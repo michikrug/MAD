@@ -643,12 +643,12 @@ class RmWrapper(DbWrapperBase):
             "UPDATE pokemon "
             "SET individual_attack = %s, individual_defense = %s, individual_stamina = %s, "
             "move_1 = %s, move_2 = %s, cp = %s, last_modified = %s, weight = %s, height = %s, "
-            "cp_multiplier = %s, catch_prob_1 = %s, catch_prob_2 = %s, catch_prob_3 = %s, "
+            "cp_multiplier = %s, "
             "WHERE encounter_id = %s"
         )
         vals = (
             individual_attack, individual_defense, individual_stamina, move_1, move_2, cp,
-            now, weight, height, cpmulti, 1, 1, 1, id
+            now, weight, height, cpmulti, id
         )
 
         self.execute(query, vals, commit=True)
@@ -661,9 +661,8 @@ class RmWrapper(DbWrapperBase):
         query_mons = (
             "INSERT INTO pokemon (encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
             "individual_attack, individual_defense, individual_stamina, move_1, move_2, cp, cp_multiplier, "
-            "weight, height, gender, catch_prob_1, catch_prob_2, catch_prob_3, rating_attack, rating_defense, "
-            "weather_boosted_condition, last_modified, costume, form) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+            "weight, height, gender, boosted_weather, last_modified, costume, form) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
             "%s, %s, %s, %s, %s) "
             "ON DUPLICATE KEY UPDATE last_modified=VALUES(last_modified), disappear_time=VALUES(disappear_time)"
         )
@@ -710,7 +709,6 @@ class RmWrapper(DbWrapperBase):
                         despawn_time,
                         None, None, None, None, None, None, None, None, None,  # TODO: consider .get("XXX", None)
                         wild_mon['pokemon_data']['display']['gender_value'],
-                        None, None, None, None, None,
                         wild_mon['pokemon_data']['display']['weather_boosted_value'],
                         now, wild_mon['pokemon_data']['display']['costume_value'],
                         wild_mon['pokemon_data']['display']['form_value']

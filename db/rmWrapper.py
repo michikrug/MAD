@@ -471,18 +471,17 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::get_near_gyms} done")
         return data
 
-    def set_scanned_location(self, lat, lng, capture_time):
+    def set_scanned_location(self, lat, lng, capture_time, radius=400):
         log.debug("{RmWrapper::set_scanned_location} called")
         now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         cell_id = int(S2Helper.lat_lng_to_cell_id(float(lat), float(lng), 16))
         query = (
-            "INSERT INTO scannedlocation (cellid, latitude, longitude, last_modified, done, band1, band2, "
-            "band3, band4, band5, midpoint, width) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
-            "ON DUPLICATE KEY UPDATE last_modified=VALUES(last_modified)"
+            "REPLACE INTO scannedlocation (cellid, latitude, longitude, last_modified, done, band1, band2, "
+            "band3, band4, band5, midpoint, width, radius) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         )
         # TODO: think of a better "unique, real number"
-        vals = (cell_id, lat, lng, now, -1, -1, -1, -1, -1, -1, -1, -1)
+        vals = (cell_id, lat, lng, now, -1, -1, -1, -1, -1, -1, -1, -1, radius)
         self.execute(query, vals, commit=True)
 
         log.debug("{RmWrapper::set_scanned_location} Done setting location...")

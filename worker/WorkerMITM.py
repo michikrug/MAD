@@ -244,8 +244,10 @@ class WorkerMITM(WorkerBase):
 
             if self._applicationArgs.last_scanned:
                 log.info('main: Set new scannedlocation in Database')
-                # self.update_scanned_location(currentLocation.lat, currentLocation.lng, curTime)
-                self.__add_task_to_loop(self.update_scanned_location(currentLocation.lat, currentLocation.lng, curTime))
+                nighttime_mode = None if self._route_manager_nighttime is None else self._route_manager_nighttime.mode
+                current_mode = self._route_manager_daytime.mode if not MadGlobals.sleep else nighttime_mode
+                radius = 67 if current_mode == 'mon_mitm' else 400
+                self.__add_task_to_loop(self.update_scanned_location(currentLocation.lat, currentLocation.lng, curTime, radius))
 
             log.debug("Acquiring lock")
             self._work_mutex.acquire()
@@ -260,9 +262,9 @@ class WorkerMITM(WorkerBase):
         t_mitm_data.join()
         t_asyncio_loop.join()
 
-    async def update_scanned_location(self, latitude, longitude, timestamp):
+    async def update_scanned_location(self, latitude, longitude, timestamp, radius):
         try:
-            self._db_wrapper.set_scanned_location(str(latitude), str(longitude), str(timestamp))
+            self._db_wrapper.set_scanned_location(str(latitude), str(longitude), str(timestamp), radius)
         except Exception as e:
             log.error("Failed updating scanned location: %s" % str(e))
             return

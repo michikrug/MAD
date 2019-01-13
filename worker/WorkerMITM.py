@@ -334,6 +334,7 @@ class WorkerMITM(WorkerBase):
                             for WP in data_extract['wild_pokemon']:
                                 if WP['spawnpoint_id']:
                                     data_requested = data
+                                    data_err_counter = 0
                         if data_requested is None:
                             log.debug("No spawnpoints in data requested")
                     elif current_mode == 'raids_mitm':
@@ -341,6 +342,7 @@ class WorkerMITM(WorkerBase):
                             for forts in data_extract['forts']:
                                 if forts['id']:
                                     data_requested = data
+                                    data_err_counter = 0
                         if data_requested is None:
                             log.debug("No forts in data received")
                     else:

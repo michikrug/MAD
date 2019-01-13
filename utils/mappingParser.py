@@ -22,7 +22,7 @@ mode_mapping = {
         "max_count": 100000
     },
     "raids_ocr": {
-        "range": 490,
+        "range": 600,
         "max_count": 7
     }
 }

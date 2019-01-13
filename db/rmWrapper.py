@@ -471,7 +471,7 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::get_near_gyms} done")
         return data
 
-    def set_scanned_location(self, lat, lng, capture_time, radius=400):
+    def set_scanned_location(self, lat, lng, capture_time, radius=600):
         log.debug("{RmWrapper::set_scanned_location} called")
         now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         cell_id = int(S2Helper.lat_lng_to_cell_id(float(lat), float(lng), 16))

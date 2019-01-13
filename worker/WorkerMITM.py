@@ -246,7 +246,7 @@ class WorkerMITM(WorkerBase):
                 log.info('main: Set new scannedlocation in Database')
                 nighttime_mode = None if self._route_manager_nighttime is None else self._route_manager_nighttime.mode
                 current_mode = self._route_manager_daytime.mode if not MadGlobals.sleep else nighttime_mode
-                radius = 67 if current_mode == 'mon_mitm' else 400
+                radius = 67 if current_mode == 'mon_mitm' else 600
                 self.__add_task_to_loop(self.update_scanned_location(currentLocation.lat, currentLocation.lng, curTime, radius))
 
             log.debug("Acquiring lock")

@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 mode_mapping = {
     "raids_mitm": {
         "s2_cell_level": 13,
-        "range": 400,
+        "range": 600,
         "max_count": 100000
     },
     "mon_mitm": {

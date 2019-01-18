@@ -97,7 +97,7 @@ def parseArgs():
                         help=('Path to Pogo Asset.'
                               'See https://github.com/ZeChrales/PogoAssets/'))
 
-    parser.add_argument('-rscrpath', '--raidscreen_path', default='ocr/screenshots', # TODO: check if user appended / or not and deal accordingly (rmeove it?)
+    parser.add_argument('-rscrpath', '--raidscreen_path', default='ocr/screenshots',  # TODO: check if user appended / or not and deal accordingly (rmeove it?)
                         help='Folder for processed Raidscreens. Default: ocr/screenshots')
 
     parser.add_argument('-ssvpath', '--successsave_path', default='ocr/success',

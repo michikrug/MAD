@@ -1,7 +1,6 @@
 import logging
 from threading import Lock
 
-
 log = logging.getLogger(__name__)
 
 
@@ -23,12 +22,14 @@ class ReceivedMapper(object):
         updated = False
         self.__mapping_mutex.acquire()
         if origin in self.__mapping.keys():
-            log.debug("Updating timestamp of %s with method %s to %s" % (str(origin), str(method), str(timestamp)))
+            log.debug("Updating timestamp of %s with method %s to %s" %
+                      (str(origin), str(method), str(timestamp)))
             self.__mapping[origin][method] = {}
             self.__mapping[origin][method]["timestamp"] = timestamp
             self.__mapping[origin][method]["data"] = data
             updated = True
         else:
-            log.warning("Not updating timestamp of %s since origin is unknown" % str(origin))
+            log.warning(
+                "Not updating timestamp of %s since origin is unknown" % str(origin))
         self.__mapping_mutex.release()
         return updated

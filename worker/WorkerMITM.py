@@ -47,7 +47,8 @@ class WorkerMITM(WorkerBase):
         # f = functools.partial(asyncio.async, coro, loop=self.loop)
         f = functools.partial(self.loop.create_task, coro)
         if current_thread() == self.loop_tid:
-            return f()  # We can call directly if we're not going between threads.
+            # We can call directly if we're not going between threads.
+            return f()
         else:
             # We're in a non-event loop thread so we use a Future
             # to get the task from the event loop thread once
@@ -70,12 +71,14 @@ class WorkerMITM(WorkerBase):
             self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
             log.warning("Turning screen on")
             self._communicator.turnScreenOn()
-            time.sleep(self._devicesettings.get("post_turn_screen_on_delay", 7))
+            time.sleep(self._devicesettings.get(
+                "post_turn_screen_on_delay", 7))
 
         cur_time = time.time()
         start_result = False
         while not pogo_topmost:
-            start_result = self._communicator.startApp("com.nianticlabs.pokemongo")
+            start_result = self._communicator.startApp(
+                "com.nianticlabs.pokemongo")
             time.sleep(1)
             pogo_topmost = self._communicator.isPogoTopmost()
         reached_raidtab = False
@@ -101,7 +104,8 @@ class WorkerMITM(WorkerBase):
         t_mitm_data.daemon = False
         t_mitm_data.start()
 
-        t_asyncio_loop = Thread(name='mitm_asyncio_' + self.id, target=self.__start_asyncio_loop)
+        t_asyncio_loop = Thread(name='mitm_asyncio_' +
+                                self.id, target=self.__start_asyncio_loop)
         t_asyncio_loop.daemon = False
         t_asyncio_loop.start()
 
@@ -130,7 +134,8 @@ class WorkerMITM(WorkerBase):
 
             # check if pogo is topmost and start if necessary
             try:
-                log.debug("Calling _start_pogo routine to check if pogo is topmost")
+                log.debug(
+                    "Calling _start_pogo routine to check if pogo is topmost")
                 self._start_pogo()
             except WebsocketWorkerRemovedException:
                 log.error("Timeout starting pogo on %s" % str(self.id))
@@ -145,7 +150,8 @@ class WorkerMITM(WorkerBase):
                 # if curTime - lastPogoRestart >= (args.restart_pogo * 60):
                 self._locationCount += 1
                 if self._locationCount > self._devicesettings.get("restart_pogo", 80):
-                    log.error("scanned " + str(self._devicesettings.get("restart_pogo", 80)) + " locations, restarting pogo")
+                    log.error("scanned " + str(self._devicesettings.get(
+                        "restart_pogo", 80)) + " locations, restarting pogo")
                     self._restartPogo()
                     self._locationCount = 0
             self._work_mutex.release()
@@ -170,7 +176,8 @@ class WorkerMITM(WorkerBase):
 
             log.debug("Updating .position file")
             with open(self.id + '.position', 'w') as outfile:
-                outfile.write(str(currentLocation.lat)+", "+str(currentLocation.lng))
+                outfile.write(str(currentLocation.lat) +
+                              ", "+str(currentLocation.lng))
 
             log.debug("main: next stop: %s" % (str(currentLocation)))
             log.debug('main: LastLat: %s, LastLng: %s, CurLat: %s, CurLng: %s' %
@@ -187,13 +194,16 @@ class WorkerMITM(WorkerBase):
             else:
                 speed = self._route_manager_daytime.settings.get("speed", 0)
             if (speed == 0 or
-                    (settings['max_distance'] and 0 < settings['max_distance'] < distance)
+                    (settings['max_distance'] and 0 <
+                     settings['max_distance'] < distance)
                     or (lastLocation.lat == 0.0 and lastLocation.lng == 0.0)):
                 log.info("main: Teleporting...")
                 # TODO: catch exception...
                 try:
-                    self._communicator.setLocation(currentLocation.lat, currentLocation.lng, 0)
-                    curTime = math.floor(time.time())  # the time we will take as a starting point to wait for data...
+                    self._communicator.setLocation(
+                        currentLocation.lat, currentLocation.lng, 0)
+                    # the time we will take as a starting point to wait for data...
+                    curTime = math.floor(time.time())
                 except WebsocketWorkerRemovedException:
                     log.error("Timeout setting location for %s" % str(self.id))
                     self._stop_worker_event.set()
@@ -207,12 +217,14 @@ class WorkerMITM(WorkerBase):
                         delayUsed = 10
                     elif distance > 10000:
                         delayUsed = 15
-                    log.info("Need more sleep after Teleport: %s seconds!" % str(delayUsed))
+                    log.info("Need more sleep after Teleport: %s seconds!" %
+                             str(delayUsed))
                     # curTime = math.floor(time.time())  # the time we will take as a starting point to wait for data...
 
                 if 0 < self._devicesettings.get('walk_after_teleport_distance', 0) < distance:
                     toWalk = get_distance_of_two_points_in_meters(float(currentLocation.lat), float(currentLocation.lng),
-                                                                  float(currentLocation.lat) + 0.0001,
+                                                                  float(
+                                                                      currentLocation.lat) + 0.0001,
                                                                   float(currentLocation.lng) + 0.0001)
                     log.info("Walking a bit: %s" % str(toWalk))
                     try:
@@ -224,7 +236,8 @@ class WorkerMITM(WorkerBase):
                         self._communicator.walkFromTo(currentLocation.lat + 0.0001, currentLocation.lng + 0.0001,
                                                       currentLocation.lat, currentLocation.lng, 11)
                     except WebsocketWorkerRemovedException:
-                        log.error("Timeout setting location for %s" % str(self.id))
+                        log.error("Timeout setting location for %s" %
+                                  str(self.id))
                         self._stop_worker_event.set()
                         return
                     log.debug("Done walking")
@@ -233,7 +246,8 @@ class WorkerMITM(WorkerBase):
                 try:
                     self._communicator.walkFromTo(lastLocation.lat, lastLocation.lng,
                                                   currentLocation.lat, currentLocation.lng, speed)
-                    curTime = math.floor(time.time())  # the time we will take as a starting point to wait for data...
+                    # the time we will take as a starting point to wait for data...
+                    curTime = math.floor(time.time())
                 except WebsocketWorkerRemovedException:
                     log.error("Timeout setting location for %s" % str(self.id))
                     self._stop_worker_event.set()
@@ -247,7 +261,8 @@ class WorkerMITM(WorkerBase):
                 nighttime_mode = None if self._route_manager_nighttime is None else self._route_manager_nighttime.mode
                 current_mode = self._route_manager_daytime.mode if not MadGlobals.sleep else nighttime_mode
                 radius = 67 if current_mode == 'mon_mitm' else 600
-                self.__add_task_to_loop(self.update_scanned_location(currentLocation.lat, currentLocation.lng, curTime, radius))
+                self.__add_task_to_loop(self.update_scanned_location(
+                    currentLocation.lat, currentLocation.lng, curTime, radius))
 
             log.debug("Acquiring lock")
             self._work_mutex.acquire()
@@ -264,7 +279,8 @@ class WorkerMITM(WorkerBase):
 
     async def update_scanned_location(self, latitude, longitude, timestamp, radius):
         try:
-            self._db_wrapper.set_scanned_location(str(latitude), str(longitude), str(timestamp), radius)
+            self._db_wrapper.set_scanned_location(
+                str(latitude), str(longitude), str(timestamp), radius)
         except Exception as e:
             log.error("Failed updating scanned location: %s" % str(e))
             return
@@ -305,7 +321,8 @@ class WorkerMITM(WorkerBase):
             # log.info('Requesting latest...')
             latest = self._received_mapping.request_latest(self.id)
             if latest is None:
-                log.warning('Nothing received from client since MAD started...')
+                log.warning(
+                    'Nothing received from client since MAD started...')
                 # we did not get anything from that client at all, let's check again in a sec
                 time.sleep(0.5)
                 continue
@@ -355,9 +372,11 @@ class WorkerMITM(WorkerBase):
 
             max_data_err_counter = 60
             if self._devicesettings is not None:
-                max_data_err_counter = self._devicesettings.get("max_data_err_counter", 60)
+                max_data_err_counter = self._devicesettings.get(
+                    "max_data_err_counter", 60)
             if data_err_counter >= int(max_data_err_counter):
-                log.warning("Errorcounter reached restart thresh, restarting pogo")
+                log.warning(
+                    "Errorcounter reached restart thresh, restarting pogo")
                 self._restartPogo(False)
                 return None, 0
             elif data_requested is None:
@@ -375,7 +394,8 @@ class WorkerMITM(WorkerBase):
         if 'cells' in data['payload']:
             try:
                 if self._applicationArgs.weather:
-                    self._db_wrapper.submit_weather_map_proto(data["payload"], received_timestamp)
+                    self._db_wrapper.submit_weather_map_proto(
+                        data["payload"], received_timestamp)
 
                 self._db_wrapper.submit_pokestops_map_proto(data["payload"])
                 self._db_wrapper.submit_gyms_map_proto(data["payload"])
@@ -387,25 +407,25 @@ class WorkerMITM(WorkerBase):
                 log.error("An exception occured while processing data.")
                 log.exception(e)
 
-        #if 'wild_pokemon' in data['payload']:
+        # if 'wild_pokemon' in data['payload']:
             #WP = data['payload']['wild_pokemon']
 
             #lat, lng, alt = S2Helper.get_position_from_cell(int(str(WP['spawnpoint_id']) + '00000', 16))
 
             #self._dbWrapper.submitspawnpoint(int(str(WP['spawnpoint_id']), 16), lat, lng, (WP['time_till_hidden']))
-            #self._dbWrapper.submitspsightings(int(str(WP['spawnpoint_id']), 16), abs(WP['encounter_id']),
-                                              #(WP['time_till_hidden']))
+            # self._dbWrapper.submitspsightings(int(str(WP['spawnpoint_id']), 16), abs(WP['encounter_id']),
+                # (WP['time_till_hidden']))
 
-            #self._dbWrapper.submit_mon_iv(abs(WP['encounter_id']), str(WP['pokemon_data']['id']), str(WP['latitude']),
-                                      #    str(WP['longitude']),
-                                      ##    abs(WP['time_till_hidden']), int(str(WP['spawnpoint_id']), 16),
-                                       #   WP['pokemon_data']['display']['gender_value'],
-                                        #  WP['pokemon_data']['display']['weather_boosted_value'],
-                                        #  WP['pokemon_data']['display']['costume_value'],
-                                     #     WP['pokemon_data']['display']['form_value'],
-                                    #      WP['pokemon_data']['cp'], WP['pokemon_data']['move_1'],
-                                    #      WP['pokemon_data']['move_2'],
-                                    #      WP['pokemon_data']['weight'], WP['pokemon_data']['height'],
-                                    #      WP['pokemon_data']['individual_attack'],
-                                    #      WP['pokemon_data']['individual_defense'],
-                                    #      WP['pokemon_data']['individual_stamina'], WP['pokemon_data']['cp_multiplier'])
+            # self._dbWrapper.submit_mon_iv(abs(WP['encounter_id']), str(WP['pokemon_data']['id']), str(WP['latitude']),
+                #    str(WP['longitude']),
+                ##    abs(WP['time_till_hidden']), int(str(WP['spawnpoint_id']), 16),
+                #   WP['pokemon_data']['display']['gender_value'],
+                #  WP['pokemon_data']['display']['weather_boosted_value'],
+                #  WP['pokemon_data']['display']['costume_value'],
+                #     WP['pokemon_data']['display']['form_value'],
+                #      WP['pokemon_data']['cp'], WP['pokemon_data']['move_1'],
+                #      WP['pokemon_data']['move_2'],
+                #      WP['pokemon_data']['weight'], WP['pokemon_data']['height'],
+                #      WP['pokemon_data']['individual_attack'],
+                #      WP['pokemon_data']['individual_defense'],
+                #      WP['pokemon_data']['individual_stamina'], WP['pokemon_data']['cp_multiplier'])

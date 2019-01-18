@@ -21,7 +21,8 @@ class WorkerBase(ABC):
         self._route_manager_daytime = route_manager_daytime
         self._route_manager_nighttime = route_manager_nighttime
         self._websocket_handler = websocket_handler
-        self._communicator = Communicator(websocket_handler, id, args.websocket_command_timeout)
+        self._communicator = Communicator(
+            websocket_handler, id, args.websocket_command_timeout)
         self._id = id
         self._applicationArgs = args
         self._last_known_state = last_known_state
@@ -33,10 +34,11 @@ class WorkerBase(ABC):
         self._lastScreenHash = None
         self._lastScreenHashCount = 0
         self._devicesettings = devicesettings
-        
+
         if not NoOcr:
             from ocr.pogoWindows import PogoWindows
-            self._pogoWindowManager = PogoWindows(self._communicator, args.temp_path)
+            self._pogoWindowManager = PogoWindows(
+                self._communicator, args.temp_path)
 
     def start_worker(self):
         # async_result = self.thread_pool.apply_async(self._main_work_thread, ())
@@ -89,14 +91,16 @@ class WorkerBase(ABC):
             attempts += 1
             if attempts > 10:
                 return False
-            stopResult = self._communicator.stopApp("com.nianticlabs.pokemongo")
+            stopResult = self._communicator.stopApp(
+                "com.nianticlabs.pokemongo")
             time.sleep(1)
             pogoTopmost = self._communicator.isPogoTopmost()
         return stopResult
 
     def _restartPogo(self, clear_cache=True):
         successfulStop = self._stopPogo()
-        log.debug("restartPogo: stop pogo resulted in %s" % str(successfulStop))
+        log.debug("restartPogo: stop pogo resulted in %s" %
+                  str(successfulStop))
         if successfulStop:
             if clear_cache:
                 self._communicator.clearAppCache("com.nianticlabs.pokemongo")
@@ -107,15 +111,19 @@ class WorkerBase(ABC):
 
     def _reopenRaidTab(self):
         log.debug("_reopenRaidTab: Taking screenshot...")
-        log.info("reopenRaidTab: Attempting to retrieve screenshot before checking raidtab")
+        log.info(
+            "reopenRaidTab: Attempting to retrieve screenshot before checking raidtab")
         if not self._takeScreenshot():
             log.debug("_reopenRaidTab: Failed getting screenshot...")
-            log.error("reopenRaidTab: Failed retrieving screenshot before checking for closebutton")
+            log.error(
+                "reopenRaidTab: Failed retrieving screenshot before checking for closebutton")
             return
         log.debug("_reopenRaidTab: Checking close except nearby...")
-        pathToPass = os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))
+        pathToPass = os.path.join(
+            self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))
         log.debug("Path: %s" % str(pathToPass))
-        self._pogoWindowManager.checkCloseExceptNearbyButton(pathToPass, self._id, 'True')
+        self._pogoWindowManager.checkCloseExceptNearbyButton(
+            pathToPass, self._id, 'True')
         log.debug("_reopenRaidTab: Getting to raidscreen...")
         self._getToRaidscreen(3)
         time.sleep(1)
@@ -126,7 +134,8 @@ class WorkerBase(ABC):
         compareToTime = time.time() - self._lastScreenshotTaken
         log.debug("Last screenshot taken: %s" % str(self._lastScreenshotTaken))
         if self._lastScreenshotTaken and compareToTime < 0.5:
-            log.debug("takeScreenshot: screenshot taken recently, returning immediately")
+            log.debug(
+                "takeScreenshot: screenshot taken recently, returning immediately")
             log.debug("Screenshot taken recently, skipping")
             return True
         # TODO: screenshot.png needs identifier in name
@@ -146,13 +155,16 @@ class WorkerBase(ABC):
             log.debug("_checkPogoFreeze: failed retrieving screenshot")
             return
         from utils.image_utils import getImageHash
-        screenHash = getImageHash(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)))
+        screenHash = getImageHash(os.path.join(
+            self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)))
         log.debug("checkPogoFreeze: Old Hash: " + str(self._lastScreenHash))
         log.debug("checkPogoFreeze: New Hash: " + str(screenHash))
         if hamming_dist(str(self._lastScreenHash), str(screenHash)) < 4 and str(self._lastScreenHash) != '0':
-            log.debug("checkPogoFreeze: New und old Screenshoot are the same - no processing")
+            log.debug(
+                "checkPogoFreeze: New und old Screenshoot are the same - no processing")
             self._lastScreenHashCount += 1
-            log.debug("checkPogoFreeze: Same Screen Count: " + str(self._lastScreenHashCount))
+            log.debug("checkPogoFreeze: Same Screen Count: " +
+                      str(self._lastScreenHashCount))
             if self._lastScreenHashCount >= 100:
                 self._lastScreenHashCount = 0
                 self._restartPogo()
@@ -164,7 +176,8 @@ class WorkerBase(ABC):
 
     def _getToRaidscreen(self, maxAttempts, again=False):
         # check for any popups (including post login OK)
-        log.debug("getToRaidscreen: Trying to get to the raidscreen with %s max attempts..." % str(maxAttempts))
+        log.debug("getToRaidscreen: Trying to get to the raidscreen with %s max attempts..." % str(
+            maxAttempts))
         pogoTopmost = self._communicator.isPogoTopmost()
         if not pogoTopmost:
             return False
@@ -190,7 +203,8 @@ class WorkerBase(ABC):
             log.warning("getToRaidscreen: GPS signal error")
             self._redErrorCount += 1
             if self._redErrorCount > 3:
-                log.error("getToRaidscreen: Red error multiple times in a row, restarting")
+                log.error(
+                    "getToRaidscreen: Red error multiple times in a row, restarting")
                 self._redErrorCount = 0
                 self._restartPogo()
                 return False
@@ -200,11 +214,13 @@ class WorkerBase(ABC):
             log.debug("getToRaidscreen: not on raidscreen...")
             if attempts > maxAttempts:
                 # could not reach raidtab in given maxAttempts
-                log.error("getToRaidscreen: Could not get to raidtab within %s attempts" % str(maxAttempts))
+                log.error("getToRaidscreen: Could not get to raidtab within %s attempts" % str(
+                    maxAttempts))
                 return False
             self._checkPogoFreeze()
             # not using continue since we need to get a screen before the next round...
-            found = self._pogoWindowManager.lookForButton(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), 2.20, 3.01)
+            found = self._pogoWindowManager.lookForButton(os.path.join(
+                self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), 2.20, 3.01)
             if found:
                 log.info("getToRaidscreen: Found button (small)")
 
@@ -214,13 +230,15 @@ class WorkerBase(ABC):
                 found = True
 
             if not found and self._pogoWindowManager.lookForButton(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), 1.05,
-                                                             2.20):
+                                                                   2.20):
                 log.info("getToRaidscreen: Found button (big)")
                 found = True
 
-            log.info("getToRaidscreen: Previous checks found popups: %s" % str(found))
+            log.info("getToRaidscreen: Previous checks found popups: %s" %
+                     str(found))
             if not found:
-                log.info("getToRaidscreen: Previous checks found nothing. Checking nearby open")
+                log.info(
+                    "getToRaidscreen: Previous checks found nothing. Checking nearby open")
                 if self._pogoWindowManager.checkNearby(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id):
                     return self._takeScreenshot(delayBefore=self._applicationArgs.post_screenshot_delay)
 
@@ -230,5 +248,3 @@ class WorkerBase(ABC):
             attempts += 1
         log.debug("getToRaidscreen: done")
         return True
-    
-    

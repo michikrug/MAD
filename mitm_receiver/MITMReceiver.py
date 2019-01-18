@@ -3,8 +3,7 @@ import logging
 import math
 import time
 
-from flask import (Flask, request, Response)
-
+from flask import Flask, Response, request
 from utils.authHelper import check_auth
 
 app = Flask(__name__)
@@ -31,17 +30,19 @@ class EndpointAction(object):
         elif allowed_origins is not None and (origin is None or origin not in allowed_origins):
             self.response = Response(status=403, headers={})
             abort = True
-        elif auths is not None: # TODO check auth properly...
+        elif auths is not None:  # TODO check auth properly...
             auth = request.headers.get('Authorization', None)
             if auth is None or not check_auth(auth, application_args, auths):
-                log.warning("Unauthorized attempt to POST from %s" % str(request.remote_addr))
+                log.warning("Unauthorized attempt to POST from %s" %
+                            str(request.remote_addr))
                 self.response = Response(status=403, headers={})
                 abort = True
         if not abort:
             try:
                 self.action(origin, json.loads(request.data))
-            except Exception as e: # TODO: catch exact exception
-                log.warning("Could not get JSON data from request: %s" % str(e))
+            except Exception as e:  # TODO: catch exact exception
+                log.warning(
+                    "Could not get JSON data from request: %s" % str(e))
                 self.response = Response(status=500, headers={})
         return self.response
 
@@ -55,19 +56,24 @@ class MITMReceiver(object):
         self.__listen_port = listen_port
         self.__received_mapping = received_mapping
         self.app = Flask("MITMReceiver")
-        self.add_endpoint(endpoint='/', endpoint_name='receive_protos', handler=self.proto_endpoint)
+        self.add_endpoint(
+            endpoint='/', endpoint_name='receive_protos', handler=self.proto_endpoint)
 
     def run_receiver(self):
-        self.app.run(host=self.__listen_ip, port=int(self.__listen_port), threaded=True, use_reloader=False)
+        self.app.run(host=self.__listen_ip, port=int(
+            self.__listen_port), threaded=True, use_reloader=False)
 
     def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, options=None):
         methods_passed = ['POST']
-        self.app.add_url_rule(endpoint, endpoint_name, EndpointAction(handler), methods=methods_passed)
+        self.app.add_url_rule(endpoint, endpoint_name,
+                              EndpointAction(handler), methods=methods_passed)
 
     def proto_endpoint(self, origin, data):
         # data = json.loads(request.data)
         type = data.get("type", None)
         if type is None:
-            log.warning("Could not read method ID. Stopping processing of proto")
+            log.warning(
+                "Could not read method ID. Stopping processing of proto")
             return
-        self.__received_mapping.update_retrieved(origin, type, data, int(math.floor(time.time())))
+        self.__received_mapping.update_retrieved(
+            origin, type, data, int(math.floor(time.time())))

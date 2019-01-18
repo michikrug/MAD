@@ -70,27 +70,37 @@ class MappingParser(object):
             # grab coords
             # first check if init is false or raids_ocr is set as mode, if so, grab the coords from DB
             # coords = np.loadtxt(area["coords"], delimiter=',')
-            geofence_helper = GeofenceHelper(area["geofence_included"], area.get("geofence_excluded", None))
+            geofence_helper = GeofenceHelper(
+                area["geofence_included"], area.get("geofence_excluded", None))
             mode = area["mode"]
             # build routemanagers
             if mode == "raids_ocr" or mode == "raids_mitm":
                 route_manager = RouteManagerRaids(self.db_wrapper, None, mode_mapping[area["mode"]]["range"],
-                                                  mode_mapping[area["mode"]]["max_count"],
-                                                  area["geofence_included"], area.get("geofence_excluded", None),
+                                                  mode_mapping[area["mode"]
+                                                               ]["max_count"],
+                                                  area["geofence_included"], area.get(
+                                                      "geofence_excluded", None),
                                                   area["routecalc"],
-                                                  mode=area["mode"], settings=area.get("settings", None),
+                                                  mode=area["mode"], settings=area.get(
+                                                      "settings", None),
                                                   init=area.get("init", False),
-                                                  name=area.get("name", "unknown")
+                                                  name=area.get(
+                                                      "name", "unknown")
                                                   )
             elif mode == "mon_mitm":
                 route_manager = RouteManagerMon(self.db_wrapper, None, mode_mapping[area["mode"]]["range"],
-                                                mode_mapping[area["mode"]]["max_count"],
-                                                area["geofence_included"], area.get("geofence_excluded", None),
+                                                mode_mapping[area["mode"]
+                                                             ]["max_count"],
+                                                area["geofence_included"], area.get(
+                                                    "geofence_excluded", None),
                                                 area["routecalc"], mode=area["mode"],
-                                                coords_spawns_known=area.get("coords_spawns_known", False),
+                                                coords_spawns_known=area.get(
+                                                    "coords_spawns_known", False),
                                                 init=area.get("init", False),
-                                                name=area.get("name", "unknown"),
-                                                settings=area.get("settings", None)
+                                                name=area.get(
+                                                    "name", "unknown"),
+                                                settings=area.get(
+                                                    "settings", None)
                                                 )
             else:
                 log.error("Invalid mode found in mapping parser.")
@@ -105,10 +115,12 @@ class MappingParser(object):
                     spawn_known = area.get("coords_spawns_known", False)
                     if spawn_known:
                         log.info("Reading known Spawnpoints from DB")
-                        coords = self.db_wrapper.get_detected_spawns(geofence_helper)
+                        coords = self.db_wrapper.get_detected_spawns(
+                            geofence_helper)
                     else:
                         log.info("Reading unknown Spawnpoints from DB")
-                        coords = self.db_wrapper.get_undetected_spawns(geofence_helper)
+                        coords = self.db_wrapper.get_undetected_spawns(
+                            geofence_helper)
                 else:
                     log.fatal("Mode not implemented yet: %s" % str(mode))
                     exit(1)

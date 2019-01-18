@@ -30,7 +30,8 @@ class Communicator:
 
     def stopApp(self, packageName):
         if not self.__runAndOk("more stop %s\r\n" % (packageName), self.__commandTimeout):
-            log.error("Failed stopping %s, please check if SU has been granted" % packageName)
+            log.error(
+                "Failed stopping %s, please check if SU has been granted" % packageName)
             return False
         else:
             return True
@@ -52,14 +53,16 @@ class Communicator:
 
     def getScreenshot(self, path):
         self.__sendMutex.acquire()
-        encoded = self.websocketHandler.sendAndWait(self.id, "screen capture\r\n", self.__commandTimeout)
+        encoded = self.websocketHandler.sendAndWait(
+            self.id, "screen capture\r\n", self.__commandTimeout)
         self.__sendMutex.release()
         if encoded is None:
             return False
         elif isinstance(encoded, str):
             log.debug("Screenshot response not binary")
             if "KO: " in encoded:
-                log.error("getScreenshot: Could not retrieve screenshot. Check if mediaprojection is enabled!")
+                log.error(
+                    "getScreenshot: Could not retrieve screenshot. Check if mediaprojection is enabled!")
                 return False
             elif "OK:" not in encoded:
                 log.error("getScreenshot: response not OK")
@@ -79,7 +82,8 @@ class Communicator:
 
     def isScreenOn(self):
         self.__sendMutex.acquire()
-        state = self.websocketHandler.sendAndWait(self.id, "more state screen\r\n", self.__commandTimeout)
+        state = self.websocketHandler.sendAndWait(
+            self.id, "more state screen\r\n", self.__commandTimeout)
         self.__sendMutex.release()
         if state is None:
             return False
@@ -87,7 +91,8 @@ class Communicator:
 
     def isPogoTopmost(self):
         self.__sendMutex.acquire()
-        topmost = self.websocketHandler.sendAndWait(self.id, "more topmost app\r\n", self.__commandTimeout)
+        topmost = self.websocketHandler.sendAndWait(
+            self.id, "more topmost app\r\n", self.__commandTimeout)
         self.__sendMutex.release()
         if topmost is None:
             return False
@@ -95,7 +100,8 @@ class Communicator:
 
     def setLocation(self, lat, lng, alt):
         self.__sendMutex.acquire()
-        response = self.websocketHandler.sendAndWait(self.id, "geo fix %s %s %s\r\n" % (lat, lng, alt), self.__commandTimeout)
+        response = self.websocketHandler.sendAndWait(
+            self.id, "geo fix %s %s %s\r\n" % (lat, lng, alt), self.__commandTimeout)
         self.__sendMutex.release()
         return response
 
@@ -136,7 +142,8 @@ class Communicator:
 
         log.debug("__walkTrackSpeed: starting to walk")
         while travel_time > Communicator.UPDATE_INTERVAL:
-            log.debug("__walkTrackSpeed: sleeping for %s" % str(Communicator.UPDATE_INTERVAL))
+            log.debug("__walkTrackSpeed: sleeping for %s" %
+                      str(Communicator.UPDATE_INTERVAL))
             time.sleep(Communicator.UPDATE_INTERVAL)
             log.debug("__walkTrackSpeed: Next round")
             travel_time -= Communicator.UPDATE_INTERVAL

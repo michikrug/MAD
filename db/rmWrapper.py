@@ -1,13 +1,11 @@
+import logging
 import shutil
 import sys
 import time
-
-import requests
-
-from db.dbWrapperBase import DbWrapperBase
-import logging
 from datetime import datetime, timedelta
 
+import requests
+from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.s2Helper import S2Helper
 
@@ -16,13 +14,15 @@ log = logging.getLogger(__name__)
 
 class RmWrapper(DbWrapperBase):
     def ensure_last_updated_column(self):
-        log.info("{RmWrapper::ensure_last_updated_column} called, returning True since RM doesn't need it")
+        log.info(
+            "{RmWrapper::ensure_last_updated_column} called, returning True since RM doesn't need it")
         return True
 
     def auto_hatch_eggs(self):
         log.debug("{RmWrapper::auto_hatch_eggs} called")
         now = (datetime.now())
-        now_timezone = int(time.mktime(now.timetuple())) - (self.timezone * 60 * 60)
+        now_timezone = int(time.mktime(now.timetuple())) - \
+            (self.timezone * 60 * 60)
 
         mon_id = self.application_args.auto_hatch_number
 
@@ -46,7 +46,8 @@ class RmWrapper(DbWrapperBase):
 
         res = self.execute(query_for_count, vals)
         rows_that_need_hatch_count = len(res)
-        log.debug("Rows that need updating: {0}".format(rows_that_need_hatch_count))
+        log.debug("Rows that need updating: {0}".format(
+            rows_that_need_hatch_count))
 
         if rows_that_need_hatch_count > 0:
             counter = 0
@@ -66,7 +67,8 @@ class RmWrapper(DbWrapperBase):
                 if affected_rows == 1:
                     counter = counter + 1
                     if self.application_args.webhook:
-                        log.debug('Sending auto hatched raid for raid id {0}'.format(row[0]))
+                        log.debug(
+                            'Sending auto hatched raid for raid id {0}'.format(row[0]))
                         self.webhook_helper.send_raid_webhook(
                             row[0], 'MON', row[1], row[2], 5, mon_id
                         )
@@ -121,7 +123,8 @@ class RmWrapper(DbWrapperBase):
                           % (str(latitude), str(longitude)))
                 continue
             timestamp = self.db_timestring_to_unix_timestamp(str(start))
-            data.append((timestamp + delay_after_hatch, Location(latitude, longitude)))
+            data.append((timestamp + delay_after_hatch,
+                         Location(latitude, longitude)))
 
         log.debug("Latest Q: %s" % str(data))
         return data
@@ -129,7 +132,8 @@ class RmWrapper(DbWrapperBase):
     def submit_raid(self, gym, pkm, lvl, start, end, type, raid_no, capture_time, unique_hash="123",
                     mon_with_no_egg=False):
         log.debug("{RmWrapper::submit_raid} called")
-        log.debug("[Crop: %s (%s) ] submit_raid: Submitting raid" % (str(raid_no), str(unique_hash)))
+        log.debug("[Crop: %s (%s) ] submit_raid: Submitting raid" %
+                  (str(raid_no), str(unique_hash)))
 
         if self.raid_exist(gym, type, raid_no, unique_hash=str(unique_hash), mon=pkm):
             self.refresh_times(gym, raid_no, capture_time)
@@ -150,7 +154,8 @@ class RmWrapper(DbWrapperBase):
         egg_hatched = False
 
         now_timezone = datetime.fromtimestamp(float(capture_time))
-        now_timezone = time.mktime(now_timezone.timetuple()) - (self.timezone * 60 * 60)
+        now_timezone = time.mktime(
+            now_timezone.timetuple()) - (self.timezone * 60 * 60)
 
         log.debug("[Crop: %s (%s) ] submit_raid: Submitting something of type %s"
                   % (str(raid_no), str(unique_hash), str(type)))
@@ -170,7 +175,8 @@ class RmWrapper(DbWrapperBase):
                 "WHERE gym_id = %s"
             )
             vals = (
-                lvl, now_timezone, start, end, pkm, int(time.time()), '999', '1', '1', gym
+                lvl, now_timezone, start, end, pkm, int(
+                    time.time()), '999', '1', '1', gym
             )
             # send out a webhook - this case should only occur once...
             wh_send = True
@@ -178,7 +184,8 @@ class RmWrapper(DbWrapperBase):
             wh_end = end
         elif end is None or start is None:
             # no end or start time given, just update anything there is
-            log.info("Updating without end- or starttime - we should've seen the egg before")
+            log.info(
+                "Updating without end- or starttime - we should've seen the egg before")
             query = (
                 "UPDATE raid "
                 "SET level = %s, pokemon_id = %s, last_scanned = FROM_UNIXTIME(%s), cp = %s, "
@@ -188,7 +195,8 @@ class RmWrapper(DbWrapperBase):
             vals = (
                 lvl, pkm, int(time.time()), '999', '1', '1', gym
             )
-            found_end_time, end_time = self.get_raid_endtime(gym, raid_no, unique_hash=unique_hash)
+            found_end_time, end_time = self.get_raid_endtime(
+                gym, raid_no, unique_hash=unique_hash)
             if found_end_time:
                 wh_send = True
                 wh_start = int(end_time) - 2700
@@ -206,7 +214,8 @@ class RmWrapper(DbWrapperBase):
                 "WHERE gym_id = %s"
             )
             vals = (
-                lvl, now_timezone, start, end, pkm, int(time.time()), '999', '1', '1', gym
+                lvl, now_timezone, start, end, pkm, int(
+                    time.time()), '999', '1', '1', gym
             )
             wh_send = True
             wh_start = start
@@ -243,7 +252,8 @@ class RmWrapper(DbWrapperBase):
                     "VALUES (%s, %s, FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), %s, "
                     "FROM_UNIXTIME(%s), 999, 1, 1"
                 )
-                vals = (gym, lvl, now_timezone, start, end, pkm, int(time.time()))
+                vals = (gym, lvl, now_timezone, start,
+                        end, pkm, int(time.time()))
 
             self.execute(query, vals, commit=True)
 
@@ -261,7 +271,8 @@ class RmWrapper(DbWrapperBase):
         self.refresh_times(gym, raid_no, capture_time)
 
         if self.application_args.webhook and wh_send:
-            log.info('[Crop: ' + str(raid_no) + ' (' + str(unique_hash) + ') ] ' + 'submitRaid: Send webhook')
+            log.info('[Crop: ' + str(raid_no) + ' (' +
+                     str(unique_hash) + ') ] ' + 'submitRaid: Send webhook')
             if wh_start:
                 wh_start += (self.timezone * 60 * 60)
             if wh_end:
@@ -276,7 +287,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::read_raid_endtime} called")
         log.debug("[Crop: %s (%s) ] read_raid_endtime: Check DB for existing mon"
                   % (str(raid_no), str(unique_hash)))
-        now = (datetime.now() - timedelta(hours=self.timezone)).strftime("%Y-%m-%d %H:%M:%S")
+        now = (datetime.now() - timedelta(hours=self.timezone)
+               ).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "SELECT raid.end "
@@ -310,7 +322,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("[Crop: %s (%s) ] get_raid_endtime: Check DB for existing mon"
                   % (str(raid_no), str(unique_hash)))
 
-        now = (datetime.now() - timedelta(hours=self.timezone)).strftime("%Y-%m-%d %H:%M:%S")
+        now = (datetime.now() - timedelta(hours=self.timezone)
+               ).strftime("%Y-%m-%d %H:%M:%S")
         query = (
             "SELECT UNIX_TIMESTAMP(raid.end) "
             "FROM raid "
@@ -411,7 +424,8 @@ class RmWrapper(DbWrapperBase):
         now = (datetime.fromtimestamp(float(capture_time)) - timedelta(
             hours=self.timezone)).strftime("%Y-%m-%d %H:%M:%S")
         now_timezone = datetime.fromtimestamp(float(capture_time))
-        now_timezone = time.mktime(now_timezone.timetuple()) - (self.timezone * 60 * 60)
+        now_timezone = time.mktime(
+            now_timezone.timetuple()) - (self.timezone * 60 * 60)
 
         query = (
             "UPDATE gym "
@@ -473,7 +487,8 @@ class RmWrapper(DbWrapperBase):
 
     def set_scanned_location(self, lat, lng, capture_time, radius=600):
         log.debug("{RmWrapper::set_scanned_location} called")
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
         cell_id = int(S2Helper.lat_lng_to_cell_id(float(lat), float(lng), 16))
         query = (
             "REPLACE INTO scannedlocation (cellid, latitude, longitude, last_modified, done, band1, band2, "
@@ -515,7 +530,8 @@ class RmWrapper(DbWrapperBase):
                     filename = url_image_path + '_' + str(gym_id) + '_.jpg'
                     log.debug('Downloading', filename)
                     self.__download_img(str(url), str(filename))
-                gyminfo[gym_id] = self.__encode_hash_json(team_id, latitude, longitude, name, description, url)
+                gyminfo[gym_id] = self.__encode_hash_json(
+                    team_id, latitude, longitude, name, description, url)
 
         with io.open('gym_info.json', 'w') as outfile:
             outfile.write(str(json.dumps(gyminfo, indent=4, sort_keys=True)))
@@ -538,7 +554,8 @@ class RmWrapper(DbWrapperBase):
         res = self.execute(query)
 
         for (gym_id, latitude, longitude, name, description, url, team_id) in res:
-            gyminfo[gym_id] = self.__encode_hash_json(team_id, latitude, longitude, name, description, url)
+            gyminfo[gym_id] = self.__encode_hash_json(
+                team_id, latitude, longitude, name, description, url)
         return gyminfo
 
     def gyms_from_db(self, geofence_helper):
@@ -554,7 +571,8 @@ class RmWrapper(DbWrapperBase):
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             return geofenced_coords
         else:
             import numpy as np
@@ -578,7 +596,8 @@ class RmWrapper(DbWrapperBase):
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             return geofenced_coords
         else:
             import numpy as np
@@ -592,8 +611,10 @@ class RmWrapper(DbWrapperBase):
                               snow_level=0, fog_level=0, wind_direction=0, weather_daytime=0):
         log.debug("{RmWrapper::update_insert_weather} called")
         now_timezone = datetime.fromtimestamp(float(capture_time))
-        now_timezone = time.mktime(now_timezone.timetuple()) - (self.timezone * 60 * 60)
-        now = now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now_timezone = time.mktime(
+            now_timezone.timetuple()) - (self.timezone * 60 * 60)
+        now = now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
         real_lat, real_lng = S2Helper.middle_of_cell(cell_id)
         if weather_daytime == 2 and gameplay_weather == 3:
@@ -606,7 +627,8 @@ class RmWrapper(DbWrapperBase):
                 'ON DUPLICATE KEY UPDATE fog_level=%s, cloud_level=%s, snow_level=%s, wind_direction=%s, ' \
                 'world_time=%s, latitude=%s, longitude=%s, gameplay_weather=%s, last_updated=%s'
         data = (cell_id, real_lat, real_lng, cloud_level, rain_level, wind_level, snow_level, fog_level,
-                wind_direction, gameplay_weather, None, None, weather_daytime, str(now),
+                wind_direction, gameplay_weather, None, None, weather_daytime, str(
+                    now),
                 fog_level, cloud_level, snow_level, wind_direction, weather_daytime, real_lat, real_lng,
                 gameplay_weather, str(now))
 
@@ -619,7 +641,8 @@ class RmWrapper(DbWrapperBase):
     def submit_mon_iv(self, id, type, lat, lon, desptime, spawnid, gender, weather, costume, form, cp, move_1, move_2,
                       weight, height, individual_attack, individual_defense, individual_stamina, cpmulti):
         log.debug("{RmWrapper::submit_mon_iv} called")
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
         despawn_time = datetime.now() + timedelta(seconds=300)
         despawn_time = datetime.utcfromtimestamp(
             time.mktime(despawn_time.timetuple())
@@ -635,9 +658,11 @@ class RmWrapper(DbWrapperBase):
             init = False
 
         if init:
-            log.info("Updating mon #{0} at {1}, {2}. Despawning at {3} (init)".format(id, lat, lon, despawn_time))
+            log.info("Updating mon #{0} at {1}, {2}. Despawning at {3} (init)".format(
+                id, lat, lon, despawn_time))
         else:
-            log.info("Updating mon #{0} at {1}, {2}. Despawning at {3} (non-init)".format(id, lat, lon, despawn_time))
+            log.info(
+                "Updating mon #{0} at {1}, {2}. Despawning at {3} (non-init)".format(id, lat, lon, despawn_time))
 
         query = (
             "UPDATE pokemon "
@@ -675,7 +700,8 @@ class RmWrapper(DbWrapperBase):
                 lon = wild_mon['longitude']
                 mon_id = wild_mon['pokemon_data']['id']
 
-                now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+                now = datetime.utcfromtimestamp(
+                    time.time()).strftime('%Y-%m-%d %H:%M:%S')
                 despawn_time = datetime.now() + timedelta(seconds=300)
                 despawn_time = datetime.utcfromtimestamp(time.mktime(despawn_time.timetuple())).strftime(
                     '%Y-%m-%d %H:%M:%S')
@@ -688,7 +714,8 @@ class RmWrapper(DbWrapperBase):
                     despawn_time_unix = int(time.time()) + 3 * 60
 
                 if getdetspawntime:
-                    despawn_time = datetime.utcfromtimestamp(despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
+                    despawn_time = datetime.utcfromtimestamp(
+                        despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
                     init = False
 
                 if init:
@@ -699,15 +726,18 @@ class RmWrapper(DbWrapperBase):
                              .format(mon_id, lat, lon, despawn_time, spawnid))
 
                 self.webhook_helper.submit_pokemon_webhook(
-                    str(abs(wild_mon['encounter_id'])), mon_id, int(time.time()),
+                    str(abs(wild_mon['encounter_id'])
+                        ), mon_id, int(time.time()),
                     spawnid, lat, lon, int(despawn_time_unix)
                 )
 
                 mon_args.append(
                     (
-                        abs(wild_mon['encounter_id']), spawnid, mon_id, lat, lon,
+                        abs(wild_mon['encounter_id']
+                            ), spawnid, mon_id, lat, lon,
                         despawn_time,
-                        None, None, None, None, None, None, None, None, None,  # TODO: consider .get("XXX", None)
+                        # TODO: consider .get("XXX", None)
+                        None, None, None, None, None, None, None, None, None,
                         wild_mon['pokemon_data']['display']['gender_value'],
                         wild_mon['pokemon_data']['display']['weather_boosted_value'],
                         now, wild_mon['pokemon_data']['display']['costume_value'],
@@ -736,7 +766,8 @@ class RmWrapper(DbWrapperBase):
         for cell in cells:
             for fort in cell['forts']:
                 if fort['type'] == 1:
-                    pokestop_args.append(self.__extract_args_single_pokestop(fort))
+                    pokestop_args.append(
+                        self.__extract_args_single_pokestop(fort))
 
         self.executemany(query_pokestops, pokestop_args, commit=True)
         return True
@@ -748,7 +779,8 @@ class RmWrapper(DbWrapperBase):
             return False
         gym_args = []
         gym_details_args = []
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query_gym = (
             "INSERT INTO gym (gym_id, team_id, guard_pokemon_id, slots_available, enabled, latitude, longitude, "
@@ -777,7 +809,8 @@ class RmWrapper(DbWrapperBase):
                     raidendSec = 0
 
                     if gym['gym_details']['has_raid']:
-                        raidendSec = int(gym['gym_details']['raid_info']['raid_end'] / 1000)
+                        raidendSec = int(
+                            gym['gym_details']['raid_info']['raid_end'] / 1000)
 
                     self.webhook_helper.send_gym_webhook(
                         gymid, raidendSec, 'unknown', team_id, slots_available, guard_pokemon_id,
@@ -812,7 +845,8 @@ class RmWrapper(DbWrapperBase):
         if cells is None:
             return False
         raid_args = []
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query_raid = (
             "INSERT INTO raid (gym_id, level, spawn, start, end, pokemon_id, cp, move_1, move_2, last_scanned) "
@@ -837,11 +871,15 @@ class RmWrapper(DbWrapperBase):
                         move_1 = 1
                         move_2 = 2
 
-                    raidendSec = int(gym['gym_details']['raid_info']['raid_end'] / 1000)
-                    raidspawnSec = int(gym['gym_details']['raid_info']['raid_spawn'] / 1000)
-                    raidbattleSec = int(gym['gym_details']['raid_info']['raid_battle'] / 1000)
+                    raidendSec = int(gym['gym_details']
+                                     ['raid_info']['raid_end'] / 1000)
+                    raidspawnSec = int(
+                        gym['gym_details']['raid_info']['raid_spawn'] / 1000)
+                    raidbattleSec = int(
+                        gym['gym_details']['raid_info']['raid_battle'] / 1000)
 
-                    raidend_date = datetime.utcfromtimestamp(float(raidendSec)).strftime("%Y-%m-%d %H:%M:%S")
+                    raidend_date = datetime.utcfromtimestamp(
+                        float(raidendSec)).strftime("%Y-%m-%d %H:%M:%S")
                     raidspawn_date = datetime.utcfromtimestamp(float(raidspawnSec)).strftime(
                         "%Y-%m-%d %H:%M:%S")
                     raidstart_date = datetime.utcfromtimestamp(float(raidbattleSec)).strftime(
@@ -898,7 +936,8 @@ class RmWrapper(DbWrapperBase):
             # lat, lng, alt = S2Helper.get_position_from_cell(weather_extract['cell_id'])
             time_of_day = map_proto.get("time_of_day_value", 0)
             list_of_weather_args.append(
-                self.__extract_args_single_weather(client_weather, time_of_day, received_timestamp)
+                self.__extract_args_single_weather(
+                    client_weather, time_of_day, received_timestamp)
             )
         self.executemany(query_weather, list_of_weather_args, commit=True)
         return True
@@ -934,15 +973,18 @@ class RmWrapper(DbWrapperBase):
             log.warning("%s is not a pokestop" % str(stop_data))
             return None
         lure = stop_data['lure_expires']
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
         if lure > 0:
-            lure = datetime.utcfromtimestamp(float(lure) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+            lure = datetime.utcfromtimestamp(
+                float(lure) / 1000).strftime("%Y-%m-%d %H:%M:%S")
         else:
             lure = '1970-01-01 00:00:00'
         return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], now, lure, now
 
     def __extract_args_single_weather(self, client_weather_data, time_of_day, received_timestamp):
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
         cell_id = client_weather_data["cell_id"]
         real_lat, real_lng = S2Helper.middle_of_cell(cell_id)
 
@@ -955,7 +997,8 @@ class RmWrapper(DbWrapperBase):
             gameplay_weather = client_weather_data["gameplay_weather"]["gameplay_condition"]
 
         now_timezone = datetime.fromtimestamp(float(received_timestamp))
-        now_timezone = time.mktime(now_timezone.timetuple()) - (self.timezone * 60 * 60)
+        now_timezone = time.mktime(
+            now_timezone.timetuple()) - (self.timezone * 60 * 60)
 
         self.webhook_helper.send_weather_webhook(cell_id, gameplay_weather, 0, 0,
                                                  time_of_day, now_timezone)

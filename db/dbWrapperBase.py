@@ -1,16 +1,15 @@
 import json
+import logging
 import math
 import time
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-import logging
-import mysql
 from threading import Lock, Semaphore
 
+import mysql
+import numpy as np
 from bitstring import BitArray
 from mysql.connector.pooling import MySQLConnectionPool
-from abc import ABC, abstractmethod
-import numpy as np
-
 from utils.collections import Location
 from utils.s2Helper import S2Helper
 
@@ -31,7 +30,8 @@ class DbWrapperBase(ABC):
         self.pool = None
         self.pool_mutex = Lock()
         self._init_pool()
-        self.connection_semaphore = Semaphore(self.application_args.db_poolsize)
+        self.connection_semaphore = Semaphore(
+            self.application_args.db_poolsize)
         self.webhook_helper = webhook_helper
 
     def _init_pool(self):
@@ -221,9 +221,9 @@ class DbWrapperBase(ABC):
 
     @abstractmethod
     def update_insert_weather(self, cell_id, gameplay_weather, capture_time,
-                               cloud_level=0, rain_level=0, wind_level=0,
-                               snow_level=0, fog_level=0, wind_direction=0,
-                               weather_daytime=0):
+                              cloud_level=0, rain_level=0, wind_level=0,
+                              snow_level=0, fog_level=0, wind_direction=0,
+                              weather_daytime=0):
         """
         Updates the weather in a given cell_id
         """
@@ -312,7 +312,8 @@ class DbWrapperBase(ABC):
 
     def check_for_hash(self, imghash, type, raid_no, distance, unique_hash="123"):
         log.debug("{DbWrapperBase::check_for_hash} called")
-        log.debug("[Crop: %s (%s) ] check_for_hash: Checking for hash in db" % (str(raid_no), str(unique_hash)))
+        log.debug("[Crop: %s (%s) ] check_for_hash: Checking for hash in db" % (
+            str(raid_no), str(unique_hash)))
 
         query = (
             "SELECT id, hash, "
@@ -333,14 +334,16 @@ class DbWrapperBase(ABC):
                   (str(raid_no), str(unique_hash), str(number_of_rows)))
 
         if number_of_rows > 0:
-            log.debug("[Crop: %s (%s) ] check_for_hash: returning found ID" % (str(raid_no), str(unique_hash)))
+            log.debug("[Crop: %s (%s) ] check_for_hash: returning found ID" % (
+                str(raid_no), str(unique_hash)))
             for row in res:
                 log.debug("[Crop: %s (%s) ] check_for_hash: ID = %s"
                           % (str(raid_no), str(unique_hash), str(row[0])))
                 log.debug("{DbWrapperBase::check_for_hash} done")
                 return True, row[0], row[1], row[4], row[5]
         else:
-            log.debug("[Crop: %s (%s) ] check_for_hash: No matching hash found" % (str(raid_no), str(unique_hash)))
+            log.debug("[Crop: %s (%s) ] check_for_hash: No matching hash found" % (
+                str(raid_no), str(unique_hash)))
             log.debug("{DbWrapperBase::check_for_hash} done")
             return False, None, None, None, None
 
@@ -397,9 +400,9 @@ class DbWrapperBase(ABC):
         log.debug('Valid ids: %s' % ids)
 
         query = (
-                "DELETE FROM trshash "
-                "WHERE " + field + " " + mode + " (%s) "
-                                                "AND type like %s"
+            "DELETE FROM trshash "
+            "WHERE " + field + " " + mode + " (%s) "
+            "AND type like %s"
         )
         vals = (str(ids), str(type),)
         log.debug(query)
@@ -475,7 +478,8 @@ class DbWrapperBase(ABC):
         for cell in cells:
             for wild_mon in cell["wild_pokemon"]:
                 spawnid = int(str(wild_mon['spawnpoint_id']), 16)
-                lat, lng, alt = S2Helper.get_position_from_cell(int(str(wild_mon['spawnpoint_id']) + '00000', 16))
+                lat, lng, alt = S2Helper.get_position_from_cell(
+                    int(str(wild_mon['spawnpoint_id']) + '00000', 16))
                 despawntime = wild_mon['time_till_hidden']
 
                 minpos = self._get_min_pos_in_array()
@@ -487,9 +491,11 @@ class DbWrapperBase(ABC):
                     spawndef_ = t
 
                 if spawndef_:
-                    newspawndef = self._set_spawn_see_minutesgroup(spawndef_, minpos)
+                    newspawndef = self._set_spawn_see_minutesgroup(
+                        spawndef_, minpos)
                 else:
-                    newspawndef = self._set_spawn_see_minutesgroup(DbWrapperBase.def_spawn, minpos)
+                    newspawndef = self._set_spawn_see_minutesgroup(
+                        DbWrapperBase.def_spawn, minpos)
 
                 last_scanned = None
                 last_non_scanned = None
@@ -518,7 +524,8 @@ class DbWrapperBase(ABC):
                     )
 
         self.executemany(query_spawnpoints, spawnpoint_args, commit=True)
-        self.executemany(query_spawnpoints_unseen, spawnpoint_args_unseen, commit=True)
+        self.executemany(query_spawnpoints_unseen,
+                         spawnpoint_args_unseen, commit=True)
 
     def submitspsightings(self, spid, encid, secs):
         log.debug("{DbWrapperBase::submitspsightings} called")
@@ -566,17 +573,20 @@ class DbWrapperBase(ABC):
         list_of_coords = []
         log.debug("{DbWrapperBase::get_detected_spawns} executing select query")
         res = self.execute(query)
-        log.debug("{DbWrapperBase::get_detected_spawns} result of query: %s" % str(res))
+        log.debug(
+            "{DbWrapperBase::get_detected_spawns} result of query: %s" % str(res))
         for (latitude, longitude) in res:
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
             log.debug("{DbWrapperBase::get_detected_spawns} applying geofence")
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             log.debug(geofenced_coords)
             return geofenced_coords
         else:
-            log.debug("{DbWrapperBase::get_detected_spawns} converting to numpy")
+            log.debug(
+                "{DbWrapperBase::get_detected_spawns} converting to numpy")
             to_return = np.zeros(shape=(len(list_of_coords), 2))
             for i in range(len(to_return)):
                 to_return[i][0] = list_of_coords[i][0]
@@ -592,19 +602,24 @@ class DbWrapperBase(ABC):
             "WHERE calc_endminsec is NULL"
         )
         list_of_coords = []
-        log.debug("{DbWrapperBase::get_undetected_spawns} executing select query")
+        log.debug(
+            "{DbWrapperBase::get_undetected_spawns} executing select query")
         res = self.execute(query)
-        log.debug("{DbWrapperBase::get_undetected_spawns} result of query: %s" % str(res))
+        log.debug(
+            "{DbWrapperBase::get_undetected_spawns} result of query: %s" % str(res))
         for (latitude, longitude) in res:
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            log.debug("{DbWrapperBase::get_undetected_spawns} applying geofence")
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            log.debug(
+                "{DbWrapperBase::get_undetected_spawns} applying geofence")
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             log.debug(geofenced_coords)
             return geofenced_coords
         else:
-            log.debug("{DbWrapperBase::get_undetected_spawns} converting to numpy")
+            log.debug(
+                "{DbWrapperBase::get_undetected_spawns} converting to numpy")
             to_return = np.zeros(shape=(len(list_of_coords), 2))
             for i in range(len(to_return)):
                 to_return[i][0] = list_of_coords[i][0]
@@ -632,7 +647,8 @@ class DbWrapperBase(ABC):
 
     def _gen_endtime(self, known_despawn):
         hrmi = known_despawn.split(':')
-        known_despawn = datetime.now().replace(hour=0, minute=int(hrmi[0]), second=int(hrmi[1]), microsecond=0)
+        known_despawn = datetime.now().replace(
+            hour=0, minute=int(hrmi[0]), second=int(hrmi[1]), microsecond=0)
         now = datetime.now()
         if now.minute <= known_despawn.minute:
             despawn = now + timedelta(minutes=known_despawn.minute - now.minute,
@@ -721,7 +737,8 @@ class DbWrapperBase(ABC):
 
         res = self.execute(query)
         for (spawnid, lat, lon, endtime, spawndef, last_scanned) in res:
-            spawn[spawnid] = {'lat': lat, 'lon': lon, 'endtime': endtime, 'spawndef': spawndef, 'lastscan': str(last_scanned)}
+            spawn[spawnid] = {'lat': lat, 'lon': lon, 'endtime': endtime,
+                              'spawndef': spawndef, 'lastscan': str(last_scanned)}
 
         return str(json.dumps(spawn, indent=4, sort_keys=True))
 
@@ -746,9 +763,11 @@ class DbWrapperBase(ABC):
             minutes = int(endminsec_split[0])
             seconds = int(endminsec_split[1])
             if math.floor(minutes / 10) == 0:
-                temp_date = current_time_of_day.replace(minute=minutes, second=seconds) + timedelta(hours=1)
+                temp_date = current_time_of_day.replace(
+                    minute=minutes, second=seconds) + timedelta(hours=1)
             else:
-                temp_date = current_time_of_day.replace(minute=minutes, second=seconds)
+                temp_date = current_time_of_day.replace(
+                    minute=minutes, second=seconds)
             if (temp_date < current_time_of_day
                     or not geofence_helper.is_coord_inside_include_geofence([latitude, longitude])):
                 # spawn has already happened, we should've added it in the past, let's move on
@@ -757,7 +776,8 @@ class DbWrapperBase(ABC):
 
             spawn_duration_minutes = 60 if spawndef == 15 else 30
 
-            timestamp = time.mktime(temp_date.timetuple()) - spawn_duration_minutes * 60
+            timestamp = time.mktime(temp_date.timetuple()) - \
+                spawn_duration_minutes * 60
             # check if we calculated a time in the past, if so, add an hour to it...
             timestamp = timestamp + 60 * 60 if timestamp < current_time else timestamp
             # TODO: consider the following since I am not sure if the prio Q clustering handles stuff properly yet

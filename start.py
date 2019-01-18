@@ -8,15 +8,14 @@ import time
 from threading import Thread
 
 from colorlog import ColoredFormatter
-from watchdog.observers import Observer
-
 from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
-from utils.mappingParser import MappingParser
 from mitm_receiver.ReceivedMapper import ReceivedMapper
+from utils.madGlobals import MadGlobals
+from utils.mappingParser import MappingParser
 from utils.walkerArgs import parseArgs
 from utils.webhookHelper import WebhookHelper
-from utils.madGlobals import MadGlobals
+from watchdog.observers import Observer
 from websocket.WebsocketServerBase import WebsocketServerBase
 
 
@@ -103,20 +102,23 @@ def start_ocr_observer(args, db_helper):
     from ocr.fileObserver import checkScreenshot
     observer = Observer()
     log.error(args.raidscreen_path)
-    observer.schedule(checkScreenshot(args, db_helper), path=args.raidscreen_path)
+    observer.schedule(checkScreenshot(args, db_helper),
+                      path=args.raidscreen_path)
     observer.start()
 
 
 def start_madmin():
     from madmin.madmin import app
-    app.run(host=args.madmin_ip, port=int(args.madmin_port), threaded=True, use_reloader=False)
+    app.run(host=args.madmin_ip, port=int(args.madmin_port),
+            threaded=True, use_reloader=False)
 
 
 # TODO: IP and port for receiver from args...
 def start_mitm_receiver(received_mapped, auths):
     from mitm_receiver.MITMReceiver import MITMReceiver
     mapping = {}
-    mitm_receiver = MITMReceiver(args.mitmreceiver_ip, int(args.mitmreceiver_port), received_mapped, args, auths)
+    mitm_receiver = MITMReceiver(args.mitmreceiver_ip, int(
+        args.mitmreceiver_port), received_mapped, args, auths)
     mitm_receiver.run_receiver()
 
 
@@ -135,8 +137,10 @@ def sleeptimer():
     sts1 = sleeptime[0].split(':')
     sts2 = sleeptime[1].split(':')
     while True:
-        tmFrom = datetime.datetime.now().replace(hour=int(sts1[0]),minute=int(sts1[1]),second=0,microsecond=0)
-        tmTil = datetime.datetime.now().replace(hour=int(sts2[0]),minute=int(sts2[1]),second=0,microsecond=0)
+        tmFrom = datetime.datetime.now().replace(
+            hour=int(sts1[0]), minute=int(sts1[1]), second=0, microsecond=0)
+        tmTil = datetime.datetime.now().replace(
+            hour=int(sts2[0]), minute=int(sts2[1]), second=0, microsecond=0)
         tmNow = datetime.datetime.now()
 
         # check if current time is past start time
@@ -164,7 +168,8 @@ def sleeptimer():
                 log.debug("Time From: %s" % tmFrom)
                 log.debug("Time Til: %s" % tmTil)
                 tmNow = datetime.datetime.now()
-                log.info('Still sleeping, current time... %s' % str(tmNow.strftime("%H:%M")))
+                log.info('Still sleeping, current time... %s' %
+                         str(tmNow.strftime("%H:%M")))
                 if tmNow >= tmTil:
                     log.warning('sleeptimer: Wakeup - here we go ...')
                     MadGlobals.sleep = False
@@ -212,15 +217,17 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.only_scan:
-        
+
         filename = os.path.join('configs', 'mappings.json')
         if not os.path.exists(filename):
             if not args.with_madmin:
-                log.fatal("No mappings.json found - start madmin with with_madmin in config or copy example")
+                log.fatal(
+                    "No mappings.json found - start madmin with with_madmin in config or copy example")
                 sys.exit(1)
-                
+
             log.fatal("No mappings.json found - starting setup mode with madmin.")
-            log.fatal("Open Madmin (ServerIP with Port " + str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
+            log.fatal("Open Madmin (ServerIP with Port " +
+                      str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
             generate_mappingjson()
         else:
 
@@ -230,7 +237,8 @@ if __name__ == "__main__":
                 routemanagers = mapping_parser.get_routemanagers()
                 auths = mapping_parser.get_auths()
             except KeyError as e:
-                log.fatal("Could not parse mappings. Please check those. Description: %s" % str(e))
+                log.fatal(
+                    "Could not parse mappings. Please check those. Description: %s" % str(e))
                 sys.exit(1)
 
             received_mapped = ReceivedMapper(device_mappings)
@@ -262,7 +270,8 @@ if __name__ == "__main__":
         MonRaidImages.runAll(args.pogoasset, db_wrapper=db_wrapper)
 
         log.info('Starting OCR Thread....')
-        t_observ = Thread(name='observer', target=start_ocr_observer, args=(args, db_wrapper,))
+        t_observ = Thread(
+            name='observer', target=start_ocr_observer, args=(args, db_wrapper,))
         t_observ.daemon = True
         t_observ.start()
 

@@ -270,6 +270,7 @@ class WorkerBase(ABC):
                     device_mappings = mapping_parser.get_devicemappings()
                     routemanagers = mapping_parser.get_routemanagers()
                     client_mapping = device_mappings[self.id]
+
                     daytime_routemanager = routemanagers[client_mapping["daytime_area"]].get(
                         "routemanager")
                     if client_mapping.get("nighttime_area", None) is not None:
@@ -279,6 +280,7 @@ class WorkerBase(ABC):
                         nightime_routemanager = None
                     self._route_manager_daytime = daytime_routemanager
                     self._route_manager_nighttime = nightime_routemanager
+                    self._devicesettings = client_mapping["settings"]
 
                     log.info(
                         'Change found in %s. Updating device mappings.', filename)

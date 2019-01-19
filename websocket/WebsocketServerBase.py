@@ -311,18 +311,22 @@ class WebsocketServerBase(ABC):
 
                 # File has changed in the last refresh_time_sec seconds.
                 if time_diff_sec < refresh_time_sec:
-                    mapping_parser = MappingParser(self.db_wrapper)
-                    device_mappings = mapping_parser.get_devicemappings()
-                    routemanagers = mapping_parser.get_routemanagers()
-                    self.device_mappings = device_mappings
-                    self.routemanagers = routemanagers
                     log.info(
                         'Change found in %s. Updating device mappings.', filename)
+                    self._reload_mappings()
+                    log.info('Propagating new mappings to all clients.')
                     self._update_clients()
                 else:
                     log.debug('No change found in %s.', filename)
             except Exception as e:
-                log.exception('Exception occurred while updating: %s.', e)
+                log.exception('Exception occurred while updating device mappings: %s.', e)
+
+    def _reload_mappings(self):
+        mapping_parser = MappingParser(self.db_wrapper)
+        device_mappings = mapping_parser.get_devicemappings()
+        routemanagers = mapping_parser.get_routemanagers()
+        self.device_mappings = device_mappings
+        self.routemanagers = routemanagers
 
     def _update_clients(self):
         for id, worker in self.__current_users.items():

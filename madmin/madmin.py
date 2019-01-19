@@ -915,7 +915,7 @@ def showsettings():
                     if output.get(quickfield, False):
                         quickadd = quickadd + \
                             str(quickfield) + ': ' + \
-                            str(output.get(quickfield, '')) + '<br>'
+                            str(output.get(quickfield, '')).split('\n')[0] + '<br>'
                 quickline = quickline + '<tr><td></td><td class=quick>' + \
                     str(quickadd) + '</td>'
             quickadd = ''

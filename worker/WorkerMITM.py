@@ -109,11 +109,6 @@ class WorkerMITM(WorkerBase):
         t_asyncio_loop.daemon = False
         t_asyncio_loop.start()
 
-        t_file_watcher = Thread(name='file_watcher_' +
-                                self.id, target=self._start_file_watcher)
-        t_file_watcher.daemon = False
-        t_file_watcher.start()
-
         self._work_mutex.acquire()
         try:
             self._start_pogo()

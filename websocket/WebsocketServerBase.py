@@ -9,6 +9,7 @@ from threading import Event, Lock, Thread
 import websockets
 from utils.authHelper import check_auth
 from utils.madGlobals import WebsocketWorkerRemovedException
+from utils.mappingParser import MappingParser
 from worker.WorkerMITM import WorkerMITM
 
 log = logging.getLogger(__name__)
@@ -53,6 +54,11 @@ class WebsocketServerBase(ABC):
             websockets.serve(self.handler, self.__listen_adress, self.__listen_port, max_size=2 ** 25,
                              origins=allowed_origins))
         asyncio.get_event_loop().run_forever()
+
+        log.info("Starting file watcher for mappings.json changes.")
+        t_file_watcher = Thread(name='file_watcher', target=self._file_watcher)
+        t_file_watcher.daemon = False
+        t_file_watcher.start()
 
     async def __unregister(self, websocket):
         id = str(websocket.request_headers.get_all("Origin")[0])
@@ -284,3 +290,46 @@ class WebsocketServerBase(ABC):
         self.__removeRequest(messageId)
         log.debug("Returning response to worker.")
         return result
+
+    def _file_watcher(self):
+        # We're on a 60-second timer.
+        refresh_time_sec = 60
+        filename = 'configs/mappings.json'
+
+        while True:
+            # Wait (x-1) seconds before refresh, min. 1s.
+            time.sleep(max(1, refresh_time_sec - 1))
+            try:
+                # Only refresh if the file has changed.
+                current_time_sec = time.time()
+                file_modified_time_sec = os.path.getmtime(filename)
+                time_diff_sec = current_time_sec - file_modified_time_sec
+
+                # File has changed in the last refresh_time_sec seconds.
+                if time_diff_sec < refresh_time_sec:
+                    mapping_parser = MappingParser(self.db_wrapper)
+                    device_mappings = mapping_parser.get_devicemappings()
+                    routemanagers = mapping_parser.get_routemanagers()
+                    self.device_mappings = device_mappings
+                    self.routemanagers = routemanagers
+                    log.info(
+                        'Change found in %s. Updating device mappings.', filename)
+                    self._update_clients()
+                else:
+                    log.debug('No change found in %s.', filename)
+            except Exception as e:
+                log.exception('Exception occurred while updating: %s.', e)
+
+    def _update_clients(self):
+        for id, worker in self.__current_users.items():
+            client_mapping = self.device_mappings[id]
+            daytime_routemanager = self.routemanagers[client_mapping["daytime_area"]].get(
+                "routemanager")
+            if client_mapping.get("nighttime_area", None) is not None:
+                nightime_routemanager = self.routemanagers[client_mapping["nighttime_area"]].get(
+                    "routemanager", None)
+            else:
+                nightime_routemanager = None
+            worker[1]._route_manager_daytime = daytime_routemanager
+            worker[1]._route_manager_nighttime = nightime_routemanager
+            worker[1]._devicesettings = client_mapping["settings"]

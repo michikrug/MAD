@@ -7,7 +7,6 @@ from multiprocessing.pool import ThreadPool
 from threading import Event, Thread
 
 from utils.hamming import hamming_distance as hamming_dist
-from utils.mappingParser import MappingParser
 from websocket.communicator import Communicator
 
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -249,42 +248,3 @@ class WorkerBase(ABC):
             attempts += 1
         log.debug("getToRaidscreen: done")
         return True
-
-    def _start_file_watcher(self):
-        # We're on a 60-second timer.
-        refresh_time_sec = 60
-        filename = 'configs/mappings.json'
-
-        while True:
-            # Wait (x-1) seconds before refresh, min. 1s.
-            time.sleep(max(1, refresh_time_sec - 1))
-            try:
-                # Only refresh if the file has changed.
-                current_time_sec = time.time()
-                file_modified_time_sec = os.path.getmtime(filename)
-                time_diff_sec = current_time_sec - file_modified_time_sec
-
-                # File has changed in the last refresh_time_sec seconds.
-                if time_diff_sec < refresh_time_sec:
-                    mapping_parser = MappingParser(self._db_wrapper)
-                    device_mappings = mapping_parser.get_devicemappings()
-                    routemanagers = mapping_parser.get_routemanagers()
-                    client_mapping = device_mappings[self.id]
-
-                    daytime_routemanager = routemanagers[client_mapping["daytime_area"]].get(
-                        "routemanager")
-                    if client_mapping.get("nighttime_area", None) is not None:
-                        nightime_routemanager = routemanagers[client_mapping["nighttime_area"]].get(
-                            "routemanager", None)
-                    else:
-                        nightime_routemanager = None
-                    self._route_manager_daytime = daytime_routemanager
-                    self._route_manager_nighttime = nightime_routemanager
-                    self._devicesettings = client_mapping["settings"]
-
-                    log.info(
-                        'Change found in %s. Updating device mappings.', filename)
-                else:
-                    log.debug('No change found in %s.', filename)
-            except Exception as e:
-                log.exception('Exception occurred while updating: %s.', e)

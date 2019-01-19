@@ -2,7 +2,9 @@ import asyncio
 import collections
 import logging
 import math
+import os
 import queue
+import time
 from abc import ABC
 from threading import Event, Lock, Thread
 
@@ -48,17 +50,19 @@ class WebsocketServerBase(ABC):
             allowed_origins.append(device)
 
         log.info("Device mappings: %s" % str(self.device_mappings))
+
         log.info("Allowed origins derived: %s" % str(allowed_origins))
-        asyncio.set_event_loop(loop)
-        asyncio.get_event_loop().run_until_complete(
-            websockets.serve(self.handler, self.__listen_adress, self.__listen_port, max_size=2 ** 25,
-                             origins=allowed_origins))
-        asyncio.get_event_loop().run_forever()
 
         log.info("Starting file watcher for mappings.json changes.")
         t_file_watcher = Thread(name='file_watcher', target=self._file_watcher)
         t_file_watcher.daemon = False
         t_file_watcher.start()
+
+        asyncio.set_event_loop(loop)
+        asyncio.get_event_loop().run_until_complete(
+            websockets.serve(self.handler, self.__listen_adress, self.__listen_port, max_size=2 ** 25,
+                             origins=allowed_origins))
+        asyncio.get_event_loop().run_forever()
 
     async def __unregister(self, websocket):
         id = str(websocket.request_headers.get_all("Origin")[0])

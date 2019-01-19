@@ -633,32 +633,28 @@ def config():
         lockvalue = ''
         if lock:
             lockvalue = 'readonly'
-        if field['settings']['type'] == 'text':
+        if field['settings']['type'] == 'text' or field['settings']['type'] == 'textarea':
+            val = ''
             req = field['settings'].get('require', 'false')
             if req in ('true'):
                 req = "required"
             if edit:
                 if block == "settings":
-                    if field['name'] in oldvalues['settings']:
-                        if str(oldvalues['settings'][field['name']]) != str('None'):
-                            val = str(oldvalues['settings'][field['name']])
-                        else:
-                            val = ''
-                    else:
-                        val = ''
+                    if field['name'] in oldvalues['settings'] and str(oldvalues['settings'][field['name']]) != str('None'):
+                        val = str(oldvalues['settings'][field['name']])
                 else:
-                    if field['name'] in oldvalues:
-                        if str(oldvalues[field['name']]) != str('None'):
-                            val = str(oldvalues[field['name']])
-                        else:
-                            val = ''
-                    else:
-                        val = ''
-                fieldwebsite.append('<div class="form-group"><label>' + str(field['name']) + '</label><br /><small class="form-text text-muted">' + str(
-                    field['settings']['description']) + '</small><input type="text" name="' + str(field['name']) + '" value="' + val + '" ' + lockvalue + ' ' + req + '></div>')
-            else:
-                fieldwebsite.append('<div class="form-group"><label>' + str(field['name']) + '</label><br /><small class="form-text text-muted">' + str(
-                    field['settings']['description']) + '</small><input type="text" name="' + str(field['name']) + '" ' + req + '></div>')
+                    if field['name'] in oldvalues and str(oldvalues[field['name']]) != str('None'):
+                        val = str(oldvalues[field['name']])
+
+            formStr = '<div class="form-group">'
+            formStr += '<label>' + str(field['name']) + '</label><br /><small class="form-text text-muted">' + str(field['settings']['description']) + '</small>'
+            if field['settings']['type'] == 'text':
+                formStr += '<input type="text" name="' + str(field['name']) + '" value="' + val + '" ' + lockvalue + ' ' + req + '>'
+            if field['settings']['type'] == 'textarea':
+                formStr += '<textarea rows="10" cols="20" name="' + str(field['name']) + '" ' + lockvalue + ' ' + req + '>' + val + '</textarea>'
+            formStr += '</div>'
+            fieldwebsite.append(formStr)
+
         if field['settings']['type'] == 'option':
             req = field['settings'].get('require', 'false')
             if req in ('true'):

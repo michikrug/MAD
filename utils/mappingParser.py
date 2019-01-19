@@ -49,29 +49,14 @@ class MappingParser(object):
             if area["geofence_included"] is None:
                 raise RuntimeError("Cannot work without geofence_included")
 
-            geofence_included = Path(area["geofence_included"])
-            if not geofence_included.is_file():
-                log.error("Geofence included file configured does not exist")
-                sys.exit(1)
-
-            geofence_excluded_raw_path = area.get("geofence_excluded", None)
-            if geofence_excluded_raw_path is not None:
-                geofence_excluded = Path(geofence_excluded_raw_path)
-                if not geofence_excluded.is_file():
-                    log.error("Geofence excluded specified but does not exist")
-                    sys.exit(1)
-
             area_dict = {"mode": area["mode"],
                          "geofence_included": area["geofence_included"],
                          "geofence_excluded": area.get("geofence_excluded", None),
                          "routecalc": area["routecalc"]}
-            # also build a routemanager for each area...
 
-            # grab coords
-            # first check if init is false or raids_ocr is set as mode, if so, grab the coords from DB
-            # coords = np.loadtxt(area["coords"], delimiter=',')
             geofence_helper = GeofenceHelper(
                 area["geofence_included"], area.get("geofence_excluded", None))
+
             mode = area["mode"]
             # build routemanagers
             if mode == "raids_ocr" or mode == "raids_mitm":

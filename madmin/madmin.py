@@ -647,11 +647,16 @@ def config():
                         val = str(oldvalues[field['name']])
 
             formStr = '<div class="form-group">'
-            formStr += '<label>' + str(field['name']) + '</label><br /><small class="form-text text-muted">' + str(field['settings']['description']) + '</small>'
+            formStr += '<label>' + str(field['name']) + '</label><br /><small class="form-text text-muted">' + str(
+                field['settings']['description']) + '</small>'
             if field['settings']['type'] == 'text':
-                formStr += '<input type="text" name="' + str(field['name']) + '" value="' + val + '" ' + lockvalue + ' ' + req + '>'
+                formStr += '<input type="text" name="' + \
+                    str(field['name']) + '" value="' + val + \
+                    '" ' + lockvalue + ' ' + req + '>'
             if field['settings']['type'] == 'textarea':
-                formStr += '<textarea rows="10" cols="20" name="' + str(field['name']) + '" ' + lockvalue + ' ' + req + '>' + val + '</textarea>'
+                formStr += '<textarea rows="10" name="' + \
+                    str(field['name']) + '" ' + lockvalue + \
+                    ' ' + req + '>' + val + '</textarea>'
             formStr += '</div>'
             fieldwebsite.append(formStr)
 

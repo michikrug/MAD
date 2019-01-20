@@ -460,6 +460,36 @@ def get_position():
 
 
 @cache.cached()
+@app.route("/get_geofence")
+def get_geofence():
+    geofence = []
+    geofencexport = {}
+
+    with open('configs/mappings.json') as f:
+        mapping = json.load(f)
+        for area in mapping['areas']:
+            name = 'Unknown'
+            geofence_included = area.get('geofence_included', '')
+            for line in geofence_included.splitlines():
+                line = line.strip()
+                if not line:  # Empty line.
+                    continue
+                elif line.startswith("["):  # Name line.
+                    name = line.replace("[", "").replace("]", "")
+                else:  # Coordinate line.
+                    lat, lon = line.split(",")
+                    geofence.append([
+                        getCoordFloat(lat),
+                        getCoordFloat(lon)
+                    ])
+
+            geofencexport[name] = geofence
+            geofence = []
+
+    return jsonify(geofencexport)
+
+
+@cache.cached()
 @app.route("/get_route")
 def get_route():
     route = []
@@ -915,7 +945,8 @@ def showsettings():
                     if output.get(quickfield, False):
                         quickadd = quickadd + \
                             str(quickfield) + ': ' + \
-                            str(output.get(quickfield, '')).split('\n')[0] + '<br>'
+                            str(output.get(quickfield, '')).split(
+                                '\n')[0] + '<br>'
                 quickline = quickline + '<tr><td></td><td class=quick>' + \
                     str(quickadd) + '</td>'
             quickadd = ''

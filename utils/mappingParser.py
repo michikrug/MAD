@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 from pathlib import Path
 
 from geofence.geofenceHelper import GeofenceHelper
@@ -88,8 +87,7 @@ class MappingParser(object):
                                                     "settings", None)
                                                 )
             else:
-                log.error("Invalid mode found in mapping parser.")
-                sys.exit(1)
+                raise RuntimeError("Invalid mode found in mapping parser.")
 
             if mode == "raids_ocr" or area.get("init", False) is False:
                 # grab data from DB depending on mode
@@ -107,8 +105,7 @@ class MappingParser(object):
                         coords = self.db_wrapper.get_undetected_spawns(
                             geofence_helper)
                 else:
-                    log.fatal("Mode not implemented yet: %s" % str(mode))
-                    exit(1)
+                    raise RuntimeError("Mode not implemented yet: %s" % str(mode))
             else:
                 # calculate all level N cells (mapping back from mapping above linked to mode)
                 coords = S2Helper.get_s2_cells_from_fence(geofence=geofence_helper,

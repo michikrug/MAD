@@ -270,6 +270,7 @@ class WorkerMITM(WorkerBase):
             data_received, data_error_counter = self.wait_for_data(data_err_counter=_data_err_counter,
                                                                    timestamp=curTime)
             _data_err_counter = data_error_counter
+            time.sleep(4)
             log.debug("Releasing lock")
             self._work_mutex.release()
             log.debug("Worker %s done, next iteration" % str(self.id))
@@ -400,9 +401,9 @@ class WorkerMITM(WorkerBase):
                 self._db_wrapper.submit_pokestops_map_proto(data["payload"])
                 self._db_wrapper.submit_gyms_map_proto(data["payload"])
                 self._db_wrapper.submit_raids_map_proto(data["payload"])
-
-                self._db_wrapper.submit_spawnpoints_map_proto(data["payload"])
                 self._db_wrapper.submit_mons_map_proto(data["payload"])
+                self._db_wrapper.submit_spawnpoints_map_proto(data["payload"])
+
             except Exception as e:
                 log.error("An exception occured while processing data.")
                 log.exception(e)

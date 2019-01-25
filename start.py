@@ -11,6 +11,7 @@ from colorlog import ColoredFormatter
 from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from mitm_receiver.MitmMapper import MitmMapper
+from utils.madGlobals import MadGlobals
 from utils.mappingParser import MappingParser
 from utils.walkerArgs import parseArgs
 from utils.webhookHelper import WebhookHelper

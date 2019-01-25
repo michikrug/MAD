@@ -9,8 +9,8 @@ class RouteManagerRaids(RouteManagerBase):
     def _priority_queue_update_interval(self):
         return 300
 
-    def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
-                 path_to_exclude_geofence, routefile, mode=None, settings=None, init=False,
+    def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, include_geofence,
+                 exclude_geofence, routefile, mode=None, settings=None, init=False,
                  name="unknown"):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,

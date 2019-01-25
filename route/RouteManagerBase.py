@@ -19,8 +19,8 @@ Relation = collections.namedtuple(
 
 
 class RouteManagerBase(ABC):
-    def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
-                 path_to_exclude_geofence, routefile, mode=None, init=False,
+    def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, include_geofence,
+                 exclude_geofence, routefile, mode=None, init=False,
                  name="unknown", settings=None):
         self.db_wrapper = db_wrapper
         self.init = init

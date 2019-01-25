@@ -437,7 +437,7 @@ class WebhookHelper(object):
                                       pokemon_level=None, cp_multiplier=None, form=None, cp=None,
                                       individual_attack=None, individual_defense=None, individual_stamina=None,
                                       move_1=None, move_2=None, height=None, weight=None):
-        log.info('Sending Pokemon %s (#%s) to webhook', pokemon_id, id)
+        log.info('Sending Pokemon %s (#%s) to webhook', pokemon_id, encounter_id)
 
         mon_payload = {"encounter_id": encounter_id, "pokemon_id": pokemon_id, "last_modified_time": last_modified_time,
                        "spawnpoint_id": spawnpoint_id, "latitude": lat, "longitude": lon,
@@ -501,6 +501,7 @@ class WebhookHelper(object):
             name=quest['name'].replace('"', '\\"').replace('\n', '\\n'),
             url=quest['url'],
             timestamp=quest['timestamp'],
+            quest_reward=quest['quest_reward'],
             quest_reward_type=quest['quest_reward_type'],
             quest_reward_type_raw=quest['quest_reward_type_raw'],
             quest_target=quest['quest_target'],

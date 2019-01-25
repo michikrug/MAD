@@ -15,6 +15,7 @@ def generate_quest(quest):
     longitude = quest['longitude']
     url = quest['image']
     timestamp = quest['quest_timestamp']
+    reward = ''
 
     if quest_reward_type == 'Item':
         item_amount = str(quest['quest_item_amount'])
@@ -27,6 +28,7 @@ def generate_quest(quest):
             quest_type_text = quest_type.replace(
                 '{0}', str(quest['quest_target']))
             quest_target = str(quest['quest_target'])
+        reward = item_amount + 'x ' + item_type
 
     elif quest_reward_type == 'Stardust':
         item_amount = str(quest['quest_stardust'])
@@ -39,6 +41,7 @@ def generate_quest(quest):
             quest_type_text = quest_type.replace(
                 '{0}', str(quest['quest_target']))
             quest_target = str(quest['quest_target'])
+        reward = item_amount + ' ' + item_type
     elif quest_reward_type == 'Pokemon':
         item_amount = "1"
         item_type = "Pokemon"
@@ -49,8 +52,9 @@ def generate_quest(quest):
             quest_type_text = quest_type.replace(
                 '{0}', str(quest['quest_target']))
             quest_target = str(quest['quest_target'])
+        reward = pokemon_name
 
-    quest_raw = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
+    quest_raw = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude, 'reward': reward,
                   'quest_type_raw': quest_type, 'quest_type': quest_type_text, 'item_amount': item_amount, 'item_type': item_type,
                   'quest_target': quest_target, 'name': name, 'url': url, 'timestamp': timestamp, 'pokemon_id': pokemon_id, 'item_id': item_id,
                   'pokemon_name': pokemon_name, 'quest_reward_type': quest_reward_type, 'quest_reward_type_raw': quest_reward_type_raw})

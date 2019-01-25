@@ -696,7 +696,7 @@ def modify_mon():
 @app.route('/asset/<path:path>', methods=['GET'])
 @auth_required
 def pushAssets(path):
-    return send_from_directory(conf_args.pogoasset, path)
+    return send_from_directory('../' + conf_args.pogoasset, path)
 
 
 @app.route('/config')

@@ -22,8 +22,8 @@ class RmWrapper(DbWrapperBase):
     def auto_hatch_eggs(self):
         log.debug("{RmWrapper::auto_hatch_eggs} called")
         now = (datetime.now())
-        now_timezone = int(time.mktime(now.timetuple())) - \
-            (self.timezone * 60 * 60)
+        now_timestamp = time.mktime(datetime.utcfromtimestamp(
+            float(received_timestamp)).timetuple())
 
         mon_id = self.application_args.auto_hatch_number
 
@@ -32,7 +32,7 @@ class RmWrapper(DbWrapperBase):
                         'so it will mark them as zero so they will remain unhatched...')
 
         log.debug("Time used to find eggs: " + str(now))
-        timecheck = now_timezone
+        timecheck = now_timestamp
 
         query_for_count = (
             "SELECT gym_id, UNIX_TIMESTAMP(start), UNIX_TIMESTAMP(end) "
@@ -102,7 +102,8 @@ class RmWrapper(DbWrapperBase):
 
     def get_next_raid_hatches(self, delay_after_hatch, geofence_helper=None):
         log.debug("{RmWrapper::get_next_raid_hatches} called")
-        db_time_to_check = datetime.now() - timedelta(hours=self.timezone)
+        db_time_to_check = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "SELECT start, latitude, longitude "
@@ -131,7 +132,7 @@ class RmWrapper(DbWrapperBase):
         return data
 
     def submit_raid(self, gym, pkm, lvl, start, end, type, raid_no, capture_time, unique_hash="123",
-                    mon_with_no_egg=False):
+                    MonWithNoEgg=False):
         log.debug("{RmWrapper::submit_raid} called")
         log.debug("[Crop: %s (%s) ] submit_raid: Submitting raid" %
                   (str(raid_no), str(unique_hash)))
@@ -144,19 +145,21 @@ class RmWrapper(DbWrapperBase):
             return False
 
         if start is not None:
-            start -= self.timezone * 60 * 60
+            start = time.mktime(
+                datetime.utcfromtimestamp(float(start)).timetuple())
 
         if end is not None:
-            end -= self.timezone * 60 * 60
+            end = time.mktime(
+                datetime.utcfromtimestamp(float(end)).timetuple())
 
         wh_send = False
         wh_start = 0
         wh_end = 0
         egg_hatched = False
 
-        now_timezone = datetime.fromtimestamp(float(capture_time))
-        now_timezone = time.mktime(
-            now_timezone.timetuple()) - (self.timezone * 60 * 60)
+        now_timestamp = time.mktime(
+            datetime.utcfromtimestamp(float(capture_time)).timetuple())
+        log.debug(now_timestamp)
 
         log.debug("[Crop: %s (%s) ] submit_raid: Submitting something of type %s"
                   % (str(raid_no), str(unique_hash), str(type)))
@@ -166,8 +169,8 @@ class RmWrapper(DbWrapperBase):
 
         # always insert timestamp to last_scanned to have rows change if raid has been reported before
 
-        if mon_with_no_egg:
-            start = end - (int(self.application_args.raid_time) * 60)
+        if MonWithNoEgg:
+            start = int(end) - (int(self.application_args.raid_time) * 60)
             query = (
                 "UPDATE raid "
                 "SET level = %s, spawn = FROM_UNIXTIME(%s), start = FROM_UNIXTIME(%s), end = FROM_UNIXTIME(%s), "
@@ -176,7 +179,7 @@ class RmWrapper(DbWrapperBase):
                 "WHERE gym_id = %s"
             )
             vals = (
-                lvl, now_timezone, start, end, pkm, int(
+                lvl, now_timestamp, start, end, pkm, int(
                     time.time()), '999', '1', '1', gym
             )
             # send out a webhook - this case should only occur once...
@@ -215,7 +218,7 @@ class RmWrapper(DbWrapperBase):
                 "WHERE gym_id = %s"
             )
             vals = (
-                lvl, now_timezone, start, end, pkm, int(
+                lvl, now_timestamp, int(start), int(end), pkm, int(
                     time.time()), '999', '1', '1', gym
             )
             wh_send = True
@@ -226,7 +229,7 @@ class RmWrapper(DbWrapperBase):
 
         if affected_rows == 0 and not egg_hatched:
             # we need to insert the raid...
-            if mon_with_no_egg:
+            if MonWithNoEgg:
                 # submit mon without egg info -> we have an endtime
                 log.info("Inserting mon without egg")
                 start = end - (int(self.application_args.raid_time) * 60)
@@ -234,12 +237,12 @@ class RmWrapper(DbWrapperBase):
                     "INSERT INTO raid (gym_id, level, spawn, start, end, pokemon_id, last_scanned, cp, "
                     "move_1, move_2) "
                     "VALUES(%s, %s, FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), %s, "
-                    "FROM_UNIXTIME(%s), 999, 1, 1"
+                    "FROM_UNIXTIME(%s), 999, 1, 1)"
                 )
                 vals = (
-                    gym, lvl, now_timezone, start, end, pkm, int(time.time())
+                    gym, lvl, now_timestamp, start, end, pkm, int(time.time())
                 )
-            elif end is None or start is None:
+            elif end is None and start is None:
                 log.info("Inserting without end or start")
                 # no end or start time given, just inserting won't help much...
                 log.warning("Useless to insert without endtime...")
@@ -247,19 +250,20 @@ class RmWrapper(DbWrapperBase):
             else:
                 # we have start and end, mon is either with egg or we're submitting an egg
                 log.info("Inserting everything")
+                start = int(end) - (int(self.application_args.raid_time) * 60)
                 query = (
                     "INSERT INTO raid (gym_id, level, spawn, start, end, pokemon_id, last_scanned, cp, "
                     "move_1, move_2) "
                     "VALUES (%s, %s, FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), FROM_UNIXTIME(%s), %s, "
-                    "FROM_UNIXTIME(%s), 999, 1, 1"
+                    "FROM_UNIXTIME(%s), 999, 1, 1)"
                 )
-                vals = (gym, lvl, now_timezone, start,
-                        end, pkm, int(time.time()))
+                vals = (gym, lvl, now_timestamp, int(start),
+                        int(end), pkm, int(time.time()))
 
             self.execute(query, vals, commit=True)
 
             wh_send = True
-            if mon_with_no_egg:
+            if MonWithNoEgg:
                 wh_start = int(end) - 2700
             else:
                 wh_start = start
@@ -274,10 +278,6 @@ class RmWrapper(DbWrapperBase):
         if self.application_args.webhook and wh_send:
             log.info('[Crop: ' + str(raid_no) + ' (' +
                      str(unique_hash) + ') ] ' + 'submitRaid: Send webhook')
-            if wh_start:
-                wh_start += (self.timezone * 60 * 60)
-            if wh_end:
-                wh_end += (self.timezone * 60 * 60)
             self.webhook_helper.send_raid_webhook(
                 gym, 'RAID', wh_start, wh_end, lvl, pkm
             )
@@ -288,14 +288,14 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::read_raid_endtime} called")
         log.debug("[Crop: %s (%s) ] read_raid_endtime: Check DB for existing mon"
                   % (str(raid_no), str(unique_hash)))
-        now = (datetime.now() - timedelta(hours=self.timezone)
-               ).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "SELECT raid.end "
             "FROM raid "
-            "WHERE STR_TO_DATE(raid.end, \'%Y-%m-%d %H:%i:%S\') >= "
-            "STR_TO_DATE(%s, \'%Y-%m-%d %H:%i:%S\') AND gym_id = %s"
+            "WHERE STR_TO_DATE(raid.end, '%Y-%m-%d %H:%i:%S') >= "
+            "STR_TO_DATE(%s, '%Y-%m-%d %H:%i:%S') AND gym_id = %s"
         )
         vals = (
             now, gym
@@ -323,8 +323,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("[Crop: %s (%s) ] get_raid_endtime: Check DB for existing mon"
                   % (str(raid_no), str(unique_hash)))
 
-        now = (datetime.now() - timedelta(hours=self.timezone)
-               ).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
         query = (
             "SELECT UNIX_TIMESTAMP(raid.end) "
             "FROM raid "
@@ -355,8 +355,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::raid_exist} called")
         log.debug("[Crop: %s (%s) ] raid_exist: Check DB for existing entry"
                   % (str(raid_no), str(unique_hash)))
-        now = (datetime.now() - timedelta(hours=self.timezone)).strftime(
-            "%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
         # TODO: consider reducing the code...
 
@@ -366,8 +366,8 @@ class RmWrapper(DbWrapperBase):
             query = (
                 "SELECT start "
                 "FROM raid "
-                "WHERE STR_TO_DATE(raid.start, \'%Y-%m-%d %H:%i:%S\') >= "
-                "STR_TO_DATE(%s, \'%Y-%m-%d %H:%i:%S\') and gym_id = %s"
+                "WHERE STR_TO_DATE(raid.start, '%Y-%m-%d %H:%i:%S') >= "
+                "STR_TO_DATE(%s, '%Y-%m-%d %H:%i:%S') and gym_id = %s"
             )
             vals = (
                 now, gym
@@ -388,15 +388,15 @@ class RmWrapper(DbWrapperBase):
                 log.debug("{RmWrapper::raid_exist} done")
                 return False
         else:
-            log.debug("[Crop: %s (%s) ] raid_exist: Check for EGG"
+            log.debug("[Crop: %s (%s) ] raid_exist: Check for MON"
                       % (str(raid_no), str(unique_hash)))
             query = (
                 "SELECT start "
                 "FROM raid "
-                "WHERE STR_TO_DATE(raid.start, \'%Y-%m-%d %H:%i:%S\') <= "
-                "STR_TO_DATE(%s, \'%Y-%m-%d %H:%i:%S\') AND "
-                "STR_TO_DATE(raid.end, \'%Y-%m-%d %H:%i:%S\') >= "
-                "STR_TO_DATE(%s, \'%Y-%m-%d %H:%i:%S\') "
+                "WHERE STR_TO_DATE(raid.start, '%Y-%m-%d %H:%i:%S') <= "
+                "STR_TO_DATE(%s, '%Y-%m-%d %H:%i:%S') AND "
+                "STR_TO_DATE(raid.end, '%Y-%m-%d %H:%i:%S') >= "
+                "STR_TO_DATE(%s, '%Y-%m-%d %H:%i:%S') "
                 "AND gym_id = %s AND pokemon_id = %s"
             )
             vals = (
@@ -422,11 +422,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::refresh_times} called")
         log.debug("[Crop: %s (%s) ] raid_exist: Check for EGG"
                   % (str(raid_no), str(unique_hash)))
-        now = (datetime.fromtimestamp(float(capture_time)) - timedelta(
-            hours=self.timezone)).strftime("%Y-%m-%d %H:%M:%S")
-        now_timezone = datetime.fromtimestamp(float(capture_time))
-        now_timezone = time.mktime(
-            now_timezone.timetuple()) - (self.timezone * 60 * 60)
+        now = datetime.utcfromtimestamp(
+            float(capture_time)).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "UPDATE gym "
@@ -440,11 +437,11 @@ class RmWrapper(DbWrapperBase):
 
         query = (
             "UPDATE raid "
-            "SET last_scanned = FROM_UNIXTIME(%s) "
+            "SET last_scanned = %s "
             "WHERE gym_id = %s"
         )
         vals = (
-            now_timezone, gym
+            now, gym
         )
         self.execute(query, vals, commit=True)
 
@@ -611,10 +608,9 @@ class RmWrapper(DbWrapperBase):
     def update_insert_weather(self, cell_id, gameplay_weather, capture_time, cloud_level=0, rain_level=0, wind_level=0,
                               snow_level=0, fog_level=0, wind_direction=0, weather_daytime=0):
         log.debug("{RmWrapper::update_insert_weather} called")
-        now_timezone = datetime.fromtimestamp(float(capture_time))
-        now_timezone = time.mktime(
-            now_timezone.timetuple()) - (self.timezone * 60 * 60)
-        now = now = datetime.utcfromtimestamp(
+        now_timestamp = time.mktime(
+            datetime.utcfromtimestamp(float(capture_time)).timetuple())
+        now = datetime.utcfromtimestamp(
             time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
         real_lat, real_lng = S2Helper.middle_of_cell(cell_id)
@@ -636,7 +632,7 @@ class RmWrapper(DbWrapperBase):
         self.execute(query, data, commit=True)
 
         self.webhook_helper.send_weather_webhook(
-            cell_id, gameplay_weather, 0, 0, weather_daytime, capture_time
+            cell_id, gameplay_weather, 0, 0, weather_daytime, now_timestamp
         )
 
     def submit_mon_iv(self, origin, timestamp, encounter_proto):
@@ -850,7 +846,6 @@ class RmWrapper(DbWrapperBase):
         if cells is None:
             return False
         pokestop_args = []
-        # now = datetime.datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query_pokestops = (
             "INSERT INTO pokestop (pokestop_id, enabled, latitude, longitude, last_modified, lure_expiration, "
@@ -1136,12 +1131,10 @@ class RmWrapper(DbWrapperBase):
         else:
             gameplay_weather = client_weather_data["gameplay_weather"]["gameplay_condition"]
 
-        now_timezone = datetime.fromtimestamp(float(received_timestamp))
-        now_timezone = time.mktime(
-            now_timezone.timetuple()) - (self.timezone * 60 * 60)
-
+        now_timestamp = time.mktime(datetime.utcfromtimestamp(
+            float(received_timestamp)).timetuple())
         self.webhook_helper.send_weather_webhook(cell_id, gameplay_weather, 0, 0,
-                                                 time_of_day, received_timestamp)
+                                                 time_of_day, now_timestamp)
 
         return (
             cell_id, real_lat, real_lng,

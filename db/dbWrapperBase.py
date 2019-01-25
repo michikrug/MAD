@@ -27,7 +27,6 @@ class DbWrapperBase(ABC):
         self.user = args.dbusername
         self.password = args.dbpassword
         self.database = args.dbname
-        self.timezone = args.timezone
         self.pool = None
         self.pool_mutex = Lock()
         self.connection_semaphore = Semaphore(
@@ -150,7 +149,7 @@ class DbWrapperBase(ABC):
 
     @abstractmethod
     def submit_raid(self, gym, pkm, lvl, start, end, type, raid_no, capture_time,
-                    unique_hash="123", mon_with_no_egg=False):
+                    unique_hash="123", MonWithNoEgg=False):
         """
         Insert or update raid in DB and send webhook
         :return: if raid has all the required values = True, else False

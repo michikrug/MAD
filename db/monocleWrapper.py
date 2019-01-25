@@ -139,7 +139,7 @@ class MonocleWrapper(DbWrapperBase):
         return data
 
     def submit_raid(self, gym, pkm, lvl, start, end, type, raid_no, capture_time, unique_hash="123",
-                    mon_with_no_egg=False):
+                    MonWithNoEgg=False):
         log.debug("[Crop: %s (%s) ] submit_raid: Submitting raid" %
                   (str(raid_no), str(unique_hash)))
 
@@ -156,7 +156,7 @@ class MonocleWrapper(DbWrapperBase):
 
         # always insert timestamp to last_scanned to have rows change if raid has been reported before
 
-        if mon_with_no_egg:
+        if MonWithNoEgg:
             start = end - (int(self.application_args.raid_time) * 60)
             query = (
                 "UPDATE raids "
@@ -214,7 +214,7 @@ class MonocleWrapper(DbWrapperBase):
 
         if affected_rows == 0 and not egg_hatched:
             # we need to insert the raid...
-            if mon_with_no_egg:
+            if MonWithNoEgg:
                 # submit mon without egg info -> we have an endtime
                 log.info("Inserting mon without egg")
                 start = end - 45 * 60
@@ -246,7 +246,7 @@ class MonocleWrapper(DbWrapperBase):
             self.execute(query, vals, commit=True)
 
             wh_send = True
-            if mon_with_no_egg:
+            if MonWithNoEgg:
                 wh_start = int(end) - 2700
             else:
                 wh_start = start

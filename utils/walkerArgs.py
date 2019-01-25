@@ -55,6 +55,8 @@ def parseArgs():
                         help='IP to listen on for proto data (MITM data). Default: 0.0.0.0 (every interface).')
     parser.add_argument('-mrport', '--mitmreceiver_port', required=False, default=8000,
                         help='Port to listen on for proto data (MITM data). Default: 8000.')
+    parser.add_argument('-mrdw', '--mitmreceiver_data_workers', type=int, default=2,
+                        help='Amount of workers to work off the data that queues up. Default: 2.')
 
     # WEBSOCKET
     parser.add_argument('-wsip', '--ws_ip', required=False, default="0.0.0.0", type=str,
@@ -192,6 +194,15 @@ def parseArgs():
     parser.add_argument('-mmnrsp', '--madmin_noresponsive', action='store_false', default=True,
                         help='MADmin deactivate responsive tables')
 
+    parser.add_argument('-mmuser', '--madmin_user', default='',
+                        help='Username for MADmin Frontend.')
+
+    parser.add_argument('-mmpassword', '--madmin_password', default='',
+                        help='Password for MADmin Frontend.')
+
+    parser.add_argument('-pfile', '--position_file', default='current',
+                        help='Filename for bot\'s current position (Default: current)')
+
     parser.add_argument('-ugd', '--unknown_gym_distance', default='10',
                         help='Show matchable gyms for unknwon with this radius (in km!) (Default: 10)')
 
@@ -199,6 +210,8 @@ def parseArgs():
 
     parser.add_argument('-rdt', '--raid_time', default='45', type=int,
                         help='Raid Battle time in minutes. (Default: 45)')
+    parser.add_argument('-ump', '--use_media_projection', action='store_true', default=False,
+                        help='Use Media Projection for image transfer (OCR) (Default: False)')
 
     # log settings
     parser.add_argument('--no-file-logs',

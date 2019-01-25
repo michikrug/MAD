@@ -4,6 +4,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 
+import numpy
 import requests
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
@@ -456,7 +457,7 @@ class RmWrapper(DbWrapperBase):
         # else:
         #     distance = str(self.application_args.gym_scan_distance)
 
-        #dist = float(dist) * 1000
+        # dist = float(dist) * 1000
 
         query = (
             "SELECT gym_id, "
@@ -528,10 +529,10 @@ class RmWrapper(DbWrapperBase):
             if url is not None:
                 if not self.application_args.justjson:
                     filename = url_image_path + '_' + str(gym_id) + '_.jpg'
-                    log.debug('Downloading', filename)
+                    log.debug('Downloading %s' % filename)
                     self.__download_img(str(url), str(filename))
-                gyminfo[gym_id] = self.__encode_hash_json(
-                    team_id, latitude, longitude, name, description, url)
+                gyminfo[gym_id] = self.__encode_hash_json(team_id, latitude, longitude, str(
+                    name).replace('"', '\\"').replace('\n', '\\n'), description, url)
 
         with io.open('gym_info.json', 'w') as outfile:
             outfile.write(str(json.dumps(gyminfo, indent=4, sort_keys=True)))
@@ -554,8 +555,8 @@ class RmWrapper(DbWrapperBase):
         res = self.execute(query)
 
         for (gym_id, latitude, longitude, name, description, url, team_id) in res:
-            gyminfo[gym_id] = self.__encode_hash_json(
-                team_id, latitude, longitude, name, description, url)
+            gyminfo[gym_id] = self.__encode_hash_json(team_id, float(latitude), float(longitude), str(name).replace('"', '\\"').replace('\n', '\\n'),
+                                                      description, url)
         return gyminfo
 
     def gyms_from_db(self, geofence_helper):
@@ -635,51 +636,142 @@ class RmWrapper(DbWrapperBase):
         self.execute(query, data, commit=True)
 
         self.webhook_helper.send_weather_webhook(
-            cell_id, gameplay_weather, 0, 0, weather_daytime, now_timezone
+            cell_id, gameplay_weather, 0, 0, weather_daytime, capture_time
         )
 
-    def submit_mon_iv(self, id, type, lat, lon, desptime, spawnid, gender, weather, costume, form, cp, move_1, move_2,
-                      weight, height, individual_attack, individual_defense, individual_stamina, cpmulti):
-        log.debug("{RmWrapper::submit_mon_iv} called")
+    def submit_mon_iv(self, origin, timestamp, encounter_proto):
+        log.debug("Updating IV sent by %s" % str(origin))
+        wild_pokemon = encounter_proto.get("wild_pokemon", None)
+        if wild_pokemon is None:
+            return
+
         now = datetime.utcfromtimestamp(
             time.time()).strftime('%Y-%m-%d %H:%M:%S')
         despawn_time = datetime.now() + timedelta(seconds=300)
-        despawn_time = datetime.utcfromtimestamp(
-            time.mktime(despawn_time.timetuple())
-        ).strftime('%Y-%m-%d %H:%M:%S')
+        despawn_time = datetime.utcfromtimestamp(time.mktime(despawn_time.timetuple())).strftime(
+            '%Y-%m-%d %H:%M:%S')
         init = True
 
+        spawnid = int(str(wild_pokemon['spawnpoint_id']), 16)
         getdetspawntime = self.get_detected_endtime(str(spawnid))
+        if getdetspawntime:
+            despawn_time_unix = self._gen_endtime(getdetspawntime)
+        else:
+            despawn_time_unix = int(time.time()) + 3 * 60
 
         if getdetspawntime:
             despawn_time = datetime.utcfromtimestamp(
-                self._gen_endtime(getdetspawntime)
-            ).strftime('%Y-%m-%d %H:%M:%S')
+                despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
             init = False
 
+        latitude = wild_pokemon.get("latitude")
+        longitude = wild_pokemon.get("longitude")
+        pokemon_data = wild_pokemon.get("pokemon_data")
+        encounter_id = wild_pokemon['encounter_id']
+
+        if encounter_id < 0:
+            encounter_id = encounter_id + 2**64
+
         if init:
-            log.info("Updating mon #{0} at {1}, {2}. Despawning at {3} (init)".format(
-                id, lat, lon, despawn_time))
+            log.info("{0}: updating mon #{1} at {2}, {3}. Despawning at {4} (init)".format(
+                str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+            )
         else:
-            log.info(
-                "Updating mon #{0} at {1}, {2}. Despawning at {3} (non-init)".format(id, lat, lon, despawn_time))
+            log.info("{0}: updating mon #{1} at {2}, {3}. Despawning at {4} (non-init)".format(
+                str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+            )
+
+        capture_probability = encounter_proto.get("capture_probability")
+        capture_probability_list = capture_probability.get(
+            "capture_probability_list")
+        if capture_probability_list is not None:
+            capture_probability_list = capture_probability_list.replace(
+                "[", "").replace("]", "").split(",")
+
+        pokemon_display = pokemon_data.get("display")
+        if pokemon_display is None:
+            pokemon_display = {}
+            # initialize to not run into nullpointer
 
         query = (
-            "UPDATE pokemon "
-            "SET individual_attack = %s, individual_defense = %s, individual_stamina = %s, "
-            "move_1 = %s, move_2 = %s, cp = %s, last_modified = %s, weight = %s, height = %s, "
-            "cp_multiplier = %s, "
-            "WHERE encounter_id = %s"
+            "INSERT INTO pokemon (encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
+            "individual_attack, individual_defense, individual_stamina, move_1, move_2, cp, cp_multiplier, "
+            "weight, height, gender, "
+            "boosted_weather, last_modified, costume, form) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+            "ON DUPLICATE KEY UPDATE last_modified=VALUES(last_modified), disappear_time=VALUES(disappear_time), "
+            "individual_attack=VALUES(individual_attack), individual_defense=VALUES(individual_defense), "
+            "individual_stamina=VALUES(individual_stamina), move_1=VALUES(move_1), move_2=VALUES(move_2), "
+            "cp=VALUES(cp), cp_multiplier=VALUES(cp_multiplier), weight=VALUES(weight), height=VALUES(height), "
+            "gender=VALUES(gender), boosted_weather=VALUES(boosted_weather), "
+            "costume=VALUES(costume), form=VALUES(form)"
         )
+
         vals = (
-            individual_attack, individual_defense, individual_stamina, move_1, move_2, cp,
-            now, weight, height, cpmulti, id
+            encounter_id,
+            wild_pokemon.get("spawnpoint_id"),
+            pokemon_data.get('id'),
+            latitude,
+            longitude,
+            despawn_time,
+            pokemon_data.get("individual_attack"),
+            pokemon_data.get("individual_defense"),
+            pokemon_data.get("individual_stamina"),
+            pokemon_data.get("move_1"),
+            pokemon_data.get("move_2"),
+            pokemon_data.get("cp"),
+            pokemon_data.get("cp_multiplier"),
+            pokemon_data.get("weight"),
+            pokemon_data.get("height"),
+            pokemon_display.get("gender_value", None),
+            None,
+            now,
+            pokemon_display.get("costume_value", None),
+            pokemon_display.get("form_value", None)
         )
 
         self.execute(query, vals, commit=True)
 
-    def submit_mons_map_proto(self, map_proto):
-        log.debug("{RmWrapper::submit_mons_map_proto} called")
+        # TODO: check above vs this...
+        despawn_time = datetime.now() + timedelta(seconds=300)
+        despawn_time_unix = int(time.mktime(despawn_time.timetuple()))
+        if getdetspawntime:
+            despawn_time = self._gen_endtime(getdetspawntime)
+            despawn_time_unix = despawn_time
+
+        # calculating level
+        if pokemon_data.get("cp_multiplier") < 0.734:
+            pokemon_level = (58.35178527 * pokemon_data.get("cp_multiplier") * pokemon_data.get(
+                "cp_multiplier") - 2.838007664 * pokemon_data.get("cp_multiplier") + 0.8539209906)
+        else:
+            pokemon_level = 171.0112688 * \
+                pokemon_data.get("cp_multiplier") - 95.20425243
+
+            pokemon_level = round(pokemon_level) * 2 / 2
+
+        self.webhook_helper.send_pokemon_webhook(
+            encounter_id=encounter_id,
+            pokemon_id=pokemon_data.get("id"),
+            last_modified_time=timestamp,
+            spawnpoint_id=wild_pokemon.get("spawnpoint_id"),
+            lat=latitude, lon=longitude,
+            despawn_time_unix=despawn_time_unix,
+            pokemon_level=pokemon_level,
+            cp_multiplier=pokemon_data.get("cp_multiplier"),
+            form=pokemon_display.get("form_value", None),
+            cp=pokemon_data.get("cp"),
+            individual_attack=pokemon_data.get("individual_attack"),
+            individual_defense=pokemon_data.get("individual_defense"),
+            individual_stamina=pokemon_data.get("individual_stamina"),
+            move_1=pokemon_data.get("move_1"),
+            move_2=pokemon_data.get("move_2"),
+            height=pokemon_data.get("height"),
+            weight=pokemon_data.get("weight")
+        )
+
+    def submit_mons_map_proto(self, origin, map_proto, mon_ids_iv):
+        log.debug(
+            "{RmWrapper::submit_mons_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -699,6 +791,10 @@ class RmWrapper(DbWrapperBase):
                 lat = wild_mon['latitude']
                 lon = wild_mon['longitude']
                 mon_id = wild_mon['pokemon_data']['id']
+                encounter_id = wild_mon['encounter_id']
+
+                if encounter_id < 0:
+                    encounter_id = encounter_id + 2**64
 
                 now = datetime.utcfromtimestamp(
                     time.time()).strftime('%Y-%m-%d %H:%M:%S')
@@ -719,22 +815,21 @@ class RmWrapper(DbWrapperBase):
                     init = False
 
                 if init:
-                    log.info("Adding mon with id #{0} at {1}, {2}. Despawning at {3} (init) ({4})"
-                             .format(mon_id, lat, lon, despawn_time, spawnid))
+                    log.info("{0}: adding mon with id #{1} at {2}, {3}. Despawning at {4} (init) ({5})"
+                             .format(str(origin), mon_id, lat, lon, despawn_time, spawnid))
                 else:
-                    log.info("Adding mon with id #{0} at {1}, {2}. Despawning at {3} (non-init) ({4})"
-                             .format(mon_id, lat, lon, despawn_time, spawnid))
+                    log.info("{0}: adding mon with id #{1} at {2}, {3}. Despawning at {4} (non-init) ({5})"
+                             .format(str(origin), mon_id, lat, lon, despawn_time, spawnid))
 
-                self.webhook_helper.submit_pokemon_webhook(
-                    str(abs(wild_mon['encounter_id'])
-                        ), mon_id, int(time.time()),
-                    spawnid, lat, lon, int(despawn_time_unix)
-                )
+                if mon_ids_iv is not None and mon_id not in mon_ids_iv or mon_ids_iv is None:
+                    self.webhook_helper.send_pokemon_webhook(
+                        str(encounter_id), mon_id, int(time.time()),
+                        spawnid, lat, lon, int(despawn_time_unix)
+                    )
 
                 mon_args.append(
                     (
-                        abs(wild_mon['encounter_id']
-                            ), spawnid, mon_id, lat, lon,
+                        encounter_id, spawnid, mon_id, lat, lon,
                         despawn_time,
                         # TODO: consider .get("XXX", None)
                         None, None, None, None, None, None, None, None, None,
@@ -748,8 +843,9 @@ class RmWrapper(DbWrapperBase):
         self.executemany(query_mons, mon_args, commit=True)
         return True
 
-    def submit_pokestops_map_proto(self, map_proto):
-        log.debug("{RmWrapper::submit_pokestops_map_proto} called")
+    def submit_pokestops_map_proto(self, origin, map_proto):
+        log.debug(
+            "{RmWrapper::submit_pokestops_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -772,8 +868,9 @@ class RmWrapper(DbWrapperBase):
         self.executemany(query_pokestops, pokestop_args, commit=True)
         return True
 
-    def submit_gyms_map_proto(self, map_proto):
-        log.debug("{RmWrapper::submit_gyms_map_proto} called")
+    def submit_gyms_map_proto(self, origin, map_proto):
+        log.debug(
+            "{RmWrapper::submit_gyms_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -836,11 +933,12 @@ class RmWrapper(DbWrapperBase):
                     )
         self.executemany(query_gym, gym_args, commit=True)
         self.executemany(query_gym_details, gym_details_args, commit=True)
-        log.debug("submit_gyms done")
+        log.debug("%s: submit_gyms done" % str(origin))
         return True
 
-    def submit_raids_map_proto(self, map_proto):
-        log.debug("{RmWrapper::submit_raids_map_proto} called")
+    def submit_raids_map_proto(self, origin, map_proto):
+        log.debug(
+            "{RmWrapper::submit_raids_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -861,10 +959,10 @@ class RmWrapper(DbWrapperBase):
                 if gym['type'] == 0 and gym['gym_details']['has_raid']:
                     gym_has_raid = gym['gym_details']['raid_info']['has_pokemon']
                     if gym_has_raid:
-                        pokemon_id = gym['gym_details']['raid_info']['pokemon']['id']
-                        cp = gym['gym_details']['raid_info']['pokemon']['cp']
-                        move_1 = gym['gym_details']['raid_info']['pokemon']['move_1']
-                        move_2 = gym['gym_details']['raid_info']['pokemon']['move_2']
+                        pokemon_id = gym['gym_details']['raid_info']['raid_pokemon']['id']
+                        cp = gym['gym_details']['raid_info']['raid_pokemon']['cp']
+                        move_1 = gym['gym_details']['raid_info']['raid_pokemon']['move_1']
+                        move_2 = gym['gym_details']['raid_info']['raid_pokemon']['move_2']
                     else:
                         pokemon_id = None
                         cp = 0
@@ -911,11 +1009,13 @@ class RmWrapper(DbWrapperBase):
                         )
                     )
         self.executemany(query_raid, raid_args, commit=True)
-        log.debug("dbWrapper::submit_raids_map_proto: Done submitting raids")
+        log.debug(
+            "dbWrapper::submit_raids_map_proto: Done submitting raids with data received from %s" % str(origin))
         return True
 
-    def submit_weather_map_proto(self, map_proto, received_timestamp):
-        log.debug("{RmWrapper::submit_weather_map_proto} called")
+    def submit_weather_map_proto(self, origin, map_proto, received_timestamp):
+        log.debug(
+            "{RmWrapper::submit_weather_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -942,6 +1042,46 @@ class RmWrapper(DbWrapperBase):
         self.executemany(query_weather, list_of_weather_args, commit=True)
         return True
 
+    def get_to_be_encountered(self, geofence_helper, min_time_left_seconds, eligible_mon_ids):
+        if min_time_left_seconds is None or eligible_mon_ids is None:
+            log.warning("RmWrapper::get_to_be_encountered: Not returning any encounters since no time left or "
+                        "eligible mon IDs specified")
+            return []
+        log.debug("Getting mons to be encountered")
+        query = (
+            "SELECT latitude, longitude, encounter_id, "
+            "TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), disappear_time) AS expire, pokemon_id "
+            "FROM pokemon "
+            "WHERE individual_attack IS NULL AND individual_defense IS NULL AND individual_stamina IS NULL "
+            "AND encounter_id != 0 "
+            "AND TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), disappear_time) >= %s "
+            "ORDER BY expire ASC"
+        )
+        vals = (
+            int(min_time_left_seconds),
+        )
+
+        results = self.execute(query, vals, commit=False)
+
+        next_to_encounter = []
+        i = 0
+        for latitude, longitude, encounter_id, expire, pokemon_id in results:
+            if pokemon_id not in eligible_mon_ids:
+                continue
+            elif latitude is None or longitude is None:
+                log.warning("lat or lng is none")
+                continue
+            elif geofence_helper and not geofence_helper.is_coord_inside_include_geofence([latitude, longitude]):
+                log.debug("Excluded encounter at %s, %s since the coordinate is not inside the given include fences"
+                          % (str(latitude), str(longitude)))
+                continue
+
+            next_to_encounter.append(
+                (i, Location(latitude, longitude), encounter_id)
+            )
+            i += 1
+        return next_to_encounter
+
     def __encode_hash_json(self, team_id, latitude, longitude, name, description, url):
         return (
             {'team_id': team_id, 'latitude': latitude, 'longitude': longitude, 'name': name, 'description': '',
@@ -960,11 +1100,11 @@ class RmWrapper(DbWrapperBase):
             except KeyboardInterrupt:
                 log.info('Ctrl-C interrupted')
                 sys.exit(1)
-            except Exception as e:
+            except Exception:
                 retry = retry + 1
-                log.info('Download error', url)
+                log.info('Download error %s' % url)
                 if retry <= 5:
-                    log.info('retry:', retry)
+                    log.info('retry: %s' % retry)
                 else:
                     log.info('Failed to download after 5 retry')
 
@@ -1001,7 +1141,7 @@ class RmWrapper(DbWrapperBase):
             now_timezone.timetuple()) - (self.timezone * 60 * 60)
 
         self.webhook_helper.send_weather_webhook(cell_id, gameplay_weather, 0, 0,
-                                                 time_of_day, now_timezone)
+                                                 time_of_day, received_timestamp)
 
         return (
             cell_id, real_lat, real_lng,
@@ -1016,3 +1156,90 @@ class RmWrapper(DbWrapperBase):
             0, 0,
             time_of_day, now
         )
+
+    def check_stop_quest(self, latitude, longitude):
+        log.debug("{RmWrapper::stops_from_db} called")
+        query = (
+            "SELECT trs_quest.GUID "
+            "from trs_quest inner join pokestop on pokestop.pokestop_id = trs_quest.GUID where "
+            "from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d') = date_format(DATE_ADD( now() , INTERVAL '-15' MINUTE ), '%Y-%m-%d') "
+            "and pokestop.latitude=%s and pokestop.longitude=%s"
+        )
+        data = (latitude, longitude)
+
+        res = self.execute(query, data)
+        number_of_rows = len(res)
+        if number_of_rows > 0:
+            log.debug('Pokestop has already a quest with CURDATE()')
+            return True
+        else:
+            log.debug('Pokestop has not a quest with CURDATE()')
+            return False
+
+    def quests_from_db(self, GUID=False):
+        log.debug("{RmWrapper::quests_from_db} called")
+        questinfo = {}
+
+        if not GUID:
+            query = (
+                "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
+                "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
+                "trs_quest.quest_item_id, trs_quest.quest_item_amount, "
+                "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp  "
+                "FROM pokestop inner join trs_quest on "
+                "pokestop.pokestop_id = trs_quest.GUID where "
+                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE()"
+            )
+            data = ()
+        else:
+            query = (
+                "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
+                "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
+                "trs_quest.quest_item_id, trs_quest.quest_item_amount, "
+                "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp "
+                "FROM pokestop inner join trs_quest on "
+                "pokestop.pokestop_id = trs_quest.GUID where "
+                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() and "
+                "trs_quest.GUID = %s"
+            )
+            data = (GUID, )
+
+        res = self.execute(query, data)
+
+        for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id, quest_reward_type,
+             quest_item_id, quest_item_amount, name, image, quest_target, quest_condition, quest_timestamp) in res:
+            mon = "%03d" % quest_pokemon_id
+            questinfo[pokestop_id] = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
+                                       'quest_type': quest_type, 'quest_stardust': quest_stardust, 'quest_pokemon_id': mon,
+                                       'quest_reward_type': quest_reward_type, 'quest_item_id': quest_item_id, 'quest_item_amount': quest_item_amount,
+                                       'name': name, 'image': image, 'quest_target': quest_target, 'quest_condition': quest_condition, 'quest_timestamp': quest_timestamp})
+        return questinfo
+
+    def submit_pokestops_details_map_proto(self, map_proto):
+        log.debug("{RmWrapper::submit_pokestops_details_map_proto} called")
+        pokestop_args = []
+        # now = datetime.datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+
+        query_pokestops = (
+            "INSERT INTO pokestop (pokestop_id, enabled, latitude, longitude, last_modified, "
+            "last_updated, name, image) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) "
+            "ON DUPLICATE KEY UPDATE last_updated=VALUES(last_updated), lure_expiration=VALUES(lure_expiration), "
+            "latitude=VALUES(latitude), longitude=VALUES(longitude), name=VALUES(name), image=VALUES(image)"
+        )
+
+        pokestop_args = self.__extract_args_single_pokestop_details(map_proto)
+
+        if pokestop_args is not None:
+            self.execute(query_pokestops, pokestop_args, commit=True)
+        return True
+
+    def __extract_args_single_pokestop_details(self, stop_data):
+        if stop_data.get('type', 999) != 1:
+            return None
+        image = stop_data.get('image_urls', None)
+        name = stop_data.get('name', None)
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
+
+        return stop_data['fort_id'], 1, stop_data['latitude'], stop_data['longitude'], now, now, name, image[0]

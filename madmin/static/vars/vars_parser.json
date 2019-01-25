@@ -158,7 +158,7 @@
 		{
 			"name": "geofence_included",
     		"settings": {
-	        	"type": "text",
+	        	"type": "textarea",
 		    	"require": "true",
 			    "empty": "null",
 				"description": "Path to including geofence for scanarea"
@@ -167,7 +167,7 @@
 		{
 			"name": "geofence_excluded",
     		"settings": {
-	        	"type": "text",
+	        	"type": "textarea",
 		    	"require": "false",
 			    "empty": "null",
 				"description": "Path to excluding geofence for scanarea"
@@ -274,7 +274,7 @@
 		{
 			"name": "geofence_included",
     		"settings": {
-	        	"type": "text",
+	        	"type": "textarea",
 		    	"require": "true",
 			    "empty": "null",
 				"description": "Path to including geofence for scanarea"
@@ -283,7 +283,7 @@
 		{
 			"name": "geofence_excluded",
     		"settings": {
-	        	"type": "text",
+	        	"type": "textarea",
 		    	"require": "false",
 			    "empty": "null",
 				"description": "Path to excluding geofence for scanarea"

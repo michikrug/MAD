@@ -6,17 +6,19 @@ log = logging.getLogger(__name__)
 
 
 class RouteManagerRaids(RouteManagerBase):
-    def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, include_geofence,
-                 exclude_geofence, routefile, mode=None, settings=None, init=False,
+    def _priority_queue_update_interval(self):
+        return 300
+
+    def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
+                 path_to_exclude_geofence, routefile, mode=None, settings=None, init=False,
                  name="unknown"):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
                                   include_geofence=include_geofence,
                                   exclude_geofence=exclude_geofence,
                                   routefile=routefile, init=init,
-                                  name=name, settings=settings
+                                  name=name, settings=settings, mode=mode
                                   )
-        self.mode = mode
 
     def _retrieve_latest_priority_queue(self):
         # TODO: pass timedelta for timeleft on raids that can be ignored.

@@ -483,7 +483,7 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::get_near_gyms} done")
         return data
 
-    def set_scanned_location(self, lat, lng, capture_time, radius=600):
+    def set_scanned_location(self, lat, lng, capture_time, radius=67):
         log.debug("{RmWrapper::set_scanned_location} called")
         now = datetime.utcfromtimestamp(
             time.time()).strftime('%Y-%m-%d %H:%M:%S')

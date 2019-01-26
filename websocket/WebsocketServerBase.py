@@ -11,8 +11,9 @@ from threading import Event, Lock, Thread
 
 import websockets
 from utils.authHelper import check_auth
-from utils.madGlobals import MadGlobals, WebsocketWorkerRemovedException
+from utils.madGlobals import WebsocketWorkerRemovedException
 from utils.mappingParser import MappingParser
+from utils.timer import Timer
 from worker.WorkerMITM import WorkerMITM
 from worker.WorkerQuests import WorkerQuests
 
@@ -101,6 +102,11 @@ class WebsocketServerBase(ABC):
 
         lastKnownState = {}
         client_mapping = self.device_mappings[id]
+
+        timer = Timer(client_mapping["switch"], id,
+                      client_mapping["switch_interval"])
+        time.sleep(1)
+
         daytime_routemanager = self.routemanagers[client_mapping["daytime_area"]].get(
             "routemanager")
         if client_mapping.get("nighttime_area", None) is not None:
@@ -111,38 +117,38 @@ class WebsocketServerBase(ABC):
         devicesettings = client_mapping["settings"]
 
         started = False
-        if MadGlobals.sleep is True:
+        if timer.get_switch() is True:
             # start the appropriate nighttime manager if set
             if nightime_routemanager is None:
                 pass
             elif nightime_routemanager.mode in ["raids_mitm", "mon_mitm", "iv_mitm"]:
                 Worker = WorkerMITM(self.args, id, lastKnownState, self, daytime_routemanager, nightime_routemanager,
-                                    self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper)
+                                    self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper, timer=timer)
                 started = True
             elif nightime_routemanager.mode in ["raids_ocr"]:
                 from worker.WorkerOcr import WorkerOcr
                 Worker = WorkerOcr(self.args, id, lastKnownState, self, daytime_routemanager, nightime_routemanager,
-                                   devicesettings, db_wrapper=self.db_wrapper)
+                                   devicesettings, db_wrapper=self.db_wrapper, timer=timer)
                 started = True
             elif nightime_routemanager.mode in ["pokestops"]:
                 Worker = WorkerQuests(self.args, id, lastKnownState, self, daytime_routemanager, nightime_routemanager,
-                                      self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper)
+                                      self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper, timer=timer)
                 started = True
             else:
                 log.fatal("Mode not implemented")
                 sys.exit(1)
-        if not MadGlobals.sleep or not started:
+        if not timer.get_switch() or not started:
             # we either gotta run daytime mode OR nighttime routemanager not set
             if daytime_routemanager.mode in ["raids_mitm", "mon_mitm", "iv_mitm"]:
                 Worker = WorkerMITM(self.args, id, lastKnownState, self, daytime_routemanager, nightime_routemanager,
-                                    self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper)
+                                    self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper, timer=timer)
             elif daytime_routemanager.mode in ["raids_ocr"]:
                 from worker.WorkerOcr import WorkerOcr
                 Worker = WorkerOcr(self.args, id, lastKnownState, self, daytime_routemanager, nightime_routemanager,
-                                   devicesettings, db_wrapper=self.db_wrapper)
+                                   devicesettings, db_wrapper=self.db_wrapper, timer=timer)
             elif daytime_routemanager.mode in ["pokestops"]:
                 Worker = WorkerQuests(self.args, id, lastKnownState, self, daytime_routemanager, nightime_routemanager,
-                                      self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper)
+                                      self._mitm_mapper, devicesettings, db_wrapper=self.db_wrapper, timer=timer)
             else:
                 log.fatal("Mode not implemented")
                 sys.exit(1)

@@ -8,6 +8,8 @@ import requests
 from s2sphere import Cell, CellId, LatLng
 from utils.questGen import generate_quest
 
+from utils.questGen import generate_quest
+
 log = logging.getLogger(__name__)
 
 raid_webhook_payload = """[{{

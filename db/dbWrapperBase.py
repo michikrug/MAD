@@ -196,7 +196,7 @@ class DbWrapperBase(ABC):
         pass
 
     @abstractmethod
-    def set_scanned_location(self, lat, lng, capture_time, radius=600):
+    def set_scanned_location(self, lat, lng, capture_time, radius=67):
         """
         Update scannedlocation (in RM) of a given lat/lng
         """

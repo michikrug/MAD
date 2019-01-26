@@ -64,6 +64,7 @@ quest_webhook_payload = """[{{
                 "name": "{name}",
                 "url": "{url}",
                 "timestamp": "{timestamp}",
+                "quest_reward": "{quest_reward}",
                 "quest_reward_type": "{quest_reward_type}",
                 "quest_reward_type_raw": "{quest_reward_type_raw}",
                 "quest_target": "{quest_target}"

@@ -7,7 +7,7 @@ from threading import Event, Lock, Thread, current_thread
 
 from utils.collections import Location
 from utils.geo import get_distance_of_two_points_in_meters
-from utils.madGlobals import MadGlobals, WebsocketWorkerRemovedException
+from utils.madGlobals import WebsocketWorkerRemovedException
 from utils.resolution import Resocalculator
 from worker.WorkerBase import WorkerBase
 

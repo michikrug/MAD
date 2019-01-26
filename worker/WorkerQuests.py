@@ -12,6 +12,7 @@ from worker.WorkerBase import WebsocketWorkerRemovedException, WorkerBase
 
 log = logging.getLogger(__name__)
 
+
 class WorkerQuests(WorkerBase):
     def __init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime, route_manager_nighttime,
                  mitm_mapper, devicesettings, db_wrapper, timer):

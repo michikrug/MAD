@@ -293,7 +293,8 @@ class WorkerMITM(WorkerBase):
             if self._applicationArgs.last_scanned:
                 log.info('main: Set new scannedlocation in Database')
                 nighttime_mode = None if self._route_manager_nighttime is None else self._route_manager_nighttime.mode
-                current_mode = self._route_manager_daytime.mode if not self._timer.get_switch() else nighttime_mode
+                current_mode = self._route_manager_daytime.mode if not self._timer.get_switch(
+                ) else nighttime_mode
                 radius = 610 if current_mode == 'raids_mitm' else 67
                 self.__add_task_to_loop(self.update_scanned_location(
                     currentLocation.lat, currentLocation.lng, curTime, radius))

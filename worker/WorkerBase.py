@@ -14,8 +14,10 @@ Location = collections.namedtuple('Location', ['lat', 'lng'])
 
 log = logging.getLogger(__name__)
 
+
 class WebsocketWorkerRemovedException(Exception):
     pass
+
 
 class WorkerBase(ABC):
     def __init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime,

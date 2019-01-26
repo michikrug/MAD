@@ -19,12 +19,11 @@ class Timer(object):
         if self._switch:
             log.info('[%s] - starting Switchtimer' % str(self._id))
             t_switchtimer = Thread(name='switchtimer',
-                                  target=self.switchtimer)
+                                   target=self.switchtimer)
             t_switchtimer.daemon = True
             t_switchtimer.start()
         else:
             log.info('[%s] - no Switchtimer needed' % str(self._id))
-        
 
     def set_switch(self, switch):
         log.info('[%s] - set switch: %s' % (str(self._id), str(switch)))

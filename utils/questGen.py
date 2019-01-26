@@ -54,7 +54,7 @@ def generate_quest(quest):
             quest_target = str(quest['quest_target'])
         reward = pokemon_name
 
-    quest_raw = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude, 'reward': reward,
+    quest_raw = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude, 'quest_reward': reward,
                   'quest_type_raw': quest_type, 'quest_type': quest_type_text, 'item_amount': item_amount, 'item_type': item_type,
                   'quest_target': quest_target, 'name': name, 'url': url, 'timestamp': timestamp, 'pokemon_id': pokemon_id, 'item_id': item_id,
                   'pokemon_name': pokemon_name, 'quest_reward_type': quest_reward_type, 'quest_reward_type_raw': quest_reward_type_raw})

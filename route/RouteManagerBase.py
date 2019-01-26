@@ -3,6 +3,7 @@ import heapq
 import logging
 import os
 import time
+import json
 from abc import ABC, abstractmethod
 from datetime import datetime
 from threading import Event, Lock, Thread
@@ -284,7 +285,7 @@ class RouteManagerBase(ABC):
                 self.recalc_route(self._max_radius,
                                   self._max_coords_within_radius, 1, True)
                 self.init = False
-                self.change_init_mapping(self, self.name)
+                self.change_init_mapping(self.name)
                 return self.get_next_location()
             elif self._current_index_of_route >= len(self._route):
                 self._current_index_of_route = 0

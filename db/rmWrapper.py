@@ -22,8 +22,8 @@ class RmWrapper(DbWrapperBase):
     def auto_hatch_eggs(self):
         log.debug("{RmWrapper::auto_hatch_eggs} called")
         now = (datetime.now())
-        now_timestamp = time.mktime(datetime.utcfromtimestamp(
-            float(received_timestamp)).timetuple())
+        now_timestamp = time.mktime(
+            datetime.utcfromtimestamp(float(now)).timetuple())
 
         mon_id = self.application_args.auto_hatch_number
 

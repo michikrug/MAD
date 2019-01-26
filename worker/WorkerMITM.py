@@ -8,8 +8,7 @@ from threading import Event, Lock, Thread, current_thread
 from route.RouteManagerIV import RouteManagerIV
 from utils.collections import Location
 from utils.geo import get_distance_of_two_points_in_meters
-from utils.madGlobals import WebsocketWorkerRemovedException
-from worker.WorkerBase import WorkerBase
+from worker.WorkerBase import WebsocketWorkerRemovedException, WorkerBase
 
 log = logging.getLogger(__name__)
 

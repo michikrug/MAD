@@ -461,7 +461,7 @@ class MonocleWrapper(DbWrapperBase):
             if url is not None:
                 if not self.application_args.justjson:
                     filename = url_image_path + '_' + str(id) + '_.jpg'
-                    log.debug('Downloading', filename)
+                    log.debug('Downloading %s' % filename)
                     self.__download_img(str(url), str(filename))
                 gyminfo[id] = self.__encode_hash_json(team, float(lat), float(lon), str(
                     name).replace('"', '\\"').replace('\n', '\\n'), url, park, sponsor)
@@ -566,7 +566,6 @@ class MonocleWrapper(DbWrapperBase):
         wild_pokemon = encounter_proto.get("wild_pokemon", None)
         if wild_pokemon is None:
             return
-        now = time.time()
         despawn_time = datetime.now() + timedelta(seconds=300)
         despawn_time_unix = int(time.mktime(despawn_time.timetuple()))
         despawn_time = datetime.utcfromtimestamp(
@@ -1019,11 +1018,11 @@ class MonocleWrapper(DbWrapperBase):
             except KeyboardInterrupt:
                 log.info('Ctrl-C interrupted')
                 sys.exit(1)
-            except Exception as e:
+            except Exception:
                 retry = retry + 1
-                log.info('Download error', url)
+                log.info('Download error %s' % url)
                 if retry <= 5:
-                    log.info('retry:', retry)
+                    log.info('retry: %s' % retry)
                 else:
                     log.info('Failed to download after 5 retry')
 

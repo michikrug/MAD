@@ -7,10 +7,9 @@ from threading import Event, Lock, Thread, current_thread
 from ocr.checkWeather import checkWeather
 from utils.collections import Location
 from utils.geo import get_distance_of_two_points_in_meters
-from utils.madGlobals import WebsocketWorkerRemovedException
 from utils.s2Helper import S2Helper
 
-from .WorkerBase import WorkerBase
+from .WorkerBase import WebsocketWorkerRemovedException, WorkerBase
 
 log = logging.getLogger(__name__)
 

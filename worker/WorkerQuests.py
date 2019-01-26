@@ -7,12 +7,10 @@ from threading import Event, Lock, Thread, current_thread
 
 from utils.collections import Location
 from utils.geo import get_distance_of_two_points_in_meters
-from utils.madGlobals import WebsocketWorkerRemovedException
 from utils.resolution import Resocalculator
-from worker.WorkerBase import WorkerBase
+from worker.WorkerBase import WebsocketWorkerRemovedException, WorkerBase
 
 log = logging.getLogger(__name__)
-
 
 class WorkerQuests(WorkerBase):
     def __init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime, route_manager_nighttime,

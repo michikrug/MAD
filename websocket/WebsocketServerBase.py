@@ -11,9 +11,9 @@ from threading import Event, Lock, Thread
 
 import websockets
 from utils.authHelper import check_auth
-from utils.madGlobals import WebsocketWorkerRemovedException
 from utils.mappingParser import MappingParser
 from utils.timer import Timer
+from worker.WorkerBase import WebsocketWorkerRemovedException
 from worker.WorkerMITM import WorkerMITM
 from worker.WorkerQuests import WorkerQuests
 

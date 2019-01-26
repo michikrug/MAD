@@ -14,6 +14,8 @@ Location = collections.namedtuple('Location', ['lat', 'lng'])
 
 log = logging.getLogger(__name__)
 
+class WebsocketWorkerRemovedException(Exception):
+    pass
 
 class WorkerBase(ABC):
     def __init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime,
@@ -273,7 +275,7 @@ class WorkerBase(ABC):
         log.info("checkPogoMainScreen: done")
         return True
 
-    def _checkPogoButton(self):
+    def _checkPogoButton(self, again=False):
         log.debug("checkPogoButton: Trying to find buttons")
         pogoTopmost = self._communicator.isPogoTopmost()
         if not pogoTopmost:
@@ -285,7 +287,6 @@ class WorkerBase(ABC):
                 log.error("checkPogoButton: failed getting a screenshot again")
                 return False
             log.debug("checkPogoButton: Got screenshot, checking GPS")
-        attempts = 0
 
         if os.path.isdir(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))):
             log.error("checkPogoButton: screenshot.png is not a file/corrupted")
@@ -301,7 +302,7 @@ class WorkerBase(ABC):
         log.info("checkPogoButton: done")
         return False
 
-    def _checkPogoClose(self):
+    def _checkPogoClose(self, again=False):
         log.debug("checkPogoClose: Trying to find closeX")
         pogoTopmost = self._communicator.isPogoTopmost()
         if not pogoTopmost:
@@ -313,7 +314,6 @@ class WorkerBase(ABC):
                 log.error("checkPogoClose: failed getting a screenshot again")
                 return False
             log.debug("checkPogoClose: Got screenshot, checking GPS")
-        attempts = 0
 
         if os.path.isdir(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))):
             log.error("checkPogoClose: screenshot.png is not a file/corrupted")

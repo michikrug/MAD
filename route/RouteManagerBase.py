@@ -1,9 +1,9 @@
 import collections
 import heapq
+import json
 import logging
 import os
 import time
-import json
 from abc import ABC, abstractmethod
 from datetime import datetime
 from threading import Event, Lock, Thread

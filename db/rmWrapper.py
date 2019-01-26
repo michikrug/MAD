@@ -720,7 +720,7 @@ class RmWrapper(DbWrapperBase):
             pokemon_data.get("weight"),
             pokemon_data.get("height"),
             pokemon_display.get("gender_value", None),
-            None,
+            pokemon_display.get('weather_boosted_value', None),
             now,
             pokemon_display.get("costume_value", None),
             pokemon_display.get("form_value", None)

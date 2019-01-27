@@ -4,6 +4,7 @@ import time
 from threading import Lock
 
 import gpxdata
+from utils.geo import get_distance_of_two_points_in_meters
 
 log = logging.getLogger(__name__)
 
@@ -156,8 +157,16 @@ class Communicator:
     #######
     def walkFromTo(self, startLat, startLng, destLat, destLng, speed):
         self.__sendMutex.acquire()
+        # calculate the time it will take to walk and add it to the timeout!
+        distance = get_distance_of_two_points_in_meters(
+            startLat, startLng, destLat, destLng)
+        # speed is in kmph, distance in m
+        # we want m/s -> speed / 3.6
+        speed_meters = speed / 3.6
+        seconds_traveltime = distance / speed_meters
+
         response = self.websocketHandler.sendAndWait(self.id, "geo walk %s %s %s %s %s\r\n"
                                                      % (startLat, startLng, destLat, destLng, speed),
-                                                     self.__commandTimeout)
+                                                     self.__commandTimeout + seconds_traveltime)
         self.__sendMutex.release()
         return response

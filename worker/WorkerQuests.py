@@ -37,13 +37,13 @@ class WorkerQuests(WorkerBase):
 
     def __update_injection_settings(self):
         # we don't wanna do anything other than questscans, set ids_iv to null ;)
-        self._mitm_mapper.update_latest(origin=self.id, timestamp=int(time.time()), key="ids_iv",
+        self._mitm_mapper.update_latest(origin=self._id, timestamp=int(time.time()), key="ids_iv",
                                         values_dict=None)
 
         injected_settings = {}
         scanmode = "quests"
         injected_settings["scanmode"] = scanmode
-        self._mitm_mapper.update_latest(origin=self.id, timestamp=int(time.time()), key="injected_settings",
+        self._mitm_mapper.update_latest(origin=self._id, timestamp=int(time.time()), key="injected_settings",
                                         values_dict=injected_settings)
 
     def __start_asyncio_loop(self):
@@ -58,7 +58,7 @@ class WorkerQuests(WorkerBase):
         self._screen_x = screen[0]
         self._screen_y = screen[1]
         log.debug('Get Screensize of %s: X: %s, Y: %s' %
-                  (str(self.id), str(self._screen_x), str(self._screen_y)))
+                  (str(self._id), str(self._screen_x), str(self._screen_y)))
         self._resocalc.get_x_y_ratio(self, self._screen_x, self._screen_y)
 
     def __add_task_to_loop(self, coro):
@@ -117,18 +117,18 @@ class WorkerQuests(WorkerBase):
 
     # TODO: update state...
     def _main_work_thread(self):
-        current_thread().name = self.id
+        current_thread().name = self._id
         log.info("Quests worker starting")
         _data_err_counter, data_error_counter = 0, 0
         firstround = True
 
         t_asyncio_loop = Thread(name='mitm_asyncio_' +
-                                self.id, target=self.__start_asyncio_loop)
+                                self._id, target=self.__start_asyncio_loop)
         t_asyncio_loop.daemon = True
         t_asyncio_loop.start()
 
         clearThread = Thread(name='clearThread%s' %
-                             self.id, target=self._clear_thread)
+                             self._id, target=self._clear_thread)
         clearThread.daemon = True
         clearThread.start()
 
@@ -139,7 +139,7 @@ class WorkerQuests(WorkerBase):
         try:
             self._start_pogo()
         except WebsocketWorkerRemovedException:
-            log.error("Timeout during init of worker %s" % str(self.id))
+            log.error("Timeout during init of worker %s" % str(self._id))
             self._stop_worker_event.set()
             self._work_mutex.release()
             return
@@ -169,7 +169,7 @@ class WorkerQuests(WorkerBase):
                     "Calling _start_pogo routine to check if pogo is topmost")
                 self._start_pogo()
             except WebsocketWorkerRemovedException:
-                log.error("Timeout starting pogo on %s" % str(self.id))
+                log.error("Timeout starting pogo on %s" % str(self._id))
                 self._stop_worker_event.set()
                 self._work_mutex.release()
                 return
@@ -214,7 +214,7 @@ class WorkerQuests(WorkerBase):
             # TODO: set position... needs to be adjust for multidevice
 
             log.debug("Updating .position file")
-            with open(self.id + '.position', 'w') as outfile:
+            with open(self._id + '.position', 'w') as outfile:
                 outfile.write(str(currentLocation.lat) +
                               ", "+str(currentLocation.lng))
 
@@ -244,7 +244,7 @@ class WorkerQuests(WorkerBase):
                     # the time we will take as a starting point to wait for data...
                     curTime = math.floor(time.time())
                 except WebsocketWorkerRemovedException:
-                    log.error("Timeout setting location for %s" % str(self.id))
+                    log.error("Timeout setting location for %s" % str(self._id))
                     self._stop_worker_event.set()
                     return
                 delayUsed = self._devicesettings.get('post_teleport_delay', 7)
@@ -278,7 +278,7 @@ class WorkerQuests(WorkerBase):
                     # the time we will take as a starting point to wait for data...
                     curTime = math.floor(time.time())
                 except WebsocketWorkerRemovedException:
-                    log.error("Timeout setting location for %s" % str(self.id))
+                    log.error("Timeout setting location for %s" % str(self._id))
                     self._stop_worker_event.set()
                     return
                 delayUsed = 0
@@ -376,7 +376,7 @@ class WorkerQuests(WorkerBase):
 
             log.debug("Releasing lock")
             self._work_mutex.release()
-            log.debug("Worker %s done, next iteration" % str(self.id))
+            log.debug("Worker %s done, next iteration" % str(self._id))
 
         t_asyncio_loop.join()
 
@@ -395,7 +395,7 @@ class WorkerQuests(WorkerBase):
         while data_requested is None and timestamp + timeout >= time.time():
             # let's check for new data...
             # log.info('Requesting latest...')
-            latest = self._mitm_mapper.request_latest(self.id)
+            latest = self._mitm_mapper.request_latest(self._id)
 
             if latest is None:
                 log.warning(

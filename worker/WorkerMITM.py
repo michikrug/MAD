@@ -17,14 +17,11 @@ class WorkerMITM(WorkerBase):
     def __init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime, route_manager_nighttime,
                  mitm_mapper, devicesettings, db_wrapper, timer):
         WorkerBase.__init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime,
-                            route_manager_nighttime, devicesettings, db_wrapper=db_wrapper, NoOcr=True)
-
-        self.id = id
+                            route_manager_nighttime, devicesettings, db_wrapper=db_wrapper, timer=timer, NoOcr=True)
         self._work_mutex = Lock()
         self._run_warning_thread_event = Event()
         self._locationCount = 0
         self._mitm_mapper = mitm_mapper
-        self._timer = timer
         # self.thread_pool = ThreadPool(processes=4)
         self.loop = None
         self.loop_started = Event()

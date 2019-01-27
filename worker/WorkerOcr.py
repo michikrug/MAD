@@ -21,12 +21,10 @@ class WorkerOcr(WorkerBase):
     def __init__(self, args, id, lastKnownState, websocketHandler, route_manager_daytime, route_manager_nighttime,
                  devicesettings, db_wrapper, timer):
         WorkerBase.__init__(self, args, id, lastKnownState, websocketHandler, route_manager_daytime,
-                            route_manager_nighttime, devicesettings, db_wrapper=db_wrapper)
-        self.id = id
+                            route_manager_nighttime, devicesettings, db_wrapper=db_wrapper, timer=timer)
         self._workMutex = Lock()
         self._run_warning_thread_event = Event()
         self._locationCount = 0
-        self._timer = timer
 
     def _start_pogo(self):
         pogoTopmost = self._communicator.isPogoTopmost()

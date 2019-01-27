@@ -21,7 +21,7 @@ class WebsocketWorkerRemovedException(Exception):
 
 class WorkerBase(ABC):
     def __init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime,
-                 route_manager_nighttime, devicesettings, db_wrapper, NoOcr=False, resocalc=False):
+                 route_manager_nighttime, devicesettings, db_wrapper, timer, NoOcr=False, resocalc=False):
         # self.thread_pool = ThreadPool(processes=2)
         self._route_manager_daytime = route_manager_daytime
         self._route_manager_nighttime = route_manager_nighttime
@@ -31,6 +31,7 @@ class WorkerBase(ABC):
         self._id = id
         self._applicationArgs = args
         self._last_known_state = last_known_state
+        self._timer = timer
 
         self._lastScreenshotTaken = 0
         self._stop_worker_event = Event()

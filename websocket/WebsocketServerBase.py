@@ -367,17 +367,5 @@ class WebsocketServerBase(ABC):
 
     def _update_clients(self):
         for id, worker in self.__current_users.items():
-            client_mapping = self.device_mappings[id]
-            daytime_routemanager = self.routemanagers[client_mapping["daytime_area"]].get(
-                "routemanager")
-            if client_mapping.get("nighttime_area", None) is not None:
-                nightime_routemanager = self.routemanagers[client_mapping["nighttime_area"]].get(
-                    "routemanager", None)
-            else:
-                nightime_routemanager = None
-            if (worker[1]._devicesettings != client_mapping["settings"] or
-                worker[1]._route_manager_daytime != daytime_routemanager or
-                worker[1]._route_manager_nighttime != nightime_routemanager or
-                worker[1]._timer._switch != client_mapping["switch"] or
-                    worker[1]._timer._switchtime != client_mapping["switch_interval"]):
-                worker[1].stop_worker()
+            log.info('Stopping worker %s to apply new mappings.', id)
+            worker[1].stop_worker()

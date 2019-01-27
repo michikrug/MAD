@@ -211,7 +211,6 @@ def near_gym():
         name = 'unknown'
         lat = '0'
         lon = '0'
-        url = '0'
         description = ''
 
         if str(gymid) in data:
@@ -224,7 +223,7 @@ def near_gym():
                     "\\", r"\\").replace('"', '').replace("\n", "")
 
         ngjson = ({'id': gymid, 'dist': dist, 'name': name, 'lat': lat, 'lon': lon,
-                   'description': description, 'filename': gymImage, 'dist': dist})
+                   'description': description, 'filename': gymImage})
         nearGym.append(ngjson)
 
     return jsonify(nearGym)
@@ -233,7 +232,6 @@ def near_gym():
 @app.route("/delete_hash")
 @auth_required
 def delete_hash():
-    nearGym = []
     hash = request.args.get('hash')
     type = request.args.get('type')
     redi = request.args.get('redirect')
@@ -250,7 +248,6 @@ def delete_hash():
 @app.route("/delete_file")
 @auth_required
 def delete_file():
-    nearGym = []
     hash = request.args.get('hash')
     type = request.args.get('type')
     redi = request.args.get('redirect')
@@ -272,7 +269,7 @@ def get_gyms():
     hashdata = json.loads(getAllHash('gym'))
 
     for file in glob.glob("ocr/www_hash/gym_*.jpg"):
-        unkfile = re.search('gym_(-?\d+)_(-?\d+)_((?s).*)\.jpg', file)
+        unkfile = re.search(r'gym_(-?\d+)_(-?\d+)_((?s).*)\.jpg', file)
         hashvalue = (unkfile.group(3))
 
         if str(hashvalue) in hashdata:
@@ -293,7 +290,6 @@ def get_gyms():
             name = 'unknown'
             lat = '0'
             lon = '0'
-            url = '0'
             description = ''
 
             gymImage = 'ocr/gym_img/_' + str(gymid) + '_.jpg'
@@ -333,7 +329,7 @@ def get_raids():
     hashdata = json.loads(getAllHash('raid'))
 
     for file in glob.glob("ocr/www_hash/raid_*.jpg"):
-        unkfile = re.search('raid_(-?\d+)_(-?\d+)_((?s).*)\.jpg', file)
+        unkfile = re.search(r'raid_(-?\d+)_(-?\d+)_((?s).*)\.jpg', file)
         hashvalue = (unkfile.group(3))
 
         if str(hashvalue) in hashdata:
@@ -378,7 +374,6 @@ def get_raids():
             name = 'unknown'
             lat = '0'
             lon = '0'
-            url = '0'
             description = ''
 
             gymImage = 'ocr/gym_img/_' + str(gymid) + '_.jpg'
@@ -427,7 +422,7 @@ def get_mons():
 
             mon = '{:03d}'.format(int(mon))
 
-            monPic = '/asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
+            monPic = '/asset/pokemon_icons/pokemon_icon_' + mon + '_' + frmadd + '.png'
             monName = 'unknown'
             monid = int(mon)
 
@@ -466,7 +461,7 @@ def get_unknows():
     unk = []
     for file in glob.glob("ocr/www_hash/unkgym_*.jpg"):
         unkfile = re.search(
-            'unkgym_(-?\d+\.?\d+)_(-?\d+\.?\d+)_((?s).*)\.jpg', file)
+            r'unkgym_(-?\d+\.?\d+)_(-?\d+\.?\d+)_((?s).*)\.jpg', file)
         creationdate = datetime.datetime.fromtimestamp(
             creation_date(file)).strftime('%Y-%m-%d %H:%M:%S')
         lat = (unkfile.group(1))
@@ -600,10 +595,10 @@ def get_gymcoords():
 @app.route("/get_quests")
 def get_quests():
     coords = []
-    monName = ''
+    #monName = ''
 
-    with open('pokemon.json') as f:
-        mondata = json.load(f)
+    #with open('pokemon.json') as f:
+    #    mondata = json.load(f)
 
     data = db_wrapper.quests_from_db()
 
@@ -857,26 +852,21 @@ def config():
 def delsetting():
 
     edit = request.args.get('edit')
-    type = request.args.get('type')
-    block = request.args.get('block')
     area = request.args.get('area')
 
     with open('configs/mappings.json') as f:
         mapping = json.load(f)
 
-    i = 0
-    for asd in mapping[area]:
-        if 'name' in mapping[area][i]:
+    for entry in mapping[area]:
+        if 'name' in entry:
             _checkfield = 'name'
-        if 'origin' in mapping[area][i]:
+        if 'origin' in entry:
             _checkfield = 'origin'
-        if 'username' in mapping[area][i]:
+        if 'username' in entry:
             _checkfield = 'username'
 
-        if str(edit) in str(mapping[area][i][_checkfield]):
-            del mapping[area][i]
-
-        i += 1
+        if str(edit) in str(entry[_checkfield]):
+            del entry
 
     with open('configs/mappings.json', 'w') as outfile:
         json.dump(mapping, outfile, indent=4, sort_keys=True)
@@ -896,116 +886,104 @@ def check_float(number):
 @auth_required
 def addedit():
     data = request.args
-    datavalue = {}
 
-    for ase, key in data.items():
-        datavalue[ase] = key
+    mode = request.args.get('mode')
+    edit = request.args.get('edit')
+    block = request.args.get('block')
+    area = request.args.get('area')
 
-    edit = datavalue.get("edit", False)
-    block = datavalue.get("block", False)
-    type_ = datavalue.get("type", False)
-    name = datavalue.get("name", False)
-    area = datavalue.get("area", False)
-    delete = datavalue.get("del", False)
+    try:
+        with open('configs/mappings.json') as f:
+            mapping = json.load(f)
 
-    with open('configs/mappings.json') as f:
-        mapping = json.load(f)
+        with open('madmin/static/vars/settings.json') as f:
+            settings = json.load(f)
 
-    with open('madmin/static/vars/settings.json') as f:
-        settings = json.load(f)
+        if edit:
+            for entry in mapping[area]:
+                if 'name' in entry:
+                    _checkfield = 'name'
+                if 'origin' in entry:
+                    _checkfield = 'origin'
+                if 'username' in entry:
+                    _checkfield = 'username'
 
-    if edit:
-        i = 0
-        for asd in mapping[area]:
-            if 'name' in mapping[area][i]:
-                _checkfield = 'name'
-            if 'origin' in mapping[area][i]:
-                _checkfield = 'origin'
-            if 'username' in mapping[area][i]:
-                _checkfield = 'username'
-
-            if str(edit) == str(mapping[area][i][_checkfield]):
-                if str(block) == str("settings"):
-                    for ase, key in data.items():
-                        if key == '':
-                            if ase in mapping[area][i]['settings']:
-                                del mapping[area][i]['settings'][ase]
-                        elif key in area:
-                            continue
-                        else:
-                            key = match_typ(key)
-                            if str(ase) not in ('block', 'area', 'type', 'edit', 'mode'):
-                                mapping[area][i]['settings'][ase] = key
-
-                else:
-                    for ase, key in data.items():
-                        if ase in mapping[area][i]:
-                            if key == '':
-                                if ase in mapping[area][i]:
-                                    del mapping[area][i][ase]
-                            elif key in area:
-                                continue
-                            else:
-                                key = match_typ(key)
-                                if str(ase) not in ('block', 'area', 'type', 'edit'):
-                                    mapping[area][i][ase] = key
-                        else:
-                            if key in area:
-                                continue
-                            else:
-                                key = match_typ(key)
-                                if str(ase) not in ('block', 'area', 'type', 'edit'):
-                                    new = {}
-                                    new[ase] = key
-                                    mapping[area][i][ase] = key
-            i += 1
-    else:
-        new = {}
-        for ase, key in data.items():
-            if key != '' and key not in area:
-                key = match_typ(key)
-                if str(ase) not in ('block', 'area', 'type', 'edit'):
-                    new[ase] = key
-
-        if str(block) == str("settings"):
-            mapping[area]['settings'].append(new)
+                if str(edit) == str(entry[_checkfield]):
+                    if str(block) == str("settings"):
+                        for key, value in data.items():
+                            if str(key) not in ('block', 'area', 'type', 'edit', 'mode'):
+                                if value == '':
+                                    if key in entry['settings']:
+                                        del entry['settings'][key]
+                                elif value in area:
+                                    continue
+                                else:
+                                    entry['settings'][key] = match_typ(value)
+                    else:
+                        for key, value in data.items():
+                            if str(key) not in ('block', 'area', 'type', 'edit'):
+                                if value == '':
+                                    if key in entry:
+                                        del entry[key]
+                                elif value in area:
+                                    continue
+                                else:
+                                    if 'geofence' in key:
+                                        entry[key] = value
+                                    else:
+                                        entry[key] = match_typ(value)
         else:
-            if (settings[area]['has_settings']) in ('true'):
-                new['settings'] = {}
-            mapping[area].append(new)
+            new = {}
+            for key, value in data.items():
+                if value != '' and value not in area and str(key) not in ('block', 'area', 'type', 'edit'):
+                    if 'geofence' in key:
+                        new[key] = value
+                    else:
+                        new[key] = match_typ(value)
 
-    with open('configs/mappings.json', 'w') as outfile:
-        json.dump(mapping, outfile, indent=4, sort_keys=True)
+            if str(block) == str("settings"):
+                mapping[area]['settings'].append(new)
+            else:
+                if (settings[area]['has_settings']) in ('true'):
+                    new['settings'] = {}
+                mapping[area].append(new)
+
+        with open('configs/mappings.json', 'w') as outfile:
+            json.dump(mapping, outfile, indent=4, sort_keys=True)
+
+    except:
+        log.info('Invalid data')
+        return redirect('/config?type='+mode+'&area='+area+'&block='+block+'&edit='+edit, code=302)
 
     return redirect("/showsettings", code=302)
 
 
-def match_typ(key):
-    if '[' in key and ']' in key:
-        if ':' in key:
-            tempkey = []
-            keyarray = key.replace('[', '').replace(']', '').replace(
+def match_typ(value):
+    if '[' in value and ']' in value:
+        if ':' in value:
+            tempvalue = []
+            valuearray = value.replace('[', '').replace(']', '').replace(
                 ' ', '').replace("'", '').split(',')
-            for k in keyarray:
-                tempkey.append(str(k))
+            for k in valuearray:
+                tempvalue.append(str(k))
 
-            key = tempkey
+            value = tempvalue
         else:
-            key = list(key.replace('[', '').replace(']', '').split(','))
-            key = [int(i) for i in key]
-    elif key in 'true':
-        key = bool(True)
-    elif key in 'false':
-        key = bool(False)
-    elif key.isdigit():
-        key = int(key)
-    elif check_float(key):
-        key = float(key)
-    elif key == "None":
-        key = None
+            value = list(value.replace('[', '').replace(']', '').split(','))
+            value = [int(i) for i in value]
+    elif value in 'true':
+        value = bool(True)
+    elif value in 'false':
+        value = bool(False)
+    elif value.isdigit():
+        value = int(value)
+    elif check_float(value):
+        value = float(value)
+    elif value == "None":
+        value = None
     else:
-        key = key.replace(' ', '_')
-    return key
+        value = value.replace(' ', '_')
+    return value
 
 
 @app.route('/showsettings', methods=['GET', 'POST'])
@@ -1119,8 +1097,6 @@ def getAllHash(type):
     for result in rv:
         hashRes[result[1]] = ({'id': str(
             result[0]), 'type': result[2], 'count': result[3], 'modify': str(result[4])})
-    # data_json = json.dumps(hashRes, sort_keys=True, indent=4, separators=(',', ': '))
-    data_json = hashRes
     return json.dumps(hashRes, indent=4, sort_keys=True)
 
 

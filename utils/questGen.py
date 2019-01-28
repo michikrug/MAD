@@ -5,43 +5,43 @@ log = logging.getLogger(__name__)
 
 
 def generate_quest(quest):
-
-    pokestop_id = (quest['pokestop_id'])
-    quest_reward_type = (questreward(quest['quest_reward_type']))
+    pokestop_id = quest['pokestop_id']
+    quest_reward_text = ''
+    quest_reward_type = questreward(quest['quest_reward_type'])
     quest_reward_type_raw = quest['quest_reward_type']
-    quest_type = (questtype(quest['quest_type']))
-    name = (quest['name'])
+    quest_type = questtype(quest['quest_type'])
+    quest_type_raw = quest['quest_type']
+    quest_condition = quest['quest_condition']
+    quest_target = quest['quest_target']
+    quest_template = quest['quest_template']
+    name = quest['name']
     latitude = quest['latitude']
     longitude = quest['longitude']
     url = quest['image']
     timestamp = quest['quest_timestamp']
-    reward = ''
 
     if quest_reward_type == 'Item':
         item_amount = str(quest['quest_item_amount'])
         item_id = quest['quest_item_id']
         item_type = str(rewarditem(quest['quest_item_id']))
-        quest_target = str(quest['quest_target'])
         pokemon_id = "0"
         pokemon_name = ""
         if '{0}' in quest_type:
             quest_type_text = quest_type.replace(
-                '{0}', str(quest['quest_target']))
-            quest_target = str(quest['quest_target'])
-        reward = item_amount + 'x ' + item_type
+                '{0}', str(quest_target))
+        quest_reward_text = item_amount + 'x ' + item_type
 
     elif quest_reward_type == 'Stardust':
         item_amount = str(quest['quest_stardust'])
         item_type = "Stardust"
         item_id = "000"
-        quest_target = str(quest['quest_target'])
         pokemon_id = "0"
         pokemon_name = ""
         if '{0}' in quest_type:
             quest_type_text = quest_type.replace(
-                '{0}', str(quest['quest_target']))
-            quest_target = str(quest['quest_target'])
-        reward = item_amount + ' ' + item_type
+                '{0}', str(quest_target))
+        quest_reward_text = item_amount + ' ' + item_type
+
     elif quest_reward_type == 'Pokemon':
         item_amount = "1"
         item_type = "Pokemon"
@@ -50,14 +50,16 @@ def generate_quest(quest):
         pokemon_id = str(quest['quest_pokemon_id'])
         if '{0}' in quest_type:
             quest_type_text = quest_type.replace(
-                '{0}', str(quest['quest_target']))
-            quest_target = str(quest['quest_target'])
-        reward = pokemon_name
+                '{0}', str(quest_target))
+        quest_reward_text = pokemon_name
 
-    quest_raw = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude, 'quest_reward': reward,
-                  'quest_type_raw': quest_type, 'quest_type': quest_type_text, 'item_amount': item_amount, 'item_type': item_type,
-                  'quest_target': quest_target, 'name': name, 'url': url, 'timestamp': timestamp, 'pokemon_id': pokemon_id, 'item_id': item_id,
-                  'pokemon_name': pokemon_name, 'quest_reward_type': quest_reward_type, 'quest_reward_type_raw': quest_reward_type_raw})
+    quest_raw = ({'pokestop_id': pokestop_id, 'name': name, 'url': url, 'latitude': latitude, 'longitude': longitude,
+                  'quest_reward_text': quest_reward_text, 'quest_type_raw': quest_type_raw, 'quest_type': quest_type_text,
+                  'quest_condition': quest_condition, 'quest_target': quest_target, 'quest_template': quest_template,
+                  'item_amount': item_amount, 'item_type': item_type, 'timestamp': timestamp, 'pokemon_id': pokemon_id,
+                  'item_id': item_id, 'pokemon_name': pokemon_name, 'quest_reward_type': quest_reward_type,
+                  'quest_reward_type_raw': quest_reward_type_raw})
+
     return quest_raw
 
 

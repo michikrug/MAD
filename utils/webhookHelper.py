@@ -67,8 +67,23 @@ quest_webhook_payload = """[{{
                 "quest_reward": "{quest_reward}",
                 "quest_reward_type": "{quest_reward_type}",
                 "quest_reward_type_raw": "{quest_reward_type_raw}",
-                "quest_target": "{quest_target}"
-                
+                "quest_target": "{quest_target}",
+                "quest_condition": "{quest_condition}",
+                "pokestop_name": "{name}",
+                "pokestop_url": "{url}",
+                "type": "{quest_type_raw}",
+                "rewards": [{{
+                    "info": {{
+                        "pokemon_id": "{pokemon_id}",
+                        "amount": "{item_amount}",
+                        "item_id": "{item_id}"
+                    }},
+                    "type": "{item_type}"
+                }}],
+                "target": "{quest_target}",
+                "updated": "{timestamp}",
+                "conditions": {quest_condition},
+                "template": "{quest_template}"
         }},
       "type": "quest"
    }} ]"""
@@ -162,6 +177,10 @@ class WebhookHelper(object):
 
         for webhook in webhooks:
             url = webhook.strip()
+
+            if 'www.bookofquests.de' in url and 'quest_type' not in payload:
+                log.debug("Do not send non-quest webhook to bookofquests")
+                return
 
             log.debug("Sending to webhook %s", url)
             log.debug("Payload: %s" % str(payload))
@@ -509,7 +528,9 @@ class WebhookHelper(object):
             quest_target=quest['quest_target'],
             pokemon_id=quest['pokemon_id'],
             item_amount=quest['item_amount'],
-            item_id=quest['item_id'])
+            item_id=quest['item_id'],
+            quest_condition=quest['quest_condition'],
+            quest_template=quest['quest_template'])
 
         payload = json.loads(data)
         self.__sendToWebhook(payload)

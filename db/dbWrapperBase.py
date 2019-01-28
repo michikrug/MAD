@@ -868,6 +868,8 @@ class DbWrapperBase(ABC):
             return False
         quest_type = map_proto['challenge_quest']['quest'].get(
             "quest_type", None)
+        quest_template = map_proto['challenge_quest']['quest'].get(
+            "template_id", None)
         if map_proto['challenge_quest']['quest'].get("quest_rewards", None):
             rewardtype = map_proto['challenge_quest']['quest']['quest_rewards'][0].get(
                 "type", None)
@@ -886,17 +888,18 @@ class DbWrapperBase(ABC):
 
             query_quests = (
                 "INSERT into trs_quest (GUID, quest_type, quest_timestamp, quest_stardust, quest_pokemon_id, quest_reward_type, "
-                "quest_item_id, quest_item_amount, quest_target, quest_condition) values "
-                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                "quest_item_id, quest_item_amount, quest_target, quest_condition, quest_template) values "
+                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 "ON DUPLICATE KEY UPDATE quest_type=VALUES(quest_type), quest_timestamp=VALUES(quest_timestamp), "
                 "quest_stardust=VALUES(quest_stardust), quest_pokemon_id=VALUES(quest_pokemon_id), "
                 "quest_reward_type=VALUES(quest_reward_type), quest_item_id=VALUES(quest_item_id), "
-                "quest_item_amount=VALUES(quest_item_amount), quest_target=VALUES(quest_target), quest_condition=VALUES(quest_condition)"
+                "quest_item_amount=VALUES(quest_item_amount), quest_target=VALUES(quest_target), "
+                "quest_condition=VALUES(quest_condition), quest_template=VALUES(quest_template)"
             )
             vals = (
                 fort_id, quest_type, time.time(
                 ), stardust, pokemon_id, rewardtype, item, itemamount, target,
-                str(condition)
+                str(condition), quest_template
             )
             log.debug("{DbWrapperBase::submit_quest_proto} submitted quest typ %s at stop %s" % (
                 str(quest_type), str(fort_id)))

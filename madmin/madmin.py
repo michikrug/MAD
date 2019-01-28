@@ -502,7 +502,6 @@ def get_position():
 @cache.cached()
 @app.route("/get_geofence")
 def get_geofence():
-    geofence = []
     geofencexport = {}
 
     with open('configs/mappings.json') as f:
@@ -516,15 +515,13 @@ def get_geofence():
                     continue
                 elif line.startswith("["):  # Name line.
                     name = line.replace("[", "").replace("]", "")
+                    geofencexport[name] = []
                 else:  # Coordinate line.
                     lat, lon = line.split(",")
-                    geofence.append([
+                    geofencexport[name].append([
                         getCoordFloat(lat),
                         getCoordFloat(lon)
                     ])
-
-            geofencexport[name] = geofence
-            geofence = []
 
     return jsonify(geofencexport)
 

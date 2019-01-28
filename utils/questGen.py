@@ -11,7 +11,7 @@ def generate_quest(quest):
     quest_reward_type_raw = quest['quest_reward_type']
     quest_type = questtype(quest['quest_type'])
     quest_type_raw = quest['quest_type']
-    quest_condition = quest['quest_condition']
+    quest_condition = quest['quest_condition'].replace('\'', '"')
     quest_target = quest['quest_target']
     quest_template = quest['quest_template']
     name = quest['name']

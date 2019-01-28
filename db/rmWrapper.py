@@ -1177,7 +1177,7 @@ class RmWrapper(DbWrapperBase):
             query = (
                 "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
                 "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
-                "trs_quest.quest_item_id, trs_quest.quest_item_amount, trs.quest_template, "
+                "trs_quest.quest_item_id, trs_quest.quest_item_amount, trs_quest.quest_template, "
                 "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp  "
                 "FROM pokestop inner join trs_quest on "
                 "pokestop.pokestop_id = trs_quest.GUID where "
@@ -1188,7 +1188,7 @@ class RmWrapper(DbWrapperBase):
             query = (
                 "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
                 "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
-                "trs_quest.quest_item_id, trs_quest.quest_item_amount, trs.quest_template, "
+                "trs_quest.quest_item_id, trs_quest.quest_item_amount, trs_quest.quest_template, "
                 "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp "
                 "FROM pokestop inner join trs_quest on "
                 "pokestop.pokestop_id = trs_quest.GUID where "

@@ -1201,9 +1201,8 @@ class RmWrapper(DbWrapperBase):
 
         for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id, quest_reward_type,
              quest_item_id, quest_item_amount, quest_template, name, image, quest_target, quest_condition, quest_timestamp) in res:
-            mon = "%03d" % quest_pokemon_id
             questinfo[pokestop_id] = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
-                                       'quest_type': quest_type, 'quest_stardust': quest_stardust, 'quest_pokemon_id': mon,
+                                       'quest_type': quest_type, 'quest_stardust': quest_stardust, 'quest_pokemon_id': quest_pokemon_id,
                                        'quest_reward_type': quest_reward_type, 'quest_item_id': quest_item_id, 'quest_item_amount': quest_item_amount,
                                        'name': name, 'image': image, 'quest_target': quest_target, 'quest_condition': quest_condition,
                                        'quest_timestamp': quest_timestamp, 'quest_template': quest_template})

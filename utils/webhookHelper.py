@@ -60,7 +60,7 @@ quest_webhook_payload = """[{{
         "item_type": "{item_type}",
         "item_amount": "{item_amount}",
         "item_id": "{item_id}",
-        "pokemon_id": "{pokemon_id}",
+        "pokemon_id": {pokemon_id},
         "name": "{name}",
         "url": "{url}",
         "timestamp": "{timestamp}",

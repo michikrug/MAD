@@ -146,7 +146,7 @@ class WebhookHelper(object):
         try:
             with open('gym_info.json') as f:
                 self.gyminfo = json.load(f)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             log.warning("gym_info.json not found")
             if db_wrapper is not None:
                 log.info("Trying to create gym_info.json")
@@ -178,7 +178,7 @@ class WebhookHelper(object):
         for webhook in webhooks:
             url = webhook.strip()
 
-            if 'www.bookofquests.de' in url and 'quest_type' not in payload:
+            if 'www.bookofquests.de' in url and 'quest_type' not in payload[0]['message']:
                 log.debug("Do not send non-quest webhook to bookofquests")
                 return
 
@@ -370,12 +370,12 @@ class WebhookHelper(object):
                     try:
                         description = info_of_gym["description"] \
                             .replace("\\", r"\\").replace('"', '').replace("\n", "")
-                    except (ValueError, TypeError) as e:
+                    except (ValueError, TypeError):
                         description = ""
                 if 'park' in self.gyminfo[str(gymid)]:
                     try:
                         park = int(info_of_gym.get("park", 0))
-                    except (ValueError, TypeError) as e:
+                    except (ValueError, TypeError):
                         park = None
                 if 'sponsor' in self.gyminfo[str(gymid)]:
                     try:

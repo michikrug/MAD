@@ -52,55 +52,55 @@ egg_webhook_payload = """[{{
 
 quest_webhook_payload = """[{{
       "message": {{
-                "pokestop_id": "{pokestop_id}",
-                "latitude": "{latitude}",
-                "longitude": "{longitude}",
-                "quest_type": "{quest_type}",
-                "quest_type_raw": "{quest_type_raw}",
-                "item_type": "{item_type}",
-                "item_amount": "{item_amount}",
-                "item_id": "{item_id}",
-                "pokemon_id": "{pokemon_id}",
-                "name": "{name}",
-                "url": "{url}",
-                "timestamp": "{timestamp}",
-                "quest_reward": "{quest_reward_text}",
-                "quest_reward_type": "{quest_reward_type}",
-                "quest_reward_type_raw": "{quest_reward_type_raw}",
-                "quest_target": "{quest_target}",
-                "quest_condition": "{quest_condition}",
-                "pokestop_name": "{name}",
-                "pokestop_url": "{url}",
-                "type": "{quest_type_raw}",
-                "rewards": [{{
-                    "info": {{
-                        "pokemon_id": "{pokemon_id}",
-                        "amount": "{item_amount}",
-                        "item_id": "{item_id}"
-                    }},
-                    "type": "{item_type}"
-                }}],
-                "target": "{quest_target}",
-                "updated": "{timestamp}",
-                "conditions": {quest_condition},
-                "template": "{quest_template}"
-        }},
+        "pokestop_id": "{pokestop_id}",
+        "latitude": "{latitude}",
+        "longitude": "{longitude}",
+        "quest_type": "{quest_type}",
+        "quest_type_raw": "{quest_type_raw}",
+        "item_type": "{item_type}",
+        "item_amount": "{item_amount}",
+        "item_id": "{item_id}",
+        "pokemon_id": "{pokemon_id}",
+        "name": "{name}",
+        "url": "{url}",
+        "timestamp": "{timestamp}",
+        "quest_reward": "{quest_reward_text}",
+        "quest_reward_type": "{quest_reward_type}",
+        "quest_reward_type_raw": "{quest_reward_type_raw}",
+        "quest_target": "{quest_target}",
+        "quest_condition": {quest_condition},
+        "pokestop_name": "{name}",
+        "pokestop_url": "{url}",
+        "type": "{quest_type_raw}",
+        "rewards": [{{
+          "info": {{
+            "pokemon_id": "{pokemon_id}",
+            "amount": "{item_amount}",
+            "item_id": "{item_id}"
+          }},
+          "type": "{quest_reward_type_raw}"
+        }}],
+        "target": "{quest_target}",
+        "updated": "{timestamp}",
+        "conditions": {quest_condition},
+        "template": "{quest_template}"
+      }},
       "type": "quest"
    }} ]"""
 
 
 weather_webhook_payload = """[{{
       "message": {{
-                "s2_cell_id": {0},
-                "coords": {1},
-                "condition": {2},
-                "alert_severity": {3},
-                "warn": {4},
-                "day": {5},
-                "time_changed": {6},
-                "latitude": {7},
-                "longitude": {8}
-        }},
+        "s2_cell_id": {0},
+        "coords": {1},
+        "condition": {2},
+        "alert_severity": {3},
+        "warn": {4},
+        "day": {5},
+        "time_changed": {6},
+        "latitude": {7},
+        "longitude": {8}
+      }},
       "type": "weather"
    }} ]"""
 

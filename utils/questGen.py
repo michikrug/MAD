@@ -13,7 +13,7 @@ def generate_quest(quest):
     quest_type_raw = quest['quest_type']
     quest_condition = quest['quest_condition'].replace('\'', '"').lower()
     quest_target = quest['quest_target']
-    quest_template = quest['quest_template']
+    quest_template = quest['quest_template'].lower()
     name = quest['name']
     latitude = quest['latitude']
     longitude = quest['longitude']

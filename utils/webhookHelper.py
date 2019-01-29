@@ -53,8 +53,8 @@ egg_webhook_payload = """[{{
 quest_webhook_payload = """[{{
       "message": {{
         "pokestop_id": "{pokestop_id}",
-        "latitude": "{latitude}",
-        "longitude": "{longitude}",
+        "latitude": {latitude},
+        "longitude": {longitude},
         "quest_type": "{quest_type}",
         "quest_type_raw": "{quest_type_raw}",
         "item_type": "{item_type}",
@@ -183,7 +183,7 @@ class WebhookHelper(object):
                 return
 
             log.debug("Sending to webhook %s", url)
-            log.debug("Payload: %s" % str(payload))
+            log.debug("Payload: %s" % json.dumps(payload))
             try:
                 response = requests.post(
                     url, data=json.dumps(payload),

@@ -13,7 +13,7 @@ def generate_quest(quest):
     quest_type_raw = quest['quest_type']
     quest_condition = quest['quest_condition'].replace('\'', '"').lower()
     quest_target = quest['quest_target']
-    quest_template = quest['quest_template'].lower()
+    quest_template = quest['quest_template']
     name = quest['name']
     latitude = quest['latitude']
     longitude = quest['longitude']
@@ -21,33 +21,33 @@ def generate_quest(quest):
     timestamp = quest['quest_timestamp']
 
     if quest_reward_type == 'Item':
-        item_amount = str(quest['quest_item_amount'])
+        item_amount = quest['quest_item_amount']
+        item_type = rewarditem(quest['quest_item_id'])
         item_id = quest['quest_item_id']
-        item_type = str(rewarditem(quest['quest_item_id']))
-        pokemon_id = "0"
+        pokemon_id = 0
         pokemon_name = ""
         if '{0}' in quest_type:
             quest_type_text = quest_type.replace(
                 '{0}', str(quest_target))
-        quest_reward_text = item_amount + 'x ' + item_type
+        quest_reward_text = str(item_amount) + 'x ' + item_type
 
     elif quest_reward_type == 'Stardust':
-        item_amount = str(quest['quest_stardust'])
+        item_amount = quest['quest_stardust']
         item_type = "Stardust"
-        item_id = "000"
-        pokemon_id = "0"
+        item_id = 0
+        pokemon_id = 0
         pokemon_name = ""
         if '{0}' in quest_type:
             quest_type_text = quest_type.replace(
                 '{0}', str(quest_target))
-        quest_reward_text = item_amount + ' ' + item_type
+        quest_reward_text = str(item_amount) + ' ' + item_type
 
     elif quest_reward_type == 'Pokemon':
-        item_amount = "1"
+        item_amount = 1
         item_type = "Pokemon"
-        item_id = "000"
+        item_id = 0
         pokemon_name = pokemonname(str(quest['quest_pokemon_id']))
-        pokemon_id = str(quest['quest_pokemon_id'])
+        pokemon_id = quest['quest_pokemon_id']
         if '{0}' in quest_type:
             quest_type_text = quest_type.replace(
                 '{0}', str(quest_target))

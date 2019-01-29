@@ -71,17 +71,17 @@ quest_webhook_payload = """[{{
         "quest_condition": {quest_condition},
         "pokestop_name": "{name}",
         "pokestop_url": "{url}",
-        "type": "{quest_type_raw}",
+        "type": {quest_type_raw},
         "rewards": [{{
           "info": {{
-            "pokemon_id": "{pokemon_id}",
-            "amount": "{item_amount}",
-            "item_id": "{item_id}"
+            "pokemon_id": {pokemon_id},
+            "amount": {item_amount},
+            "item_id": {item_id}
           }},
-          "type": "{quest_reward_type_raw}"
+          "type": {quest_reward_type_raw}
         }}],
-        "target": "{quest_target}",
-        "updated": "{timestamp}",
+        "target": {quest_target},
+        "updated": {timestamp},
         "conditions": {quest_condition},
         "template": "{quest_template}"
       }},

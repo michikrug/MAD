@@ -288,7 +288,7 @@ class WebhookHelper(object):
             self.__add_task_to_loop(self._submit_quest_webhook(rawquest))
 
     def submit_quest_webhook_boq(self, rawquest):
-        if 'bookofquests' in self.__application_args.webhook:
+        if self.__application_args.webhook and 'bookofquests' in self.__application_args.webhook_url:
             self.__add_task_to_loop(self._submit_quest_webhook_boq(rawquest))
 
     def send_gym_webhook(self, gym_id, raid_active_until, gym_name, team_id, slots_available, guard_pokemon_id,

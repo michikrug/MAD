@@ -94,10 +94,10 @@
                 break;
             case 7:
                 var form = '00';
-                if (quest_pokemon_id === '327') {
+                if (quest_pokemon_id == 327) {
                     form = '11';
                 }
-                var image = '<center><img src = /asset/pokemon_icons/pokemon_icon_' + quest_pokemon_id.padStart(3, 0) + '_' + form + '.png width=100></center>';
+                var image = '<center><img src = /asset/pokemon_icons/pokemon_icon_' + String.prototype.padStart.call(quest_pokemon_id, 3, 0) + '_' + form + '.png width=100></center>';
                 break;
         }
 

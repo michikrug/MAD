@@ -40,6 +40,9 @@ class testimage(object):
         if self._mode == "confirm_del_quest":
             self._image_check = self.confirm_del_quest(self._image)
 
+        if self._mode == "open_gym":
+            self._image_check = self.get_gym_click_coords(self._image)
+
         cv2.imshow("output", self._image_check)
         cv2.waitKey(0)
 
@@ -86,6 +89,12 @@ class testimage(object):
             self)[0], self._resocalc.get_confirm_delete_quest_coords(self)[1]
         return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
 
+    def get_gym_click_coords(self, image):
+        print('Opening gym')
+        x, y = self._resocalc.get_gym_click_coords(
+            self)[0], self._resocalc.get_gym_click_coords(self)[1]
+        return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
+
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required=True, help="Path to the image")
@@ -93,4 +102,4 @@ ap.add_argument("-m", "--mode", required=True, help="Type of Image")
 args = vars(ap.parse_args())
 
 
-tet = testimage(args["image"], args["mode"])
+test = testimage(args["image"], args["mode"])

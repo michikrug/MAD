@@ -244,7 +244,8 @@ class WorkerQuests(WorkerBase):
                     # the time we will take as a starting point to wait for data...
                     curTime = math.floor(time.time())
                 except WebsocketWorkerRemovedException:
-                    log.error("Timeout setting location for %s" % str(self._id))
+                    log.error("Timeout setting location for %s" %
+                              str(self._id))
                     self._stop_worker_event.set()
                     return
                 delayUsed = self._devicesettings.get('post_teleport_delay', 7)
@@ -278,7 +279,8 @@ class WorkerQuests(WorkerBase):
                     # the time we will take as a starting point to wait for data...
                     curTime = math.floor(time.time())
                 except WebsocketWorkerRemovedException:
-                    log.error("Timeout setting location for %s" % str(self._id))
+                    log.error("Timeout setting location for %s" %
+                              str(self._id))
                     self._stop_worker_event.set()
                     return
                 delayUsed = 0

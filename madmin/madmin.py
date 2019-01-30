@@ -594,7 +594,7 @@ def get_quests():
     coords = []
     #monName = ''
 
-    #with open('pokemon.json') as f:
+    # with open('pokemon.json') as f:
     #    mondata = json.load(f)
 
     data = db_wrapper.quests_from_db()

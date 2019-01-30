@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import calendar
 import datetime
 import glob
 import json
@@ -48,7 +49,7 @@ class Scanner:
 
     def detectRaidTime(self, raidpic, hash, raidNo, radius):
         zero = datetime.datetime.now()
-        unixnow = time.mktime(zero.timetuple())
+        unixnow = calendar.timegm(zero.timetuple())
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                   ') ] ' + 'detectRaidTime: Reading Raidtimer')
         height, width, channel = raidpic.shape
@@ -106,11 +107,11 @@ class Scanner:
 
     def detectRaidEndtimer(self, raidpic, hash, raidNo, radius):
         zero = datetime.datetime.now()
-        unixnow = time.mktime(zero.timetuple())
+        unixnow = calendar.timegm(zero.timetuple())
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                   ') ] ' + 'detectRaidEndtimer: Reading Raidtimer')
         height, width, channel = raidpic.shape
-        raidtimer = raidpic[int(round(radius*2*0.03)+(2*radius)+(radius*2*0.10))                            :int(round(radius*2*0.03)+(2*radius)+(radius*2*0.23)), 0:width]
+        raidtimer = raidpic[int(round(radius*2*0.03)+(2*radius)+(radius*2*0.10)):int(round(radius*2*0.03)+(2*radius)+(radius*2*0.23)), 0:width]
         raidtimer = cv2.resize(raidtimer, (0, 0), fx=3,
                                fy=3, interpolation=cv2.INTER_CUBIC)
         emptyRaidTempPath = os.path.join(
@@ -216,7 +217,7 @@ class Scanner:
         log.info('[Crop: ' + str(raidNo) +
                  ' (' + str(self.uniqueHash) + ') ] ' + 'Scanning Level')
         height, width, channel = raidpic.shape
-        raidlevel = raidpic[int(round(radius*2*0.03)+(2*radius)+(radius*2*0.43))                            :int(round(radius*2*0.03)+(2*radius)+(radius*2*0.68)), 0:width]
+        raidlevel = raidpic[int(round(radius*2*0.03)+(2*radius)+(radius*2*0.43)):int(round(radius*2*0.03)+(2*radius)+(radius*2*0.68)), 0:width]
         raidlevel = cv2.resize(raidlevel, (0, 0), fx=0.5, fy=0.5)
 
         imgray = cv2.cvtColor(raidlevel, cv2.COLOR_BGR2GRAY)
@@ -845,7 +846,7 @@ class Scanner:
     def getHatchTime(self, data, raidNo):
         zero = datetime.datetime.now().replace(
             hour=0, minute=0, second=0, microsecond=0)
-        unix_zero = time.mktime(zero.timetuple())
+        unix_zero = calendar.timegm(zero.timetuple())
         hour_min_divider = data.find(':')
         if hour_min_divider is None or hour_min_divider == -1:
             return False
@@ -884,7 +885,7 @@ class Scanner:
 
     def getEndTime(self, data, raidNo):
         zero = datetime.datetime.now()
-        unix_zero = time.mktime(zero.timetuple())
+        unix_zero = calendar.timegm(zero.timetuple())
         hour_min_divider = data.find(':')
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                   ') ] ' + 'getHatchTime: :Count: ' + str(data.count(':')))

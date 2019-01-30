@@ -185,7 +185,8 @@ class WorkerOcr(WorkerBase):
                         self._communicator.walkFromTo(currentLocation.lat + 0.0001, currentLocation.lng + 0.0001,
                                                       currentLocation.lat, currentLocation.lng, 11)
                     except WebsocketWorkerRemovedException:
-                        log.error("Timeout walking a bit on %s" % str(self._id))
+                        log.error("Timeout walking a bit on %s" %
+                                  str(self._id))
                         self._stop_worker_event.set()
                         return
                     log.debug("Done walking")

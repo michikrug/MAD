@@ -592,7 +592,7 @@ def get_gymcoords():
 @app.route("/get_quests")
 @auth_required
 def get_quests():
-    since = request.args.get('since')
+    since = request.args.get('since') or 0
     coords = []
     #monName = ''
 
@@ -849,7 +849,6 @@ def config():
 @app.route('/delsetting', methods=['GET', 'POST'])
 @auth_required
 def delsetting():
-
     edit = request.args.get('edit')
     area = request.args.get('area')
 

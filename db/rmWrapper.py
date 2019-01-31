@@ -1187,7 +1187,7 @@ class RmWrapper(DbWrapperBase):
                 "FROM pokestop inner join trs_quest on "
                 "pokestop.pokestop_id = trs_quest.GUID where "
                 "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() and "
-                "trs_quest.quest_timestamp > %s"
+                "trs_quest.quest_timestamp > %s "
                 "ORDER BY trs_quest.quest_timestamp DESC"
             )
             data = (since, )

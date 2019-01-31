@@ -1174,7 +1174,7 @@ class RmWrapper(DbWrapperBase):
             log.debug('Pokestop has not a quest with CURDATE()')
             return False
 
-    def quests_from_db(self, GUID=False):
+    def quests_from_db(self, GUID=False, since=0):
         log.debug("{RmWrapper::quests_from_db} called")
         questinfo = {}
 
@@ -1186,10 +1186,11 @@ class RmWrapper(DbWrapperBase):
                 "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp  "
                 "FROM pokestop inner join trs_quest on "
                 "pokestop.pokestop_id = trs_quest.GUID where "
-                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE()"
+                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() and "
+                "trs_quest.quest_timestamp > %s"
                 "ORDER BY trs_quest.quest_timestamp DESC"
             )
-            data = ()
+            data = (since, )
         else:
             query = (
                 "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
@@ -1199,9 +1200,10 @@ class RmWrapper(DbWrapperBase):
                 "FROM pokestop inner join trs_quest on "
                 "pokestop.pokestop_id = trs_quest.GUID where "
                 "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() and "
+                "trs_quest.quest_timestamp > %s and "
                 "trs_quest.GUID = %s"
             )
-            data = (GUID, )
+            data = (since, GUID)
 
         res = self.execute(query, data)
 

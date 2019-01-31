@@ -590,14 +590,16 @@ def get_gymcoords():
 
 
 @app.route("/get_quests")
+@auth_required
 def get_quests():
+    since = request.args.get('since')
     coords = []
     #monName = ''
 
     # with open('pokemon.json') as f:
     #    mondata = json.load(f)
 
-    data = db_wrapper.quests_from_db()
+    data = db_wrapper.quests_from_db(since=since)
 
     for pokestopid in data:
         quest = data[str(pokestopid)]

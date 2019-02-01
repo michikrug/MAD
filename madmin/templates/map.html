@@ -266,7 +266,7 @@
 		}).addTo(map);
 
 		$.getJSON({
-			url: "/get_geofence",
+			url: "get_geofence",
 			success: function (result) {
 				$.each(result, function (pos, data) {
 					fence[pos] = L.layerGroup();
@@ -290,7 +290,7 @@
 		});
 
 		$.getJSON({
-			url: "/get_route",
+			url: "get_route",
 			success: function (result) {
 				$.each(result, function (pos, data) {
 					extraRouteCircle[pos] = L.layerGroup();
@@ -345,7 +345,7 @@
 
 		(function work() {
 			$.getJSON({
-				url: "/get_spawns",
+				url: "get_spawns",
 				success: function (result) {
 
 					$.each(result, function (k, v) {
@@ -430,7 +430,7 @@
 		})();
 
 		$.getJSON({
-			url: "/get_gymcoords",
+			url: "get_gymcoords",
 			success: function (result) {
 				$.each(result, function (k, v) {
 					if (map.getCenter().lat == default_lat || map.getCenter().lng == default_lng) {
@@ -445,7 +445,7 @@
 		});
 
 		$.getJSON({
-			url: "/get_quests",
+			url: "get_quests",
 			success: function (result) {
 				$.each(result, function (k, v) {
 					L.marker([v['latitude'], v['longitude']], { icon: build_quest_small(v['quest_reward_type_raw'], v['item_id'], v['pokemon_id']) })
@@ -461,7 +461,7 @@
 
 		(function work() {
 			$.getJSON({
-				url: "/get_position",
+				url: "get_position",
 				success: function (result) {
 					$.each(result, function (pos, data) {
 						if (!marker.hasOwnProperty(pos)) {
@@ -511,7 +511,7 @@
 				if (quest_pokemon_id == 327) {
 					form = '11';
 				}
-				var image = '/asset/pokemon_icons/pokemon_icon_' + String.prototype.padStart.call(quest_pokemon_id, 3, 0) + '_' + form + '.png';
+				var image = 'asset/pokemon_icons/pokemon_icon_' + String.prototype.padStart.call(quest_pokemon_id, 3, 0) + '_' + form + '.png';
 				var size = [50, 50]
 				var anchor = [40, 30]
 				break;
@@ -549,7 +549,7 @@
 				if (quest_pokemon_id == 327) {
 					form = '11';
 				}
-				var image = '/asset/pokemon_icons/pokemon_icon_' + String.prototype.padStart.call(quest_pokemon_id, 3, 0) + '_' + form + '.png';
+				var image = 'asset/pokemon_icons/pokemon_icon_' + String.prototype.padStart.call(quest_pokemon_id, 3, 0) + '_' + form + '.png';
 				var rewardtext = quest_pokemon_name;
 				var width = 60;
 				break;
@@ -557,7 +557,7 @@
 
 		var questtext = quest_type;
 
-		popuptext = '<center><b>' + questtext + '</b><br><img src=' + image + ' width=' + width + '><br>' + rewardtext + '</center>';
+		popuptext = '<center><b>' + questtext + '</b><br><img src="' + image + '" width="' + width + '"><br />' + rewardtext + '</center>';
 		return popuptext;
 
 	}

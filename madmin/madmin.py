@@ -127,8 +127,8 @@ def quest():
 @app.route("/submit_hash")
 @auth_required
 def submit_hash():
-    hash = request.conf_args.get('hash')
-    id = request.conf_args.get('id')
+    hash = request.args.get('hash')
+    id = request.args.get('id')
 
     if db_wrapper.insert_hash(hash, 'gym', id, '999', unique_hash="madmin"):
 
@@ -136,51 +136,51 @@ def submit_hash():
             copyfile(file, 'www_hash/gym_0_0_' + str(hash) + '.jpg')
             os.remove(file)
 
-        return redirect("/unknown", code=302)
+        return redirect("unknown", code=302)
 
 
 @app.route("/modify_raid_gym")
 @auth_required
 def modify_raid_gym():
-    hash = request.conf_args.get('hash')
-    id = request.conf_args.get('id')
-    mon = request.conf_args.get('mon')
-    lvl = request.conf_args.get('lvl')
+    hash = request.args.get('hash')
+    id = request.args.get('id')
+    mon = request.args.get('mon')
+    lvl = request.args.get('lvl')
 
     newJsonString = encodeHashJson(id, lvl, mon)
     db_wrapper.delete_hash_table('"' + str(hash) + '"', 'raid', 'in', 'hash')
     db_wrapper.insert_hash(hash, 'raid', newJsonString,
                            '999', unique_hash="madmin")
 
-    return redirect("/raids", code=302)
+    return redirect("raids", code=302)
 
 
 @app.route("/modify_raid_mon")
 @auth_required
 def modify_raid_mon():
-    hash = request.conf_args.get('hash')
-    id = request.conf_args.get('gym')
-    mon = request.conf_args.get('mon')
-    lvl = request.conf_args.get('lvl')
+    hash = request.args.get('hash')
+    id = request.args.get('gym')
+    mon = request.args.get('mon')
+    lvl = request.args.get('lvl')
 
     newJsonString = encodeHashJson(id, lvl, mon)
     db_wrapper.delete_hash_table('"' + str(hash) + '"', 'raid', 'in', 'hash')
     db_wrapper.insert_hash(hash, 'raid', newJsonString,
                            '999', unique_hash="madmin")
 
-    return redirect("/raids", code=302)
+    return redirect("raids", code=302)
 
 
 @app.route("/modify_gym_hash")
 @auth_required
 def modify_gym_hash():
-    hash = request.conf_args.get('hash')
-    id = request.conf_args.get('id')
+    hash = request.args.get('hash')
+    id = request.args.get('id')
 
     db_wrapper.delete_hash_table('"' + str(hash) + '"', 'gym', 'in', 'hash')
     db_wrapper.insert_hash(hash, 'gym', id, '999', unique_hash="madmin")
 
-    return redirect("/gyms", code=302)
+    return redirect("gyms", code=302)
 
 
 @app.route("/near_gym")
@@ -189,8 +189,8 @@ def near_gym():
     nearGym = []
     with open('gym_info.json') as f:
         data = json.load(f)
-    lat = request.conf_args.get('lat')
-    lon = request.conf_args.get('lon')
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
     if lat == "9999":
         distance = int(9999)
         lat = conf_args.home_lat
@@ -206,7 +206,7 @@ def near_gym():
 
         gymid = str(closegym[0])
         dist = str(closegym[1])
-        gymImage = 'ocr/gym_img/_' + str(gymid) + '_.jpg'
+        gymImage = 'gym_img/_' + str(gymid) + '_.jpg'
 
         name = 'unknown'
         lat = '0'
@@ -242,7 +242,7 @@ def delete_hash():
     for file in glob.glob("ocr/www_hash/*" + str(hash) + ".jpg"):
         os.remove(file)
 
-    return redirect('/' + str(redi), code=302)
+    return redirect(str(redi), code=302)
 
 
 @app.route("/delete_file")
@@ -257,7 +257,7 @@ def delete_file():
     for file in glob.glob("ocr/www_hash/*" + str(hash) + ".jpg"):
         os.remove(file)
 
-    return redirect('/' + str(redi), code=302)
+    return redirect(str(redi), code=302)
 
 
 @app.route("/get_gyms")
@@ -292,7 +292,7 @@ def get_gyms():
             lon = '0'
             description = ''
 
-            gymImage = 'ocr/gym_img/_' + str(gymid) + '_.jpg'
+            gymImage = 'gym_img/_' + str(gymid) + '_.jpg'
 
             if str(gymid) in data:
                 name = data[str(gymid)]["name"].replace(
@@ -350,17 +350,17 @@ def get_raids():
                 monPic = ''
             else:
                 type = 'mon'
-                monPic = '/asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
+                monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
                 if str(monid) in mondata:
                     monName = mondata[str(monid)]["name"]
 
             eggId = eggIdsByLevel[int(lvl) - 1]
             if eggId == 1:
-                eggPic = '/asset/static_assets/png/ic_raid_egg_normal.png'
+                eggPic = 'asset/static_assets/png/ic_raid_egg_normal.png'
             if eggId == 2:
-                eggPic = '/asset/static_assets/png/ic_raid_egg_rare.png'
+                eggPic = 'asset/static_assets/png/ic_raid_egg_rare.png'
             if eggId == 3:
-                eggPic = '/asset/static_assets/png/ic_raid_egg_legendary.png'
+                eggPic = 'asset/static_assets/png/ic_raid_egg_legendary.png'
 
             creationdate = datetime.datetime.fromtimestamp(
                 creation_date(file)).strftime('%Y-%m-%d %H:%M:%S')
@@ -376,7 +376,7 @@ def get_raids():
             lon = '0'
             description = ''
 
-            gymImage = 'ocr/gym_img/_' + str(gymid) + '_.jpg'
+            gymImage = 'gym_img/_' + str(gymid) + '_.jpg'
 
             if str(gymid) in data:
                 name = data[str(gymid)]["name"].replace(
@@ -422,7 +422,7 @@ def get_mons():
 
             mon = '{:03d}'.format(int(mon))
 
-            monPic = '/asset/pokemon_icons/pokemon_icon_' + mon + '_' + frmadd + '.png'
+            monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + frmadd + '.png'
             monName = 'unknown'
             monid = int(mon)
 
@@ -592,7 +592,7 @@ def get_gymcoords():
 @app.route("/get_quests")
 @auth_required
 def get_quests():
-    since = request.args.get('since') or 0
+    since = request.args.get('since', 0, type=int)
     coords = []
     #monName = ''
 
@@ -705,7 +705,7 @@ def config():
     type = request.args.get('type')
     block = request.args.get('block')
     area = request.args.get('area')
-    fieldwebsite.append('<form action="/addedit" id="settings">')
+    fieldwebsite.append('<form action="addedit" id="settings">')
     fieldwebsite.append(
         '<input type="hidden" name="block" value="' + block + '">')
     fieldwebsite.append(
@@ -869,7 +869,7 @@ def delsetting():
     with open('configs/mappings.json', 'w') as outfile:
         json.dump(mapping, outfile, indent=4, sort_keys=True)
 
-    return redirect("/showsettings", code=302)
+    return redirect("showsettings", code=302)
 
 
 def check_float(number):
@@ -951,9 +951,9 @@ def addedit():
 
     except:
         log.info('Invalid data')
-        return redirect('/config?type='+mode+'&area='+area+'&block='+block+'&edit='+edit, code=302)
+        return redirect('config?type='+mode+'&area='+area+'&block='+block+'&edit='+edit, code=302)
 
-    return redirect("/showsettings", code=302)
+    return redirect("showsettings", code=302)
 
 
 def match_typ(value):
@@ -997,8 +997,8 @@ def showsettings():
 
     for var in vars:
         line, quickadd, quickline = '', '', ''
-        header = '<thead><tr><th><b>' + (var.upper()) + '</b> <a href=/addnew?area=' + var + \
-            '>[Add new]</a></th><th>Basedata</th><th>Settings</th><th>Delete</th></tr></thead>'
+        header = '<thead><tr><th><b>' + (var.upper()) + '</b> <a href="addnew?area=' + var + \
+            '">[Add new]</a></th><th>Basedata</th><th>Settings</th><th>Delete</th></tr></thead>'
         subheader = '<tr><td colspan="4">' + \
             settings[var]['description'] + '</td></tr>'
         edit = '<td></td>'
@@ -1012,17 +1012,17 @@ def showsettings():
             quickadd, quickline = '', ''
             mode = output.get('mode', _typearea)
             if settings[var]['could_edit']:
-                edit = '<td><a href=/config?type=' + str(mode) + '&area=' + str(
-                    _typearea) + '&block=fields&edit=' + str(output[_field]) + '>[Edit]</a></td>'
+                edit = '<td><a href="config?type=' + str(mode) + '&area=' + str(
+                    _typearea) + '&block=fields&edit=' + str(output[_field]) + '">[Edit]</a></td>'
             else:
                 edit = '<td></td>'
             if settings[var]['has_settings'] in ('true'):
-                editsettings = '<td><a href=/config?type=' + str(mode) + '&area=' + str(
-                    _typearea) + '&block=settings&edit=' + str(output[_field]) + '>[Edit Settings]</a></td>'
+                editsettings = '<td><a href="config?type=' + str(mode) + '&area=' + str(
+                    _typearea) + '&block=settings&edit=' + str(output[_field]) + '">[Edit Settings]</a></td>'
             else:
                 editsettings = '<td></td>'
-            delete = '<td><a href=/delsetting?type=' + str(mode) + '&area=' + str(
-                _typearea) + '&block=settings&edit=' + str(output[_field]) + '&del=true>[Delete]</a></td>'
+            delete = '<td><a href="delsetting?type=' + str(mode) + '&area=' + str(
+                _typearea) + '&block=settings&edit=' + str(output[_field]) + '&del=true">[Delete]</a></td>'
 
             line = line + '<tr><td><b>' + \
                 str(output[_field]) + '</b></td>' + str(edit) + \
@@ -1068,8 +1068,8 @@ def addnew():
         return redirect('config?type=' + area + '&area=' + area + '&block=fields')
 
     for output in settings[area]:
-        line = line + '<h3><a href=config?type=' + str(output['name']) + '&area=' + str(
-            area) + '&block=fields>'+str(output['name'])+'</a></h3><h5>'+str(output['description'])+'</h5><hr>'
+        line = line + '<h3><a href="config?type=' + str(output['name']) + '&area=' + str(
+            area) + '&block=fields">'+str(output['name'])+'</a></h3><h5>'+str(output['description'])+'</h5><hr>'
 
     return render_template('sel_type.html', line=line, title="Type selector")
 

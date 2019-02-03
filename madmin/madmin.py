@@ -1065,7 +1065,7 @@ def addnew():
     with open('madmin/static/vars/vars_parser.json') as f:
         settings = json.load(f)
     if (len(settings[area])) == 1:
-        return redirect(getBasePath(request) + '/config?type=' + area + '&area=' + area + '&block=fields')
+        return redirect(getBasePath(request) + '/config?type=' + area + '&area=' + area + '&block=fields', code=302)
 
     for output in settings[area]:
         line = line + '<h3><a href="config?type=' + str(output['name']) + '&area=' + str(

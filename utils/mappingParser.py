@@ -60,9 +60,11 @@ class MappingParser(object):
                          "geofence_excluded": area.get("geofence_excluded", None),
                          "routecalc": area["routecalc"]}
 
+            # grab coords
+            # first check if init is false or raids_ocr is set as mode, if so, grab the coords from DB
+            # coords = np.loadtxt(area["coords"], delimiter=',')
             geofence_helper = GeofenceHelper(
                 area["geofence_included"], area.get("geofence_excluded", None))
-
             mode = area["mode"]
             # build routemanagers
             if mode == "raids_ocr" or mode == "raids_mitm":
@@ -194,13 +196,13 @@ class MappingParser(object):
             device_dict = {}
             daytime_area = device["daytime_area"]
             nighttime_area = device.get("nighttime_area", None)
-            sleep = device.get("switch", False)
-            sleep_interval = device.get("switch_interval", False)
+            switch = device.get("switch", False)
+            switch_interval = device.get("switch_interval", False)
             settings = device.get("settings", None)
             device_dict["daytime_area"] = daytime_area
             device_dict["nighttime_area"] = nighttime_area
-            device_dict["switch"] = sleep
-            device_dict["switch_interval"] = sleep_interval
+            device_dict["switch"] = switch
+            device_dict["switch_interval"] = switch_interval
             device_dict["settings"] = settings
             devices[device["origin"]] = device_dict
         return devices

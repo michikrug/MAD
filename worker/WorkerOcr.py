@@ -2,29 +2,168 @@ import logging
 import os
 import time
 from shutil import copyfile
-from threading import Event, Lock, Thread, current_thread
+from threading import Thread, Event
 
 from ocr.checkWeather import checkWeather
-from utils.collections import Location
 from utils.geo import get_distance_of_two_points_in_meters
+from utils.madGlobals import InternalStopWorkerException, WebsocketWorkerRemovedException
 from utils.s2Helper import S2Helper
+from .WorkerBase import WorkerBase
 
-from .WorkerBase import WebsocketWorkerRemovedException, WorkerBase
 
 log = logging.getLogger(__name__)
 
 
-# communicator is the parent websocket, it also stores when a location update has last been sent to the worker
-# build 2 threads. Thread A simply checks for popups etc, Thread B sets locationupdates with given delays if Thread A
-# signals that the raid tab is open
-class WorkerOcr(WorkerBase):
-    def __init__(self, args, id, lastKnownState, websocketHandler, route_manager_daytime, route_manager_nighttime,
-                 devicesettings, db_wrapper, timer):
-        WorkerBase.__init__(self, args, id, lastKnownState, websocketHandler, route_manager_daytime,
-                            route_manager_nighttime, devicesettings, db_wrapper=db_wrapper, timer=timer)
-        self._workMutex = Lock()
-        self._run_warning_thread_event = Event()
-        self._locationCount = 0
+class WorkerOCR(WorkerBase):
+    def _pre_work_loop(self):
+        self.__speed_weather_check_thread = Thread(name='speedWeatherCheckThread%s' % self._id,
+                                                   target=self._speed_weather_check_thread)
+        self.__speed_weather_check_thread.daemon = False
+        self.__speed_weather_check_thread.start()
+
+    def _health_check(self):
+        pass
+
+    def _pre_location_update(self):
+        self.__start_speed_weather_check_event.set()
+
+    def _move_to_location(self):
+        routemanager = self._get_currently_valid_routemanager()
+        if routemanager is None:
+            raise InternalStopWorkerException
+        # get the distance from our current position (last) to the next gym (cur)
+        distance = get_distance_of_two_points_in_meters(float(self.last_location.lat),
+                                                        float(
+                                                            self.last_location.lng),
+                                                        float(
+                                                            self.current_location.lat),
+                                                        float(self.current_location.lng))
+        log.info('main: Moving %s meters to the next position' % distance)
+        speed = routemanager.settings.get("speed", 0)
+        max_distance = routemanager.settings.get("max_distance", None)
+        if (speed == 0 or
+                (max_distance and 0 < max_distance < distance)
+                or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
+            log.info("main: Teleporting...")
+            self._communicator.setLocation(
+                self.current_location.lat, self.current_location.lng, 0)
+            # cur_time = math.floor(time.time())  # the time we will take as a starting point to wait for data...
+
+            delay_used = self._devicesettings.get('post_teleport_delay', 7)
+            # Test for cooldown / teleported distance TODO: check this block...
+            if self._devicesettings.get('cool_down_sleep', False):
+                if distance > 2500:
+                    delay_used = 8
+                elif distance > 5000:
+                    delay_used = 10
+                elif distance > 10000:
+                    delay_used = 15
+                log.info("Need more sleep after Teleport: %s seconds!" %
+                         str(delay_used))
+                # curTime = math.floor(time.time())  # the time we will take as a starting point to wait for data...
+
+            if 0 < self._devicesettings.get('walk_after_teleport_distance', 0) < distance:
+                # TODO: actually use to_walk for distance
+                to_walk = get_distance_of_two_points_in_meters(float(self.current_location.lat),
+                                                               float(
+                                                                   self.current_location.lng),
+                                                               float(
+                                                                   self.current_location.lat) + 0.0001,
+                                                               float(self.current_location.lng) + 0.0001)
+                log.info("Walking a bit: %s" % str(to_walk))
+                time.sleep(0.3)
+                self._communicator.walkFromTo(self.current_location.lat, self.current_location.lng,
+                                              self.current_location.lat + 0.0001, self.current_location.lng + 0.0001,
+                                              11)
+                log.debug("Walking back")
+                time.sleep(0.3)
+                self._communicator.walkFromTo(self.current_location.lat + 0.0001, self.current_location.lng + 0.0001,
+                                              self.current_location.lat, self.current_location.lng, 11)
+                log.debug("Done walking")
+        else:
+            log.info("main: Walking...")
+            self._communicator.walkFromTo(self.last_location.lat, self.last_location.lng,
+                                          self.current_location.lat, self.current_location.lng, speed)
+            # cur_time = math.floor(time.time())  # the time we will take as a starting point to wait for data...
+            delay_used = self._devicesettings.get('post_walk_delay', 7)
+        log.info("Sleeping %s" % str(delay_used))
+        time.sleep(float(delay_used))
+        cur_time = time.time()
+        return cur_time
+
+    def _post_move_location_routine(self, timestamp):
+        # check if the speed_weather_check_thread signalled an abort by setting the stop_worker_event
+        if self._stop_worker_event.is_set():
+            raise InternalStopWorkerException
+        log.debug("Main: acquiring lock")
+        self._work_mutex.acquire()
+        log.debug("main: Lock acquired")
+        # TODO: takeScreenshot can throw, should we care about releasing locks or just cleanup everything else?
+        if not self._takeScreenshot():
+            self._work_mutex.release()
+            log.debug(
+                "Worker: couldn't take screenshot before radscreen check, lock released")
+            return
+
+        log.debug("Worker: Got screenshot")
+        # curTime = time.time()
+        log.info("main: Checking raidcount and copying raidscreen if raids present")
+        count_of_raids = self._pogoWindowManager.readRaidCircles(os.path.join(
+            self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id)
+        if count_of_raids == -1:
+            log.debug("Worker: Count present but no raid shown")
+            log.warning(
+                "main: Count present but no raid shown, reopening raidTab")
+            self._reopenRaidTab()
+            log.debug("Done reopening raidtab")
+            if not self._takeScreenshot():
+                self._work_mutex.release()
+                log.debug(
+                    "Worker: couldn't take screenshot after opening raidtab, lock released")
+                return
+            count_of_raids = self._pogoWindowManager.readRaidCircles(os.path.join(
+                self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id)
+        #    elif countOfRaids == 0:
+        #        emptycount += 1
+        #        if emptycount > 30:
+        #            emptycount = 0
+        #            log.error("Had 30 empty scans, restarting pogo")
+        #            restartPogo()
+
+        # not an elif since we may have gotten a new screenshot..
+        # detectin weather
+        if self._applicationArgs.weather:
+            log.debug("Worker: Checking weather...")
+            weather = checkWeather(os.path.join(
+                self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)))
+            if weather[0]:
+                log.debug('Submit Weather')
+                cell_id = S2Helper.lat_lng_to_cell_id(
+                    self.current_location.lat, self.current_location.lng)
+                self._db_wrapper.update_insert_weather(
+                    cell_id, weather[1], timestamp)
+            else:
+                log.error('Weather could not detected')
+
+        if count_of_raids > 0:
+            log.debug("Worker: Count of raids >0")
+            log.debug(
+                "main: New und old Screenshoot are different - starting OCR")
+            log.debug("main: countOfRaids: %s" % str(count_of_raids))
+            timestamp = time.time()
+            copyFileName = self._applicationArgs.raidscreen_path + '/raidscreen_' + str(timestamp) \
+                + "_" + str(self.current_location.lat) + "_" + str(self.current_location.lng) + "_" \
+                + str(count_of_raids) + '.png'
+            log.debug('Copying file: ' + copyFileName)
+            log.debug("Worker: Copying file to %s" % str(copyFileName))
+            copyfile(os.path.join(self._applicationArgs.temp_path,
+                                  'screenshot%s.png' % str(self._id)), copyFileName)
+            os.remove(os.path.join(self._applicationArgs.temp_path,
+                                   'screenshot%s.png' % str(self._id)))
+
+        log.debug("main: Releasing lock")
+        self._work_mutex.release()
+        log.debug("Worker: Lock released")
 
     def _start_pogo(self):
         pogoTopmost = self._communicator.isPogoTopmost()
@@ -56,300 +195,56 @@ class WorkerOcr(WorkerBase):
 
         return reachedRaidtab
 
-    # TODO: update state...
-    def _main_work_thread(self):
-        current_thread().name = self._id
-        log.debug("Sub called")
-        # first check if pogo is running etc etc
-        self._workMutex.acquire()
-        try:
-            self._initRoutine()
-        except WebsocketWorkerRemovedException:
-            log.error("Timeout during init of worker %s" % str(self._id))
-            self._stop_worker_event.set()
-            self._workMutex.release()
-            return
-        self._workMutex.release()
-        # loop = asyncio.get_event_loop()
-        # TODO:loop.create_task(self._speed_weather_check_thread())
+    def _cleanup(self):
+        pass
 
-        speedWeatherCheckThread = Thread(
-            name='speedWeatherCheckThread%s' % self._id, target=self._speed_weather_check_thread)
-        speedWeatherCheckThread.daemon = False
-        speedWeatherCheckThread.start()
-
-        currentLocation = self._last_known_state.get("last_location", None)
-        if currentLocation is None:
-            currentLocation = Location(0.0, 0.0)
-        lastLocation = None
-        while not self._stop_worker_event.isSet():
-            while self._timer.get_switch() and self._route_manager_nighttime is None:
-                time.sleep(1)
-            __time = time.time()
-            log.debug("Worker: acquiring lock for restart check")
-            self._workMutex.acquire()
-            log.debug("Worker: acquired lock")
-            # Restart pogo every now and then...
-            if self._devicesettings.get("restart_pogo", 80) > 0:
-                # log.debug("main: Current time - lastPogoRestart: %s" % str(curTime - lastPogoRestart))
-                # if curTime - lastPogoRestart >= (args.restart_pogo * 60):
-                self._locationCount += 1
-                if self._locationCount > self._devicesettings.get("restart_pogo", 80):
-                    log.error("scanned " + str(self._devicesettings.get(
-                        "restart_pogo", 80)) + " locations, restarting pogo")
-                    try:
-                        self._restartPogo()
-                    except WebsocketWorkerRemovedException:
-                        log.error("Timeout restarting pogo on %s" %
-                                  str(self._id))
-                        self._stop_worker_event.set()
-                        self._workMutex.release()
-                        return
-                    self._locationCount = 0
-            self._workMutex.release()
-            log.debug("Worker: lock released")
-
-            # TODO: consider adding runWarningThreadEvent.set()
-            lastLocation = currentLocation
-            self._last_known_state["last_location"] = lastLocation
-
-            # TODO: object oriented...
-            if self._timer.get_switch() and self._route_manager_nighttime is not None:
-                if self._route_manager_nighttime.mode not in ["raids_ocr"]:
-                    break
-                currentLocation = self._route_manager_nighttime.get_next_location()
-                settings = self._route_manager_nighttime.settings
-            elif self._timer.get_switch():
-                # skip to top while loop to get to sleep loop
-                continue
-            else:
-                if self._route_manager_daytime.mode not in ["raids_ocr"]:
-                    break
-                currentLocation = self._route_manager_daytime.get_next_location()
-                settings = self._route_manager_daytime.settings
-
-            log.debug("Updating .position file")
-            with open(self._id + '.position', 'w') as outfile:
-                outfile.write(str(currentLocation.lat) +
-                              ", " + str(currentLocation.lng))
-
-            log.debug("main: next stop: %s" % (str(currentLocation)))
-            log.debug('main: LastLat: %s, LastLng: %s, CurLat: %s, CurLng: %s' %
-                      (lastLocation.lat, lastLocation.lng,
-                       currentLocation.lat, currentLocation.lng))
-            # get the distance from our current position (last) to the next gym (cur)
-            distance = get_distance_of_two_points_in_meters(float(lastLocation.lat), float(lastLocation.lng),
-                                                            float(currentLocation.lat), float(currentLocation.lng))
-            log.info('main: Moving %s meters to the next position' % distance)
-            delayUsed = 0
-            if self._timer.get_switch():
-                speed = self._route_manager_nighttime.settings.get("speed", 0)
-            else:
-                speed = self._route_manager_daytime.settings.get("speed", 0)
-            if (speed == 0 or
-                    (settings["max_distance"] and 0 <
-                     settings["max_distance"] < distance)
-                    or (lastLocation.lat == 0.0 and lastLocation.lng == 0.0)):
-                log.info("main: Teleporting...")
-                try:
-                    self._communicator.setLocation(
-                        currentLocation.lat, currentLocation.lng, 0)
-                except WebsocketWorkerRemovedException:
-                    log.error("Timeout setting location of %s" % str(self._id))
-                    self._stop_worker_event.set()
-                    return
-                delayUsed = self._devicesettings.get("post_teleport_delay", 7)
-                # Test for cooldown / teleported distance TODO: check this block...
-                if self._devicesettings.get("cool_down_sleep", False):
-                    if distance > 2500:
-                        delayUsed = 30
-                    elif distance > 5000:
-                        delayUsed = 45
-                    elif distance > 10000:
-                        delayUsed = 60
-                    log.info("Need more sleep after Teleport: %s seconds!" %
-                             str(delayUsed))
-
-                if 0 < self._devicesettings.get("walk_after_teleport_distance", 0) < distance:
-                    toWalk = get_distance_of_two_points_in_meters(float(currentLocation.lat), float(currentLocation.lng),
-                                                                  float(
-                                                                      currentLocation.lat) + 0.0001,
-                                                                  float(currentLocation.lng) + 0.0001)
-                    log.info("Walking a bit: %s" % str(toWalk))
-                    time.sleep(0.3)
-                    try:
-                        self._communicator.walkFromTo(currentLocation.lat, currentLocation.lng,
-                                                      currentLocation.lat + 0.0001, currentLocation.lng + 0.0001, 11)
-                        log.debug("Walking back")
-                        time.sleep(0.3)
-                        self._communicator.walkFromTo(currentLocation.lat + 0.0001, currentLocation.lng + 0.0001,
-                                                      currentLocation.lat, currentLocation.lng, 11)
-                    except WebsocketWorkerRemovedException:
-                        log.error("Timeout walking a bit on %s" %
-                                  str(self._id))
-                        self._stop_worker_event.set()
-                        return
-                    log.debug("Done walking")
-            else:
-                log.info("main: Walking...")
-                try:
-                    self._communicator.walkFromTo(lastLocation.lat, lastLocation.lng,
-                                                  currentLocation.lat, currentLocation.lng,
-                                                  speed)
-                except WebsocketWorkerRemovedException:
-                    log.error("Timeout while walking with worker %s" %
-                              str(self._id))
-                    self._stop_worker_event.set()
-                    return
-                delayUsed = self._devicesettings.get("post_walk_delay", 7)
-            log.info("Sleeping %s" % str(delayUsed))
-            time.sleep(float(delayUsed))
-
-            log.debug("Main: acquiring lock")
-            self._workMutex.acquire()
-            log.debug("main: Lock acquired")
-            try:
-                if not self._takeScreenshot():
-                    self._workMutex.release()
-                    log.debug("Worker: Lock released")
-                    continue
-            except WebsocketWorkerRemovedException:
-                log.error("Timeout grabbing a screenshot from %s" %
-                          str(self._id))
-                self._stop_worker_event.set()
-                self._workMutex.release()
-                return
-            log.debug("Worker: Got screenshot")
-            curTime = time.time()
-            if self._applicationArgs.last_scanned:
-                log.info('main: Set new scannedlocation in Database')
-                self._db_wrapper.set_scanned_location(
-                    str(currentLocation.lat), str(currentLocation.lng), str(curTime))
-            log.info(
-                "main: Checking raidcount and copying raidscreen if raids present")
-            countOfRaids = self._pogoWindowManager.readRaidCircles(os.path.join(
-                self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id)
-            if countOfRaids == -1:
-                log.debug("Worker: Count present but no raid shown")
-                log.warning(
-                    "main: Count present but no raid shown, reopening raidTab")
-                try:
-                    self._reopenRaidTab()
-                except WebsocketWorkerRemovedException:
-                    log.error("Timeout reopening the raidtab on %s" %
-                              str(self._id))
-                    self._stop_worker_event.set()
-                    self._workMutex.release()
-                    return
-                # tabOutAndInPogo()
-                log.debug("Done reopening raidtab")
-                try:
-                    if not self._takeScreenshot():
-                        self._workMutex.release()
-                        log.debug("Worker: Lock released")
-                        continue
-                except WebsocketWorkerRemovedException:
-                    log.error(
-                        "Timeout grabbing screenshot from worker %s" % str(self._id))
-                    self._stop_worker_event.set()
-                    self._workMutex.release()
-                    return
-                countOfRaids = self._pogoWindowManager.readRaidCircles(os.path.join(
-                    self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id)
-            #    elif countOfRaids == 0:
-            #        emptycount += 1
-            #        if emptycount > 30:
-            #            emptycount = 0
-            #            log.error("Had 30 empty scans, restarting pogo")
-            #            restartPogo()
-
-            # not an elif since we may have gotten a new screenshot..
-            # detectin weather
-            if self._applicationArgs.weather:
-                log.debug("Worker: Checking weather...")
-                weather = checkWeather(os.path.join(
-                    self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)))
-                if weather[0]:
-                    log.debug('Submit Weather')
-                    cell_id = S2Helper.lat_lng_to_cell_id(
-                        currentLocation.lat, currentLocation.lng)
-                    self._db_wrapper.update_insert_weather(
-                        cell_id, weather[1], curTime)
-                else:
-                    log.error('Weather could not detected')
-
-            if countOfRaids > 0:
-                log.debug("Worker: Count of raids >0")
-                log.debug(
-                    "main: New und old Screenshoot are different - starting OCR")
-                log.debug("main: countOfRaids: %s" % str(countOfRaids))
-                curTime = time.time()
-                copyFileName = self._applicationArgs.raidscreen_path + '/raidscreen_' + str(curTime) \
-                    + "_" + str(currentLocation.lat) + "_" + str(currentLocation.lng) + "_" \
-                    + str(countOfRaids) + '.png'
-                log.debug('Copying file: ' + copyFileName)
-                log.debug("Worker: Copying file to %s" % str(copyFileName))
-                copyfile(os.path.join(self._applicationArgs.temp_path,
-                                      'screenshot%s.png' % str(self._id)), copyFileName)
-                os.remove(os.path.join(self._applicationArgs.temp_path,
-                                       'screenshot%s.png' % str(self._id)))
-
-            log.debug("main: Releasing lock")
-            self._workMutex.release()
-            log.debug("Worker: Lock released")
-
-        self.stop_worker()
-
-    # TODO: update state...
+    def _valid_modes(self):
+        return ["raids_ocr"]
 
     def _speed_weather_check_thread(self):
         while not self._stop_worker_event.is_set():
-            while self._timer.get_switch():
+            while not self.__start_speed_weather_check_event.is_set():
                 time.sleep(0.5)
+            if self._stop_worker_event.is_set():
+                return
             log.debug("checkSpeedWeatherWarningThread: acquiring lock")
             log.debug("Speedweather: acquiring lock")
-            self._workMutex.acquire()
+            self._work_mutex.acquire()
             try:
                 log.debug("Speedweather: acquired lock")
                 log.debug("checkSpeedWeatherWarningThread: lock acquired")
 
                 log.debug(
                     "checkSpeedWeatherWarningThread: Checking if pogo is running...")
-                try:
-                    if not self._communicator.isPogoTopmost():
-                        log.warning(
-                            "checkSpeedWeatherWarningThread: Starting Pogo")
-                        self._restartPogo()
-                except WebsocketWorkerRemovedException:
-                    log.error(
-                        "Timeout checking if pogo is topmost/restarting pogo on %s" % str(self._id))
-                    self._stop_worker_event.set()
-                    self._workMutex.release()
-                    return
+                if not self._communicator.isPogoTopmost():
+                    log.warning(
+                        "checkSpeedWeatherWarningThread: Starting Pogo")
+                    self._restart_pogo()
 
-                try:
-                    reachedRaidscreen = self._getToRaidscreen(10, True)
-                except WebsocketWorkerRemovedException:
-                    log.error("Timeout getting to raidscreen on %s" %
-                              str(self._id))
-                    self._stop_worker_event.set()
-                    self._workMutex.release()
-                    return
-                if reachedRaidscreen:
+                reached_raidscreen = self._getToRaidscreen(10, True)
+
+                if reached_raidscreen:
                     log.debug(
                         "checkSpeedWeatherWarningThread: checkSpeedWeatherWarningThread: reached raidscreen...")
-                    self._run_warning_thread_event.set()
+                    self.__start_speed_weather_check_event.clear()
                 else:
                     log.debug(
                         "checkSpeedWeatherWarningThread: did not reach raidscreen in 10 attempts")
-                    self._run_warning_thread_event.clear()
+                    self.__start_speed_weather_check_event.set()
             except WebsocketWorkerRemovedException as e:
                 log.error("Timeout during init of worker %s with %s" %
                           (str(self._id), str(e)))
                 self._stop_worker_event.set()
-                self._workMutex.release()
+                self._work_mutex.release()
                 return
             log.debug("checkSpeedWeatherWarningThread: releasing lock")
-            self._workMutex.release()
+            self._work_mutex.release()
             log.debug("Speedweather: released lock")
             time.sleep(1)
+
+    def __init__(self, args, id, lastKnownState, websocketHandler, route_manager_daytime, route_manager_nighttime,
+                 devicesettings, db_wrapper, timer):
+        WorkerBase.__init__(self, args, id, lastKnownState, websocketHandler, route_manager_daytime,
+                            route_manager_nighttime, devicesettings, db_wrapper=db_wrapper, timer=timer)
+        self.__speed_weather_check_thread = None
+        self.__start_speed_weather_check_event = Event()

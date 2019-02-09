@@ -69,7 +69,7 @@ class PogoWindows:
         else:
             return False
 
-    def __readCircleCount(self, filename, hash, ratio, xcord=False, crop=False, click=False, canny=False):
+    def __readCircleCount(self, filename, hash, ratio, xcord=False, crop=False, click=False, canny=False, secondratio=False):
         log.debug("__readCircleCount: Reading circles")
 
         try:
@@ -94,9 +94,12 @@ class PogoWindows:
         gray = cv2.cvtColor(screenshotRead, cv2.COLOR_BGR2GRAY)
         # detect circles in the image
 
-        radMin = int((width / float(ratio) - 3) / 2)
-        radMax = int((width / float(ratio) + 3) / 2)
-
+        if not secondratio:
+            radMin = int((width / float(ratio) - 3) / 2)
+            radMax = int((width / float(ratio) + 3) / 2)
+        else:
+            radMin = int((width / float(ratio) - 3) / 2)
+            radMax = int((width / float(secondratio) + 3) / 2)
         if canny:
             gray = cv2.GaussianBlur(gray, (3, 3), 0)
             gray = cv2.Canny(gray, 100, 50, apertureSize=3)
@@ -373,8 +376,7 @@ class PogoWindows:
             return False
 
         height, width, _ = image.shape
-        image = image[int(height / 2 - (height / 3))
-                          :int(height / 2 + (height / 3)), 0:int(width)]
+        image = image[int(height / 2 - (height / 3))                      :int(height / 2 + (height / 3)), 0:int(width)]
         cv2.imwrite(os.path.join(self.tempDirPath, str(
             hash) + '_AmountOfRaids.jpg'), image)
 
@@ -427,8 +429,8 @@ class PogoWindows:
         height, width, _ = screenshotRead.shape
 
         log.info('Raidscreen not running...')
-        self.communicator.click(
-            int(width - (width / 7.2)), int(height - (height / 12.19)))
+        self.communicator.click(int(width - (width / 7.2)),
+                                int(height - (height / 12.19)))
         time.sleep(4)
         return False
 
@@ -509,16 +511,16 @@ class PogoWindows:
         if screenshotRead is None:
             log.error("checkCloseExceptNearbyButton: Screenshot corrupted :(")
             return False
-
+            # 7.5
         if self.__readCircleCount(filename, hash,
-                                  float(7.5), xcord=False, crop=True, click=False, canny=True) > 0:
+                                  float(8.5), xcord=False, crop=True, click=False, canny=True, secondratio=float(7.5)) > 0:
             log.info("Found Pokeball.")
             return True
         return False
 
     def checkCloseButton(self, filename, hash):
-        log.debug(
-            "checkCloseButton: Checking close with: file %s, hash %s" % (filename, hash))
+        log.debug("checkCloseButton: Checking close with: file %s, hash %s" %
+                  (filename, hash))
         try:
             screenshotRead = cv2.imread(filename)
         except:
@@ -530,7 +532,7 @@ class PogoWindows:
             return False
 
         if self.__readCircleCount(filename, hash,
-                                  float(8), xcord=False, crop=True, click=True, canny=True) > 0:
+                                  float(7.7), xcord=False, crop=True, click=True, canny=True) > 0:
             log.debug("Found close button (X). Closing the window - Ratio: 10")
             return True
 

@@ -5,6 +5,7 @@ from threading import Thread
 from utils.walkerArgs import parseArgs
 
 args = parseArgs()
+os.environ['LANGUAGE'] = args.language
 
 
 def generate_mappingjson():

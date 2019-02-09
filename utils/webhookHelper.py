@@ -7,6 +7,7 @@ from threading import Event, Thread, current_thread
 import requests
 
 from s2sphere import Cell, CellId, LatLng
+from utils.language import open_json_file
 from utils.questGen import generate_quest
 
 log = logging.getLogger(__name__)
@@ -17,12 +18,12 @@ raid_webhook_payload = """[{{
         "longitude": {lon},
         "level": {lvl},
         "pokemon_id": "{poke_id}",
-        "team": {team},
+        "team_id": {team},
         "cp": "{cp}",
         "move_1": {move_1},
         "move_2": {move_2},
-        "raid_begin": {hatch_time},
-        "raid_end": {end},
+        "start": {hatch_time},
+        "end": {end},
         "gym_id": "{ext_id}",
         "name": "{name_id}",
         "url": "{url}",
@@ -38,12 +39,13 @@ egg_webhook_payload = """[{{
         "latitude": {lat},
         "longitude": {lon},
         "level": {lvl},
-        "team": {team},
-        "raid_begin": {hatch_time},
-        "raid_end": {end},
+        "team_id": {team},
+        "start": {hatch_time},
+        "end": {end},
         "gym_id": "{ext_id}",
         "name": "{name_id}",
         "url": "{url}",
+        "pokemon_id": 0,
         "sponsor": "{sponsor}",
         "weather": "{weather}",
         "park": "{park}"
@@ -65,10 +67,11 @@ quest_webhook_payload = """[{{
         "name": "{name}",
         "url": "{url}",
         "timestamp": "{timestamp}",
-        "quest_reward": "{quest_reward_text}",
+        "quest_reward": "{quest_task}",
         "quest_reward_type": "{quest_reward_type}",
         "quest_reward_type_raw": "{quest_reward_type_raw}",
         "quest_target": "{quest_target}",
+        "quest_task": "{quest_task}",
         "quest_condition": {quest_condition}
       }},
       "type": "quest"
@@ -160,8 +163,7 @@ class WebhookHelper(object):
     def __init__(self, args):
         self.__application_args = args
         self.pokemon_file = None
-        with open('pokemon.json') as j:
-            self.pokemon_file = json.load(j)
+        self.pokemon_file = open_json_file('pokemon')
         self.gyminfo = None
 
         self.loop = None
@@ -557,13 +559,13 @@ class WebhookHelper(object):
             name=quest['name'].replace('"', '\\"').replace('\n', '\\n'),
             url=quest['url'],
             timestamp=quest['timestamp'],
-            quest_reward_text=quest['quest_reward_text'],
             quest_reward_type=quest['quest_reward_type'],
             quest_reward_type_raw=quest['quest_reward_type_raw'],
             quest_target=quest['quest_target'],
             pokemon_id=quest['pokemon_id'],
             item_amount=quest['item_amount'],
             item_id=quest['item_id'],
+            quest_task=quest['quest_task'],
             quest_condition=quest['quest_condition'],
             quest_template=quest['quest_template'])
 
@@ -587,13 +589,13 @@ class WebhookHelper(object):
                 name=quest['name'].replace('"', '\\"').replace('\n', '\\n'),
                 url=quest['url'],
                 timestamp=quest['timestamp'],
-                quest_reward_text=quest['quest_reward_text'],
                 quest_reward_type=quest['quest_reward_type'],
                 quest_reward_type_raw=quest['quest_reward_type_raw'],
                 quest_target=quest['quest_target'],
                 pokemon_id=quest['pokemon_id'],
                 item_amount=quest['item_amount'],
                 item_id=quest['item_id'],
+                quest_task=quest['quest_task'],
                 quest_condition=quest['quest_condition'],
                 quest_template=quest['quest_template'])
         else:
@@ -607,13 +609,13 @@ class WebhookHelper(object):
                 name=quest['name'].replace('"', '\\"').replace('\n', '\\n'),
                 url=quest['url'],
                 timestamp=quest['timestamp'],
-                quest_reward_text=quest['quest_reward_text'],
                 quest_reward_type=quest['quest_reward_type'],
                 quest_reward_type_raw=quest['quest_reward_type_raw'],
                 quest_target=quest['quest_target'],
                 pokemon_id=quest['pokemon_id'],
                 item_amount=quest['item_amount'],
                 item_id=quest['item_id'],
+                quest_task=quest['quest_task'],
                 quest_condition=quest['quest_condition'],
                 quest_template=quest['quest_template'])
 

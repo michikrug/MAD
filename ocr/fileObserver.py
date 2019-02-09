@@ -59,8 +59,8 @@ class checkScreenshot(PatternMatchingEventHandler):
 
         minRadius = int(((width / 4.736)) / 2)
         maxRadius = int(((width / 4.736)) / 2)
-        log.debug('Searching for Raid Circles with Radius from %s to %s px' % (
-            str(minRadius), str(maxRadius)))
+        log.debug('Searching for Raid Circles with Radius from %s to %s px' %
+                  (str(minRadius), str(maxRadius)))
 
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 20,
                                    param1=50, param2=30, minRadius=minRadius, maxRadius=maxRadius)

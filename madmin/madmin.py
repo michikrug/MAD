@@ -20,6 +20,7 @@ from flask import (Flask, jsonify, make_response, redirect, render_template,
 from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from flask_caching import Cache
+from utils.language import i8ln, open_json_file
 from utils.questGen import generate_quest
 from utils.walkerArgs import parseArgs
 
@@ -324,8 +325,7 @@ def get_raids():
 
     data = db_wrapper.get_gym_infos()
 
-    with open('pokemon.json') as f:
-        mondata = json.load(f)
+    mondata = open_json_file('pokemon')
 
     hashdata = json.loads(getAllHash('raid'))
 
@@ -353,7 +353,7 @@ def get_raids():
                 type = 'mon'
                 monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
                 if str(monid) in mondata:
-                    monName = mondata[str(monid)]["name"]
+                    monName = i8ln(mondata[str(monid)]["name"])
 
             eggId = eggIdsByLevel[int(lvl) - 1]
             if eggId == 1:
@@ -405,8 +405,7 @@ def get_mons():
     mons = []
     monList = []
 
-    with open('pokemon.json') as f:
-        mondata = json.load(f)
+    mondata = open_json_file('pokemon')
 
     with open('raidmons.json') as f:
         raidmon = json.load(f)
@@ -428,7 +427,7 @@ def get_mons():
             monid = int(mon)
 
             if str(monid) in mondata:
-                monName = mondata[str(monid)]["name"]
+                monName = i8ln(mondata[str(monid)]["name"])
 
             monJson = ({'filename': monPic, 'mon': monid,
                         'name': monName, 'lvl': lvl})
@@ -608,28 +607,7 @@ def get_quests():
 
     return jsonify(coords)
 
-    # for pokestopid in data:
-    #     pokestop = data[str(pokestopid)]
-    #     if int(pokestop['quest_pokemon_id']) > 0:
-    #         monName = mondata[str(int(pokestop['quest_pokemon_id']))]["name"]
-    #     coords.append({
-    #         'id': pokestopid,
-    #         'quest_type': pokestop['quest_type'],
-    #         'quest_stardust': pokestop['quest_stardust'],
-    #         'lat': pokestop['latitude'],
-    #         'lon': pokestop['longitude'],
-    #         'quest_pokemon_id': pokestop['quest_pokemon_id'],
-    #         'quest_reward_type': pokestop['quest_reward_type'],
-    #         'quest_item_id': pokestop['quest_item_id'],
-    #         'quest_item_amount': pokestop['quest_item_amount'],
-    #         'name': pokestop['name'],
-    #         'image': pokestop['image'],
-    #         'monname': monName,
-    #         'quest_condition': pokestop['quest_condition'],
-    #         'quest_target': pokestop['quest_target']
-    #         })
-    #
-    # return jsonify(coords)
+    return jsonify(coords)
 
 
 @app.route('/gym_img/<path:path>', methods=['GET'])

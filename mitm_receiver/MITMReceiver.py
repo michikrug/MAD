@@ -119,7 +119,6 @@ class MITMReceiver(object):
         injected_settings = self.__mitm_mapper.request_latest(
             origin, "injected_settings")
 
-        # TODO: replace with encounter IDs at some point...
         ids_iv = self.__mitm_mapper.request_latest(origin, "ids_iv")
         if ids_iv is not None:
             ids_iv = ids_iv.get("values", None)
@@ -157,8 +156,8 @@ class MITMReceiver(object):
 
                     self._db_wrapper.submit_spawnpoints_map_proto(
                         origin, data["payload"])
-                    mon_ids_iv = self.__mitm_mapper.request_latest(
-                        origin, "mon_ids_iv")
+                    # mon_ids_iv = self.__mitm_mapper.request_latest(origin, "mon_ids_iv")
+                    mon_ids_iv = self.__mitm_mapper.get_mon_ids_iv(origin)
                     self._db_wrapper.submit_mons_map_proto(
                         origin, data["payload"], mon_ids_iv)
                 except Exception as e:

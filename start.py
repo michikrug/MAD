@@ -5,6 +5,7 @@ import os
 #os.environ['PYTHONASYNCIODEBUG'] = '1'
 import sys
 import time
+from logging.handlers import RotatingFileHandler
 from threading import Thread
 
 from colorlog import ColoredFormatter
@@ -12,10 +13,11 @@ from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from utils.mappingParser import MappingParser
+from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
 from utils.webhookHelper import WebhookHelper
 from watchdog.observers import Observer
-from websocket.WebsocketServerBase import WebsocketServerBase
+from websocket.WebsocketServer import WebsocketServer
 
 
 class LogFilter(logging.Filter):
@@ -29,6 +31,7 @@ class LogFilter(logging.Filter):
 
 
 args = parseArgs()
+os.environ['LANGUAGE'] = args.language
 
 console = logging.StreamHandler()
 nextRaidQueue = []
@@ -67,8 +70,21 @@ stderr_hdlr.setFormatter(formatter)
 stderr_hdlr.setLevel(logging.WARNING)
 
 log = logging.getLogger()
+
 log.addHandler(stdout_hdlr)
 log.addHandler(stderr_hdlr)
+
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    log.error("Uncaught exception", exc_info=(
+        exc_type, exc_value, exc_traceback))
+
+
+sys.excepthook = handle_exception
 
 
 def set_log_and_verbosity(log):
@@ -78,8 +94,13 @@ def set_log_and_verbosity(log):
     if not os.path.exists(args.log_path):
         os.mkdir(args.log_path)
     if not args.no_file_logs:
+
         filename = os.path.join(args.log_path, args.log_filename)
-        filelog = logging.FileHandler(filename)
+        if not args.log_rotation:
+            filelog = logging.FileHandler(filename)
+        else:
+            filelog = RotatingFileHandler(filename, maxBytes=args.log_rotation_file_size,
+                                          backupCount=args.log_rotation_backup_count)
         filelog.setFormatter(logging.Formatter(
             '%(asctime)s [%(threadName)18s][%(module)14s][%(levelname)8s] ' +
             '%(message)s'))
@@ -92,17 +113,47 @@ def set_log_and_verbosity(log):
 
 
 def start_scan(mitm_mapper, db_wrapper, routemanagers, device_mappings, auths):
-    wsRunning = WebsocketServerBase(args, args.ws_ip, int(args.ws_port), mitm_mapper, db_wrapper, routemanagers,
-                                    device_mappings, auths)
+    # wsRunning = WebsocketServerBase(args, args.ws_ip, int(args.ws_port), mitm_mapper, db_wrapper, routemanagers,
+    #                                 device_mappings, auths)
+    wsRunning = WebsocketServer(
+        args, mitm_mapper, db_wrapper, routemanagers, device_mappings, auths)
     wsRunning.start_server()
 
 
 def start_ocr_observer(args, db_helper):
     from ocr.fileObserver import checkScreenshot
     observer = Observer()
+    log.error(args.raidscreen_path)
     observer.schedule(checkScreenshot(args, db_helper),
                       path=args.raidscreen_path)
     observer.start()
+
+
+def delete_old_logs(minutes):
+    if minutes == "0":
+        log.info('delete_old_logs: Search/Delete logs is disabled')
+        return
+
+    while True:
+        log.info('delete_old_logs: Search/Delete logs older than ' +
+                 str(minutes) + ' minutes')
+
+        now = time.time()
+        only_files = []
+
+        logpath = args.log_path
+
+        log.debug('delete_old_logs: Log Folder: ' + str(logpath))
+        for file in os.listdir(logpath):
+            file_full_path = os.path.join(logpath, file)
+            if os.path.isfile(file_full_path):
+                # Delete files older than x days
+                if os.stat(file_full_path).st_mtime < now - int(minutes) * 60:
+                    os.remove(file_full_path)
+                    log.info('delete_old_logs: File Removed : ' + file_full_path)
+
+        log.info('delete_old_logs: Search/Delete logs finished')
+        time.sleep(3600)
 
 
 def start_madmin():
@@ -145,6 +196,8 @@ if __name__ == "__main__":
     db_wrapper.check_and_create_spawn_tables()
     db_wrapper.create_quest_database_if_not_exists()
     webhook_helper.set_gyminfo(db_wrapper)
+    version = MADVersion(args, db_wrapper)
+    version.get_version()
 
     if not db_wrapper.ensure_last_updated_column():
         log.fatal("Missing raids.last_updated column and couldn't create it")
@@ -236,6 +289,13 @@ if __name__ == "__main__":
         t_flask = Thread(name='madmin', target=start_madmin)
         t_flask.daemon = False
         t_flask.start()
+
+    log.info('Starting Log Cleanup Thread....')
+    t_cleanup = Thread(name='cleanuplogs',
+                       target=delete_old_logs(args.cleanup_age))
+    t_cleanup.join()
+    t_cleanup.daemon = True
+    t_cleanup.start()
 
     while True:
         time.sleep(10)

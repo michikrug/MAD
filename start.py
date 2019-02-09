@@ -100,7 +100,8 @@ def start_scan(mitm_mapper, db_wrapper, routemanagers, device_mappings, auths):
 def start_ocr_observer(args, db_helper):
     from ocr.fileObserver import checkScreenshot
     observer = Observer()
-    observer.schedule(checkScreenshot(args, db_helper), path=args.raidscreen_path)
+    observer.schedule(checkScreenshot(args, db_helper),
+                      path=args.raidscreen_path)
     observer.start()
 
 
@@ -126,6 +127,7 @@ def generate_mappingjson():
     newfile['devices'] = []
     with open('configs/mappings.json', 'w') as outfile:
         json.dump(newfile, outfile, indent=4, sort_keys=True)
+
 
 if __name__ == "__main__":
     # TODO: globally destroy all threads upon sys.exit() for example
@@ -191,9 +193,9 @@ if __name__ == "__main__":
                     "Could not parse mappings. Please check those. Description: %s" % str(e))
                 sys.exit(1)
             except RuntimeError as e:
-                log.fatal("There is something wrong with your mappings. Description: %s" % str(e))
+                log.fatal(
+                    "There is something wrong with your mappings. Description: %s" % str(e))
                 sys.exit(1)
-
 
             mitm_mapper = MitmMapper(device_mappings)
             ocr_enabled = False

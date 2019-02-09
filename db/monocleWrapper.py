@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta
 
 import requests
+
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.s2Helper import S2Helper

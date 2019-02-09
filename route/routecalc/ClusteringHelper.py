@@ -1,5 +1,6 @@
 from utils.collections import Relation
-from utils.geo import get_middle_of_coord_list, get_distance_of_two_points_in_meters
+from utils.geo import (get_distance_of_two_points_in_meters,
+                       get_middle_of_coord_list)
 
 
 class ClusteringHelper:

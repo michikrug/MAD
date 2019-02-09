@@ -7,6 +7,7 @@ import time
 from queue import Queue
 
 from flask import Flask, Response, request
+
 from utils.authHelper import check_auth
 
 app = Flask(__name__)

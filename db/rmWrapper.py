@@ -4,8 +4,9 @@ import sys
 import time
 from datetime import datetime, timedelta
 
-import numpy
 import requests
+
+import numpy
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.s2Helper import S2Helper

@@ -607,8 +607,6 @@ def get_quests():
 
     return jsonify(coords)
 
-    return jsonify(coords)
-
 
 @app.route('/gym_img/<path:path>', methods=['GET'])
 @auth_required

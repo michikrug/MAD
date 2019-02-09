@@ -2,14 +2,15 @@ import logging
 import os
 import time
 from shutil import copyfile
-from threading import Thread, Event
+from threading import Event, Thread
 
 from ocr.checkWeather import checkWeather
 from utils.geo import get_distance_of_two_points_in_meters
-from utils.madGlobals import InternalStopWorkerException, WebsocketWorkerRemovedException
+from utils.madGlobals import (InternalStopWorkerException,
+                              WebsocketWorkerRemovedException)
 from utils.s2Helper import S2Helper
-from .WorkerBase import WorkerBase
 
+from .WorkerBase import WorkerBase
 
 log = logging.getLogger(__name__)
 

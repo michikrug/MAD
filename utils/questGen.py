@@ -32,25 +32,29 @@ def generate_quest(quest):
     url = quest['image']
     timestamp = quest['quest_timestamp']
     quest_target = quest['quest_target']
+    quest_reward_text = ''
 
-    if quest_reward_type == _("Item"):
+    if quest_reward_type == _('Item'):
         item_amount = quest['quest_item_amount']
         item_type = rewarditem(quest['quest_item_id'])
         item_id = quest['quest_item_id']
         pokemon_id = 0
-        pokemon_name = ""
-    elif quest_reward_type == _("Stardust"):
+        pokemon_name = ''
+        quest_reward_text = '%sx %s' % (item_amount, item_type)
+    elif quest_reward_type == _('Stardust'):
         item_amount = quest['quest_stardust']
         item_type = _("Stardust")
         item_id = 0
         pokemon_id = 0
-        pokemon_name = ""
-    elif quest_reward_type == _("Pokemon"):
+        pokemon_name = ''
+        quest_reward_text = '%s %s' % (item_amount, item_type)
+    elif quest_reward_type == _('Pokemon'):
         item_amount = 1
-        item_type = "Pokemon"
+        item_type = 'Pokemon'
         item_id = 0
         pokemon_name = i8ln(pokemonname(str(quest['quest_pokemon_id'])))
         pokemon_id = quest['quest_pokemon_id']
+        quest_reward_text = pokemon_name
     if '{0}' in quest_type:
         quest_type_text = quest_type.replace('{0}', str(quest_target))
 
@@ -63,7 +67,8 @@ def generate_quest(quest):
     quest_raw = ({'pokestop_id': pokestop_id, 'name': name, 'url': url, 'latitude': latitude, 'longitude': longitude,
                   'quest_type_raw': quest_type_raw, 'quest_type': quest_type_text, 'item_amount': item_amount, 'item_type': item_type,
                   'quest_target': quest_target, 'timestamp': timestamp, 'pokemon_id': pokemon_id, 'item_id': item_id,
-                  'pokemon_name': pokemon_name, 'quest_reward_type': quest_reward_type, 'quest_reward_type_raw': quest_reward_type_raw, 'quest_task': quest_task,
+                  'pokemon_name': pokemon_name, 'quest_reward_type': quest_reward_type, 'quest_reward_type_raw': quest_reward_type_raw,
+                  'quest_task': quest_task, 'quest_reward_text': quest_reward_text,
                   'quest_condition': quest_condition, 'quest_template': quest_template})
     return quest_raw
 

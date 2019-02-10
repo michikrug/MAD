@@ -67,7 +67,7 @@ quest_webhook_payload = """[{{
         "name": "{name}",
         "url": "{url}",
         "timestamp": "{timestamp}",
-        "quest_reward": "{quest_task}",
+        "quest_reward": "{quest_reward_text}",
         "quest_reward_type": "{quest_reward_type}",
         "quest_reward_type_raw": "{quest_reward_type_raw}",
         "quest_target": "{quest_target}",
@@ -567,7 +567,8 @@ class WebhookHelper(object):
             item_id=quest['item_id'],
             quest_task=quest['quest_task'],
             quest_condition=quest['quest_condition'],
-            quest_template=quest['quest_template'])
+            quest_template=quest['quest_template'],
+            quest_reward_text=quest['quest_reward_text'])
 
         payload = json.loads(data)
         self.__sendToWebhook(payload)
@@ -597,7 +598,8 @@ class WebhookHelper(object):
                 item_id=quest['item_id'],
                 quest_task=quest['quest_task'],
                 quest_condition=quest['quest_condition'],
-                quest_template=quest['quest_template'])
+                quest_template=quest['quest_template'],
+                quest_reward_text=quest['quest_reward_text'])
         else:
             data = boq_item_quest_webhook_payload.format(
                 pokestop_id=quest['pokestop_id'],
@@ -617,7 +619,8 @@ class WebhookHelper(object):
                 item_id=quest['item_id'],
                 quest_task=quest['quest_task'],
                 quest_condition=quest['quest_condition'],
-                quest_template=quest['quest_template'])
+                quest_template=quest['quest_template'],
+                quest_reward_text=quest['quest_reward_text'])
 
         payload = json.loads(data)
         self.__sendToWebhook(payload)

@@ -25,7 +25,7 @@ class MADVersion(object):
             if self._version < current_version:
                 log.error('New Update found')
                 self.start_update()
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             self.set_version(0)
             self.start_update()
 

@@ -23,8 +23,8 @@ class RmWrapper(DbWrapperBase):
     def auto_hatch_eggs(self):
         log.debug("{RmWrapper::auto_hatch_eggs} called")
         now = (datetime.now())
-        now_timestamp = time.mktime(
-            datetime.utcfromtimestamp(float(now)).timetuple())
+        now_timestamp = time.mktime(datetime.utcfromtimestamp(
+            float(now)).timetuple())
 
         mon_id = self.application_args.auto_hatch_number
 
@@ -532,7 +532,7 @@ class RmWrapper(DbWrapperBase):
             if url is not None:
                 if not self.application_args.justjson:
                     filename = url_image_path + '_' + str(gym_id) + '_.jpg'
-                    log.debug('Downloading %s' % filename)
+                    log.debug('Downloading %s', filename)
                     self.__download_img(str(url), str(filename))
                 gyminfo[gym_id] = self.__encode_hash_json(team_id, latitude, longitude, str(
                     name).replace('"', '\\"').replace('\n', '\\n'), description, url)
@@ -1106,9 +1106,9 @@ class RmWrapper(DbWrapperBase):
                 sys.exit(1)
             except Exception:
                 retry = retry + 1
-                log.info('Download error %s' % url)
+                log.info('Download error %s', url)
                 if retry <= 5:
-                    log.info('retry: %s' % retry)
+                    log.info('retry: %s', retry)
                 else:
                     log.info('Failed to download after 5 retry')
 

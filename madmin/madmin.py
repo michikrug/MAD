@@ -594,10 +594,6 @@ def get_gymcoords():
 def get_quests():
     since = request.args.get('since', 0, type=int)
     coords = []
-    #monName = ''
-
-    # with open('pokemon.json') as f:
-    #    mondata = json.load(f)
 
     data = db_wrapper.quests_from_db(since=since)
 

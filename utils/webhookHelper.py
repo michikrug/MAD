@@ -417,7 +417,7 @@ class WebhookHelper(object):
                 if 'sponsor' in self.gyminfo[str(gymid)]:
                     try:
                         sponsor = int(info_of_gym.get("sponsor", 0))
-                    except (ValueError, TypeError) as e:
+                    except (ValueError, TypeError):
                         sponsor = 0
 
         hatch_time = int(start)

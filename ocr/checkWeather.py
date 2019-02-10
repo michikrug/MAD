@@ -28,7 +28,7 @@ def weather_image_matching(weather_icon_name, screenshot_name):
 
     if weather_icon is None:
         log.error('weather_image_matching: %s appears to be corrupted' %
-                  str(url_img_name))
+                  str(weather_icon_name))
         return 0
 
     screenshot_img = cv2.imread(screenshot_name, 3)
@@ -37,10 +37,7 @@ def weather_image_matching(weather_icon_name, screenshot_name):
         log.error('weather_image_matching: %s appears to be corrupted' %
                   str(screenshot_name))
         return 0
-    height, width, _ = weather_icon.shape
 
-    fort_img = imutils.resize(
-        screenshot_img, width=int(screenshot_img.shape[1] * 2))
     height_f, width_f, _ = screenshot_img.shape
     screenshot_img = screenshot_img[0:int(height_f/7), 0:width_f]
 
@@ -57,7 +54,7 @@ def weather_image_matching(weather_icon_name, screenshot_name):
     screenshot_img = cv2.blur(screenshot_img, (3, 3))
     screenshot_img = cv2.Canny(screenshot_img, 50, 100)
 
-    found = None
+    found = []
     for scale in np.linspace(0.2, 1, 5)[::-1]:
         resized = imutils.resize(screenshot_img, width=int(
             screenshot_img.shape[1] * scale))
@@ -74,20 +71,19 @@ def weather_image_matching(weather_icon_name, screenshot_name):
         if endY > height_f/7 and endX < width_f/2:
             maxVal = 0
 
-        if found is None or maxVal > found[0]:
+        if not found or maxVal > found[0]:
             found = (maxVal, maxLoc, r)
 
     return found[0]
 
 
 def checkWeather(raidpic):
-    foundweather = None
+    foundweather = []
 
     for file in glob.glob(os.path.join('ocr', 'weather', 'weatherIcon_small_*.png')):
-        filename = os.path.basename(file)
         find_weather = weather_image_matching(file, raidpic)
 
-        if foundweather is None or find_weather > foundweather[0]:
+        if not foundweather or find_weather > foundweather[0]:
             foundweather = find_weather, os.path.basename(file)
 
     if foundweather[0] > 0:

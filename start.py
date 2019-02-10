@@ -139,7 +139,6 @@ def delete_old_logs(minutes):
                  str(minutes) + ' minutes')
 
         now = time.time()
-        only_files = []
 
         logpath = args.log_path
 

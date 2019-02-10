@@ -48,8 +48,6 @@ class Scanner:
             os.makedirs(self.www_hash)
 
     def detectRaidTime(self, raidpic, hash, raidNo, radius):
-        zero = datetime.datetime.now()
-        unixnow = calendar.timegm(zero.timetuple())
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                   ') ] ' + 'detectRaidTime: Reading Raidtimer')
         height, width, channel = raidpic.shape
@@ -132,7 +130,6 @@ class Scanner:
 
         if raidEndFound:
             if ':' in raidtimer:
-                now = datetime.datetime.now()
                 log.info('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                          'detectRaidEndtimer: found raidendtimer %s' % raidtimer)
                 endTime = self.getEndTime(raidtimer, raidNo)
@@ -164,7 +161,7 @@ class Scanner:
             return (raidEndFound, False, False)
 
     def detectRaidBoss(self, raidpic, lvl, hash, raidNo):
-        foundmon = None
+        foundmon = []
         monID = None
         log.info('[Crop: ' + str(raidNo) +
                  ' (' + str(self.uniqueHash) + ') ] ' + 'Extracting Raidboss')
@@ -185,7 +182,7 @@ class Scanner:
                 find_mon = mon_image_matching(
                     self.args, file, picName, raidNo, hash)
 
-                if foundmon is None or find_mon > foundmon[0]:
+                if not foundmon or find_mon > foundmon[0]:
                     foundmon = find_mon, file
 
                 if foundmon and foundmon[0] > 0.01:
@@ -212,7 +209,6 @@ class Scanner:
         return False, picName
 
     def detectLevel(self, raidpic, hash, raidNo, radius):
-        foundlvl = None
         lvl = None
 
         log.info('[Crop: ' + str(raidNo) +
@@ -243,7 +239,6 @@ class Scanner:
         return None
 
     def checkDummy(self, raidpic, x1, x2, y1, y2, hash, raidNo, radius):
-        foundgym = None
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                   ') ] ' + 'checkDummy: Check for dummy Gym Image')
 
@@ -257,14 +252,12 @@ class Scanner:
         return False
 
     def detectGym(self, raidpic, hash, raidNo, captureLat, captureLng, radius, monId=None):
-        foundgym = None
+        foundgym = []
         gymId = None
         x1 = 0.30
         x2 = 0.62
         y1 = 0.62
         y2 = 1.23
-
-        foundMonCrops = False
 
         log.info('[Crop: ' + str(raidNo) + ' (' +
                  str(self.uniqueHash) + ') ] ' + 'detectGym: Scanning Gym')
@@ -277,7 +270,6 @@ class Scanner:
                 data = json.load(f)
 
             if str(monId) in data:
-                foundMonCrops = True
                 crop = data[str(monId)]["Crop"]
                 log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                           ') ] ' + 'detectGym: Found other Crops for Mon %s' % monId)
@@ -326,7 +318,7 @@ class Scanner:
                         self.args.gym_detection_value), raidNo, hash, checkX=True, radius=radius, x1=x1, x2=x2, y1=y1, y2=y2)
                     log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                               'detectGym: Compare Gym-ID - ' + str(closegym[0]) + ' - Match: ' + str(find_gym))
-                    if foundgym is None or find_gym > foundgym[0]:
+                    if not foundgym or find_gym > foundgym[0]:
                         foundgym = find_gym, file
 
                     if foundgym and foundgym[0] >= float(self.args.gym_detection_value):
@@ -356,7 +348,6 @@ class Scanner:
             return None
 
     def unknownfound(self, raidpic, type, zoom, raidNo, hash, captureTime, imageHash=0, lat=0, lng=0):
-
         if captureTime:
             text = datetime.datetime.fromtimestamp(float(captureTime))
             text = "Scanned: " + str(text.strftime("%Y-%m-%d %H:%M"))
@@ -411,7 +402,7 @@ class Scanner:
         log.debug('[Crop: ' + str(raidNo) + ' (' +
                   str(self.uniqueHash) + ') ] ' + 'Encoding Raid Hash Json')
         hashJson = json.dumps(
-            {'gym': gym, 'lvl': lvl, 'mon': mon, 'lvl': lvl}, separators=(',', ':'))
+            {'gym': gym, 'lvl': lvl, 'mon': mon}, separators=(',', ':'))
         return hashJson
 
     def cropImage(self, image, raidNo, radius):
@@ -420,7 +411,6 @@ class Scanner:
         output = image.copy()
         height, width, channel = output.shape
         output = output[0:round(height*2/3), 0:width]
-        image_cols, image_rows, _ = image.shape
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 20,
                                    param1=50, param2=30, minRadius=radius, maxRadius=radius)
         if circles is not None:
@@ -448,7 +438,6 @@ class Scanner:
                       'start_detect: File does not exist: %s' % str(filenameOfCrop))
             return
 
-        monfound = False
         eggfound = False
 
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
@@ -572,7 +561,7 @@ class Scanner:
         if eggfound:
             log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                       ') ] ' + 'start_detect: Found the crop to contain an egg')
-            eggId = eggIdsByLevel[int(raidlevel) - 1]
+            # eggId = eggIdsByLevel[int(raidlevel) - 1]
 
         if not eggfound:
             log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
@@ -624,8 +613,8 @@ class Scanner:
         if eggfound:
             log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                       'start_detect: Found egg level %s starting at %s and ending at %s. GymID: %s' % (raidlevel, raidstart, raidend, gymId))
-            submitStatus = self.db_wrapper.submit_raid(str(gymId), None, raidlevel, raidstart, raidend, 'EGG', raidNo,
-                                                       captureTime, unique_hash=self.uniqueHash)
+            self.db_wrapper.submit_raid(str(gymId), None, raidlevel, raidstart, raidend, 'EGG', raidNo,
+                                        captureTime, unique_hash=self.uniqueHash)
             # if submitStatus:
             raidHashJson = self.encodeHashJson(gymId, raidlevel, False, raidNo)
             log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
@@ -642,19 +631,19 @@ class Scanner:
                 if raidend[1]:
                     log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                               'start_detect: Submitting mon without egg. ID: %s, gymId: %s' % (str(monFound[0]), str(gymId)))
-                    submitStatus = self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, raidend[2],
-                                                               'MON', raidNo, captureTime, unique_hash=self.uniqueHash,
-                                                               MonWithNoEgg=True)
+                    self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, raidend[2],
+                                                'MON', raidNo, captureTime, unique_hash=self.uniqueHash,
+                                                MonWithNoEgg=True)
                 else:
                     log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                               'start_detect: Submitting mon without raidend. ID: %s, gymId: %s' % (str(monFound[0]), str(gymId)))
-                    submitStatus = self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, None, 'MON',
-                                                               raidNo, captureTime, unique_hash=self.uniqueHash)
+                    self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, None, 'MON',
+                                                raidNo, captureTime, unique_hash=self.uniqueHash)
             else:
                 log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                           'start_detect: Submitting mon with previously reported endtime. ID: %s, gymId: %s' % (str(monFound[0]), str(gymId)))
-                submitStatus = self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, None, 'MON',
-                                                           raidNo, captureTime, unique_hash=self.uniqueHash)
+                self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, None, 'MON',
+                                            raidNo, captureTime, unique_hash=self.uniqueHash)
 
             raidHashJson = self.encodeHashJson(
                 gymId, raidlevel, monFound[0], raidNo)
@@ -677,33 +666,6 @@ class Scanner:
 
         h = str(imagehash.dhash(image))
         return h
-
-        image = image.convert('L').resize(
-            (hash_size + 1, hash_size),
-            Image.ANTIALIAS,
-        )
-        pixels = list(image.getdata())
-        # Compare adjacent pixels.
-        difference = []
-        for row in xrange(hash_size):
-            for col in xrange(hash_size):
-                pixel_left = image.getpixel((col, row))
-                pixel_right = image.getpixel((col + 1, row))
-                difference.append(pixel_left > pixel_right)
-        # Convert the binary array to a hexadecimal string.
-            decimal_value = 0
-            hex_string = []
-            for index, value in enumerate(difference):
-                if value:
-                    decimal_value += 2**(index % 8)
-                if (index % 8) == 7:
-                    hex_string.append(hex(decimal_value)[2:].rjust(2, '0'))
-                    decimal_value = 0
-
-        hashValue = ''.join(hex_string)
-        log.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
-                  ') ] ' + 'ImageHash: Generated Image Hash: ' + str(hashValue))
-        return hashValue
 
     def imageHashExists(self, image, zoom, type, raidNo, x1=0.30, x2=0.62, y1=0.62, y2=1.23, radius=0, hashSize=8):
         image2 = cv2.imread(image, 3)

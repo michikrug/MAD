@@ -225,7 +225,7 @@ class WebsocketServer(object):
         while found is None and websocket_client_connection.open:
             try:
                 found = self.__send_queue.get_nowait()
-            except Exception as e:
+            except Exception:
                 await asyncio.sleep(0.02)
         if not websocket_client_connection.open:
             log.error("retrieve_next_send: connection closed, returning None")
@@ -241,9 +241,9 @@ class WebsocketServer(object):
             message = None
             try:
                 message = await asyncio.wait_for(websocket_client_connection.recv(), timeout=0.02)
-            except asyncio.TimeoutError as te:
+            except asyncio.TimeoutError:
                 await asyncio.sleep(0.02)
-            except websockets.exceptions.ConnectionClosed as cc:
+            except websockets.exceptions.ConnectionClosed:
                 log.warning(
                     "Connection to %s was closed, stopping worker" % str(id))
                 self.__current_users_mutex.acquire()

@@ -402,7 +402,6 @@ class MonocleWrapper(DbWrapperBase):
 
     def get_near_gyms(self, lat, lng, hash, raid_no, dist, unique_hash="123"):
         if dist == 99:
-            distance = str(9999)
             lat = self.application_args.home_lat
             lng = self.application_args.home_lng
         else:
@@ -462,7 +461,7 @@ class MonocleWrapper(DbWrapperBase):
             if url is not None:
                 if not self.application_args.justjson:
                     filename = url_image_path + '_' + str(id) + '_.jpg'
-                    log.debug('Downloading %s' % filename)
+                    log.debug('Downloading %s', filename)
                     self.__download_img(str(url), str(filename))
                 gyminfo[id] = self.__encode_hash_json(team, float(lat), float(lon), str(
                     name).replace('"', '\\"').replace('\n', '\\n'), url, park, sponsor)
@@ -1056,9 +1055,9 @@ class MonocleWrapper(DbWrapperBase):
                 sys.exit(1)
             except Exception:
                 retry = retry + 1
-                log.info('Download error %s' % url)
+                log.info('Download error %s', url)
                 if retry <= 5:
-                    log.info('retry: %s' % retry)
+                    log.info('retry: %s', retry)
                 else:
                     log.info('Failed to download after 5 retry')
 

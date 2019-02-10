@@ -166,7 +166,7 @@ def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=
     log.info("Calculating a short route through all those coords. Might take a while")
     # Constant Definitions
     NUM_NEW_SOLUTION_METHODS = 3
-    SWAP, REVERSE, TRANSPOSE = 0, 1, 2
+    # SWAP, REVERSE, TRANSPOSE = 0, 1, 2
 
     coordinates = lessCoordinates.copy()
     # Params Initial
@@ -261,7 +261,7 @@ def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=
             else:
                 # multiple solutions, so much fun at once!
                 merged_sol = sol_best.copy()
-                length_sols_minus_one = len(solutions_temp) - 1
+                # length_sols_minus_one = len(solutions_temp) - 1
                 # log.error("Length solutions minus one: %s" % str(length_sols_minus_one))
                 # range_to_be_searched = range(length_sols_minus_one)
                 # log.error("Scanning range: %s" % str(range_to_be_searched))

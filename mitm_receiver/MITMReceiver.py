@@ -12,7 +12,7 @@ from utils.authHelper import check_auth
 
 app = Flask(__name__)
 log = logging.getLogger(__name__)
-allowed_origins = None
+allowed_origins = []
 auths = None
 application_args = None
 
@@ -31,7 +31,7 @@ class EndpointAction(object):
             log.warning("Missing Origin header in request")
             self.response = Response(status=500, headers={})
             abort = True
-        elif allowed_origins is not None and (origin is None or origin not in allowed_origins):
+        elif allowed_origins and (origin is None or origin not in allowed_origins):
             self.response = Response(status=403, headers={})
             abort = True
         elif auths is not None:  # TODO check auth properly...

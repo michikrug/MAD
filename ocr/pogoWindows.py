@@ -175,7 +175,6 @@ class PogoWindows:
                   str(radMin) + " Max " + str(radMax))
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, width / 8, param1=100, param2=15, minRadius=radMin,
                                    maxRadius=radMax)
-        circle = 0
         # ensure at least some circles were found
         if circles is not None:
             # convert the (x, y) coordinates and radius of the circles to integers
@@ -211,7 +210,6 @@ class PogoWindows:
 
     def lookForButton(self, filename, ratiomin, ratiomax):
         log.debug("lookForButton: Reading lines")
-        disToMiddleMin = None
         try:
             screenshotRead = cv2.imread(filename)
             gray = cv2.cvtColor(screenshotRead, cv2.COLOR_BGR2GRAY)
@@ -222,8 +220,6 @@ class PogoWindows:
         if screenshotRead is None:
             log.error("Screenshot corrupted :(")
             return False
-
-        allowRatio = [1.60, 1.05, 2.20, 3.01, 2.32]
 
         height, width, _ = screenshotRead.shape
         _widthold = float(width)
@@ -247,7 +243,6 @@ class PogoWindows:
         kernel = np.ones((2, 2), np.uint8)
         edges = cv2.morphologyEx(edges, cv2.MORPH_GRADIENT, kernel)
 
-        maxLineGap = 50
         lineCount = 0
         lines = []
         _x = 0
@@ -325,7 +320,6 @@ class PogoWindows:
         log.debug("__checkRaidLine: MaxLineLength:" + str(maxLineLength))
         minLineLength = width / 6.35 - width * 0.03
         log.debug("__checkRaidLine: MinLineLength:" + str(minLineLength))
-        maxLineGap = 50
 
         lines = cv2.HoughLinesP(edges, rho=1, theta=math.pi / 180, threshold=70, minLineLength=minLineLength,
                                 maxLineGap=2)
@@ -442,7 +436,6 @@ class PogoWindows:
 
         try:
             image = cv2.imread(filename)
-            height, width, _ = image.shape
         except:
             log.error("Screenshot corrupted :(")
             return False

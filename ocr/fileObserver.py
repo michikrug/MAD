@@ -47,9 +47,7 @@ class checkScreenshot(PatternMatchingEventHandler):
         # let's start a thread handling the tasks...
 
     def cropImage(self, screenshot, captureTime, captureLat, captureLng, src_path):
-        p = None
         raidNo = 0
-        processes = []
 
         hash = str(time.time())
         orgScreen = screenshot
@@ -121,8 +119,6 @@ class checkScreenshot(PatternMatchingEventHandler):
         # amountOfRaids = self.pogoWindowManager.getAmountOfRaids(event.src_path)
         if amountOfRaids is None or amountOfRaids == 0:
             return
-        processes = []
-        bounds = []
 
         self.cropImage(raidPic, captureTime, captureLat,
                        captureLng, event.src_path)

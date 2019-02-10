@@ -23,7 +23,6 @@ def fort_image_matching(url_img_name, fort_img_name, zoom, value, raidNo, hash, 
         log.error('[Crop: ' + str(raidNo) + ' (' + str(hash) + ') ] ' +
                   'fort_image_matching: %s appears to be corrupted' % str(fort_img_name))
         return 0.0
-    height, width, channel = url_img.shape
     height_f, width_f, channel_f = fort_img.shape
 
     if zoom == True:
@@ -74,7 +73,7 @@ def fort_image_matching(url_img_name, fort_img_name, zoom, value, raidNo, hash, 
 
     (tH, tW) = crop.shape[:2]
 
-    found = None
+    found = []
     for scale in np.linspace(npFrom, npValue, matchCount)[::-1]:
 
         resized = imutils.resize(
@@ -89,12 +88,11 @@ def fort_image_matching(url_img_name, fort_img_name, zoom, value, raidNo, hash, 
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(hash) + ') ] ' +
                   'Filename: ' + str(url_img_name) + ' Matchvalue: ' + str(maxVal))
 
-        if found is None or maxVal > found[0]:
+        if not found or maxVal > found[0]:
             found = (maxVal, maxLoc, r)
 
     (maxVal, maxLoc, r) = found
     (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
-    (endX, endY) = (int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
 
     if found is None or found[0] < value or (checkX and startX > width_f/2):
         return 0.0
@@ -106,4 +104,4 @@ if __name__ == '__main__':
     fort_id = 'raid1'
     fort_img_path = os.getcwd() + '/' + str(fort_id) + '.jpg'
     url_img_path = os.getcwd() + 'ocr/mon_img/ic_raid_egg_rare.png'
-    log.debug(fort_image_matching(url_img_path, fort_img_path, True))
+    # log.debug(fort_image_matching(url_img_path,fort_img_path,True))

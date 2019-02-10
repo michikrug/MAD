@@ -243,7 +243,7 @@ class S2Helper:
     def sort_row_from_west(row):
         if row is None or len(row) == 0:
             return []
-        new_row = []
+        # new_row = []
         return sorted(row, key=lambda x: x.lng)
         # while len(row) > 0:
         #     most_west = S2Helper.get_most_west(row)
@@ -274,7 +274,7 @@ class S2Helper:
         start = gpxdata.TrackPoint(init_loc.lat, init_loc.lng)
         destination = start + gpxdata.CourseDistance(bearing, distance)
 
-        origin = Point(init_loc.lat, init_loc.lng)
+        # origin = Point(init_loc.lat, init_loc.lng)
         # start = start + gpxdata.CourseDistance(course, distance)
         # destination = distance.distance(kilometers=distance).destination(
         #     origin, bearing)

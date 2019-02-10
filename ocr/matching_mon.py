@@ -39,7 +39,7 @@ def mon_image_matching(args, url_img_name, fort_img_name, raidNo, hash):
     fort_img = cv2.blur(fort_img, (3, 3))
     fort_img = cv2.Canny(fort_img, 50, 100)
 
-    found = None
+    found = []
     for scale in np.linspace(args.npmFrom, args.npmValue, 10)[::-1]:
 
         resized = imutils.resize(
@@ -60,7 +60,7 @@ def mon_image_matching(args, url_img_name, fort_img_name, raidNo, hash):
         log.debug('[Crop: ' + str(raidNo) + ' (' + str(hash) + ') ] ' + 'Filename: ' +
                   str(url_img_name) + ' Matchvalue: ' + str(maxVal) + ' Scale: ' + str(scale))
 
-        if found is None or maxVal > found[0]:
+        if not found or maxVal > found[0]:
             found = (maxVal, maxLoc, r)
 
     return found[0]

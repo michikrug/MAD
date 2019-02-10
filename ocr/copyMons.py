@@ -95,7 +95,7 @@ class MonRaidImages(object):
                     #crop = crop[y-1:y+h+1,x-1:x+w+1]
                     cv2.imwrite(monFile, crop)
 
-        _monList = myList = '|'.join(map(str, monList))
+        _monList = '|'.join(map(str, monList))
         dbWrapper = db_wrapper
         dbWrapper.clear_hash_gyms(_monList)
 
@@ -143,4 +143,4 @@ class MonRaidImages(object):
 
 
 if __name__ == '__main__':
-    MonRaidImages.runAll('../../PogoAssets/')
+    MonRaidImages.runAll('../../PogoAssets/', None)

@@ -52,7 +52,7 @@ def generate_quest(quest):
         pokemon_name = i8ln(pokemonname(str(quest['quest_pokemon_id'])))
         pokemon_id = quest['quest_pokemon_id']
     if '{0}' in quest_type:
-        quest_type_text = quest_type.replace('{0}', quest_target)
+        quest_type_text = quest_type.replace('{0}', str(quest_target))
 
     if not quest['task']:
         quest_task = questtask(

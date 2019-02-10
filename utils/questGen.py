@@ -24,7 +24,7 @@ def generate_quest(quest):
     quest_reward_type_raw = quest['quest_reward_type']
     quest_type_raw = quest['quest_type']
     quest_type = questtype(quest['quest_type'])
-    quest_condition = quest['quest_condition'].replace('\'', '"')
+    quest_condition = quest['quest_condition'].replace('\'', '"').lower()
     quest_template = quest['quest_template']
     name = quest['name']
     latitude = quest['latitude']

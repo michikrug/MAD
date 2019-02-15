@@ -297,11 +297,19 @@
 						}
 
 						// add geofence to layergroup
-						L.geoJSON(geojson, { style: { "color": getRandomColor(), "weight": 2, "opacity": 0.25 } }).addTo(group);
+						L.geoJSON(geojson, { style: { "color": $this.getRandomColor(), "weight": 2, "opacity": 0.25 } }).addTo(group);
 
 						$this.addLayer(geofence.name, group, false, "geofence-" + geofence.name);
 					});
 				});
+			},
+			getRandomColor() {
+				var letters = '0123456789ABCDEF';
+				var color = '#';
+				for (var i = 0; i < 6; i++) {
+					color += letters[Math.floor(Math.random() * 16)];
+				}
+				return color;
 			},
 			build_quest_small(quest_reward_type_raw, quest_item_id, quest_pokemon_id) {
 				switch (quest_reward_type_raw) {

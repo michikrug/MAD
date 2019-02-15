@@ -493,7 +493,7 @@ def get_unknows():
 def get_position():
     positions = []
 
-    for name, in device_mappings.items():
+    for name, device in device_mappings.items():
         try:
             with open(name + '.position', 'r') as f:
                 latlon = f.read().strip().split(', ')
@@ -513,7 +513,8 @@ def get_position():
 @app.route("/get_geofence")
 @auth_required
 def get_geofence():
-    geofences = []
+    geofences = {}
+
     for name, area in areas.items():
         name = 'Unknown'
         for line in area['geofence_included'].splitlines():
@@ -531,7 +532,7 @@ def get_geofence():
                 ])
 
     geofencexport = []
-    for name, coordinates in geofences:
+    for name, coordinates in geofences.items():
         geofencexport.append({'name': name, 'coordinates': coordinates})
 
     return jsonify(geofencexport)

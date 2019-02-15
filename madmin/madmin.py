@@ -21,8 +21,8 @@ from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from flask_caching import Cache
 from utils.language import i8ln, open_json_file
+from utils.mappingParser import MappingParser
 from utils.questGen import generate_quest
-from utils.walkerArgs import parseArgs
 
 sys.path.append("..")  # Adds higher directory to python modules path.
 
@@ -32,15 +32,24 @@ cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 log = logging.getLogger(__name__)
 
-conf_args = parseArgs()
+conf_args = None
+db_wrapper = None
+device_mappings = None
+routemanagers = None
+areas = None
 
-if conf_args.db_method == "rm":
-    db_wrapper = RmWrapper(conf_args, None)
-elif conf_args.db_method == "monocle":
-    db_wrapper = MonocleWrapper(conf_args, None)
-else:
-    log.error("Invalid db_method in config. Exiting")
-    sys.exit(1)
+
+def madmin_start(arg_args, arg_db_wrapper):
+    import json
+    global conf_args, device_mappings, db_wrapper, routemanagers, areas
+    conf_args = arg_args
+    db_wrapper = arg_db_wrapper
+    mapping_parser = MappingParser(arg_db_wrapper)
+    device_mappings = mapping_parser.get_devicemappings()
+    routemanagers = mapping_parser.get_routemanagers()
+    areas = mapping_parser.get_areas()
+    app.run(host=arg_args.madmin_ip, port=int(
+        arg_args.madmin_port), threaded=True, use_reloader=False)
 
 
 def auth_required(func):
@@ -482,46 +491,48 @@ def get_unknows():
 @app.route("/get_position")
 @auth_required
 def get_position():
-    position = []
-    positionexport = {}
-    # fileName = conf_args.position_file+'.position'
+    positions = []
 
-    for filename in glob.glob('*.position'):
-        name = filename.split('.')
-        with open(filename, 'r') as f:
-            latlon = f.read().strip().split(', ')
-            position = {
-                'lat': getCoordFloat(latlon[0]),
-                'lng': getCoordFloat(latlon[1])
-            }
-            positionexport[str(name[0])] = position
+    for name, in device_mappings.items():
+        try:
+            with open(name + '.position', 'r') as f:
+                latlon = f.read().strip().split(', ')
+                worker = {
+                    'name': str(name),
+                    'lat': getCoordFloat(latlon[0]),
+                    'lon': getCoordFloat(latlon[1])
+                }
+                positions.append(worker)
+        except OSError:
+            pass
 
-    return jsonify(positionexport)
+    return jsonify(positions)
 
 
 @cache.cached()
 @app.route("/get_geofence")
+@auth_required
 def get_geofence():
-    geofencexport = {}
+    geofences = []
+    for name, area in areas.items():
+        name = 'Unknown'
+        for line in area['geofence_included'].splitlines():
+            line = line.strip()
+            if not line:  # Empty line.
+                continue
+            elif line.startswith("["):  # Name line.
+                name = line.replace("[", "").replace("]", "")
+                geofences[name] = []
+            else:  # Coordinate line.
+                lat, lon = line.split(",")
+                geofences[name].append([
+                    getCoordFloat(lat),
+                    getCoordFloat(lon)
+                ])
 
-    with open('configs/mappings.json') as f:
-        mapping = json.load(f)
-        for area in mapping['areas']:
-            name = 'Unknown'
-            geofence_included = area.get('geofence_included', '')
-            for line in geofence_included.splitlines():
-                line = line.strip()
-                if not line:  # Empty line.
-                    continue
-                elif line.startswith("["):  # Name line.
-                    name = line.replace("[", "").replace("]", "")
-                    geofencexport[name] = []
-                else:  # Coordinate line.
-                    lat, lon = line.split(",")
-                    geofencexport[name].append([
-                        getCoordFloat(lat),
-                        getCoordFloat(lon)
-                    ])
+    geofencexport = []
+    for name, coordinates in geofences:
+        geofencexport.append({'name': name, 'coordinates': coordinates})
 
     return jsonify(geofencexport)
 
@@ -530,20 +541,23 @@ def get_geofence():
 @app.route("/get_route")
 @auth_required
 def get_route():
-    route = []
-    routeexport = {}
+    routeexport = []
 
-    for filename in glob.glob('*.calc'):
-        name = filename.split('.')
-        with open(filename, 'r') as f:
-            for line in f.readlines():
-                latlon = line.strip().split(', ')
-                route.append([
-                    getCoordFloat(latlon[0]),
-                    getCoordFloat(latlon[1])
-                ])
-            routeexport[str(name[0])] = route
-            route = []
+    for name, area in areas.items():
+        route = []
+        try:
+            with open(area['routecalc'] + '.calc', 'r') as f:
+                for line in f.readlines():
+                    latlon = line.strip().split(', ')
+                    route.append([
+                        getCoordFloat(latlon[0]),
+                        getCoordFloat(latlon[1])
+                    ])
+                routeexport.append(
+                    {'name': str(name), 'mode': area['mode'], 'coordinates': route})
+        # ignore missing routes files
+        except OSError:
+            pass
 
     return jsonify(routeexport)
 
@@ -1100,5 +1114,19 @@ def creation_date(path_to_file):
 
 
 if __name__ == "__main__":
+    from utils.walkerArgs import parseArgs
+    from db.monocleWrapper import MonocleWrapper
+    from db.rmWrapper import RmWrapper
+
+    args = parseArgs()
+
+    if args.db_method == "rm":
+        db_wrapper = RmWrapper(args, None)
+    elif args.db_method == "monocle":
+        db_wrapper = MonocleWrapper(args, None)
+    else:
+        log.error("Invalid db_method in config. Exiting")
+        sys.exit(1)
+
     app.run()
     # host='0.0.0.0', port=int(conf_args.madmin_port), threaded=False)

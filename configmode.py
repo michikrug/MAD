@@ -2,6 +2,8 @@ import os
 import sys
 from threading import Thread
 
+from db.monocleWrapper import MonocleWrapper
+from db.rmWrapper import RmWrapper
 from utils.walkerArgs import parseArgs
 
 args = parseArgs()
@@ -18,10 +20,9 @@ def generate_mappingjson():
         json.dump(newfile, outfile, indent=4, sort_keys=True)
 
 
-def start_madmin():
-    from madmin.madmin import app
-    app.run(host=args.madmin_ip, port=int(args.madmin_port),
-            threaded=True, use_reloader=False)
+def start_madmin(args, db_wrapper):
+    from madmin.madmin import madmin_start
+    madmin_start(args, db_wrapper)
 
 
 if __name__ == "__main__":
@@ -34,7 +35,18 @@ if __name__ == "__main__":
     if not os.path.exists(filename):
         generate_mappingjson()
 
+    webhook_helper = None
+
+    if args.db_method == "rm":
+        db_wrapper = RmWrapper(args, webhook_helper)
+    elif args.db_method == "monocle":
+        db_wrapper = MonocleWrapper(args, webhook_helper)
+    else:
+        log.error("Invalid db_method in config. Exiting")
+        sys.exit(1)
+
     print('Starting MADmin with Port {} - open browser  and click "Mapping Editor"'.format(int(args.madmin_port)))
-    t_flask = Thread(name='madmin', target=start_madmin)
+    t_flask = Thread(name='madmin', target=start_madmin,
+                     args=(args, db_wrapper,))
     t_flask.daemon = False
     t_flask.start()

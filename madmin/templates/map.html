@@ -202,7 +202,7 @@
 						// add route to layergroup
 						L.geoJSON(geojson, { style: { "color": "#FF0000", "weight": 2, "opacity": 0.5 } }).addTo(group);
 
-						$this.addLayer(route.name, group, false, "route-" + mode);
+						$this.addLayer("route - " + route.name, group, false, "route-" + mode);
 					});
 				});
 			},
@@ -299,7 +299,7 @@
 						// add geofence to layergroup
 						L.geoJSON(geojson, { style: { "color": $this.getRandomColor(), "weight": 2, "opacity": 0.25 } }).addTo(group);
 
-						$this.addLayer(geofence.name, group, false, "geofence-" + geofence.name);
+						$this.addLayer("geofence - " + geofence.name, group, false, "geofence-" + geofence.name);
 					});
 				});
 			},

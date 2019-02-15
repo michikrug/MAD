@@ -1,4 +1,4 @@
-html, body, div[role="main"] {
+html, body, div[role="main"], #app {
 	height: 100%;
 }
 
@@ -110,4 +110,8 @@ li.list-group-item.layer-item .custom-switch {
 	width: 400px;
 	height: 180px;
 	text-align: center;
+}
+
+.leaflet-sidebar.collapsed {
+	width: 44px !important;
 }

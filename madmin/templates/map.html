@@ -328,7 +328,7 @@
 						if (quest_pokemon_id === 327) {
 							form = '11';
 						}
-						var image = 'asset/pokemon_icons/pokemon_icon_' + quest_pokemon_id + '_' + form + '.png';
+						var image = 'asset/pokemon_icons/pokemon_icon_' + String.prototype.padStart.call(quest_pokemon_id, 3, 0) + '_' + form + '.png';
 						var size = [50, 50]
 						var anchor = [40, 30]
 						break;
@@ -362,7 +362,7 @@
 						if (quest_pokemon_id === 327) {
 							form = '11';
 						}
-						var image = 'asset/pokemon_icons/pokemon_icon_' + quest_pokemon_id + '_' + form + '.png';
+						var image = 'asset/pokemon_icons/pokemon_icon_' + String.prototype.padStart.call(quest_pokemon_id, 3, 0) + '_' + form + '.png';
 						var rewardtext = quest_pokemon_name;
 						var width = 60;
 						break;

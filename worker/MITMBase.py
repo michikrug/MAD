@@ -50,7 +50,7 @@ class MITMBase(WorkerBase):
             log.warning("Timeout waiting for data")
             try:
                 current_routemanager = self._get_currently_valid_routemanager()
-            except InternalStopWorkerException as e:
+            except InternalStopWorkerException:
                 log.info(
                     "Worker %s is to be stopped due to invalid routemanager/mode switch" % str(self._id))
                 raise InternalStopWorkerException

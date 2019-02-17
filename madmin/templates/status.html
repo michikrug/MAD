@@ -8,7 +8,7 @@
 <script>
     var dataTable;
     function setGrid(tableGridHtmlId, gridData) {
-        if ($.fn.dataTable.isDataTable(tableGridHtmlId) ) {
+        if ($.fn.dataTable.isDataTable(tableGridHtmlId)) {
             dataTable.destroy();
         }
 
@@ -43,7 +43,7 @@
                     "targets": [5, 6],
                     "render": function (data, type, row) {
                         var dateToShow = moment(data);
-                        if(dateToShow.isValid()) {
+                        if (dateToShow.isValid()) {
                             return dateToShow.fromNow();
                         }
 
@@ -55,12 +55,12 @@
             "responsive": {{ responsive }},
             "autoWidth": true
         });
-	}
+    }
 
     function getStatusData() {
         return $.ajax({
             type: "GET",
-            url: "/get_status",
+            url: "get_status",
             success: function (result) {
                 return result;
             }
@@ -68,8 +68,8 @@
     }
 
     function reloadGrid() {
-        getStatusData().then(function(result) {
-                setGrid('#show-data', result);
+        getStatusData().then(function (result) {
+            setGrid('#show-data', result);
         });
     }
 
@@ -77,9 +77,9 @@
         $("#navstatus").addClass("active");
 
         getStatusData().then(function (result) {
-                setGrid('#show-data', result);
+            setGrid('#show-data', result);
 
-                setInterval(reloadGrid, 5000);
+            setInterval(reloadGrid, 5000);
         });
     });
 </script>

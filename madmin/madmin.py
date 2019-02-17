@@ -127,7 +127,7 @@ def unknown():
 @app.route('/map', methods=['GET'])
 @auth_required
 def map():
-    return render_template('map.html')
+    return render_template('map.html', lat=conf_args.home_lat, lng=conf_args.home_lng)
 
 
 @app.route('/quests', methods=['GET'])
@@ -1066,6 +1066,20 @@ def getBasePath(request):
     if request.referrer:
         return '/'.join(request.referrer.split('/')[:-1])
     return ''
+
+
+@app.route('/status', methods=['GET'])
+@auth_required
+def status():
+    return render_template('status.html', responsive=str(conf_args.madmin_noresponsive).lower(), title="Worker status")
+
+
+@app.route('/get_status', methods=['GET'])
+@auth_required
+def get_status():
+    data = json.loads(db_wrapper.download_status())
+
+    return jsonify(data)
 
 
 def decodeHashJson(hashJson):

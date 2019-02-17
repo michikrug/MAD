@@ -41,7 +41,7 @@ class MADVersion(object):
                 try:
                     self._dbwrapper.execute(alter_query, commit=True)
                 except Exception as e:
-                    log.info("Unexpected error: %s" % (e))
+                    log.info("Unexpected error: %s" % e)
 
             # Adding quest_task = ingame quest conditions
             if self._dbwrapper.check_column_exists('trs_quest', 'quest_task') == 0:
@@ -52,7 +52,7 @@ class MADVersion(object):
                 try:
                     self._dbwrapper.execute(alter_query, commit=True)
                 except Exception as e:
-                    log.info("Unexpected error: %s" % (e))
+                    log.info("Unexpected error: %s" % e)
 
             # Adding form column for rm / monocle if not exists
             if self._application_args.db_method == "rm":
@@ -77,7 +77,7 @@ class MADVersion(object):
                 try:
                     self._dbwrapper.execute(alter_query, commit=True)
                 except Exception as e:
-                    log.info("Unexpected error: %s" % (e))
+                    log.info("Unexpected error: %s" % e)
 
         if self._version < 2:
             alter_query = (
@@ -88,7 +88,7 @@ class MADVersion(object):
             try:
                 self._dbwrapper.execute(alter_query, commit=True)
             except Exception as e:
-                log.info("Unexpected error: %s" % (e))
+                log.info("Unexpected error: %s" % e)
 
         self.set_version(current_version)
 

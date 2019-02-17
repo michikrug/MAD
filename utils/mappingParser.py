@@ -6,6 +6,7 @@ from pathlib import Path
 from geofence.geofenceHelper import GeofenceHelper
 from route.RouteManagerIV import RouteManagerIV
 from route.RouteManagerMon import RouteManagerMon
+from route.RouteManagerQuests import RouteManagerQuests
 from route.RouteManagerRaids import RouteManagerRaids
 from utils.s2Helper import S2Helper
 
@@ -14,22 +15,23 @@ log = logging.getLogger(__name__)
 mode_mapping = {
     "raids_mitm": {
         "s2_cell_level": 13,
-        "range": 490,
-        "max_count": 100000
+        "range":         490,
+        "max_count":     100000
+
     },
-    "mon_mitm": {
+    "mon_mitm":   {
         "s2_cell_level": 17,
-        "range": 67,
-        "max_count": 100000
+        "range":         67,
+        "max_count":     100000
     },
     "raids_ocr": {
-        "range": 490,
-        "max_count": 7
+        "range":         490,
+        "max_count":     7
     },
-    "pokestops": {
+    "pokestops":  {
         "s2_cell_level": 13,
-        "range": 1,
-        "max_count": 100000
+        "range":         1,
+        "max_count":     100000
     }
 }
 
@@ -106,18 +108,19 @@ class MappingParser(object):
                                                mode=mode
                                                )
             elif mode == "pokestops":
-                route_manager = RouteManagerMon(self.db_wrapper, None, mode_mapping[area["mode"]]["range"],
-                                                mode_mapping[area["mode"]
-                                                             ]["max_count"],
-                                                area["geofence_included"], area.get(
-                                                    "geofence_excluded", None),
-                                                area["routecalc"], mode=area["mode"],
-                                                init=area.get("init", False),
-                                                name=area.get(
-                                                    "name", "unknown"),
-                                                settings=area.get(
-                                                    "settings", None)
-                                                )
+                route_manager = RouteManagerQuests(self.db_wrapper, None, mode_mapping[area["mode"]]["range"],
+                                                   mode_mapping[area["mode"]
+                                                                ]["max_count"],
+                                                   area["geofence_included"], area.get(
+                                                       "geofence_excluded", None),
+                                                   area["routecalc"], mode=area["mode"],
+                                                   init=area.get(
+                                                       "init", False),
+                                                   name=area.get(
+                                                       "name", "unknown"),
+                                                   settings=area.get(
+                                                       "settings", None)
+                                                   )
             else:
                 raise RuntimeError("Invalid mode found in mapping parser.")
 

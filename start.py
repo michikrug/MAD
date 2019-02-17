@@ -123,7 +123,7 @@ def start_ocr_observer(args, db_helper):
 
 
 def delete_old_logs(minutes):
-    if minutes == "0":
+    if minutes == 0:
         log.info('delete_old_logs: Search/Delete logs is disabled')
         return
 
@@ -216,6 +216,7 @@ if __name__ == "__main__":
     db_wrapper.create_hash_database_if_not_exists()
     db_wrapper.check_and_create_spawn_tables()
     db_wrapper.create_quest_database_if_not_exists()
+    db_wrapper.create_status_database_if_not_exists()
     webhook_helper.set_gyminfo(db_wrapper)
     version = MADVersion(args, db_wrapper)
     version.get_version()
@@ -321,7 +322,6 @@ if __name__ == "__main__":
     log.info('Starting Log Cleanup Thread....')
     t_cleanup = Thread(name='cleanuplogs',
                        target=delete_old_logs(args.cleanup_age))
-    t_cleanup.join()
     t_cleanup.daemon = True
     t_cleanup.start()
 

@@ -17,6 +17,10 @@ from worker.WorkerQuests import WorkerQuests
 log = logging.getLogger(__name__)
 OutgoingMessage = collections.namedtuple('OutgoingMessage', ['id', 'message'])
 
+# Silence the websocket library.
+logging.getLogger('websockets.server').setLevel(logging.INFO)
+logging.getLogger('websockets.protocol').setLevel(logging.INFO)
+
 
 class WebsocketServer(object):
     def __init__(self, args, mitm_mapper, db_wrapper, routemanagers, device_mappings, auths):
@@ -349,7 +353,11 @@ class WebsocketServer(object):
             log.debug("Received answer in time, popping response")
             self.__reset_fail_counter(id)
             result = self.__pop_response(message_id)
-            log.debug("Response: %s" % str(result))
+            if isinstance(result, str):
+                log.debug("Response to %s: %s" % (str(id), str(result)))
+            else:
+                log.debug("Received binary data to %s, starting with %s" %
+                          (str(id), str(result[:10])))
         else:
             # timeout reached
             log.warning("Timeout, increasing timeout-counter")
@@ -361,7 +369,6 @@ class WebsocketServer(object):
                 self.clean_up_user(id)
                 raise WebsocketWorkerTimeoutException
 
-        log.debug("Returning response to %s: %s" % (str(id), str(result)))
         self.__remove_request(message_id)
         return result
 
@@ -392,9 +399,11 @@ class WebsocketServer(object):
         self.__requests_mutex.release()
 
     def update_settings(self, routemanagers, device_mappings, auths):
+        self.__current_users_mutex.acquire()
         self.__device_mappings = device_mappings
         self.__routemanagers = routemanagers
         self.__auths = auths
         for id, worker in self.__current_users.items():
             log.info('Stopping worker %s to apply new mappings.', id)
             worker[1].stop_worker()
+        self.__current_users_mutex.release()

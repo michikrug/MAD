@@ -675,11 +675,11 @@ class RmWrapper(DbWrapperBase):
             encounter_id = encounter_id + 2**64
 
         if init:
-            log.info("{0}: updating mon #{1} at {2}, {3}. Despawning at {4} (init)".format(
+            log.info("{0}: updating IV mon #{1} at {2}, {3}. Despawning at {4} (init)".format(
                 str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
             )
         else:
-            log.info("{0}: updating mon #{1} at {2}, {3}. Despawning at {4} (non-init)".format(
+            log.info("{0}: updating IV mon #{1} at {2}, {3}. Despawning at {4} (non-init)".format(
                 str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
             )
 
@@ -732,12 +732,14 @@ class RmWrapper(DbWrapperBase):
             pokemon_display.get("form_value", None)
         )
 
+        log.debug("Placing query to update mon")
         self.execute(query, vals, commit=True)
-
+        log.debug("Done updating mon in DB")
         # TODO: check above vs this...
         despawn_time = datetime.now() + timedelta(seconds=300)
         despawn_time_unix = int(time.mktime(despawn_time.timetuple()))
         if getdetspawntime:
+            log.debug("Retrieving endtime")
             despawn_time = self._gen_endtime(getdetspawntime)
             despawn_time_unix = despawn_time
 
@@ -751,6 +753,7 @@ class RmWrapper(DbWrapperBase):
 
             pokemon_level = round(pokemon_level) * 2 / 2
 
+        log.debug("Sending webhook")
         self.webhook_helper.send_pokemon_webhook(
             encounter_id=encounter_id,
             pokemon_id=pokemon_data.get("id"),
@@ -770,6 +773,7 @@ class RmWrapper(DbWrapperBase):
             height=pokemon_data.get("height"),
             weight=pokemon_data.get("weight")
         )
+        log.debug("Done submitting encounter data to DB")
 
     def submit_mons_map_proto(self, origin, map_proto, mon_ids_iv):
         log.debug(
@@ -1061,9 +1065,11 @@ class RmWrapper(DbWrapperBase):
             "FROM pokemon "
             "WHERE individual_attack IS NULL AND individual_defense IS NULL AND individual_stamina IS NULL "
             "AND encounter_id != 0 "
-            "AND TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), disappear_time) >= %s "
+            "and (disappear_time BETWEEN DATE_ADD(UTC_TIMESTAMP(), INTERVAL %s SECOND) "
+            "and DATE_ADD(UTC_TIMESTAMP(), INTERVAL 60 MINUTE))"
             "ORDER BY expire ASC"
         )
+
         vals = (
             int(min_time_left_seconds),
         )
@@ -1163,7 +1169,8 @@ class RmWrapper(DbWrapperBase):
         query = (
             "SELECT trs_quest.GUID "
             "from trs_quest inner join pokestop on pokestop.pokestop_id = trs_quest.GUID where "
-            "from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d') = date_format(DATE_ADD( now() , INTERVAL '-15' MINUTE ), '%Y-%m-%d') "
+            "from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d') = "
+            "date_format(DATE_ADD( now() , INTERVAL '-15' MINUTE ), '%Y-%m-%d') "
             "and pokestop.latitude=%s and pokestop.longitude=%s"
         )
         data = (latitude, longitude)
@@ -1176,6 +1183,34 @@ class RmWrapper(DbWrapperBase):
         else:
             log.debug('Pokestop has not a quest with CURDATE()')
             return False
+
+    def stop_from_db_without_quests(self, geofence_helper):
+        log.debug("{RmWrapper::stop_from_db_without_questsb} called")
+
+        query = (
+            "SELECT pokestop.latitude, pokestop.longitude "
+            "FROM pokestop left join trs_quest on "
+            "pokestop.pokestop_id = trs_quest.GUID where "
+            "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) <> CURDATE() "
+            "or trs_quest.GUID IS NULL"
+        )
+
+        res = self.execute(query)
+        list_of_coords = []
+        for (latitude, longitude) in res:
+            list_of_coords.append([latitude, longitude])
+
+        if geofence_helper is not None:
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
+            return geofenced_coords
+        else:
+            import numpy as np
+            to_return = np.zeros(shape=(len(list_of_coords), 2))
+            for i in range(len(to_return)):
+                to_return[i][0] = list_of_coords[i][0]
+                to_return[i][1] = list_of_coords[i][1]
+            return to_return
 
     def quests_from_db(self, GUID=False, since=0):
         log.debug("{RmWrapper::quests_from_db} called")

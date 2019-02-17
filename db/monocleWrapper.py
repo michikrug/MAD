@@ -431,7 +431,7 @@ class MonocleWrapper(DbWrapperBase):
             data.append(id)
         return data
 
-    def set_scanned_location(self, lat, lng, capture_time):
+    def set_scanned_location(self, lat, lng, capture_time, radius):
         log.debug(
             "MonocleWrapper::set_scanned_location: Scanned location not supported with monocle")
         pass

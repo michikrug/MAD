@@ -271,8 +271,7 @@ class WorkerBase(ABC):
                 valid = self._check_location_is_valid()
                 if not valid:
                     break
-            except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException) \
-                    as e:
+            except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 log.warning("Worker %s get non valid coords!" % str(self._id))
                 break
 
@@ -299,9 +298,18 @@ class WorkerBase(ABC):
                 self._location_count += 1
                 if self._applicationArgs.last_scanned:
                     log.info('main: Set new scannedlocation in Database')
-                    # self.update_scanned_location(currentLocation.lat, currentLocation.lng, curTime)
+                    
+                    routeMan = self._get_currently_valid_routemanager()
+                    mode = routeMan.mode if routeMan else None
+                    if mode == None or mode == "iv_mitm" or mode == "mon_mitm":
+                        radius = 67
+                    if mode == "raids_ocr" or mode == "raids_mitm":
+                        radius = 490
+                    if mode == "pokestops":
+                        radius = 40
+
                     self._add_task_to_loop(self.update_scanned_location(
-                        self.current_location.lat, self.current_location.lng, time_snapshot)
+                        self.current_location.lat, self.current_location.lng, time_snapshot, radius)
                     )
 
                 try:
@@ -322,10 +330,10 @@ class WorkerBase(ABC):
                 outfile.write(str(self.current_location.lat) +
                               ", " + str(self.current_location.lng))
 
-    async def update_scanned_location(self, latitude, longitude, timestamp):
+    async def update_scanned_location(self, latitude, longitude, timestamp, radius):
         try:
             self._db_wrapper.set_scanned_location(
-                str(latitude), str(longitude), str(timestamp))
+                latitude, longitude, timestamp, radius)
         except Exception as e:
             log.error("Failed updating scanned location: %s" % str(e))
             return

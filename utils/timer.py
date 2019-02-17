@@ -1,7 +1,7 @@
 import datetime
 import logging
 import time
-from threading import Thread, Event
+from threading import Event, Thread
 
 log = logging.getLogger(__name__)
 

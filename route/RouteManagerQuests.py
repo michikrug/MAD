@@ -1,4 +1,5 @@
 import logging
+
 from route.RouteManagerBase import RouteManagerBase
 
 log = logging.getLogger(__name__)
@@ -18,7 +19,8 @@ class RouteManagerQuests(RouteManagerBase):
         return 0
 
     def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, False, nofile=True)
+        self.recalc_route(
+            self._max_radius, self._max_coords_within_radius, 1, False, nofile=True)
 
     def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
                  path_to_exclude_geofence, routefile, mode=None, init=False,

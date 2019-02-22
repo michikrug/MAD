@@ -299,8 +299,8 @@ class WorkerBase(ABC):
                 if self._applicationArgs.last_scanned:
                     log.info('main: Set new scannedlocation in Database')
                     
-                    routeMan = self._get_currently_valid_routemanager()
-                    mode = routeMan.mode if routeMan else None
+                    route_man = self._get_currently_valid_routemanager()
+                    mode = route_man.mode if route_man else None
                     if mode == None or mode == "iv_mitm" or mode == "mon_mitm":
                         radius = 67
                     if mode == "raids_ocr" or mode == "raids_mitm":

@@ -861,7 +861,8 @@ class RmWrapper(DbWrapperBase):
             "INSERT INTO pokestop (pokestop_id, enabled, latitude, longitude, last_modified, lure_expiration, "
             "last_updated) "
             "VALUES (%s, %s, %s, %s, %s, %s, %s) "
-            "ON DUPLICATE KEY UPDATE last_updated=VALUES(last_updated), lure_expiration=VALUES(lure_expiration)"
+            "ON DUPLICATE KEY UPDATE last_updated=VALUES(last_updated), lure_expiration=VALUES(lure_expiration), "
+            "last_modified=VALUES(last_modified)"
         )
 
         for cell in cells:
@@ -1127,9 +1128,11 @@ class RmWrapper(DbWrapperBase):
             return None
         now = datetime.utcfromtimestamp(
             time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        last_modified = datetime.utcfromtimestamp(
+            stop_data['last_modified_timestamp_ms']/1000).strftime("%Y-%m-%d %H:%M:%S")
         # lure isn't present anymore...
         lure = '1970-01-01 00:00:00'
-        return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], now, lure, now
+        return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now
 
     def __extract_args_single_weather(self, client_weather_data, time_of_day, received_timestamp):
         now = datetime.utcfromtimestamp(
@@ -1259,7 +1262,6 @@ class RmWrapper(DbWrapperBase):
     def submit_pokestops_details_map_proto(self, map_proto):
         log.debug("{RmWrapper::submit_pokestops_details_map_proto} called")
         pokestop_args = []
-        # now = datetime.datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query_pokestops = (
             "INSERT INTO pokestop (pokestop_id, enabled, latitude, longitude, last_modified, "
@@ -1282,5 +1284,6 @@ class RmWrapper(DbWrapperBase):
         name = stop_data.get('name', None)
         now = datetime.utcfromtimestamp(
             time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        last_modified = '1970-01-01 00:00:00'
 
-        return stop_data['fort_id'], 1, stop_data['latitude'], stop_data['longitude'], now, now, name, image[0]
+        return stop_data['fort_id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, now, name, image[0]

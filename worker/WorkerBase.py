@@ -298,7 +298,7 @@ class WorkerBase(ABC):
                 self._location_count += 1
                 if self._applicationArgs.last_scanned:
                     log.info('main: Set new scannedlocation in Database')
-                    
+
                     route_man = self._get_currently_valid_routemanager()
                     mode = route_man.mode if route_man else None
                     if mode == None or mode == "iv_mitm" or mode == "mon_mitm":

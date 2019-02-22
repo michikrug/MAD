@@ -3,7 +3,6 @@ import datetime
 import glob
 import json
 import logging
-import numbers
 import os
 import platform
 import re
@@ -35,18 +34,15 @@ log = logging.getLogger(__name__)
 conf_args = None
 db_wrapper = None
 device_mappings = None
-routemanagers = None
 areas = None
 
 
 def madmin_start(arg_args, arg_db_wrapper):
-    import json
-    global conf_args, device_mappings, db_wrapper, routemanagers, areas
+    global conf_args, device_mappings, db_wrapper, areas
     conf_args = arg_args
     db_wrapper = arg_db_wrapper
     mapping_parser = MappingParser(arg_db_wrapper)
     device_mappings = mapping_parser.get_devicemappings()
-    routemanagers = mapping_parser.get_routemanagers()
     areas = mapping_parser.get_areas()
     app.run(host=arg_args.madmin_ip, port=int(
         arg_args.madmin_port), threaded=True, use_reloader=False)
@@ -1144,4 +1140,3 @@ if __name__ == "__main__":
         sys.exit(1)
 
     app.run()
-    # host='0.0.0.0', port=int(conf_args.madmin_port), threaded=False)

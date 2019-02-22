@@ -4,6 +4,7 @@ from threading import Thread
 
 from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
+from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
 
 args = parseArgs()
@@ -44,6 +45,9 @@ if __name__ == "__main__":
     else:
         log.error("Invalid db_method in config. Exiting")
         sys.exit(1)
+
+    version = MADVersion(args, db_wrapper)
+    version.get_version()
 
     print('Starting MADmin with Port {} - open browser  and click "Mapping Editor"'.format(int(args.madmin_port)))
     t_flask = Thread(name='madmin', target=start_madmin,

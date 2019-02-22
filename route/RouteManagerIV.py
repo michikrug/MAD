@@ -1,4 +1,5 @@
 import logging
+
 from route.RouteManagerBase import RouteManagerBase
 
 log = logging.getLogger(__name__)
@@ -12,13 +13,14 @@ class RouteManagerIV(RouteManagerBase):
         return None
 
     def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, True)
+        self.recalc_route(self._max_radius,
+                          self._max_coords_within_radius, 1, True)
 
     def _retrieve_latest_priority_queue(self):
         # IV is excluded from clustering, check RouteManagerBase for more info
         latest_priorities = self.db_wrapper.get_to_be_encountered(geofence_helper=self.geofence_helper,
-                                                                  min_time_left_seconds=
-                                                                  self.settings.get("min_time_left_seconds", None),
+                                                                  min_time_left_seconds=self.settings.get(
+                                                                      "min_time_left_seconds", None),
                                                                   eligible_mon_ids=self.settings.get("mon_ids_iv", None))
         # extract the encounterIDs and set them in the routeManager...
         new_list = []
@@ -50,4 +52,3 @@ class RouteManagerIV(RouteManagerBase):
         if self.delay_after_timestamp_prio is None:
             # just set a value to enable the queue
             self.delay_after_timestamp_prio = 5
-

@@ -1,4 +1,5 @@
 import logging
+
 from route.RouteManagerBase import RouteManagerBase
 
 log = logging.getLogger(__name__)
@@ -12,7 +13,8 @@ class RouteManagerMon(RouteManagerBase):
         return None
 
     def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, True)
+        self.recalc_route(self._max_radius,
+                          self._max_coords_within_radius, 1, True)
 
     def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
                  path_to_exclude_geofence, routefile, mode=None, coords_spawns_known=False, init=False,
@@ -35,7 +37,8 @@ class RouteManagerMon(RouteManagerBase):
             coords = self.db_wrapper.get_detected_spawns(self.geofence_helper)
         else:
             log.info("Reading unknown Spawnpoints from DB")
-            coords = self.db_wrapper.get_undetected_spawns(self.geofence_helper)
+            coords = self.db_wrapper.get_undetected_spawns(
+                self.geofence_helper)
         return coords
 
     def _cluster_priority_queue_criteria(self):

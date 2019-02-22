@@ -7,9 +7,9 @@ import sys
 from threading import Event, Lock, Thread
 
 import websockets
-
 from utils.authHelper import check_auth
-from utils.madGlobals import WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException
+from utils.madGlobals import (WebsocketWorkerRemovedException,
+                              WebsocketWorkerTimeoutException)
 from utils.timer import Timer
 from worker.WorkerMITM import WorkerMITM
 from worker.WorkerQuests import WorkerQuests
@@ -20,6 +20,7 @@ OutgoingMessage = collections.namedtuple('OutgoingMessage', ['id', 'message'])
 # Silence the websocket library.
 logging.getLogger('websockets.server').setLevel(logging.INFO)
 logging.getLogger('websockets.protocol').setLevel(logging.INFO)
+
 
 class WebsocketServer(object):
     def __init__(self, args, mitm_mapper, db_wrapper, routemanagers, device_mappings, auths):
@@ -61,8 +62,8 @@ class WebsocketServer(object):
 
         asyncio.set_event_loop(self.__loop)
         asyncio.get_event_loop().run_until_complete(
-                websockets.serve(self.handler, self.__listen_address, self.__listen_port, max_size=2 ** 25,
-                                 origins=allowed_origins, ping_timeout=10, ping_interval=15))
+            websockets.serve(self.handler, self.__listen_address, self.__listen_port, max_size=2 ** 25,
+                             origins=allowed_origins, ping_timeout=10, ping_interval=15))
         asyncio.get_event_loop().run_forever()
 
     async def handler(self, websocket_client_connection, path):
@@ -75,25 +76,29 @@ class WebsocketServer(object):
             return
 
         consumer_task = asyncio.ensure_future(
-                self.__consumer_handler(websocket_client_connection))
+            self.__consumer_handler(websocket_client_connection))
         producer_task = asyncio.ensure_future(
-                self.__producer_handler(websocket_client_connection))
+            self.__producer_handler(websocket_client_connection))
         done, pending = await asyncio.wait(
-                [producer_task, consumer_task],
-                return_when=asyncio.FIRST_COMPLETED,
+            [producer_task, consumer_task],
+            return_when=asyncio.FIRST_COMPLETED,
         )
         log.info("consumer or producer of %s stopped, cancelling pending tasks"
                  % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
         for task in pending:
             task.cancel()
-        log.info("Awaiting unregister of %s" % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
+        log.info("Awaiting unregister of %s" % str(
+            websocket_client_connection.request_headers.get_all("Origin")[0]))
         await self.__unregister(websocket_client_connection)
-        log.info("All done with %s" % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
+        log.info("All done with %s" % str(
+            websocket_client_connection.request_headers.get_all("Origin")[0]))
 
     async def __register(self, websocket_client_connection):
-        log.info("Client %s registering" % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
+        log.info("Client %s registering" % str(
+            websocket_client_connection.request_headers.get_all("Origin")[0]))
         try:
-            id = str(websocket_client_connection.request_headers.get_all("Origin")[0])
+            id = str(
+                websocket_client_connection.request_headers.get_all("Origin")[0])
         except IndexError:
             log.warning("Client from %s tried to connect without Origin header"
                         % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
@@ -101,7 +106,8 @@ class WebsocketServer(object):
 
         if self.__auths:
             try:
-                authBase64 = str(websocket_client_connection.request_headers.get_all("Authorization")[0])
+                authBase64 = str(
+                    websocket_client_connection.request_headers.get_all("Authorization")[0])
             except IndexError:
                 log.warning("Client from %s tried to connect without auth header"
                             % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
@@ -124,11 +130,14 @@ class WebsocketServer(object):
 
         last_known_state = {}
         client_mapping = self.__device_mappings[id]
-        timer = Timer(client_mapping["switch"], id, client_mapping["switch_interval"])
+        timer = Timer(client_mapping["switch"], id,
+                      client_mapping["switch_interval"])
         await asyncio.sleep(0.8)
-        daytime_routemanager = self.__routemanagers[client_mapping["daytime_area"]].get("routemanager")
+        daytime_routemanager = self.__routemanagers[client_mapping["daytime_area"]].get(
+            "routemanager")
         if client_mapping.get("nighttime_area", None) is not None:
-            nightime_routemanager = self.__routemanagers[client_mapping["nighttime_area"]].get("routemanager", None)
+            nightime_routemanager = self.__routemanagers[client_mapping["nighttime_area"]].get(
+                "routemanager", None)
         else:
             nightime_routemanager = None
         devicesettings = client_mapping["settings"]
@@ -178,17 +187,20 @@ class WebsocketServer(object):
                 log.fatal("Mode not implemented")
                 sys.exit(1)
 
-        new_worker_thread = Thread(name='worker_%s' % id, target=worker.start_worker)
+        new_worker_thread = Thread(name='worker_%s' %
+                                   id, target=worker.start_worker)
         new_worker_thread.daemon = True
         self.__current_users_mutex.acquire()
-        self.__current_users[id] = [new_worker_thread, worker, websocket_client_connection, 0]
+        self.__current_users[id] = [new_worker_thread,
+                                    worker, websocket_client_connection, 0]
         self.__current_users_mutex.release()
         new_worker_thread.start()
 
         return True
 
     async def __unregister(self, websocket_client_connection):
-        worker_id = str(websocket_client_connection.request_headers.get_all("Origin")[0])
+        worker_id = str(
+            websocket_client_connection.request_headers.get_all("Origin")[0])
         self.__current_users_mutex.acquire()
         worker = self.__current_users.get(worker_id, None)
         if worker is not None:
@@ -229,7 +241,8 @@ class WebsocketServer(object):
     async def __consumer_handler(self, websocket_client_connection):
         if websocket_client_connection is None:
             return
-        worker_id = str(websocket_client_connection.request_headers.get_all("Origin")[0])
+        worker_id = str(
+            websocket_client_connection.request_headers.get_all("Origin")[0])
         log.warning("Consumer handler of %s starting" % str(worker_id))
         while websocket_client_connection.open:
             message = None
@@ -238,7 +251,8 @@ class WebsocketServer(object):
             except asyncio.TimeoutError as te:
                 await asyncio.sleep(0.02)
             except websockets.exceptions.ConnectionClosed as cc:
-                log.warning("Connection to %s was closed, stopping worker" % str(worker_id))
+                log.warning(
+                    "Connection to %s was closed, stopping worker" % str(worker_id))
                 self.__current_users_mutex.acquire()
                 worker = self.__current_users.get(worker_id, None)
                 self.__current_users_mutex.release()
@@ -251,14 +265,16 @@ class WebsocketServer(object):
 
             if message is not None:
                 await self.__on_message(message)
-        log.warning("Connection of %s closed in consumer_handler" % str(worker_id))
+        log.warning("Connection of %s closed in consumer_handler" %
+                    str(worker_id))
 
     def clean_up_user(self, worker_id):
         self.__current_users_mutex.acquire()
         if worker_id in self.__current_users.keys():
             if self.__current_users[worker_id][2].open:
                 log.info("Calling close for %s..." % str(worker_id))
-                asyncio.ensure_future(self.__current_users[worker_id][2].close(), loop=self.__loop)
+                asyncio.ensure_future(
+                    self.__current_users[worker_id][2].close(), loop=self.__loop)
             self.__current_users.pop(worker_id)
             log.info("Info of %s removed in websocket" % str(worker_id))
         self.__current_users_mutex.release()
@@ -343,9 +359,11 @@ class WebsocketServer(object):
             self.__reset_fail_counter(id)
             result = self.__pop_response(message_id)
             if isinstance(result, str):
-                log.debug("Response to %s: %s" % (str(id), str(result.strip())))
+                log.debug("Response to %s: %s" %
+                          (str(id), str(result.strip())))
             else:
-                log.debug("Received binary data to %s, starting with %s" % (str(id), str(result[:10])))
+                log.debug("Received binary data to %s, starting with %s" %
+                          (str(id), str(result[:10])))
         else:
             # timeout reached
             log.warning("Timeout, increasing timeout-counter")

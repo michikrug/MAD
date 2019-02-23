@@ -467,8 +467,6 @@ class MonocleWrapper(DbWrapperBase):
                                                           '"', '\\"')
                                                       .replace('\n', '\\n'), url, park, sponsor)
 
-        with io.open('gym_info.json', 'w') as outfile:
-            outfile.write(str(json.dumps(gyminfo, indent=4, sort_keys=True)))
         log.info('Finished downloading gym images...')
 
         return True

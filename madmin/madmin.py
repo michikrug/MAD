@@ -512,23 +512,47 @@ def get_geofence():
     geofences = {}
 
     for name, area in areas.items():
-        name = 'Unknown'
+        geofence_include = {}
+        geofence_exclude = {}
+        geofence_name = 'Unknown'
         for line in area['geofence_included'].splitlines():
             line = line.strip()
             if not line:  # Empty line.
                 continue
             elif line.startswith("["):  # Name line.
-                name = line.replace("[", "").replace("]", "")
-                geofences[name] = []
+                geofence_name = line.replace("[", "").replace("]", "")
+                geofence_include[geofence_name] = []
             else:  # Coordinate line.
                 lat, lon = line.split(",")
-                geofences[name].append([
-                    getCoordFloat(lat),
-                    getCoordFloat(lon)
+                geofence_include[geofence_name].append([
+                    getCoordFloat(lon),
+                    getCoordFloat(lat)
                 ])
 
+        if area['geofence_excluded']:
+            geofence_name = 'Unknown'
+            for line in area['geofence_excluded'].splitlines():
+                line = line.strip()
+                if not line:  # Empty line.
+                    continue
+                elif line.startswith("["):  # Name line.
+                    geofence_name = line.replace("[", "").replace("]", "")
+                    geofence_exclude[geofence_name] = []
+                else:  # Coordinate line.
+                    lat, lon = line.split(",")
+                    geofence_exclude[geofence_name].append([
+                        getCoordFloat(lon),
+                        getCoordFloat(lat)
+                    ])
+
+        geofences[name] = {'include': geofence_include,
+                           'exclude': geofence_exclude}
+
     geofencexport = []
-    for name, coordinates in geofences.items():
+    for name, fences in geofences.items():
+        coordinates = []
+        for fname, coords in fences.get('include').items():
+            coordinates.append([coords, fences.get('exclude').get(fname, [])])
         geofencexport.append({'name': name, 'coordinates': coordinates})
 
     return jsonify(geofencexport)
@@ -839,16 +863,16 @@ def delsetting():
     with open('configs/mappings.json') as f:
         mapping = json.load(f)
 
-    for entry in mapping[area]:
-        if 'name' in entry:
+    for key, value in mapping[area]:
+        if 'name' in value:
             _checkfield = 'name'
-        if 'origin' in entry:
+        if 'origin' in value:
             _checkfield = 'origin'
-        if 'username' in entry:
+        if 'username' in value:
             _checkfield = 'username'
 
-        if str(edit) in str(entry[_checkfield]):
-            del entry
+        if str(edit) in str(value[_checkfield]):
+            del mapping[area][key]
 
     with open('configs/mappings.json', 'w') as outfile:
         json.dump(mapping, outfile, indent=4, sort_keys=True)

@@ -23,7 +23,7 @@ logging.getLogger('websockets.protocol').setLevel(logging.INFO)
 
 
 class WebsocketServer(object):
-    def __init__(self, args, mitm_mapper, db_wrapper, routemanagers, device_mappings, auths):
+    def __init__(self, args, mitm_mapper, db_wrapper, routemanagers, device_mappings, auths, pogoWindowManager):
         self.__current_users = {}
         self.__current_users_mutex = Lock()
 
@@ -42,6 +42,7 @@ class WebsocketServer(object):
         self.__device_mappings = device_mappings
         self.__routemanagers = routemanagers
         self.__auths = auths
+        self.__pogoWindowManager = pogoWindowManager
         self.__mitm_mapper = mitm_mapper
 
         self.__next_id = 0
@@ -152,20 +153,25 @@ class WebsocketServer(object):
                 pass
             elif nightime_routemanager.mode in ["raids_mitm", "mon_mitm", "iv_mitm"]:
                 worker = WorkerMITM(self.args, id, last_known_state, self, daytime_routemanager, nightime_routemanager,
-                                    self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer)
+                                    self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer,
+                                    pogoWindowManager=self.__pogoWindowManager)
                 started = True
             elif nightime_routemanager.mode in ["raids_ocr"]:
                 from worker.WorkerOCR import WorkerOCR
                 worker = WorkerOCR(self.args, id, last_known_state, self, daytime_routemanager, nightime_routemanager,
-                                   devicesettings, db_wrapper=self.__db_wrapper, timer=timer)
+                                   devicesettings, db_wrapper=self.__db_wrapper, timer=timer,
+                                   pogoWindowManager=self.__pogoWindowManager)
                 started = True
             elif nightime_routemanager.mode in ["pokestops"]:
-                worker = WorkerQuests(self.args, id, last_known_state, self, daytime_routemanager, nightime_routemanager,
-                                      self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer)
+                worker = WorkerQuests(self.args, id, last_known_state, self, daytime_routemanager,
+                                      nightime_routemanager,
+                                      self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer,
+                                      pogoWindowManager=self.__pogoWindowManager)
                 started = True
             else:
                 log.fatal("Mode not implemented")
                 sys.exit(1)
+
         if not timer.get_switch() or not started:
             # set mon_iv
             client_mapping['mon_ids_iv'] = self.__routemanagers[client_mapping["daytime_area"]].get(
@@ -173,14 +179,18 @@ class WebsocketServer(object):
             # we either gotta run daytime mode OR nighttime routemanager not set
             if daytime_routemanager.mode in ["raids_mitm", "mon_mitm", "iv_mitm"]:
                 worker = WorkerMITM(self.args, id, last_known_state, self, daytime_routemanager, nightime_routemanager,
-                                    self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer)
+                                    self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer,
+                                    pogoWindowManager=self.__pogoWindowManager)
             elif daytime_routemanager.mode in ["raids_ocr"]:
                 from worker.WorkerOCR import WorkerOCR
                 worker = WorkerOCR(self.args, id, last_known_state, self, daytime_routemanager, nightime_routemanager,
-                                   devicesettings, db_wrapper=self.__db_wrapper, timer=timer)
+                                   devicesettings, db_wrapper=self.__db_wrapper, timer=timer,
+                                   pogoWindowManager=self.__pogoWindowManager)
             elif daytime_routemanager.mode in ["pokestops"]:
-                worker = WorkerQuests(self.args, id, last_known_state, self, daytime_routemanager, nightime_routemanager,
-                                      self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer)
+                worker = WorkerQuests(self.args, id, last_known_state, self, daytime_routemanager,
+                                      nightime_routemanager,
+                                      self.__mitm_mapper, devicesettings, db_wrapper=self.__db_wrapper, timer=timer,
+                                      pogoWindowManager=self.__pogoWindowManager)
             else:
                 log.fatal("Mode not implemented")
                 sys.exit(1)

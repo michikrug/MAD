@@ -13,6 +13,7 @@ from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from mitm_receiver.MITMReceiver import MITMReceiver
+from ocr.pogoWindows import PogoWindows
 from utils.mappingParser import MappingParser
 from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
@@ -270,6 +271,7 @@ if __name__ == "__main__":
                     "There is something wrong with your mappings. Description: %s" % str(e))
                 sys.exit(1)
 
+            pogoWindowManager = PogoWindows(args.temp_path)
             mitm_mapper = MitmMapper(device_mappings)
             ocr_enabled = False
             for routemanager in routemanagers.keys():
@@ -291,7 +293,7 @@ if __name__ == "__main__":
 
             log.info('Starting scanner....')
             ws_server = WebsocketServer(args, mitm_mapper, db_wrapper,
-                                        routemanagers, device_mappings, auths)
+                                        routemanagers, device_mappings, auths, pogoWindowManager)
             t_ws = Thread(name='scanner', target=ws_server.start_server)
             t_ws.daemon = True
             t_ws.start()

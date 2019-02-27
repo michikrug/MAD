@@ -1,16 +1,16 @@
 import asyncio
 import functools
 import json
+import logging
 import os
 import time
-
-import logging
-from threading import current_thread, Event, Thread
-from utils.questGen import generate_quest
-from utils.language import open_json_file
+from threading import Event, Thread, current_thread
 
 import requests
+
 from s2sphere import Cell, CellId, LatLng
+from utils.language import open_json_file
+from utils.questGen import generate_quest
 
 log = logging.getLogger(__name__)
 
@@ -127,13 +127,15 @@ class WebhookHelper(object):
         self.loop = None
         self.loop_started = Event()
         self.loop_tid = None
-        self.t_asyncio_loop = Thread(name='webhook_asyncio_loop', target=self.__start_asyncio_loop)
+        self.t_asyncio_loop = Thread(
+            name='webhook_asyncio_loop', target=self.__start_asyncio_loop)
         self.t_asyncio_loop.daemon = True
         self.t_asyncio_loop.start()
 
     def __set_gyminfo(self):
         if self.db_wrapper is None:
-            raise Exception("Something went wrong. DB access has not been set yet. This should not have happened.")
+            raise Exception(
+                "Something went wrong. DB access has not been set yet. This should not have happened.")
 
         # to reduce load, we only pull data from DB every 15 minutes
         if self.gyminfo is None or self.gyminfo_refresh < time.time()-900:
@@ -150,7 +152,8 @@ class WebhookHelper(object):
     def __add_task_to_loop(self, coro):
         f = functools.partial(self.loop.create_task, coro)
         if current_thread() == self.loop_tid:
-            return f()  # We can call directly if we're not going between threads.
+            # We can call directly if we're not going between threads.
+            return f()
         else:
             return self.loop.call_soon_threadsafe(f)
 
@@ -177,7 +180,8 @@ class WebhookHelper(object):
                 else:
                     log.info("Success sending webhook")
             except Exception as e:
-                log.warning("Exception occured while sending webhook: %s" % str(e))
+                log.warning(
+                    "Exception occured while sending webhook: %s" % str(e))
 
     # TODO well yeah, this is kinda stupid actually.
     # better solution: actually pass all the information to
@@ -219,7 +223,8 @@ class WebhookHelper(object):
 
     def send_weather_webhook(self, s2_cell_id, weather_id, severe, warn, day, time):
         if self.__application_args.webhook and self.__application_args.weather_webhook:
-            self.__add_task_to_loop(self._send_weather_webhook(s2_cell_id, weather_id, severe, warn, day, time))
+            self.__add_task_to_loop(self._send_weather_webhook(
+                s2_cell_id, weather_id, severe, warn, day, time))
 
     def send_pokemon_webhook(self, encounter_id, pokemon_id, last_modified_time, spawnpoint_id, lat, lon,
                              despawn_time_unix,
@@ -251,7 +256,7 @@ class WebhookHelper(object):
             self.__set_gyminfo()
 
             self.__add_task_to_loop(self._send_gym_webhook(gym_id, raid_active_until, gym_name, team_id,
-                                    slots_available, guard_pokemon_id, latitude, longitude, last_modified))
+                                                           slots_available, guard_pokemon_id, latitude, longitude, last_modified))
 
     async def _send_gym_webhook(self, gym_id, raid_active_until, gym_name, team_id,
                                 slots_available, guard_pokemon_id, latitude, longitude, last_modified):
@@ -434,7 +439,8 @@ class WebhookHelper(object):
                 vertex = LatLng.from_point(cell.get_vertex(v))
                 coords.append([vertex.lat().degrees, vertex.lng().degrees])
 
-            data = weather_webhook_payload.format(s2cellId, coords, weatherId, severe, warn, day, time, latitude, longitude)
+            data = weather_webhook_payload.format(
+                s2cellId, coords, weatherId, severe, warn, day, time, latitude, longitude)
 
             log.debug(data)
             payload = json.loads(data)
@@ -522,4 +528,3 @@ class WebhookHelper(object):
 
         payload = json.loads(data)
         self.__sendToWebhook(payload)
-

@@ -279,7 +279,7 @@
 
 					res.data.forEach(function (quest) {
 						L.marker([quest['latitude'], quest['longitude']], { icon: $this.build_quest_small(quest['quest_reward_type_raw'], quest['item_id'], quest['pokemon_id']) })
-							.bindPopup('<div id="gymImage" style="background: url(&quot;' + quest['url'] + '&quot;) center center no-repeat;"></div><div id="gymName"><strong>' + quest['name'] + '</div><div id="gymID"></strong>' + quest['pokestop_id'] + '</div><div id="gymCoords"><a href="https://maps.google.com/?q=' + quest['latitude'] + ',' + quest['longitude'] + '">' + quest['latitude'] + ', ' + quest['longitude'] + '</a><br>' + $this.build_quest(quest['quest_reward_type_raw'], quest['quest_type'], quest['pokemon_id'], quest['item_id'], quest['item_amount'], quest['pokemon_name'], quest['item_type']) + '</div>', { 'className': 'questpopup' })
+							.bindPopup('<div id="gymImage" style="background: url(&quot;' + quest['url'] + '&quot;) center center no-repeat;"></div><div id="gymName"><strong>' + quest['name'] + '</div><div id="gymID"></strong>' + quest['pokestop_id'] + '</div><div id="gymCoords"><a href="https://maps.google.com/?q=' + quest['latitude'] + ',' + quest['longitude'] + '">' + quest['latitude'] + ', ' + quest['longitude'] + '</a><br>' + $this.build_quest(quest['quest_reward_type_raw'], quest['quest_task'], quest['pokemon_id'], quest['item_id'], quest['item_amount'], quest['pokemon_name'], quest['item_type']) + '</div>', { 'className': 'questpopup' })
 							.addTo(l_quests);
 					});
 
@@ -345,7 +345,7 @@
 
 				return icon;
 			},
-			build_quest(quest_reward_type_raw, quest_type, quest_pokemon_id, quest_item_id, quest_item_amount, quest_pokemon_name, quest_item_type) {
+			build_quest(quest_reward_type_raw, quest_task, quest_pokemon_id, quest_item_id, quest_item_amount, quest_pokemon_name, quest_item_type) {
 				switch (quest_reward_type_raw) {
 					case 2:
 						var image = 'static/quest/reward_' + quest_item_id + '_1.png';
@@ -367,9 +367,8 @@
 						var width = 60;
 						break;
 				}
-				var questtext = quest_type;
 
-				popuptext = '<center><b>' + questtext + '</b><br><img src=' + image + ' width=' + width + '><br>' + rewardtext + '</center>';
+				popuptext = '<center><b>' + quest_task + '</b><br><img src=' + image + ' width=' + width + '><br>' + rewardtext + '</center>';
 				return popuptext;
 
 			},

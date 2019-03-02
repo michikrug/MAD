@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import time
 from shutil import copyfile
 from threading import Event, Thread
@@ -90,7 +91,7 @@ class WorkerOCR(WorkerBase):
         log.info("Sleeping %s" % str(delay_used))
         time.sleep(float(delay_used))
         cur_time = time.time()
-        return cur_time
+        return cur_time, True
 
     def _post_move_location_routine(self, timestamp):
         # check if the speed_weather_check_thread signalled an abort by setting the stop_worker_event
@@ -123,7 +124,7 @@ class WorkerOCR(WorkerBase):
                     "Worker: couldn't take screenshot after opening raidtab, lock released")
                 return
             count_of_raids = self._pogoWindowManager.readRaidCircles(os.path.join(
-                self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id)
+                self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id, self._communicator)
         #    elif countOfRaids == 0:
         #        emptycount += 1
         #        if emptycount > 30:

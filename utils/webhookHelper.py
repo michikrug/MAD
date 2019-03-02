@@ -128,7 +128,7 @@ class WebhookHelper(object):
         self.loop_tid = None
         self.t_asyncio_loop = Thread(
             name='webhook_asyncio_loop', target=self.__start_asyncio_loop)
-        self.t_asyncio_loop.daemon = True
+        self.t_asyncio_loop.daemon = False
         self.t_asyncio_loop.start()
 
     def __set_gyminfo(self):
@@ -156,7 +156,7 @@ class WebhookHelper(object):
         else:
             return self.loop.call_soon_threadsafe(f)
 
-    def __stop_loop(self):
+    def stop_helper(self):
         self.loop.call_soon_threadsafe(self.loop.stop)
 
     def __sendToWebhook(self, payload):
@@ -534,7 +534,8 @@ class WebhookHelper(object):
             item_amount=quest['item_amount'],
             item_id=quest['item_id'],
             quest_task=quest['quest_task'],
-            quest_condition=quest['quest_condition'].replace('\'', '"').lower(),
+            quest_condition=quest['quest_condition'].replace(
+                '\'', '"').lower(),
             quest_template=quest['quest_template'],
             quest_reward_text=quest['quest_reward_text'])
 

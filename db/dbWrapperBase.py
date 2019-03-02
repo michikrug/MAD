@@ -37,12 +37,22 @@ class DbWrapperBase(ABC):
                          "port": self.port}
         self._init_pool()
 
+    def __del__(self):
+        self.shutdown_pool()
+
     def _init_pool(self):
         log.info("Connecting pool to DB")
         self.pool_mutex.acquire()
         self.pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="db_wrapper_pool",
                                                                 pool_size=self.application_args.db_poolsize,
                                                                 **self.dbconfig)
+        self.pool_mutex.release()
+
+    def shutdown_pool(self):
+        log.info("Closing pool to DB")
+        self.pool_mutex.acquire()
+        if self.pool is not None:
+            self.pool.close()
         self.pool_mutex.release()
 
     def close(self, conn, cursor):
@@ -90,6 +100,9 @@ class DbWrapperBase(ABC):
         except mysql.connector.Error as err:
             log.error("Failed executing query: %s" % str(err))
             return None
+        except Exception as e:
+            log.error("Unspecified exception in dbWrapper: %s" % str(e))
+            return None
         finally:
             self.close(conn, cursor)
             self.connection_semaphore.release()
@@ -119,6 +132,9 @@ class DbWrapperBase(ABC):
                 return res
         except mysql.connector.Error as err:
             log.error("Failed executing query: %s" % str(err))
+            return None
+        except Exception as e:
+            log.error("Unspecified exception in dbWrapper: %s" % str(e))
             return None
         finally:
             self.close(conn, cursor)
@@ -500,7 +516,7 @@ class DbWrapperBase(ABC):
 
         query = (
             "SELECT spawnpoint, spawndef "
-            "FROM trs_spawn where spawnpoint in (%s)" % (spawnids)
+            "FROM trs_spawn WHERE spawnpoint in (%s)" % (spawnids)
         )
         # vals = (spawn_id,)
 
@@ -890,7 +906,7 @@ class DbWrapperBase(ABC):
             task = questtask(int(quest_type), str(condition), int(target))
 
             query_quests = (
-                "INSERT into trs_quest (GUID, quest_type, quest_timestamp, quest_stardust, quest_pokemon_id, quest_reward_type, "
+                "INSERT INTO trs_quest (GUID, quest_type, quest_timestamp, quest_stardust, quest_pokemon_id, quest_reward_type, "
                 "quest_item_id, quest_item_amount, quest_target, quest_condition, quest_reward, quest_task, quest_template) values "
                 "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 "ON DUPLICATE KEY UPDATE quest_type=VALUES(quest_type), quest_timestamp=VALUES(quest_timestamp), "
@@ -921,20 +937,20 @@ class DbWrapperBase(ABC):
     def create_status_database_if_not_exists(self):
         log.debug("{DbWrapperBase::create_status_database_if_not_exists} called")
 
-        query = (' Create table if not exists trs_status (  '
+        query = ('CREATE table IF NOT EXISTS trs_status ( '
                  'origin VARCHAR(50) NOT NULL , '
-                 ' currentPos VARCHAR(50) NOT NULL, '
-                 ' lastPos VARCHAR(50) NOT NULL, '
-                 ' routePos INT(11) NOT NULL, '
-                 ' routeMax INT(11) NOT NULL, '
-                 ' routemanager VARCHAR(255) NOT NULL, '
-                 ' rebootCounter INT(11)  NOT NULL, '
-                 ' lastProtoDateTime VARCHAR(50) NULL DEFAULT NULL, '
-                 ' lastPogoRestart VARCHAR(50) NULL DEFAULT NULL, '
-                 ' init TEXT NOT NULL, '
-                 ' rebootingOption TEXT NOT NULL, '
-                 ' restartCounter TEXT NOT NULL, '
-                 ' PRIMARY KEY (origin))')
+                 'currentPos VARCHAR(50) NOT NULL, '
+                 'lastPos VARCHAR(50) NOT NULL, '
+                 'routePos INT(11) NOT NULL, '
+                 'routeMax INT(11) NOT NULL, '
+                 'routemanager VARCHAR(255) NOT NULL, '
+                 'rebootCounter INT(11)  NOT NULL, '
+                 'lastProtoDateTime VARCHAR(50) NULL DEFAULT NULL, '
+                 'lastPogoRestart VARCHAR(50) NULL DEFAULT NULL, '
+                 'init TEXT NOT NULL, '
+                 'rebootingOption TEXT NOT NULL, '
+                 'restartCounter TEXT NOT NULL, '
+                 'PRIMARY KEY (origin))')
 
         self.execute(query, commit=True)
 
@@ -944,9 +960,9 @@ class DbWrapperBase(ABC):
         log.debug("dbWrapper::save_status")
 
         query = (
-            "INSERT into trs_status (origin, currentPos, lastPos, routePos, routeMax, "
+            "INSERT INTO trs_status (origin, currentPos, lastPos, routePos, routeMax, "
             "routemanager, rebootCounter, lastProtoDateTime, "
-            "init, rebootingOption, restartCounter) values "
+            "init, rebootingOption, restartCounter) VALUES "
             "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             "ON DUPLICATE KEY UPDATE currentPos=VALUES(currentPos), "
             "lastPos=VALUES(lastPos), routePos=VALUES(routePos), "
@@ -966,11 +982,9 @@ class DbWrapperBase(ABC):
         log.debug("dbWrapper::save_last_reboot")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = (
-
-            "insert into trs_status(origin, lastPogoReboot, globalrebootcount) "
-            "values (%s, %s, %s) "
+            "INSERT INTO trs_status(origin, lastPogoReboot, globalrebootcount) "
+            "VALUES (%s, %s, %s) "
             "ON DUPLICATE KEY UPDATE lastPogoReboot=VALUES(lastPogoReboot), globalrebootcount=(globalrebootcount+1)"
-
         )
 
         vals = (
@@ -983,11 +997,9 @@ class DbWrapperBase(ABC):
         log.debug("dbWrapper::save_last_restart")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = (
-
-            "insert into trs_status(origin, lastPogoRestart, globalrestartcount) "
-            "values (%s, %s, %s) "
+            "INSERT INTO trs_status(origin, lastPogoRestart, globalrestartcount) "
+            "VALUES (%s, %s, %s) "
             "ON DUPLICATE KEY UPDATE lastPogoRestart=VALUES(lastPogoRestart), globalrestartcount=(globalrestartcount+1)"
-
         )
 
         vals = (

@@ -222,7 +222,6 @@ class WorkerBase(ABC):
         if self._route_manager_nighttime is not None:
             self._route_manager_nighttime.unregister_worker(self._id)
 
-        self._communicator.cleanup_websocket()
         log.info("Stopping Route")
         # self.stop_worker()
         if self._async_io_looper_thread is not None:
@@ -232,6 +231,7 @@ class WorkerBase(ABC):
         if self._timer is not None:
             log.info("Stopping switch timer")
             self._timer.stop_switch()
+        self._communicator.cleanup_websocket(self)
         log.info("Internal cleanup of %s finished" % str(self._id))
 
     def _main_work_thread(self):
@@ -563,7 +563,6 @@ class WorkerBase(ABC):
                 log.error(
                     "_check_pogo_main_screen: failed getting a screenshot again")
                 return False
-            log.debug("_check_pogo_main_screen: Got screenshot, checking GPS")
         attempts = 0
 
         if os.path.isdir(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))):
@@ -605,6 +604,8 @@ class WorkerBase(ABC):
 
             log.info(
                 "_check_pogo_main_screen: Previous checks found popups: %s" % str(found))
+            if not found:
+                self._takeScreenshot()
 
             attempts += 1
         log.info("_check_pogo_main_screen: done")
@@ -710,7 +711,8 @@ class WorkerBase(ABC):
         self._redErrorCount = 0
         log.debug("getToRaidscreen: checking raidscreen")
         while not self._pogoWindowManager.checkRaidscreen(os.path.join(self._applicationArgs.temp_path,
-                                                                       'screenshot%s.png' % str(self._id)), self._id):
+                                                                       'screenshot%s.png' % str(self._id)), self._id,
+                                                          self._communicator):
             log.debug("getToRaidscreen: not on raidscreen...")
             if attempts > maxAttempts:
                 # could not reach raidtab in given maxAttempts
@@ -743,7 +745,8 @@ class WorkerBase(ABC):
                 log.info(
                     "getToRaidscreen: Previous checks found nothing. Checking nearby open")
                 if self._pogoWindowManager.checkNearby(os.path.join(self._applicationArgs.temp_path,
-                                                                    'screenshot%s.png' % str(self._id)), self._id):
+                                                                    'screenshot%s.png' % str(self._id)), self._id,
+                                                       self._communicator):
                     return self._takeScreenshot(delayBefore=self._applicationArgs.post_screenshot_delay)
 
             if not self._takeScreenshot(delayBefore=self._applicationArgs.post_screenshot_delay):

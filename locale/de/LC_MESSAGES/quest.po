@@ -105,7 +105,7 @@ msgid "Curveball "
 msgstr "Curvebälle"
 
 msgid "Make {0} {type}{curve}Throws{inrow}"
-msgstr "Lande {0} {type}{curve} Würfe {inrow}"
+msgstr "Lande {0} {type}{curve} Würfe{inrow}"
 
 msgid "Earn {0} Candies walking with your buddy"
 msgstr "Verdiene {0} Bonbons mit deinem Begleiter"

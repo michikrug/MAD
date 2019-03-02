@@ -78,51 +78,6 @@ quest_webhook_payload = """[{{
       "type": "quest"
    }} ]"""
 
-boq_item_quest_webhook_payload = """[{{
-      "message": {{
-        "pokestop_id": "{pokestop_id}",
-        "latitude": {latitude},
-        "longitude": {longitude},
-        "pokestop_name": "{name}",
-        "pokestop_url": "{url}",
-        "type": {quest_type_raw},
-        "rewards": [{{
-          "info": {{
-            "amount": {item_amount},
-            "item_id": {item_id}
-          }},
-          "type": {quest_reward_type_raw}
-        }}],
-        "target": {quest_target},
-        "updated": {timestamp},
-        "conditions": {quest_condition},
-        "template": "{quest_template}"
-      }},
-      "type": "quest"
-   }} ]"""
-
-boq_pkm_quest_webhook_payload = """[{{
-      "message": {{
-        "pokestop_id": "{pokestop_id}",
-        "latitude": {latitude},
-        "longitude": {longitude},
-        "pokestop_name": "{name}",
-        "pokestop_url": "{url}",
-        "type": {quest_type_raw},
-        "rewards": [{{
-          "info": {{
-            "pokemon_id": {pokemon_id}
-          }},
-          "type": {quest_reward_type_raw}
-        }}],
-        "target": {quest_target},
-        "updated": {timestamp},
-        "conditions": {quest_condition},
-        "template": "{quest_template}"
-      }},
-      "type": "quest"
-   }} ]"""
-
 weather_webhook_payload = """[{{
       "message": {{
         "s2_cell_id": {0},
@@ -298,10 +253,6 @@ class WebhookHelper(object):
     def submit_quest_webhook(self, rawquest):
         if self.__application_args.webhook:
             self.__add_task_to_loop(self._submit_quest_webhook(rawquest))
-
-    def submit_quest_webhook_boq(self, rawquest):
-        if self.__application_args.webhook and 'bookofquests' in self.__application_args.webhook_url:
-            self.__add_task_to_loop(self._submit_quest_webhook_boq(rawquest))
 
     def send_gym_webhook(self, gym_id, raid_active_until, gym_name, team_id, slots_available, guard_pokemon_id,
                          latitude, longitude, last_modified):
@@ -583,61 +534,9 @@ class WebhookHelper(object):
             item_amount=quest['item_amount'],
             item_id=quest['item_id'],
             quest_task=quest['quest_task'],
-            quest_condition=quest['quest_condition'],
+            quest_condition=quest['quest_condition'].replace('\'', '"').lower(),
             quest_template=quest['quest_template'],
             quest_reward_text=quest['quest_reward_text'])
-
-        payload = json.loads(data)
-        self.__sendToWebhook(payload)
-
-    async def _submit_quest_webhook_boq(self, rawquest):
-        log.info('Sending Quest to BoQ webhook')
-
-        for pokestopid in rawquest:
-            quest = generate_quest(rawquest[str(pokestopid)])
-
-        if quest['pokemon_id']:
-            data = boq_pkm_quest_webhook_payload.format(
-                pokestop_id=quest['pokestop_id'],
-                latitude=quest['latitude'],
-                longitude=quest['longitude'],
-                quest_type=quest['quest_type'],
-                quest_type_raw=quest['quest_type_raw'],
-                item_type=quest['item_type'],
-                name=quest['name'].replace('"', '\\"').replace('\n', '\\n'),
-                url=quest['url'],
-                timestamp=quest['timestamp'],
-                quest_reward_type=quest['quest_reward_type'],
-                quest_reward_type_raw=quest['quest_reward_type_raw'],
-                quest_target=quest['quest_target'],
-                pokemon_id=quest['pokemon_id'],
-                item_amount=quest['item_amount'],
-                item_id=quest['item_id'],
-                quest_task=quest['quest_task'],
-                quest_condition=quest['quest_condition'],
-                quest_template=quest['quest_template'],
-                quest_reward_text=quest['quest_reward_text'])
-        else:
-            data = boq_item_quest_webhook_payload.format(
-                pokestop_id=quest['pokestop_id'],
-                latitude=quest['latitude'],
-                longitude=quest['longitude'],
-                quest_type=quest['quest_type'],
-                quest_type_raw=quest['quest_type_raw'],
-                item_type=quest['item_type'],
-                name=quest['name'].replace('"', '\\"').replace('\n', '\\n'),
-                url=quest['url'],
-                timestamp=quest['timestamp'],
-                quest_reward_type=quest['quest_reward_type'],
-                quest_reward_type_raw=quest['quest_reward_type_raw'],
-                quest_target=quest['quest_target'],
-                pokemon_id=quest['pokemon_id'],
-                item_amount=quest['item_amount'],
-                item_id=quest['item_id'],
-                quest_task=quest['quest_task'],
-                quest_condition=quest['quest_condition'],
-                quest_template=quest['quest_template'],
-                quest_reward_text=quest['quest_reward_text'])
 
         payload = json.loads(data)
         self.__sendToWebhook(payload)

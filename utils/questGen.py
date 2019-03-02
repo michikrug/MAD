@@ -22,9 +22,9 @@ def generate_quest(quest):
     pokestop_id = quest['pokestop_id']
     quest_reward_type = questreward(quest['quest_reward_type'])
     quest_reward_type_raw = quest['quest_reward_type']
-    quest_type_raw = quest['quest_type']
     quest_type = questtype(quest['quest_type'])
-    quest_condition = quest['quest_condition'].replace('\'', '"').lower()
+    quest_type_raw = quest['quest_type']
+    quest_condition = quest['quest_condition']
     quest_template = quest['quest_template']
     name = quest['name']
     latitude = quest['latitude']

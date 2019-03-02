@@ -165,7 +165,7 @@ class WebhookHelper(object):
         for webhook in webhooks:
             url = webhook.strip()
 
-            if 'bookofquests' in url and 'rewards' not in payload[0]['message']:
+            if 'bookofquests' in url and 'quest_type' not in payload[0]['message']:
                 log.debug("Do not send non-quest webhook to bookofquests")
                 return
 

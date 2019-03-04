@@ -6,7 +6,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-current_version = 5
+current_version = 6
 
 
 class MADVersion(object):
@@ -201,6 +201,19 @@ class MADVersion(object):
                     self._dbwrapper.execute(alter_query, commit=True)
                 except Exception as e:
                     log.info("Unexpected error: %s" % e)
+
+            if self._version < 6:
+                if self._application_args.db_method == "monocle":
+                    alter_query = (
+                        "alter table sightings add column costume smallint(6) default 0"
+                    )
+                    column_exist = self._dbwrapper.check_column_exists(
+                        'sightings', 'costume')
+                    if column_exist == 0:
+                        try:
+                            self._dbwrapper.execute(alter_query, commit=True)
+                        except Exception as e:
+                            log.info("Unexpected error: %s" % e)
 
         self.set_version(current_version)
 

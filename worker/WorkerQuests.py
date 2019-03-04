@@ -235,7 +235,7 @@ class WorkerQuests(MITMBase):
     def clear_box(self, delayadd):
         log.info('Cleanup Box')
         not_allow = ('Gift', 'Raid Pass', 'Camera', 'Lucky Egg', 'Geschenk', 'Raidpass', 'Kamera', 'Glücks-Ei',
-                     'Cadeau', 'Passe de Raid', 'Appareil photo')
+                     'Cadeau', 'Passe de Raid', 'Appareil photo', 'Wunderbox', 'Mystery Box', 'Boîte Mystère')
         x, y = self._resocalc.get_close_main_button_coords(self)[0], self._resocalc.get_close_main_button_coords(self)[
             1]
         self._communicator.click(int(x), int(y))
@@ -256,7 +256,8 @@ class WorkerQuests(MITMBase):
         to = 0
 
         while int(to) <= 7 and int(_pos) <= int(4):
-            self._takeScreenshot()
+            self._takeScreenshot(delayBefore=1)
+
             item_text = self._pogoWindowManager.get_inventory_text(os.path.join(self._applicationArgs.temp_path,
                                                                                 'screenshot%s.png' % str(self._id)),
                                                                    self._id, text_x1, text_x2, text_y1, text_y2)

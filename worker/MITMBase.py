@@ -23,7 +23,7 @@ class MITMBase(WorkerBase):
         self._rec_data_time = ""
         self._mitm_mapper = mitm_mapper
 
-        #if not NoOcr:
+        # if not NoOcr:
         #    from ocr.pogoWindows import PogoWindows
         #    self._pogoWindowManager = PogoWindows(self._communicator, args.temp_path)
 
@@ -36,7 +36,8 @@ class MITMBase(WorkerBase):
 
         while data_requested is None and timestamp + timeout >= math.floor(time.time()):
             latest = self._mitm_mapper.request_latest(self._id)
-            data_requested = self._wait_data_worker(latest, proto_to_wait_for, timestamp)
+            data_requested = self._wait_data_worker(
+                latest, proto_to_wait_for, timestamp)
             time.sleep(1)
 
         if data_requested is not None:
@@ -51,7 +52,8 @@ class MITMBase(WorkerBase):
             try:
                 current_routemanager = self._get_currently_valid_routemanager()
             except InternalStopWorkerException as e:
-                log.info("Worker %s is to be stopped due to invalid routemanager/mode switch" % str(self._id))
+                log.info(
+                    "Worker %s is to be stopped due to invalid routemanager/mode switch" % str(self._id))
                 raise InternalStopWorkerException
             self._restart_count += 1
 
@@ -59,8 +61,10 @@ class MITMBase(WorkerBase):
             reboot_thresh = self._devicesettings.get("reboot_thresh", 3)
             if current_routemanager is not None:
                 if current_routemanager.init:
-                    restart_thresh = self._devicesettings.get("restart_thresh", 5) * 2
-                    reboot_thresh = self._devicesettings.get("reboot_thresh", 3) * 2
+                    restart_thresh = self._devicesettings.get(
+                        "restart_thresh", 5) * 2
+                    reboot_thresh = self._devicesettings.get(
+                        "reboot_thresh", 3) * 2
 
             if self._restart_count > restart_thresh:
                 self._reboot_count += 1
@@ -87,25 +91,25 @@ class MITMBase(WorkerBase):
     def _clear_quests(self, delayadd):
         log.debug('{_clear_quests} called')
         x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-               self._resocalc.get_coords_quest_menu(self)[1]
+            self._resocalc.get_coords_quest_menu(self)[1]
         self._communicator.click(int(x), int(y))
 
         time.sleep(1 + int(delayadd))
 
         x, y = self._resocalc.get_delete_quest_coords(self)[0], \
-               self._resocalc.get_delete_quest_coords(self)[1]
+            self._resocalc.get_delete_quest_coords(self)[1]
         self._communicator.click(int(x), int(y))
 
         time.sleep(1 + int(delayadd))
 
         x, y = self._resocalc.get_confirm_delete_quest_coords(self)[0], \
-               self._resocalc.get_confirm_delete_quest_coords(self)[1]
+            self._resocalc.get_confirm_delete_quest_coords(self)[1]
         self._communicator.click(int(x), int(y))
 
         time.sleep(1 + int(delayadd))
 
         x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-               self._resocalc.get_close_main_button_coords(self)[1]
+            self._resocalc.get_close_main_button_coords(self)[1]
         self._communicator.click(int(x), int(y))
 
         log.debug('{_clear_quests} finished')
@@ -114,7 +118,8 @@ class MITMBase(WorkerBase):
     def _open_gym(self, delayadd):
         log.debug('{_open_gym} called')
         time.sleep(.5)
-        x, y = self._resocalc.get_gym_click_coords(self)[0], self._resocalc.get_gym_click_coords(self)[1]
+        x, y = self._resocalc.get_gym_click_coords(
+            self)[0], self._resocalc.get_gym_click_coords(self)[1]
         self._communicator.click(int(x), int(y))
         time.sleep(.5 + int(delayadd))
         log.debug('{_open_gym} finished')
@@ -123,14 +128,14 @@ class MITMBase(WorkerBase):
     def _spin_wheel(self, delayadd):
         log.debug('{_spin_wheel} called')
         x1, x2, y = self._resocalc.get_gym_spin_coords(self)[0], self._resocalc.get_gym_spin_coords(self)[1], \
-                    self._resocalc.get_gym_spin_coords(self)[2]
+            self._resocalc.get_gym_spin_coords(self)[2]
         self._communicator.swipe(int(x1), int(y), int(x2), int(y))
         return
 
     def _close_gym(self, delayadd):
         log.debug('{_close_gym} called')
         x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-               self._resocalc.get_close_main_button_coords(self)[1]
+            self._resocalc.get_close_main_button_coords(self)[1]
         self._communicator.click(int(x), int(y))
         time.sleep(1 + int(delayadd))
         log.debug('{_close_gym} called')
@@ -138,7 +143,7 @@ class MITMBase(WorkerBase):
     def _turn_map(self, delayadd):
         log.debug('{_turn_map} called')
         x1, x2, y = self._resocalc.get_gym_spin_coords(self)[0], self._resocalc.get_gym_spin_coords(self)[1], \
-                    self._resocalc.get_gym_spin_coords(self)[2]
+            self._resocalc.get_gym_spin_coords(self)[2]
         self._communicator.swipe(int(x1), int(y), int(x2), int(y))
         time.sleep(int(delayadd))
         log.debug('{_turn_map} called')
@@ -152,7 +157,8 @@ class MITMBase(WorkerBase):
         log.debug('Routemanager: %s' % str(routemanager.name))
         log.debug('Restart Counter: %s' % str(self._restart_count))
         log.debug('Reboot Counter: %s' % str(self._reboot_count))
-        log.debug('Reboot Option: %s' % str(self._devicesettings.get("reboot", False)))
+        log.debug('Reboot Option: %s' %
+                  str(self._devicesettings.get("reboot", False)))
         log.debug('Current Pos: %s %s' % (str(self.current_location.lat),
                                           str(self.current_location.lng)))
         log.debug('Last Pos: %s %s' % (str(self.last_location.lat),
@@ -178,4 +184,3 @@ class MITMBase(WorkerBase):
         }
 
         self._db_wrapper.save_status(dataToSave)
-

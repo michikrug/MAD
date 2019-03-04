@@ -4,24 +4,22 @@ import os
 #os.environ['PYTHONASYNCIODEBUG'] = '1'
 import sys
 import time
+from logging.handlers import RotatingFileHandler
 from threading import Thread
 
 from colorlog import ColoredFormatter
-from logging.handlers import RotatingFileHandler
-from watchdog.observers import Observer
-
 from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from mitm_receiver.MITMReceiver import MITMReceiver
+from ocr.pogoWindows import PogoWindows
 from utils.madGlobals import terminate_mad
 from utils.mappingParser import MappingParser
+from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
 from utils.webhookHelper import WebhookHelper
-from utils.version import MADVersion
+from watchdog.observers import Observer
 from websocket.WebsocketServer import WebsocketServer
-
-from ocr.pogoWindows import PogoWindows
 
 
 class LogFilter(logging.Filter):
@@ -35,7 +33,7 @@ class LogFilter(logging.Filter):
 
 
 args = parseArgs()
-os.environ['LANGUAGE']=args.language
+os.environ['LANGUAGE'] = args.language
 
 console = logging.StreamHandler()
 nextRaidQueue = []
@@ -84,7 +82,8 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    log.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+    log.error("Uncaught exception", exc_info=(
+        exc_type, exc_value, exc_traceback))
 
 
 sys.excepthook = handle_exception
@@ -97,7 +96,7 @@ def set_log_and_verbosity(log):
     if not os.path.exists(args.log_path):
         os.mkdir(args.log_path)
     if not args.no_file_logs:
-        
+
         filename = os.path.join(args.log_path, args.log_filename)
         if not args.log_rotation:
             filelog = logging.FileHandler(filename)
@@ -146,11 +145,13 @@ def install_thread_excepthook():
                 sys.excepthook(exc_type, exc_value, exc_trace)
     Thread.run = run
 
+
 def start_ocr_observer(args, db_helper):
     from ocr.fileObserver import checkScreenshot
     observer = Observer()
     log.error(args.raidscreen_path)
-    observer.schedule(checkScreenshot(args, db_helper), path=args.raidscreen_path)
+    observer.schedule(checkScreenshot(args, db_helper),
+                      path=args.raidscreen_path)
     observer.start()
 
 
@@ -160,11 +161,12 @@ def delete_old_logs(minutes):
         return
 
     while not terminate_mad.is_set():
-        log.info('delete_old_logs: Search/Delete logs older than ' + str(minutes) + ' minutes')
+        log.info('delete_old_logs: Search/Delete logs older than ' +
+                 str(minutes) + ' minutes')
 
         now = time.time()
         only_files = []
-        
+
         logpath = args.log_path
 
         log.debug('delete_old_logs: Log Folder: ' + str(logpath))
@@ -288,23 +290,26 @@ if __name__ == "__main__":
         filename = os.path.join('configs', 'mappings.json')
         if not os.path.exists(filename):
             if not args.with_madmin:
-                log.fatal("No mappings.json found - start madmin with with_madmin in config or copy example")
+                log.fatal(
+                    "No mappings.json found - start madmin with with_madmin in config or copy example")
                 sys.exit(1)
-                
+
             log.fatal("No mappings.json found - starting setup mode with madmin.")
-            log.fatal("Open Madmin (ServerIP with Port " + str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
+            log.fatal("Open Madmin (ServerIP with Port " +
+                      str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
             generate_mappingjson()
         else:
 
             try:
                 (device_mappings, routemanagers, auths) = load_mappings(db_wrapper)
             except KeyError as e:
-                log.fatal("Could not parse mappings. Please check those. Description: %s" % str(e))
+                log.fatal(
+                    "Could not parse mappings. Please check those. Description: %s" % str(e))
                 sys.exit(1)
             except RuntimeError as e:
-                log.fatal("There is something wrong with your mappings. Description: %s" % str(e))
+                log.fatal(
+                    "There is something wrong with your mappings. Description: %s" % str(e))
                 sys.exit(1)
-
 
             if args.only_routes:
                 log.info("Done calculating routes!")
@@ -322,8 +327,10 @@ if __name__ == "__main__":
                 if "ocr" in area.get("mode", ""):
                     ocr_enabled = True
                 if ("ocr" in area.get("mode", "") or "pokestop" in area.get("mode", "")) and args.no_ocr:
-                    log.error('No-OCR Mode is activated - No OCR Mode possible.')
-                    log.error('Check your config.ini and be sure that CV2 and Tesseract is installed')
+                    log.error(
+                        'No-OCR Mode is activated - No OCR Mode possible.')
+                    log.error(
+                        'Check your config.ini and be sure that CV2 and Tesseract is installed')
                     sys.exit(1)
 
             if not args.no_ocr:
@@ -359,16 +366,18 @@ if __name__ == "__main__":
         MonRaidImages.runAll(args.pogoasset, db_wrapper=db_wrapper)
 
         log.info('Starting OCR Thread....')
-        t_observ = Thread(name='observer', target=start_ocr_observer, args=(args, db_wrapper,))
+        t_observ = Thread(
+            name='observer', target=start_ocr_observer, args=(args, db_wrapper,))
         t_observ.daemon = True
         t_observ.start()
 
     if args.with_madmin:
         log.info('Starting Madmin on Port: %s' % str(args.madmin_port))
-        t_flask = Thread(name='madmin', target=start_madmin, args=(args, db_wrapper,))
+        t_flask = Thread(name='madmin', target=start_madmin,
+                         args=(args, db_wrapper,))
         t_flask.daemon = True
         t_flask.start()
-        
+
     log.info('Starting Log Cleanup Thread....')
     t_cleanup = Thread(name='cleanuplogs',
                        target=delete_old_logs(args.cleanup_age))

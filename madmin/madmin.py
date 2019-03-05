@@ -35,10 +35,12 @@ conf_args = None
 db_wrapper = None
 device_mappings = None
 areas = None
+usa = None
 
 
-def madmin_start(arg_args, arg_db_wrapper):
-    global conf_args, device_mappings, db_wrapper, areas
+def madmin_start(arg_args, arg_db_wrapper, usage):
+    global conf_args, device_mappings, db_wrapper, areas, usa
+    usa = usage
     conf_args = arg_args
     db_wrapper = arg_db_wrapper
     mapping_parser = MappingParser(db_wrapper)
@@ -1100,12 +1102,83 @@ def status():
     return render_template('status.html', responsive=str(conf_args.madmin_noresponsive).lower(), title="Worker status")
 
 
+@app.route('/statistics', methods=['GET'])
+@auth_required
+def statistics():
+    return render_template('statistics.html', title="Worker status")
+
+
 @app.route('/get_status', methods=['GET'])
 @auth_required
 def get_status():
     data = json.loads(db_wrapper.download_status())
-
     return jsonify(data)
+
+
+def datetime_from_utc_to_local(utc_datetime):
+    now_timestamp = time.time()
+    offset = datetime.datetime.fromtimestamp(
+        now_timestamp) - datetime.datetime.utcfromtimestamp(now_timestamp)
+    return int(utc_datetime + offset.total_seconds()) * 1000
+
+
+@app.route('/get_game_stats', methods=['GET'])
+@auth_required
+def game_stats():
+    global usa
+    # Stop
+    stop = []
+    data = db_wrapper.statistics_get_stop_quest()
+    for dat in data:
+        stop.append({'label': dat[0], 'data': dat[1]})
+
+    # Quest
+    quest = db_wrapper.statistics_get_quests_count(1)
+
+    # Gym
+    gym = []
+    data = db_wrapper.statistics_get_gym_count()
+    for dat in data:
+        if dat[0] == 'WHITE':
+            color = '#999999'
+            text = 'Uncontested'
+        elif dat[0] == 'BLUE':
+            color = '#0051CF'
+            text = 'Mystic'
+        elif dat[0] == 'RED':
+            color = '#FF260E'
+            text = 'Valor'
+        elif dat[0] == 'YELLOW':
+            color = '#FECC23'
+            text = 'Instinct'
+        gym.append({'label': text, 'data': dat[1], 'color': color})
+
+    # Spawn
+    iv = []
+    noniv = []
+    sum = []
+    sumup = {}
+
+    data = db_wrapper.statistics_get_pokemon_count(1)
+    for dat in data:
+        if dat[2] == 1:
+            iv.append([datetime_from_utc_to_local(dat[0]), dat[1]])
+        else:
+            noniv.append([datetime_from_utc_to_local(dat[0]), dat[1]])
+
+        if datetime_from_utc_to_local(dat[0]) in sumup:
+            sumup[datetime_from_utc_to_local(dat[0])] += dat[1]
+        else:
+            sumup[datetime_from_utc_to_local(dat[0])] = dat[1]
+
+    for dat in sumup:
+        sum.append([dat, sumup[dat]])
+
+    spawn = {'iv': iv, 'noniv': noniv, 'sum': sum}
+
+    stats = {'spawn': spawn, 'gym': gym,
+             'quest': quest, 'stop': stop, 'usage': usa}
+    return jsonify(stats)
 
 
 def decodeHashJson(hashJson):

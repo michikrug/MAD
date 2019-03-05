@@ -1,17 +1,18 @@
 import asyncio
 import collections
+import datetime
 import functools
 import logging
 import os
 import time
-import datetime
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
-from threading import Event, Thread, current_thread, Lock
+from threading import Event, Lock, Thread, current_thread
 
 from utils.hamming import hamming_distance as hamming_dist
-from utils.madGlobals import WebsocketWorkerRemovedException, InternalStopWorkerException, \
-    WebsocketWorkerTimeoutException
+from utils.madGlobals import (InternalStopWorkerException,
+                              WebsocketWorkerRemovedException,
+                              WebsocketWorkerTimeoutException)
 from utils.resolution import Resocalculator
 from websocket.communicator import Communicator
 
@@ -28,7 +29,8 @@ class WorkerBase(ABC):
         self._route_manager_nighttime = route_manager_nighttime
         self._route_manager_last_time = None
         self._websocket_handler = websocket_handler
-        self._communicator = Communicator(websocket_handler, id, args.websocket_command_timeout)
+        self._communicator = Communicator(
+            websocket_handler, id, args.websocket_command_timeout)
         self._id = id
         self._applicationArgs = args
         self._last_known_state = last_known_state
@@ -53,7 +55,8 @@ class WorkerBase(ABC):
         self._lastStart = ""
         self._pogoWindowManager = pogoWindowManager
 
-        self.current_location = self._last_known_state.get("last_location", None)
+        self.current_location = self._last_known_state.get(
+            "last_location", None)
         if self.current_location is None:
             self.current_location = Location(0.0, 0.0)
         self.last_location = Location(0.0, 0.0)
@@ -113,8 +116,6 @@ class WorkerBase(ABC):
         """
         pass
 
-
-
     @abstractmethod
     def _cleanup(self):
         """
@@ -140,7 +141,8 @@ class WorkerBase(ABC):
     def _add_task_to_loop(self, coro):
         f = functools.partial(self.loop.create_task, coro)
         if current_thread() == self.loop_tid:
-            return f()  # We can call directly if we're not going between threads.
+            # We can call directly if we're not going between threads.
+            return f()
         else:
             # We're in a non-event loop thread so we use a Future
             # to get the task from the event loop thread once
@@ -187,7 +189,8 @@ class WorkerBase(ABC):
 
     def _internal_health_check(self):
         # check if pogo is topmost and start if necessary
-        log.debug("_internal_health_check: Calling _start_pogo routine to check if pogo is topmost")
+        log.debug(
+            "_internal_health_check: Calling _start_pogo routine to check if pogo is topmost")
         self._work_mutex.acquire()
         log.debug("_internal_health_check: worker lock acquired")
         log.debug("Checking if we need to restart pogo")
@@ -213,7 +216,8 @@ class WorkerBase(ABC):
         self._stop_worker_event.set()
         log.info("Internal cleanup of %s started" % str(self._id))
         self._cleanup()
-        log.info("Internal cleanup of %s signalling end to websocketserver" % str(self._id))
+        log.info(
+            "Internal cleanup of %s signalling end to websocketserver" % str(self._id))
         self._route_manager_daytime.unregister_worker(self._id)
         if self._route_manager_nighttime is not None:
             self._route_manager_nighttime.unregister_worker(self._id)
@@ -236,7 +240,8 @@ class WorkerBase(ABC):
             self._internal_pre_work()
         except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException) \
                 as e:
-            log.error("Failed initializing worker %s, connection terminated exceptionally" % str(self._id))
+            log.error(
+                "Failed initializing worker %s, connection terminated exceptionally" % str(self._id))
             return
 
         while not self._stop_worker_event.isSet():
@@ -294,7 +299,7 @@ class WorkerBase(ABC):
                 log.warning("Worker %s failed moving to new location, stopping worker, "
                             "connection terminated exceptionally" % str(self._id))
                 break
-                
+
             if process_location:
                 self._add_task_to_loop(self._update_position_file())
                 self._location_count += 1
@@ -308,10 +313,12 @@ class WorkerBase(ABC):
                 try:
                     self._post_move_location_routine(time_snapshot)
                 except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException) \
-                    as e:
-                    log.warning("Worker %s failed running post_move_location_routine, stopping worker" % str(self._id))
+                        as e:
+                    log.warning(
+                        "Worker %s failed running post_move_location_routine, stopping worker" % str(self._id))
                     break
-                log.info("Worker %s finished iteration, continuing work" % str(self._id))
+                log.info("Worker %s finished iteration, continuing work" %
+                         str(self._id))
 
         self._internal_cleanup()
 
@@ -319,11 +326,13 @@ class WorkerBase(ABC):
         log.debug("Updating .position file")
         if self.current_location is not None:
             with open(self._id + '.position', 'w') as outfile:
-                outfile.write(str(self.current_location.lat) + ", " + str(self.current_location.lng))
+                outfile.write(str(self.current_location.lat) +
+                              ", " + str(self.current_location.lng))
 
     async def update_scanned_location(self, latitude, longitude, timestamp):
         try:
-            self._db_wrapper.set_scanned_location(str(latitude), str(longitude), str(timestamp))
+            self._db_wrapper.set_scanned_location(
+                str(latitude), str(longitude), str(timestamp))
         except Exception as e:
             log.error("Failed updating scanned location: %s" % str(e))
             return
@@ -394,7 +403,8 @@ class WorkerBase(ABC):
             self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
             log.warning("Turning screen on")
             self._communicator.turnScreenOn()
-            time.sleep(self._devicesettings.get("post_turn_screen_on_delay", 2))
+            time.sleep(self._devicesettings.get(
+                "post_turn_screen_on_delay", 2))
         # check if pogo is running and start it if necessary
         log.warning("turnScreenOnAndStartPogo: (Re-)Starting Pogo")
         self._start_pogo()
@@ -404,7 +414,8 @@ class WorkerBase(ABC):
             self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
             log.warning("Turning screen on")
             self._communicator.turnScreenOn()
-            time.sleep(self._devicesettings.get("post_turn_screen_on_delay", 2))
+            time.sleep(self._devicesettings.get(
+                "post_turn_screen_on_delay", 2))
 
     def _stop_pogo(self):
         attempts = 0
@@ -414,7 +425,8 @@ class WorkerBase(ABC):
             attempts += 1
             if attempts > 10:
                 return False
-            stop_result = self._communicator.stopApp("com.nianticlabs.pokemongo")
+            stop_result = self._communicator.stopApp(
+                "com.nianticlabs.pokemongo")
             time.sleep(1)
             pogoTopmost = self._communicator.isPogoTopmost()
         return stop_result
@@ -423,7 +435,8 @@ class WorkerBase(ABC):
         try:
             start_result = self._communicator.reboot()
         except WebsocketWorkerRemovedException as e:
-            log.error("Could not reboot due to client already having disconnected")
+            log.error(
+                "Could not reboot due to client already having disconnected")
             start_result = False
         time.sleep(5)
         self._db_wrapper.save_last_reboot(self._id)
@@ -434,7 +447,7 @@ class WorkerBase(ABC):
         start_result = self._communicator.startApp("com.mad.pogodroid")
         time.sleep(5)
         return start_result
-    
+
     def _stopPogoDroid(self):
         stopResult = self._communicator.stopApp("com.mad.pogodroid")
         return stopResult
@@ -442,7 +455,8 @@ class WorkerBase(ABC):
     def _restart_pogo(self, clear_cache=True):
         successful_stop = self._stop_pogo()
         self._db_wrapper.save_last_restart(self._id)
-        log.debug("restartPogo: stop pogo resulted in %s" % str(successful_stop))
+        log.debug("restartPogo: stop pogo resulted in %s" %
+                  str(successful_stop))
         if successful_stop:
             if clear_cache:
                 self._communicator.clearAppCache("com.nianticlabs.pokemongo")
@@ -454,7 +468,8 @@ class WorkerBase(ABC):
     def _restartPogoDroid(self):
         successfulStop = self._stopPogoDroid()
         time.sleep(1)
-        log.debug("restartPogoDroid: stop pogodriud resulted in %s" % str(successfulStop))
+        log.debug("restartPogoDroid: stop pogodriud resulted in %s" %
+                  str(successfulStop))
         if successfulStop:
             return self._start_pogodroid()
         else:
@@ -462,15 +477,19 @@ class WorkerBase(ABC):
 
     def _reopenRaidTab(self):
         log.debug("_reopenRaidTab: Taking screenshot...")
-        log.info("reopenRaidTab: Attempting to retrieve screenshot before checking raidtab")
+        log.info(
+            "reopenRaidTab: Attempting to retrieve screenshot before checking raidtab")
         if not self._takeScreenshot():
             log.debug("_reopenRaidTab: Failed getting screenshot...")
-            log.error("reopenRaidTab: Failed retrieving screenshot before checking for closebutton")
+            log.error(
+                "reopenRaidTab: Failed retrieving screenshot before checking for closebutton")
             return
         log.debug("_reopenRaidTab: Checking close except nearby...")
-        pathToPass = os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))
+        pathToPass = os.path.join(
+            self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))
         log.debug("Path: %s" % str(pathToPass))
-        self._pogoWindowManager.checkCloseExceptNearbyButton(pathToPass, self._id, self._communicator, 'True')
+        self._pogoWindowManager.checkCloseExceptNearbyButton(
+            pathToPass, self._id, self._communicator, 'True')
         log.debug("_reopenRaidTab: Getting to raidscreen...")
         self._getToRaidscreen(3)
         time.sleep(1)
@@ -480,16 +499,17 @@ class WorkerBase(ABC):
         time.sleep(delayBefore)
         compareToTime = time.time() - self._lastScreenshotTaken
         log.debug("Last screenshot taken: %s" % str(self._lastScreenshotTaken))
-        
+
         if self._applicationArgs.use_media_projection:
             take_screenshot = self._communicator.getScreenshot(os.path.join(self._applicationArgs.temp_path,
                                                                             'screenshot%s.png' % str(self._id)))
         else:
             take_screenshot = self._communicator.get_screenshot_single(os.path.join(self._applicationArgs.temp_path,
                                                                                     'screenshot%s.png' % str(self._id)))
-        
+
         if self._lastScreenshotTaken and compareToTime < 0.5:
-            log.debug("takeScreenshot: screenshot taken recently, returning immediately")
+            log.debug(
+                "takeScreenshot: screenshot taken recently, returning immediately")
             log.debug("Screenshot taken recently, skipping")
             return True
         # TODO: screenshot.png needs identifier in name
@@ -509,13 +529,16 @@ class WorkerBase(ABC):
             log.debug("_checkPogoFreeze: failed retrieving screenshot")
             return
         from utils.image_utils import getImageHash
-        screenHash = getImageHash(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)))
+        screenHash = getImageHash(os.path.join(
+            self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)))
         log.debug("checkPogoFreeze: Old Hash: " + str(self._lastScreenHash))
         log.debug("checkPogoFreeze: New Hash: " + str(screenHash))
         if hamming_dist(str(self._lastScreenHash), str(screenHash)) < 4 and str(self._lastScreenHash) != '0':
-            log.debug("checkPogoFreeze: New und old Screenshoot are the same - no processing")
+            log.debug(
+                "checkPogoFreeze: New und old Screenshoot are the same - no processing")
             self._lastScreenHashCount += 1
-            log.debug("checkPogoFreeze: Same Screen Count: " + str(self._lastScreenHashCount))
+            log.debug("checkPogoFreeze: Same Screen Count: " +
+                      str(self._lastScreenHashCount))
             if self._lastScreenHashCount >= 100:
                 self._lastScreenHashCount = 0
                 self._restart_pogo()
@@ -524,9 +547,10 @@ class WorkerBase(ABC):
             self._lastScreenHashCount = 0
 
             log.debug("_checkPogoFreeze: done")
-            
+
     def _check_pogo_main_screen(self, maxAttempts, again=False):
-        log.debug("_check_pogo_main_screen: Trying to get to the Mainscreen with %s max attempts..." % str(maxAttempts))
+        log.debug("_check_pogo_main_screen: Trying to get to the Mainscreen with %s max attempts..." % str(
+            maxAttempts))
         pogoTopmost = self._communicator.isPogoTopmost()
         if not pogoTopmost:
             return False
@@ -534,12 +558,14 @@ class WorkerBase(ABC):
         self._checkPogoFreeze()
         if not self._takeScreenshot(delayBefore=self._applicationArgs.post_screenshot_delay):
             if again:
-                log.error("_check_pogo_main_screen: failed getting a screenshot again")
+                log.error(
+                    "_check_pogo_main_screen: failed getting a screenshot again")
                 return False
         attempts = 0
 
         if os.path.isdir(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))):
-            log.error("_check_pogo_main_screen: screenshot.png is not a file/corrupted")
+            log.error(
+                "_check_pogo_main_screen: screenshot.png is not a file/corrupted")
             return False
 
         log.info("_check_pogo_main_screen: checking mainscreen")
@@ -549,7 +575,8 @@ class WorkerBase(ABC):
             log.error("_check_pogo_main_screen: not on Mainscreen...")
             if attempts > maxAttempts:
                 # could not reach raidtab in given maxAttempts
-                log.error("_check_pogo_main_screen: Could not get to Mainscreen within %s attempts" % str(maxAttempts))
+                log.error("_check_pogo_main_screen: Could not get to Mainscreen within %s attempts" % str(
+                    maxAttempts))
                 return False
             self._checkPogoFreeze()
             # not using continue since we need to get a screen before the next round...
@@ -560,9 +587,11 @@ class WorkerBase(ABC):
                 log.info("_check_pogo_main_screen: Found button (small)")
 
             if not found and self._pogoWindowManager.checkCloseExceptNearbyButton(
-                    os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id,
+                    os.path.join(self._applicationArgs.temp_path,
+                                 'screenshot%s.png' % str(self._id)), self._id,
                     self._communicator, closeraid=True):
-                log.info("_check_pogo_main_screen: Found (X) button (except nearby)")
+                log.info(
+                    "_check_pogo_main_screen: Found (X) button (except nearby)")
                 found = True
 
             if not found and self._pogoWindowManager.lookForButton(os.path.join(self._applicationArgs.temp_path,
@@ -571,14 +600,15 @@ class WorkerBase(ABC):
                 log.info("_check_pogo_main_screen: Found button (big)")
                 found = True
 
-            log.info("_check_pogo_main_screen: Previous checks found popups: %s" % str(found))
+            log.info(
+                "_check_pogo_main_screen: Previous checks found popups: %s" % str(found))
             if not found:
                 self._takeScreenshot()
 
             attempts += 1
         log.info("_check_pogo_main_screen: done")
         return True
-    
+
     def _checkPogoButton(self):
         log.debug("checkPogoButton: Trying to find buttons")
         pogoTopmost = self._communicator.isPogoTopmost()
@@ -599,7 +629,7 @@ class WorkerBase(ABC):
         if os.path.isdir(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))):
             log.error("checkPogoButton: screenshot.png is not a file/corrupted")
             return False
-        
+
         log.info("checkPogoButton: checking for buttons")
         found = self._pogoWindowManager.lookForButton(os.path.join(self._applicationArgs.temp_path,
                                                                    'screenshot%s.png' % str(self._id)), 2.20, 3.01,
@@ -610,7 +640,7 @@ class WorkerBase(ABC):
             return True
         log.info("checkPogoButton: done")
         return False
-        
+
     def _checkPogoClose(self):
         log.debug("checkPogoClose: Trying to find closeX")
         pogoTopmost = self._communicator.isPogoTopmost()
@@ -631,11 +661,11 @@ class WorkerBase(ABC):
         if os.path.isdir(os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id))):
             log.error("checkPogoClose: screenshot.png is not a file/corrupted")
             return False
-        
+
         log.info("checkPogoClose: checking for CloseX")
         found = self._pogoWindowManager.checkCloseExceptNearbyButton(
-                            os.path.join(self._applicationArgs.temp_path,
-                                         'screenshot%s.png' % str(self._id)), self._id, self._communicator)
+            os.path.join(self._applicationArgs.temp_path,
+                         'screenshot%s.png' % str(self._id)), self._id, self._communicator)
         if found:
             log.info("checkPogoClose: Found (X) button (except nearby)")
             log.info("checkPogoClose: done")
@@ -645,7 +675,8 @@ class WorkerBase(ABC):
 
     def _getToRaidscreen(self, maxAttempts, again=False):
         # check for any popups (including post login OK)
-        log.debug("getToRaidscreen: Trying to get to the raidscreen with %s max attempts..." % str(maxAttempts))
+        log.debug("getToRaidscreen: Trying to get to the raidscreen with %s max attempts..." % str(
+            maxAttempts))
         pogoTopmost = self._communicator.isPogoTopmost()
         if not pogoTopmost:
             return False
@@ -672,7 +703,8 @@ class WorkerBase(ABC):
             log.warning("getToRaidscreen: GPS signal error")
             self._redErrorCount += 1
             if self._redErrorCount > 3:
-                log.error("getToRaidscreen: Red error multiple times in a row, restarting")
+                log.error(
+                    "getToRaidscreen: Red error multiple times in a row, restarting")
                 self._redErrorCount = 0
                 self._restart_pogo()
                 return False
@@ -684,7 +716,8 @@ class WorkerBase(ABC):
             log.debug("getToRaidscreen: not on raidscreen...")
             if attempts > maxAttempts:
                 # could not reach raidtab in given maxAttempts
-                log.error("getToRaidscreen: Could not get to raidtab within %s attempts" % str(maxAttempts))
+                log.error("getToRaidscreen: Could not get to raidtab within %s attempts" % str(
+                    maxAttempts))
                 return False
             self._checkPogoFreeze()
             # not using continue since we need to get a screen before the next round...
@@ -694,7 +727,8 @@ class WorkerBase(ABC):
                 log.info("getToRaidscreen: Found button (small)")
 
             if not found and self._pogoWindowManager.checkCloseExceptNearbyButton(
-                    os.path.join(self._applicationArgs.temp_path, 'screenshot%s.png' % str(self._id)), self._id,
+                    os.path.join(self._applicationArgs.temp_path,
+                                 'screenshot%s.png' % str(self._id)), self._id,
                     self._communicator):
                 log.info("getToRaidscreen: Found (X) button (except nearby)")
                 found = True
@@ -705,9 +739,11 @@ class WorkerBase(ABC):
                 log.info("getToRaidscreen: Found button (big)")
                 found = True
 
-            log.info("getToRaidscreen: Previous checks found popups: %s" % str(found))
+            log.info("getToRaidscreen: Previous checks found popups: %s" %
+                     str(found))
             if not found:
-                log.info("getToRaidscreen: Previous checks found nothing. Checking nearby open")
+                log.info(
+                    "getToRaidscreen: Previous checks found nothing. Checking nearby open")
                 if self._pogoWindowManager.checkNearby(os.path.join(self._applicationArgs.temp_path,
                                                                     'screenshot%s.png' % str(self._id)), self._id,
                                                        self._communicator):
@@ -720,10 +756,10 @@ class WorkerBase(ABC):
         log.debug("getToRaidscreen: done")
         return True
 
-
     def _get_screen_size(self):
         screen = self._communicator.getscreensize().split(' ')
         self._screen_x = screen[0]
         self._screen_y = screen[1]
-        log.debug('Get Screensize of %s: X: %s, Y: %s' % (str(self._id), str(self._screen_x), str(self._screen_y)))
+        log.debug('Get Screensize of %s: X: %s, Y: %s' %
+                  (str(self._id), str(self._screen_x), str(self._screen_y)))
         self._resocalc.get_x_y_ratio(self, self._screen_x, self._screen_y)

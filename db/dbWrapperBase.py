@@ -962,7 +962,7 @@ class DbWrapperBase(ABC):
         log.debug("{DbWrapperBase::create_usage_database_if_not_exists} called")
 
         query = ('CREATE TABLE if not exists trs_usage ( '
-                 'usage_id INT(10) NULL AUTO_INCREMENT , '
+                 'usage_id INT(10) NOT NULL AUTO_INCREMENT , '
                  'cpu FLOAT NULL DEFAULT NULL , '
                  'memory FLOAT NULL DEFAULT NULL , '
                  'garbage INT(5) NULL DEFAULT NULL , '

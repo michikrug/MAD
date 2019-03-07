@@ -250,7 +250,7 @@ def delete_hash():
     for file in glob.glob("ocr/www_hash/*" + str(hash) + ".jpg"):
         os.remove(file)
 
-    return redirect(getBasePath(request) + "/" + str(redi), code=302)
+    return redirect(getBasePath(request) + '/' + str(redi), code=302)
 
 
 @app.route("/delete_file")
@@ -265,7 +265,7 @@ def delete_file():
     for file in glob.glob("ocr/www_hash/*" + str(hash) + ".jpg"):
         os.remove(file)
 
-    return redirect(str(redi), code=302)
+    return redirect(getBasePath(request) + '/' + str(redi), code=302)
 
 
 @app.route("/get_gyms")
@@ -926,7 +926,7 @@ def addedit():
                                 elif value in area:
                                     continue
                                 else:
-                                    entry['settings'][key] = match_typ(value)
+                                    entry['settings'][key] = match_type(value)
                     else:
                         for key, value in data.items():
                             if str(key) not in ('block', 'area', 'type', 'edit'):
@@ -939,7 +939,7 @@ def addedit():
                                     if 'geofence' in key:
                                         entry[key] = value
                                     else:
-                                        entry[key] = match_typ(value)
+                                        entry[key] = match_type(value)
         else:
             new = {}
             for key, value in data.items():
@@ -947,7 +947,7 @@ def addedit():
                     if 'geofence' in key:
                         new[key] = value
                     else:
-                        new[key] = match_typ(value)
+                        new[key] = match_type(value)
 
             if str(block) == str("settings"):
                 mapping[area]['settings'].append(new)
@@ -970,7 +970,7 @@ def addedit():
     return redirect(getBasePath(request) + "/showsettings", code=302)
 
 
-def match_typ(value):
+def match_type(value):
     if '[' in value and ']' in value:
         if ':' in value:
             tempvalue = []
@@ -978,7 +978,6 @@ def match_typ(value):
                 ' ', '').replace("'", '').split(',')
             for k in valuearray:
                 tempvalue.append(str(k))
-
             value = tempvalue
         else:
             value = list(value.replace('[', '').replace(']', '').split(','))
@@ -1088,12 +1087,6 @@ def addnew():
     return render_template('sel_type.html', line=line, title="Type selector")
 
 
-def getBasePath(request):
-    if request.referrer:
-        return '/'.join(request.referrer.split('/')[:-1])
-    return ''
-
-
 @app.route('/status', methods=['GET'])
 @auth_required
 def status():
@@ -1106,6 +1099,12 @@ def get_status():
     data = json.loads(db_wrapper.download_status())
 
     return jsonify(data)
+
+
+def getBasePath(request):
+    if request.referrer:
+        return '/'.join(request.referrer.split('/')[:-1])
+    return ''
 
 
 def decodeHashJson(hashJson):

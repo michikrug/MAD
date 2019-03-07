@@ -1,4 +1,5 @@
 import logging
+
 from route.RouteManagerBase import RouteManagerBase
 
 log = logging.getLogger(__name__)
@@ -18,7 +19,8 @@ class RouteManagerQuests(RouteManagerBase):
         return 0
 
     def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, False, nofile=True)
+        self.recalc_route(
+            self._max_radius, self._max_coords_within_radius, 1, False, nofile=True)
 
     def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
                  path_to_exclude_geofence, routefile, mode=None, init=False,
@@ -41,7 +43,8 @@ class RouteManagerQuests(RouteManagerBase):
         try:
             if not self._is_started:
                 log.info("Starting routemanager %s" % str(self.name))
-                stops = self.db_wrapper.stop_from_db_without_quests(self.geofence_helper)
+                stops = self.db_wrapper.stop_from_db_without_quests(
+                    self.geofence_helper)
                 log.info('Detected stops without quests: %s' % str(stops))
                 for stop in stops:
                     self._stoplist.append(str(stop[0]) + '-' + str(stop[1]))
@@ -63,4 +66,3 @@ class RouteManagerQuests(RouteManagerBase):
             log.info('Already got this Stop')
             return False
         return True
-

@@ -319,7 +319,7 @@ class RouteManagerBase(ABC):
 
         # first check if a location is available, if not, block until we have one...
         got_location = False
-        while not got_location:
+        while not got_location and self._is_started:
             log.debug("%s: Checking if a location is available..." %
                       str(self.name))
             self._manager_mutex.acquire()
@@ -360,8 +360,8 @@ class RouteManagerBase(ABC):
 
             # continue as usual
             if self._current_index_of_route < len(self._route):
-                log.info("Moving on with location %s" %
-                         self._route[self._current_index_of_route])
+                log.info("%s: Moving on with location %s [%s/%s]" % (str(
+                    self.name), self._route[self._current_index_of_route], self._current_index_of_route+1, len(self._route)))
                 next_lat = self._route[self._current_index_of_route]['lat']
                 next_lng = self._route[self._current_index_of_route]['lng']
             self._current_index_of_route += 1

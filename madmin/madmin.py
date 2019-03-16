@@ -13,11 +13,10 @@ from functools import wraps
 from math import floor
 from shutil import copyfile
 
-from flask import (Flask, jsonify, make_response, redirect, render_template,
-                   request, send_from_directory)
-
 from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
+from flask import (Flask, jsonify, make_response, redirect, render_template,
+                   request, send_from_directory)
 from flask_caching import Cache
 from utils.language import i8ln, open_json_file
 from utils.mappingParser import MappingParser
@@ -99,7 +98,7 @@ def screens():
 @app.route('/', methods=['GET'])
 @auth_required
 def root():
-    return render_template('index.html')
+    return render_template('index.html', running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/raids', methods=['GET'])
@@ -1104,7 +1103,7 @@ def statistics():
         minutes_spawn = 120
 
     return render_template('statistics.html', title="MAD Statisics", minutes_spawn=minutes_spawn,
-                           minutes_usage=minutes_usage)
+                           minutes_usage=minutes_usage, time=conf_args.madmin_time)
 
 
 @app.route('/get_status', methods=['GET'])
@@ -1136,16 +1135,35 @@ def game_stats():
     quest = db_wrapper.statistics_get_quests_count(1)
 
     # Usage
-    cpu = []
-    mem = []
-    garbage = []
+    insta = {}
+    usage = []
+    idx = 0
     usa = db_wrapper.statistics_get_usage_count(minutes_usage)
-    for dat in usa:
-        cpu.append([dat[3]*1000, dat[0]])
-        mem.append([dat[3]*1000, dat[1]])
-        garbage.append([dat[3]*1000, dat[2]])
 
-    usage = {'mem': mem, 'cpu': cpu, 'garbage': garbage}
+    for dat in usa:
+        if 'CPU-' + dat[4] not in insta:
+            insta['CPU-' + dat[4]] = {}
+            insta['CPU-' + dat[4]]["axis"] = 1
+            insta['CPU-' + dat[4]]["data"] = []
+        if 'MEM-' + dat[4] not in insta:
+            insta['MEM-' + dat[4]] = {}
+            insta['MEM-' + dat[4]]['axis'] = 2
+            insta['MEM-' + dat[4]]["data"] = []
+        if conf_args.stat_gc:
+            if 'CO-' + dat[4] not in insta:
+                insta['CO-' + dat[4]] = {}
+                insta['CO-' + dat[4]]['axis'] = 3
+                insta['CO-' + dat[4]]["data"] = []
+
+        insta['CPU-' + dat[4]]['data'].append([dat[3] * 1000, dat[0]])
+        insta['MEM-' + dat[4]]['data'].append([dat[3] * 1000, dat[1]])
+        if conf_args.stat_gc:
+            insta['CO-' + dat[4]]['data'].append([dat[3] * 1000, dat[2]])
+
+    for label in insta:
+        usage.append(
+            {'label': label, 'data': insta[label]['data'], 'yaxis': insta[label]['axis'], 'idx': idx})
+        idx += 1
 
     # Gym
     gym = []

@@ -4,9 +4,8 @@ import sys
 import time
 from datetime import datetime, timedelta
 
-import requests
-
 import numpy
+import requests
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.s2Helper import S2Helper
@@ -701,7 +700,7 @@ class RmWrapper(DbWrapperBase):
 
         vals = (
             encounter_id,
-            wild_pokemon.get("spawnpoint_id"),
+            spawnid,
             pokemon_data.get('id'),
             latitude,
             longitude,
@@ -748,7 +747,7 @@ class RmWrapper(DbWrapperBase):
             encounter_id=encounter_id,
             pokemon_id=pokemon_data.get("id"),
             last_modified_time=timestamp,
-            spawnpoint_id=wild_pokemon.get("spawnpoint_id"),
+            spawnpoint_id=spawnid,
             lat=latitude, lon=longitude,
             despawn_time_unix=despawn_time_unix,
             pokemon_level=pokemon_level,

@@ -6,7 +6,6 @@ import time
 from threading import Event, Thread, current_thread
 
 import requests
-
 from s2sphere import Cell, CellId, LatLng
 from utils.language import open_json_file
 from utils.questGen import generate_quest

@@ -8,13 +8,19 @@
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.selection.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.pie.min.js"></script>
+<script type="text/javascript" src="static/js/jquery.flot.axislabels.js"></script>
+
 <script>
     $(function () {
 
         var options_dots = {
             xaxis: {
                 mode: "time",
+                {% if time == "12" %}
+                timeformat: "%d.%m<br>%I:00 %p - ",
+                {% else %}
                 timeformat: "%d.%m<br>%H:00 - ",
+                {% endif %}
                 minTickSize: [1, "hour"],
                 timezone: "browser"
             },
@@ -36,13 +42,17 @@
                 container: $("#legendContainer_spawn"),
                 noColumns: 0
             }
-        }
+        };
 
         var options_bars = {
             xaxis: {
                 mode: "time",
+                {% if time == "12" %}
+                timeformat: "%d.%m<br>%I:00:00 %p",
+                {% else %}
                 timeformat: "%d.%m<br>%H:00:00",
-                minTickSize: [1, "hour"],
+                {% endif %}
+                minTickSize: [3, "hour"],
                 timezone: "browser"
             },
             series: {
@@ -63,7 +73,7 @@
                 container: $("#legendContainer_quest"),
                 noColumns: 0
             }
-        }
+        };
 
         var options_pie = {
             series: {
@@ -87,11 +97,10 @@
                         '</div>';
                 }
             }
-        }
+        };
 
         $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif').lstrip('/') }}" width="100px" /><br /><h2>Load...</h2>' });
 
-        // $('#ajax-loader').show();
         $.ajax({
             "url": "get_game_stats?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
             "type": "GET",
@@ -104,7 +113,7 @@
                 stop = result.stop
                 usage = result.usage
 
-                var plot_spawn = $.plot($("#flot_spawn"), [
+                $.plot($("#flot_spawn"), [
                     {
                         data: spawn.iv,
                         label: "IV Spawns / Hour"
@@ -120,24 +129,7 @@
                 ], options_dots);
                 $("#flot_spawn").UseTooltip();
 
-                var plot_usage = $.plot($("#flot_usage"), [
-                    {
-                        data: usage.cpu,
-                        label: "CPU in %",
-                        color: "#123123"
-                    },
-                    {
-                        data: usage.garbage,
-                        label: "Collected objects",
-                        yaxis: 1
-                    },
-                    {
-                        data: usage.mem,
-                        label: "Memory in GB",
-                        yaxis: 2,
-                        color: "red"
-                    }
-                ],
+                $.plot($("#flot_usage"), usage,
                     {
                         grid: {
                             hoverable: true,
@@ -146,16 +138,40 @@
                         },
                         xaxis: {
                             mode: "time",
+                            //{% if time == "12" %}
+                            timeformat: "%d.%m<br>%I:%M %p",
+                            //{% else %}
                             timeformat: "%d.%m<br>%H:%M",
-                            tickSize: [15, "minute"],
-                            timezone: "browser",
-                            show: usage.garbage.length > 0
+                            //{% endif %}
+                            tickSize: [3, "hour"],
+                            timezone: "browser"
                         },
                         yaxes: [
                             {
                                 //[First axis]
+                                axisLabel: "CPU",
+                                color: "black",
+                                axisLabelUseCanvas: true,
+                                axisLabelFontSizePixels: 12,
+                                axisLabelFontFamily: 'Verdana, Arial',
+                                axisLabelPadding: 3
                             }, {
-                                position: "right"
+                                position: "right",
+                                axisLabel: "Memory",
+                                color: "black",
+                                axisLabelUseCanvas: true,
+                                axisLabelFontSizePixels: 12,
+                                axisLabelFontFamily: 'Verdana, Arial',
+                                axisLabelPadding: 3
+                            }, {
+                                position: "right",
+                                axisLabel: "Collected Objects",
+                                color: "black",
+                                axisLabelUseCanvas: true,
+                                axisLabelFontSizePixels: 12,
+                                axisLabelFontFamily: 'Verdana, Arial',
+                                axisLabelPadding: 3,
+                                min: 1
                             }
                         ],
 
@@ -165,9 +181,9 @@
                         }
                     }
                 );
-                $("#flot_usage").UseTooltip();
+                $("#flot_usage").UseTooltipFull();
 
-                var plot_quest = $.plot($("#flot_quest"), [
+                $.plot($("#flot_quest"), [
                     {
                         data: quest,
                         color: "#5482FF",
@@ -176,12 +192,12 @@
                 ], options_bars);
                 $("#flot_quest").UseTooltip();
 
-                var plot_stop = $.plot($("#flot_stop"), stop, options_pie);
-                var plot_gym = $.plot($("#flot_gym"), gym, options_pie);
+                $.plot($("#flot_stop"), stop, options_pie);
+                $.plot($("#flot_gym"), gym, options_pie);
 
             },
             complete: function () {
-                setTimeout($.unblockUI, 500);
+                setTimeout($.unblockUI, 100);
             }
 
         });
@@ -202,7 +218,7 @@
                         showTooltip(item.pageX,
                             item.pageY,
                             color,
-                            "<strong>" + item.series.label + "</strong><br><strong>Amount:</strong> " + y + "<br><strong>Hour</strong>: " + timeConverter(x) + "</strong>");
+                            "<strong>" + item.series.label + "</strong><br><strong>Amount:</strong> " + y + "<br><strong>Hour</strong>: " + timeConverter(x, 'hour') + "</strong>");
                     }
                 } else {
                     $("#tooltip").remove();
@@ -211,7 +227,30 @@
             });
         };
 
-        function timeConverter(timestamp) {
+        $.fn.UseTooltipFull = function () {
+            $(this).bind("plothover", function (event, pos, item) {
+                if (item) {
+                    if ((previousLabel != item.series.label) || (previousPoint != item.dataIndex)) {
+                        previousPoint = item.dataIndex;
+                        previousLabel = item.series.label;
+                        $("#tooltip").remove();
+
+                        var x = item.datapoint[0];
+                        var y = item.datapoint[1];
+                        var color = item.series.color;
+                        showTooltip(item.pageX,
+                            item.pageY,
+                            color,
+                            "<strong>" + item.series.label + "</strong><br><strong>Amount:</strong> " + y + "<br><strong>Time</strong>: " + timeConverter(x, 'full') + "</strong>");
+                    }
+                } else {
+                    $("#tooltip").remove();
+                    previousPoint = null;
+                }
+            });
+        };
+
+        function timeConverter(timestamp, mode) {
             var a = new Date(timestamp);
             var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             var year = a.getFullYear();
@@ -220,8 +259,25 @@
             var hour = a.getHours();
             var hour_till = a.getHours() + 1;
             var min = a.getMinutes();
+            min = min < 10 ? '0' + min : min;
             var sec = a.getSeconds();
-            var time = hour + ' - ' + hour_till
+            sec = sec < 10 ? '0' + sec : sec;
+
+            {% if time == "12" %}
+            var ampm = hour >= 12 ? 'pm' : 'am';
+            hour = hour % 12;
+            hour = hour ? hour : 12;
+            hour_till = hour_till % 12;
+            hour_till = hour_till ? hour_till : 12;
+            hour_till + ' ' + ampm;
+            sec = sec + ' ' + ampm;
+            {% endif %}
+
+            if (mode == 'hour') {
+                var time = hour + ' - ' + hour_till
+            } else {
+                var time = hour + ':' + min + ':' + sec
+            }
             return time;
         }
 

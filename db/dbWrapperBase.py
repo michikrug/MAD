@@ -836,9 +836,10 @@ class DbWrapperBase(ABC):
 
         log.debug("DbWrapperBase::retrieve_next_spawns called")
         query = (
-            "SELECT latitude, longitude, spawndef, calc_endminsec "
-            "FROM `trs_spawn`"
-            "WHERE calc_endminsec IS NOT NULL"
+            "SELECT latitude, longitude, spawndef, calc_endminsec FROM trs_spawn WHERE calc_endminsec IS NOT NULL and "
+            "DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') between DATE_FORMAT(DATE_ADD(NOW(), "
+            "INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') and DATE_FORMAT(DATE_ADD(NOW(), "
+            "INTERVAL if(spawndef=15,70,40) MINUTE),'%i:%s')"
         )
         res = self.execute(query)
         next_up = []
@@ -851,7 +852,7 @@ class DbWrapperBase(ABC):
             seconds = int(endminsec_split[1])
             temp_date = current_time_of_day.replace(
                 minute=minutes, second=seconds)
-            if math.floor(minutes / 10) == 0:
+            if minutes < datetime.now().minute:
                 temp_date = temp_date + timedelta(hours=1)
 
             if temp_date < current_time_of_day:
@@ -940,13 +941,13 @@ class DbWrapperBase(ABC):
         log.debug("{DbWrapperBase::create_status_database_if_not_exists} called")
 
         query = ('CREATE table IF NOT EXISTS trs_status ( '
-                 'origin VARCHAR(50) NOT NULL , '
-                 'currentPos VARCHAR(50) NOT NULL, '
-                 'lastPos VARCHAR(50) NOT NULL, '
-                 'routePos INT(11) NOT NULL, '
-                 'routeMax INT(11) NOT NULL, '
-                 'routemanager VARCHAR(255) NOT NULL, '
-                 'rebootCounter INT(11)  NOT NULL, '
+                 'origin VARCHAR(50) NOT NULL, '
+                 'currentPos VARCHAR(50) NULL DEFAULT NULL, '
+                 'lastPos VARCHAR(50) NULL DEFAULT NULL, '
+                 'routePos INT(11) NULL DEFAULT NULL, '
+                 'routeMax INT(11) NULL DEFAULT NULL, '
+                 'routemanager VARCHAR(255) NULL DEFAULT NULL, '
+                 'rebootCounter INT(11) NULL DEFAULT NULL, '
                  'lastProtoDateTime VARCHAR(50) NULL DEFAULT NULL, '
                  'lastPogoRestart VARCHAR(50) NULL DEFAULT NULL, '
                  'init TEXT NOT NULL, '
@@ -962,7 +963,8 @@ class DbWrapperBase(ABC):
         log.debug("{DbWrapperBase::create_usage_database_if_not_exists} called")
 
         query = ('CREATE TABLE if not exists trs_usage ( '
-                 'usage_id INT(10) NOT NULL AUTO_INCREMENT , '
+                 'usage_id INT(10) NOT NULL AUTO_INCREMENT, '
+                 'instance varchar(100) NULL DEFAULT NULL, '
                  'cpu FLOAT NULL DEFAULT NULL , '
                  'memory FLOAT NULL DEFAULT NULL , '
                  'garbage INT(5) NULL DEFAULT NULL , '
@@ -974,15 +976,15 @@ class DbWrapperBase(ABC):
 
         return True
 
-    def insert_usage(self, cpu, mem, garbage, timestamp):
+    def insert_usage(self, instance, cpu, mem, garbage, timestamp):
         log.debug("dbWrapper::insert_usage")
 
         query = (
-            "INSERT into trs_usage (cpu, memory, garbage, timestamp) VALUES "
-            "(%s, %s, %s, %s)"
+            "INSERT into trs_usage (instance, cpu, memory, garbage, timestamp) VALUES "
+            "(%s, %s, %s, %s, %s)"
         )
         vals = (
-            cpu, mem, garbage, timestamp
+            instance, cpu, mem, garbage, timestamp
         )
         self.execute(query, vals, commit=True)
 
@@ -1116,7 +1118,7 @@ class DbWrapperBase(ABC):
 
         return res
 
-    def statistics_get_usage_count(self, minutes):
+    def statistics_get_usage_count(self, minutes=120, instance=None):
         log.debug('Fetching usage from db')
         query_where = ''
 
@@ -1125,8 +1127,13 @@ class DbWrapperBase(ABC):
             query_where = ' WHERE FROM_UNIXTIME(timestamp) > \'%s\' ' % str(
                 days)
 
+        if instance is not None:
+            query_where = query_where + \
+                ' and instance = \'%s\' ' % str(instance)
+
         query = (
-            "SELECT cpu, memory, garbage, timestamp FROM trs_usage %s " %
+            "SELECT cpu, memory, garbage, timestamp, instance FROM trs_usage %s "
+            "order by timestamp" %
                 (str(query_where))
         )
 

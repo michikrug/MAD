@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import secrets
 
+import numpy as np
 from route.routecalc.ClusteringHelper import ClusteringHelper
 from utils.collections import Location
 

@@ -15,7 +15,6 @@ from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from mitm_receiver.MITMReceiver import MITMReceiver
-from ocr.pogoWindows import PogoWindows
 from utils.madGlobals import terminate_mad
 from utils.mappingParser import MappingParser
 from utils.version import MADVersion
@@ -27,10 +26,6 @@ from websocket.WebsocketServer import WebsocketServer
 log = logging.getLogger()
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language
-
-
-class LogFilter(logging.Filter):
-
 
 class LogFilter(logging.Filter):
     def __init__(self, level):

@@ -80,6 +80,11 @@ class WebhookHelper(object):
         for webhook in webhooks:
             url = webhook.strip()
 
+            if url.startswith("["):
+                endIndex = webhook.rindex("]")
+                endIndex += 1
+                url = url[endIndex:]
+
             if 'bookofquests' in url and 'quest_type' not in payload[0]['message']:
                 log.debug("Do not send non-quest webhook to bookofquests")
                 return

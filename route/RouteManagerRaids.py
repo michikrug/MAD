@@ -1,7 +1,8 @@
 import logging
-from route.RouteManagerBase import RouteManagerBase
-from route.routecalc.ClusteringHelper import ClusteringHelper
 from threading import Event, Thread
+
+from route.routecalc.ClusteringHelper import ClusteringHelper
+from route.RouteManagerBase import RouteManagerBase
 
 log = logging.getLogger(__name__)
 

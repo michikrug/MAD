@@ -8,9 +8,9 @@ import time
 from threading import Event, Lock, Thread
 
 import websockets
-
 from utils.authHelper import check_auth
-from utils.madGlobals import WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException
+from utils.madGlobals import (WebsocketWorkerRemovedException,
+                              WebsocketWorkerTimeoutException)
 from utils.timer import Timer
 from worker.WorkerMITM import WorkerMITM
 from worker.WorkerQuests import WorkerQuests
@@ -67,8 +67,8 @@ class WebsocketServer(object):
 
         asyncio.set_event_loop(self.__loop)
         self.__loop.run_until_complete(
-                websockets.serve(self.handler, self.__listen_address, self.__listen_port, max_size=2 ** 25,
-                                 origins=allowed_origins, ping_timeout=10, ping_interval=15))
+            websockets.serve(self.handler, self.__listen_address, self.__listen_port, max_size=2 ** 25,
+                             origins=allowed_origins, ping_timeout=10, ping_interval=15))
         self.__loop.run_forever()
 
     def stop_server(self):
@@ -108,29 +108,33 @@ class WebsocketServer(object):
             return
 
         consumer_task = asyncio.ensure_future(
-                self.__consumer_handler(websocket_client_connection))
+            self.__consumer_handler(websocket_client_connection))
         producer_task = asyncio.ensure_future(
-                self.__producer_handler(websocket_client_connection))
+            self.__producer_handler(websocket_client_connection))
         done, pending = await asyncio.wait(
-                [producer_task, consumer_task],
-                return_when=asyncio.FIRST_COMPLETED,
+            [producer_task, consumer_task],
+            return_when=asyncio.FIRST_COMPLETED,
         )
         log.info("consumer or producer of %s stopped, cancelling pending tasks"
                  % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
         for task in pending:
             task.cancel()
-        log.info("Awaiting unregister of %s" % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
+        log.info("Awaiting unregister of %s" % str(
+            websocket_client_connection.request_headers.get_all("Origin")[0]))
         await self.__unregister(websocket_client_connection)
-        log.info("All done with %s" % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
+        log.info("All done with %s" % str(
+            websocket_client_connection.request_headers.get_all("Origin")[0]))
 
     async def __register(self, websocket_client_connection):
-        log.info("Client %s registering" % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
+        log.info("Client %s registering" % str(
+            websocket_client_connection.request_headers.get_all("Origin")[0]))
         if self.__stop_server.is_set():
             log.info("MAD is set to shut down, not accepting new connection")
             return False
 
         try:
-            id = str(websocket_client_connection.request_headers.get_all("Origin")[0])
+            id = str(
+                websocket_client_connection.request_headers.get_all("Origin")[0])
         except IndexError:
             log.warning("Client from %s tried to connect without Origin header"
                         % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
@@ -138,7 +142,8 @@ class WebsocketServer(object):
 
         if self.__auths:
             try:
-                authBase64 = str(websocket_client_connection.request_headers.get_all("Authorization")[0])
+                authBase64 = str(
+                    websocket_client_connection.request_headers.get_all("Authorization")[0])
             except IndexError:
                 log.warning("Client from %s tried to connect without auth header"
                             % str(websocket_client_connection.request_headers.get_all("Origin")[0]))
@@ -162,13 +167,16 @@ class WebsocketServer(object):
             log.debug("Setting up switchtimer for %s" % str(id))
             last_known_state = {}
             client_mapping = self.__device_mappings[id]
-            timer = Timer(client_mapping["switch"], id, client_mapping["switch_interval"])
+            timer = Timer(client_mapping["switch"],
+                          id, client_mapping["switch_interval"])
             log.debug("Switchtime for %s all set up, brief delay" % str(id))
             time.sleep(0.8)
             log.debug("Setting up routemanagers for %s" % str(id))
-            daytime_routemanager = self.__routemanagers[client_mapping["daytime_area"]].get("routemanager")
+            daytime_routemanager = self.__routemanagers[client_mapping["daytime_area"]].get(
+                "routemanager")
             if client_mapping.get("nighttime_area", None) is not None:
-                nightime_routemanager = self.__routemanagers[client_mapping["nighttime_area"]].get("routemanager", None)
+                nightime_routemanager = self.__routemanagers[client_mapping["nighttime_area"]].get(
+                    "routemanager", None)
             else:
                 nightime_routemanager = None
             devicesettings = client_mapping["settings"]
@@ -180,7 +188,7 @@ class WebsocketServer(object):
             if timer.get_switch() is True and client_mapping.get("nighttime_area", None) is not None:
                 # set global mon_iv
                 client_mapping['mon_ids_iv'] = self.__routemanagers[client_mapping["nighttime_area"]].get(
-                        "routemanager").settings.get("mon_ids_iv", [])
+                    "routemanager").settings.get("mon_ids_iv", [])
                 # start the appropriate nighttime manager if set
                 if nightime_routemanager is None:
                     pass
@@ -208,7 +216,7 @@ class WebsocketServer(object):
             if not timer.get_switch() or not started:
                 # set mon_iv
                 client_mapping['mon_ids_iv'] = self.__routemanagers[client_mapping["daytime_area"]].get(
-                        "routemanager").settings.get("mon_ids_iv", [])
+                    "routemanager").settings.get("mon_ids_iv", [])
                 # we either gotta run daytime mode OR nighttime routemanager not set
                 if daytime_routemanager.mode in ["raids_mitm", "mon_mitm", "iv_mitm"]:
                     worker = WorkerMITM(self.args, id, last_known_state, self, daytime_routemanager, nightime_routemanager,
@@ -229,11 +237,13 @@ class WebsocketServer(object):
                     sys.exit(1)
 
             log.debug("Starting worker for %s" % str(id))
-            new_worker_thread = Thread(name='worker_%s' % id, target=worker.start_worker)
+            new_worker_thread = Thread(
+                name='worker_%s' % id, target=worker.start_worker)
 
             new_worker_thread.daemon = False
 
-            self.__current_users[id] = [new_worker_thread, worker, websocket_client_connection, 0]
+            self.__current_users[id] = [new_worker_thread,
+                                        worker, websocket_client_connection, 0]
         finally:
             self.__current_users_mutex.release()
         new_worker_thread.start()
@@ -241,7 +251,8 @@ class WebsocketServer(object):
         return True
 
     async def __unregister(self, websocket_client_connection):
-        worker_id = str(websocket_client_connection.request_headers.get_all("Origin")[0])
+        worker_id = str(
+            websocket_client_connection.request_headers.get_all("Origin")[0])
         self.__current_users_mutex.acquire()
         worker = self.__current_users.get(worker_id, None)
         if worker is not None:
@@ -282,7 +293,8 @@ class WebsocketServer(object):
     async def __consumer_handler(self, websocket_client_connection):
         if websocket_client_connection is None:
             return
-        worker_id = str(websocket_client_connection.request_headers.get_all("Origin")[0])
+        worker_id = str(
+            websocket_client_connection.request_headers.get_all("Origin")[0])
         log.warning("Consumer handler of %s starting" % str(worker_id))
         while websocket_client_connection.open:
             message = None
@@ -291,7 +303,8 @@ class WebsocketServer(object):
             except asyncio.TimeoutError as te:
                 await asyncio.sleep(0.02)
             except websockets.exceptions.ConnectionClosed as cc:
-                log.warning("Connection to %s was closed, stopping worker" % str(worker_id))
+                log.warning(
+                    "Connection to %s was closed, stopping worker" % str(worker_id))
                 self.__current_users_mutex.acquire()
                 worker = self.__current_users.get(worker_id, None)
                 self.__current_users_mutex.release()
@@ -304,7 +317,8 @@ class WebsocketServer(object):
 
             if message is not None:
                 await self.__on_message(message)
-        log.warning("Connection of %s closed in consumer_handler" % str(worker_id))
+        log.warning("Connection of %s closed in consumer_handler" %
+                    str(worker_id))
 
     def clean_up_user(self, worker_id, worker_instance):
         """
@@ -317,7 +331,8 @@ class WebsocketServer(object):
                                                          or self.__current_users[worker_id][1] == worker_instance):
             if self.__current_users[worker_id][2].open:
                 log.info("Calling close for %s..." % str(worker_id))
-                asyncio.ensure_future(self.__current_users[worker_id][2].close(), loop=self.__loop)
+                asyncio.ensure_future(
+                    self.__current_users[worker_id][2].close(), loop=self.__loop)
             self.__current_users.pop(worker_id)
             log.info("Info of %s removed in websocket" % str(worker_id))
         self.__current_users_mutex.release()
@@ -402,9 +417,11 @@ class WebsocketServer(object):
             self.__reset_fail_counter(id)
             result = self.__pop_response(message_id)
             if isinstance(result, str):
-                log.debug("Response to %s: %s" % (str(id), str(result.strip())))
+                log.debug("Response to %s: %s" %
+                          (str(id), str(result.strip())))
             else:
-                log.debug("Received binary data to %s, starting with %s" % (str(id), str(result[:10])))
+                log.debug("Received binary data to %s, starting with %s" %
+                          (str(id), str(result[:10])))
         else:
             # timeout reached
             log.warning("Timeout, increasing timeout-counter")

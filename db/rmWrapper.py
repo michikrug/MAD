@@ -1165,7 +1165,7 @@ class RmWrapper(DbWrapperBase):
             "SELECT raid.gym_id, raid.level, raid.spawn, raid.start, raid.end, raid.pokemon_id, "
             "raid.cp, raid.move_1, raid.move_2, raid.last_scanned, raid.form, raid.is_exclusive, "
             "gymdetails.name, gymdetails.url, gym.latitude, gym.longitude, "
-            "gym.team_id "
+            "gym.team_id, gym.park "
             "FROM raid "
             "LEFT JOIN gymdetails ON gymdetails.gym_id = raid.gym_id "
             "LEFT JOIN gym ON gym.gym_id = raid.gym_id "
@@ -1179,7 +1179,7 @@ class RmWrapper(DbWrapperBase):
 
         for (gym_id, level, spawn, start, end, pokemon_id,
                 cp, move_1, move_2, last_scanned, form, is_exclusive,
-                name, url, latitude, longitude, team_id) in res:
+                name, url, latitude, longitude, team_id, park) in res:
             ret.append({
                 "gym_id": gym_id,
                 "level": level,
@@ -1197,7 +1197,8 @@ class RmWrapper(DbWrapperBase):
                 "latitude": latitude,
                 "longitude": longitude,
                 "team_id": team_id,
-                "is_exclusive": is_exclusive
+                "is_exclusive": is_exclusive,
+                "is_ex_raid_eligible": park
             })
 
         return ret
@@ -1289,7 +1290,7 @@ class RmWrapper(DbWrapperBase):
             "SELECT name, description, url, gym.gym_id, team_id, "
             "guard_pokemon_id, slots_available, latitude, longitude, "
             "total_cp, is_in_battle, "
-            "last_modified, gym.last_scanned "
+            "last_modified, gym.last_scanned, park "
             "FROM gym "
             "LEFT JOIN gymdetails ON gym.gym_id = gymdetails.gym_id "
             "WHERE last_modified >= %s"
@@ -1301,7 +1302,7 @@ class RmWrapper(DbWrapperBase):
         ret = []
 
         for (name, description, url, gym_id, team_id, guard_pokemon_id, slots_available,
-                latitude, longitude, total_cp, is_in_battle, last_modified, last_scanned) in res:
+                latitude, longitude, total_cp, is_in_battle, last_modified, last_scanned, park) in res:
             ret.append({
                 "gym_id": gym_id,
                 "team_id": team_id,
@@ -1315,7 +1316,8 @@ class RmWrapper(DbWrapperBase):
                 "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
                 "name": name,
                 "url": url,
-                "description": description
+                "description": description,
+                "is_ex_raid_eligible": park
             })
 
         return ret

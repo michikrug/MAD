@@ -30,7 +30,7 @@ class WorkerBase(ABC):
         self._route_manager_last_time = None
         self._websocket_handler = websocket_handler
         self._communicator = Communicator(
-            websocket_handler, id, args.websocket_command_timeout)
+            websocket_handler, id, self, args.websocket_command_timeout)
         self._id = id
         self._applicationArgs = args
         self._last_known_state = last_known_state
@@ -41,6 +41,7 @@ class WorkerBase(ABC):
         self._async_io_looper_thread = None
         self._location_count = 0
         self._timer = timer
+        self._init = False
 
         self._lastScreenshotTaken = 0
         self._stop_worker_event = Event()
@@ -55,11 +56,9 @@ class WorkerBase(ABC):
         self._lastStart = ""
         self._pogoWindowManager = pogoWindowManager
 
-        self.current_location = self._last_known_state.get(
-            "last_location", None)
+        self.current_location = self._devicesettings.get("last_location", None)
         if self.current_location is None:
             self.current_location = Location(0.0, 0.0)
-        self.last_location = Location(0.0, 0.0)
         self.last_processed_location = Location(0.0, 0.0)
 
     @abstractmethod
@@ -231,7 +230,7 @@ class WorkerBase(ABC):
         if self._timer is not None:
             log.info("Stopping switch timer")
             self._timer.stop_switch()
-        self._communicator.cleanup_websocket(self)
+        self._communicator.cleanup_websocket()
         log.info("Internal cleanup of %s finished" % str(self._id))
 
     def _main_work_thread(self):
@@ -287,8 +286,9 @@ class WorkerBase(ABC):
 
             try:
                 log.debug('main worker %s: LastLat: %s, LastLng: %s, CurLat: %s, CurLng: %s' %
-                          (str(self._id), self.last_location.lat, self.last_location.lng,
-                           self.current_location.lat, self.current_location.lng))
+                          (str(self._id), self._devicesettings["last_location"].lat,
+                           self._devicesettings["last_location"].lng, self.current_location.lat,
+                           self.current_location.lng))
                 time_snapshot, process_location = self._move_to_location()
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 log.warning("Worker %s failed moving to new location, stopping worker, "
@@ -350,6 +350,7 @@ class WorkerBase(ABC):
                 # TODO: check if result is positive/negative?
                 self._route_manager_nighttime.register_worker(self._id)
                 self._route_manager_last_time = self._route_manager_nighttime
+            self._init = self._route_manager_nighttime.init
             return self._route_manager_nighttime
         elif switch_mode is True and self._route_manager_nighttime is None:
             if self._route_manager_last_time is not None:
@@ -362,6 +363,7 @@ class WorkerBase(ABC):
                     self._route_manager_nighttime.unregister_worker(self._id)
                 self._route_manager_daytime.register_worker(self._id)
                 self._route_manager_last_time = self._route_manager_daytime
+                self._init = self._route_manager_daytime.init
             return self._route_manager_daytime
         else:
             # log.fatal("Raising internal worker exception")
@@ -611,8 +613,9 @@ class WorkerBase(ABC):
 
             log.info(
                 "_check_pogo_main_screen: Previous checks found popups: %s" % str(found))
-            if not found:
-                self._takeScreenshot()
+
+            self._takeScreenshot(delayBefore=self._devicesettings.get(
+                "post_screenshot_delay", 1))
 
             attempts += 1
         log.info("_check_pogo_main_screen: done")
@@ -624,7 +627,6 @@ class WorkerBase(ABC):
         if not pogoTopmost:
             return False
 
-        self._checkPogoFreeze()
         if not self._takeScreenshot(delayBefore=self._devicesettings.get("post_screenshot_delay", 1)):
             # TODO: again?
             # if again:
@@ -643,6 +645,7 @@ class WorkerBase(ABC):
                                                                    'screenshot%s.png' % str(self._id)), 2.20, 3.01,
                                                       self._communicator)
         if found:
+            time.sleep(1)
             log.info("checkPogoButton: Found button (small)")
             log.info("checkPogoButton: done")
             return True
@@ -655,7 +658,6 @@ class WorkerBase(ABC):
         if not pogoTopmost:
             return False
 
-        self._checkPogoFreeze()
         if not self._takeScreenshot(delayBefore=self._devicesettings.get("post_screenshot_delay", 1)):
             # TODO: go again?
             # if again:
@@ -674,6 +676,7 @@ class WorkerBase(ABC):
             os.path.join(self._applicationArgs.temp_path,
                          'screenshot%s.png' % str(self._id)), self._id, self._communicator)
         if found:
+            time.sleep(1)
             log.info("checkPogoClose: Found (X) button (except nearby)")
             log.info("checkPogoClose: done")
             return True

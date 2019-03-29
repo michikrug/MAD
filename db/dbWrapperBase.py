@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import sys
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -44,6 +45,43 @@ class DbWrapperBase(ABC):
                                                                 pool_size=self.application_args.db_poolsize,
                                                                 **self.dbconfig)
         self.pool_mutex.release()
+
+    def _check_column_exists(self, table, column):
+        query = (
+            "SELECT count(*) "
+            "FROM information_schema.columns "
+            "WHERE table_name = %s "
+            "AND column_name = %s "
+            "AND table_schema = %s"
+        )
+        vals = (
+            table,
+            column,
+            self.database,
+        )
+
+        return int(self.execute(query, vals)[0][0])
+
+    def _check_create_column(self, field):
+        if self._check_column_exists(field["table"], field["column"]) == 1:
+            return
+
+        alter_query = (
+            "ALTER TABLE {} "
+            "ADD COLUMN {} {}"
+            .format(field["table"], field["column"], field["ctype"])
+        )
+
+        self.execute(alter_query, commit=True)
+
+        if self._check_column_exists(field["table"], field["column"]) == 1:
+            log.info("Successfully added '{}.{}' column".format(
+                field["table"], field["column"]))
+            return
+        else:
+            log.fatal("Couldn't create required column {}.{}'".format(
+                field["table"], field["column"]))
+            sys.exit(1)
 
     def close(self, conn, cursor):
         """
@@ -129,13 +167,6 @@ class DbWrapperBase(ABC):
         finally:
             self.close(conn, cursor)
             self.connection_semaphore.release()
-
-    @abstractmethod
-    def ensure_last_updated_column(self):
-        """
-        We add a last_updated column to monocle
-        """
-        pass
 
     @abstractmethod
     def auto_hatch_eggs(self):
@@ -329,6 +360,25 @@ class DbWrapperBase(ABC):
         pass
 
     @abstractmethod
+    def get_raids_changed_since(self, timestamp):
+        pass
+
+    @abstractmethod
+    def get_mon_changed_since(self, timestamp):
+        pass
+
+    @abstractmethod
+    def get_quests_changed_since(self, timestamp):
+        pass
+
+    @abstractmethod
+    def get_gyms_changed_since(self, timestamp):
+        pass
+
+    @abstractmethod
+    def get_weather_changed_since(self, timestamp):
+        pass
+
     def statistics_get_pokemon_count(self, days):
         pass
 
@@ -1082,20 +1132,6 @@ class DbWrapperBase(ABC):
             workerstatus.append(status)
 
         return str(json.dumps(workerstatus, indent=4, sort_keys=True))
-
-    def check_column_exists(self, table, column):
-        query = (
-            "SELECT count(*) "
-            "FROM information_schema.columns "
-            "WHERE table_name = %s "
-            "AND column_name = %s "
-            "AND table_schema = %s"
-        )
-        vals = (
-            table, column, self.database,
-        )
-
-        return int(self.execute(query, vals)[0][0])
 
     def statistics_get_quests_count(self, days):
         log.debug('Fetching quests count from db')

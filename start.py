@@ -4,7 +4,6 @@ import gc
 import glob
 import logging
 import os
-#os.environ['PYTHONASYNCIODEBUG'] = '1'
 import sys
 import time
 from logging.handlers import RotatingFileHandler
@@ -25,62 +24,21 @@ from utils.webhookHelper import WebhookHelper
 from watchdog.observers import Observer
 from websocket.WebsocketServer import WebsocketServer
 
+log = logging.getLogger()
+args = parseArgs()
+os.environ['LANGUAGE'] = args.language
+
 
 class LogFilter(logging.Filter):
 
+
+class LogFilter(logging.Filter):
     def __init__(self, level):
         super().__init__()
         self.level = level
 
     def filter(self, record):
         return record.levelno < self.level
-
-
-args = parseArgs()
-os.environ['LANGUAGE'] = args.language
-
-console = logging.StreamHandler()
-nextRaidQueue = []
-
-REFERRERS_TO_IGNORE = [locals(), globals(), gc.garbage]
-
-if not args.verbose:
-    console.setLevel(logging.INFO)
-
-formatter = ColoredFormatter(
-    '%(log_color)s [%(asctime)s] [%(threadName)16s] [%(module)14s:%(lineno)d]' +
-    ' [%(levelname)8s] %(message)s',
-    datefmt='%m-%d %H:%M:%S',
-    reset=True,
-    log_colors={
-        'DEBUG': 'purple',
-        'INFO': 'cyan',
-        'WARNING': 'yellow',
-        'ERROR': 'red',
-        'CRITICAL': 'red,bg_white',
-    },
-    secondary_log_colors={},
-    style='%'
-)
-
-console.setFormatter(formatter)
-
-# Redirect messages lower than WARNING to stdout
-stdout_hdlr = logging.StreamHandler(sys.stdout)
-stdout_hdlr.setFormatter(formatter)
-log_filter = LogFilter(logging.WARNING)
-stdout_hdlr.addFilter(log_filter)
-stdout_hdlr.setLevel(5)
-
-# Redirect messages equal or higher than WARNING to stderr
-stderr_hdlr = logging.StreamHandler(sys.stderr)
-stderr_hdlr.setFormatter(formatter)
-stderr_hdlr.setLevel(logging.WARNING)
-
-log = logging.getLogger()
-
-log.addHandler(stdout_hdlr)
-log.addHandler(stderr_hdlr)
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -96,12 +54,41 @@ sys.excepthook = handle_exception
 
 
 def set_log_and_verbosity(log):
-    # Always write to log file.
-    args = parseArgs()
-    # Create directory for log files.
-    if not os.path.exists(args.log_path):
-        os.mkdir(args.log_path)
+    formatter = ColoredFormatter(
+        '%(log_color)s [%(asctime)s] [%(threadName)16s] [%(module)14s:%(lineno)d]' +
+        ' [%(levelname)8s] %(message)s',
+        datefmt='%m-%d %H:%M:%S',
+        reset=True,
+        log_colors={
+            'DEBUG': 'purple',
+            'INFO': 'cyan',
+            'WARNING': 'yellow',
+            'ERROR': 'red',
+            'CRITICAL': 'red,bg_white',
+        },
+        secondary_log_colors={},
+        style='%'
+    )
+
+    # Redirect messages lower than WARNING to stdout
+    stdout_hdlr = logging.StreamHandler(sys.stdout)
+    stdout_hdlr.setFormatter(formatter)
+    log_filter = LogFilter(logging.WARNING)
+    stdout_hdlr.addFilter(log_filter)
+    stdout_hdlr.setLevel(5)
+
+    # Redirect messages equal or higher than WARNING to stderr
+    stderr_hdlr = logging.StreamHandler(sys.stderr)
+    stderr_hdlr.setFormatter(formatter)
+    stderr_hdlr.setLevel(logging.WARNING)
+
+    log.addHandler(stdout_hdlr)
+    log.addHandler(stderr_hdlr)
+
     if not args.no_file_logs:
+        # Create directory for log files.
+        if not os.path.exists(args.log_path):
+            os.mkdir(args.log_path)
 
         filename = os.path.join(args.log_path, args.log_filename)
         if not args.log_rotation:
@@ -110,7 +97,7 @@ def set_log_and_verbosity(log):
             filelog = RotatingFileHandler(filename, maxBytes=args.log_rotation_file_size,
                                           backupCount=args.log_rotation_backup_count)
         filelog.setFormatter(logging.Formatter(
-            '%(asctime)s [%(threadName)18s][%(module)14s][%(levelname)8s] ' +
+            '%(asctime)s [%(threadName)18s][%(module)14s:%(lineno)d][%(levelname)8s] ' +
             '%(message)s'))
         log.addHandler(filelog)
 
@@ -202,7 +189,7 @@ def generate_mappingjson():
         json.dump(newfile, outfile, indent=4, sort_keys=True)
 
 
-def file_watcher(db_wrapper, mitm_mapper, ws_server):
+def file_watcher(db_wrapper, mitm_mapper, ws_server, webhook_worker):
     # We're on a 60-second timer.
     refresh_time_sec = 60
     filename = 'configs/mappings.json'
@@ -225,6 +212,9 @@ def file_watcher(db_wrapper, mitm_mapper, ws_server):
                 log.info('Propagating new mappings to all clients.')
                 ws_server.update_settings(
                     routemanagers, device_mappings, auths)
+
+                if webhook_worker is not None:
+                    webhook_worker.update_settings(routemanagers)
             else:
                 log.debug('No change found in %s.', filename)
         except Exception as e:
@@ -233,6 +223,8 @@ def file_watcher(db_wrapper, mitm_mapper, ws_server):
 
 
 def find_referring_graphs(obj):
+    REFERRERS_TO_IGNORE = [locals(), globals(), gc.garbage]
+
     print('Looking for references to %s' % repr(obj))
     referrers = (r for r in gc.get_referrers(obj)
                  if r not in REFERRERS_TO_IGNORE)
@@ -255,9 +247,9 @@ def get_system_infos(db_wrapper):
         log.info('Starting internal Cleanup')
         log.debug('Collecting...')
         n = gc.collect()
-        log.info('Unreachable objects: %s' % str(n))
-        log.info('Remaining Garbage: %s ' % str(gc.garbage))
-        log.info('Running Threads: %s' % str(active_count()))
+        log.info('Unreachable objects: %s - Remaining garbage: %s - Running threads: %s' %
+                 (str(n), str(gc.garbage), str(active_count())))
+
         for obj in gc.garbage:
             for ref in find_referring_graphs(obj):
                 ref.set_next(None)
@@ -270,9 +262,8 @@ def get_system_infos(db_wrapper):
 
         memoryUse = py.memory_info()[0] / 2. ** 30
         cpuUse = py.cpu_percent()
-        log.info('Instance Name: %s' % str(args.status_name))
-        log.info('Memory Usage: %s' % str(memoryUse))
-        log.info('CPU Usage: %s' % str(cpuUse))
+        log.info('Instance Name: "%s" - Memory usage: %s - CPU usage: %s' %
+                 (str(args.status_name), str(memoryUse), str(cpuUse)))
         collected = None
         if args.stat_gc:
             collected = gc.collect()
@@ -314,10 +305,6 @@ if __name__ == "__main__":
     db_wrapper.create_usage_database_if_not_exists()
     version = MADVersion(args, db_wrapper)
     version.get_version()
-
-    if not db_wrapper.ensure_last_updated_column():
-        log.fatal("Missing raids.last_updated column and couldn't create it")
-        sys.exit(1)
 
     if args.clean_hash_database:
         log.info('Cleanup Hash Database and www_hash folder')
@@ -406,16 +393,26 @@ if __name__ == "__main__":
             t_mitm.daemon = True
             t_mitm.start()
 
-            log.info('Starting scanner....')
+            log.info('Starting scanner')
             ws_server = WebsocketServer(args, mitm_mapper, db_wrapper,
                                         routemanagers, device_mappings, auths, pogoWindowManager)
             t_ws = Thread(name='scanner', target=ws_server.start_server)
             t_ws.daemon = False
             t_ws.start()
 
+            webhook_worker = None
+            if args.webhook:
+                from webhook.webhookworker import WebhookWorker
+
+                webhook_worker = WebhookWorker(args, db_wrapper, routemanagers)
+                t_whw = Thread(name="webhook_worker",
+                               target=webhook_worker.run_worker)
+                t_whw.daemon = False
+                t_whw.start()
+
             log.info("Starting file watcher for mappings.json changes.")
             t_file_watcher = Thread(name='file_watcher', target=file_watcher,
-                                    args=(db_wrapper, mitm_mapper, ws_server))
+                                    args=(db_wrapper, mitm_mapper, ws_server, webhook_worker))
             t_file_watcher.daemon = False
             t_file_watcher.start()
 
@@ -424,7 +421,7 @@ if __name__ == "__main__":
 
         MonRaidImages.runAll(args.pogoasset, db_wrapper=db_wrapper)
 
-        log.info('Starting OCR Thread....')
+        log.info('Starting OCR worker')
         t_observ = Thread(
             name='observer', target=start_ocr_observer, args=(args, db_wrapper,))
         t_observ.daemon = True
@@ -446,7 +443,7 @@ if __name__ == "__main__":
         else:
             log.warning("Dont collect system usage just for MADmin")
 
-    log.error('Starting Log Cleanup Thread....')
+    log.info('Starting log cleanup worker')
     t_cleanup = Thread(name='cleanuplogs',
                        target=delete_old_logs, args=(args.cleanup_age,))
     t_cleanup.daemon = True

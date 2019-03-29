@@ -8,6 +8,9 @@ log = logging.getLogger(__name__)
 
 
 class RouteManagerRaids(RouteManagerBase):
+    def _accept_empty_route(self):
+        return False
+
     def _priority_queue_update_interval(self):
         return 300
 
@@ -15,8 +18,8 @@ class RouteManagerRaids(RouteManagerBase):
         return None
 
     def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius,
-                          self._max_coords_within_radius, 1, True)
+        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=True,
+                          nofile=False)
 
     def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, include_geofence,
                  exclude_geofence, routefile, mode=None, settings=None, init=False,

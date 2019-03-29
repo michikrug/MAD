@@ -31,7 +31,7 @@ class MADVersion(object):
         if self._version < 1:
             log.info('Execute Update for Version 1')
             # Adding quest_reward for PMSF ALT
-            if self._dbwrapper.check_column_exists('trs_quest', 'quest_reward') == 0:
+            if self._dbwrapper._check_column_exists('trs_quest', 'quest_reward') == 0:
                 alter_query = (
                     "ALTER TABLE trs_quest "
                     "ADD quest_reward VARCHAR(500) NULL AFTER quest_condition"
@@ -42,7 +42,7 @@ class MADVersion(object):
                     log.info("Unexpected error: %s" % e)
 
             # Adding quest_task = ingame quest conditions
-            if self._dbwrapper.check_column_exists('trs_quest', 'quest_task') == 0:
+            if self._dbwrapper._check_column_exists('trs_quest', 'quest_task') == 0:
                 alter_query = (
                     "ALTER TABLE trs_quest "
                     "ADD quest_task VARCHAR(150) NULL AFTER quest_reward"
@@ -58,14 +58,14 @@ class MADVersion(object):
                     "ALTER TABLE raid "
                     "ADD form smallint(6) DEFAULT NULL"
                 )
-                column_exist = self._dbwrapper.check_column_exists(
+                column_exist = self._dbwrapper._check_column_exists(
                     'raid', 'form')
             elif self._application_args.db_method == "monocle":
                 alter_query = (
                     "ALTER TABLE raids "
                     "ADD form smallint(6) DEFAULT NULL"
                 )
-                column_exist = self._dbwrapper.check_column_exists(
+                column_exist = self._dbwrapper._check_column_exists(
                     'raids', 'form')
             else:
                 log.error("Invalid db_method in config. Exiting")
@@ -160,7 +160,7 @@ class MADVersion(object):
                 "ALTER TABLE trs_status "
                 "ADD lastPogoReboot varchar(50) NULL DEFAULT NULL"
             )
-            column_exist = self._dbwrapper.check_column_exists(
+            column_exist = self._dbwrapper._check_column_exists(
                 'trs_status', 'lastPogoReboot')
             if column_exist == 0:
                 try:
@@ -172,7 +172,7 @@ class MADVersion(object):
                 "ALTER TABLE trs_status "
                 "ADD globalrebootcount int(11) NULL DEFAULT '0'"
             )
-            column_exist = self._dbwrapper.check_column_exists(
+            column_exist = self._dbwrapper._check_column_exists(
                 'trs_status', 'globalrebootcount')
             if column_exist == 0:
                 try:
@@ -184,7 +184,7 @@ class MADVersion(object):
                 "ALTER TABLE trs_status "
                 "ADD globalrestartcount int(11) NULL DEFAULT '0'"
             )
-            column_exist = self._dbwrapper.check_column_exists(
+            column_exist = self._dbwrapper._check_column_exists(
                 'trs_status', 'globalrestartcount')
             if column_exist == 0:
                 try:
@@ -205,7 +205,7 @@ class MADVersion(object):
                 alter_query = (
                     "alter table sightings add column costume smallint(6) default 0"
                 )
-                column_exist = self._dbwrapper.check_column_exists(
+                column_exist = self._dbwrapper._check_column_exists(
                     'sightings', 'costume')
                 if column_exist == 0:
                     try:

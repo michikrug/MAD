@@ -22,6 +22,8 @@ OutgoingMessage = collections.namedtuple('OutgoingMessage', ['id', 'message'])
 logging.getLogger('websockets.server').setLevel(logging.INFO)
 logging.getLogger('websockets.protocol').setLevel(logging.INFO)
 
+Location = collections.namedtuple('Location', ['lat', 'lng'])
+
 
 class WebsocketServer(object):
     def __init__(self, args, mitm_mapper, db_wrapper, routemanagers, device_mappings, auths, pogoWindowManager):
@@ -60,8 +62,8 @@ class WebsocketServer(object):
         for device in self.__device_mappings.keys():
             allowed_origins.append(device)
 
-        log.info("Device mappings: %s" % str(self.__device_mappings))
-        log.info("Allowed origins derived: %s" % str(allowed_origins))
+        log.debug("Device mappings: %s" % str(self.__device_mappings))
+        log.debug("Allowed origins derived: %s" % str(allowed_origins))
 
         asyncio.set_event_loop(self.__loop)
         self.__loop.run_until_complete(
@@ -87,6 +89,11 @@ class WebsocketServer(object):
             else:
                 self.__current_users_mutex.release()
                 time.sleep(1)
+        for routemanager in self.__routemanagers.keys():
+            area = self.__routemanagers.get(routemanager, None)
+            if area is None:
+                continue
+            area["routemanager"].stop_routemanager()
 
         if self.__loop is not None:
             self.__loop.call_soon_threadsafe(self.__loop.stop)
@@ -173,6 +180,8 @@ class WebsocketServer(object):
             else:
                 nightime_routemanager = None
             devicesettings = client_mapping["settings"]
+            if "last_location" not in devicesettings:
+                devicesettings['last_location'] = Location(0.0, 0.0)
 
             log.debug("Setting up worker for %s" % str(id))
             started = False
@@ -230,7 +239,9 @@ class WebsocketServer(object):
             log.debug("Starting worker for %s" % str(id))
             new_worker_thread = Thread(
                 name='worker_%s' % id, target=worker.start_worker)
+
             new_worker_thread.daemon = False
+
             self.__current_users[id] = [new_worker_thread,
                                         worker, websocket_client_connection, 0]
         finally:
@@ -288,7 +299,7 @@ class WebsocketServer(object):
         while websocket_client_connection.open:
             message = None
             try:
-                message = await asyncio.wait_for(websocket_client_connection.recv(), timeout=2.0)
+                message = await asyncio.wait_for(websocket_client_connection.recv(), timeout=0.2)
             except asyncio.TimeoutError:
                 await asyncio.sleep(0.02)
             except websockets.exceptions.ConnectionClosed:
@@ -380,12 +391,12 @@ class WebsocketServer(object):
         next_message = OutgoingMessage(id, to_be_sent)
         self.__send_queue.put(next_message)
 
-    def send_and_wait(self, id, message, timeout):
+    def send_and_wait(self, id, worker_instance, message, timeout):
         log.debug("%s sending command: %s" % (str(id), message.strip()))
         self.__current_users_mutex.acquire()
         user_entry = self.__current_users.get(id, None)
         self.__current_users_mutex.release()
-        if user_entry is None:
+        if user_entry is None or user_entry[1] != worker_instance:
             raise WebsocketWorkerRemovedException
 
         message_id = self.__get_new_message_id()
@@ -452,7 +463,13 @@ class WebsocketServer(object):
         self.__requests_mutex.release()
 
     def update_settings(self, routemanagers, device_mappings, auths):
+        for loc in self.__device_mappings:
+            if "last_location" in self.__device_mappings[loc]['settings']:
+                device_mappings[loc]['settings']["last_location"] = \
+                    self.__device_mappings[loc]['settings']["last_location"]
         self.__current_users_mutex.acquire()
+        # save reference to old routemanagers to stop them
+        old_routemanagers = routemanagers
         self.__device_mappings = device_mappings
         self.__routemanagers = routemanagers
         self.__auths = auths
@@ -460,3 +477,8 @@ class WebsocketServer(object):
             log.info('Stopping worker %s to apply new mappings.', id)
             worker[1].stop_worker()
         self.__current_users_mutex.release()
+        for routemanager in old_routemanagers.keys():
+            area = routemanagers.get(routemanager, None)
+            if area is None:
+                continue
+            area["routemanager"].stop_routemanager()

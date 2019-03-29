@@ -13,10 +13,11 @@ from functools import wraps
 from math import floor
 from shutil import copyfile
 
-from db.monocleWrapper import MonocleWrapper
-from db.rmWrapper import RmWrapper
 from flask import (Flask, jsonify, make_response, redirect, render_template,
                    request, send_from_directory)
+
+from db.monocleWrapper import MonocleWrapper
+from db.rmWrapper import RmWrapper
 from flask_caching import Cache
 from utils.language import i8ln, open_json_file
 from utils.mappingParser import MappingParser

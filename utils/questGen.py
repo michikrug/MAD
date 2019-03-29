@@ -183,7 +183,8 @@ def questtask(typeid, condition, target):
             arr['type'] = ''
             arr['poke'] = ''
 
-            match_object = re.search(r"'pokemon_ids': \[([0-9, ]+)\]", condition)
+            match_object = re.search(
+                r"'pokemon_ids': \[([0-9, ]+)\]", condition)
             if match_object is not None:
                 pt = match_object.group(1).split(', ')
                 last = len(pt)

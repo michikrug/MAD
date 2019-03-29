@@ -7,6 +7,7 @@ import time
 from queue import Queue
 
 from flask import Flask, Response, request
+
 from utils.authHelper import check_auth
 
 app = Flask(__name__)
@@ -80,9 +81,6 @@ class MITMReceiver(object):
                                  target=self.received_data_worker)
             t.start()
             self.worker_threads.append(t)
-
-    def __del__(self):
-        self.stop_receiver()
 
     def stop_receiver(self):
         global application_args

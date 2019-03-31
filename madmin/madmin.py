@@ -989,8 +989,8 @@ def config():
         req = 'required' if field['settings'].get(
             'require', 'false') == 'true' else ''
         if field['settings']['type'] == 'text' or field['settings']['type'] == 'textarea':
+            val = ''
             if edit:
-                val = ''
                 if block == 'settings':
                     if field['name'] in oldvalues['settings'] and str(oldvalues['settings'][field['name']]) != str('None'):
                         val = str(oldvalues['settings'][field['name']])

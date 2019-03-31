@@ -1,27 +1,26 @@
+import calendar
+import datetime
+import gc
 import glob
 import logging
 import os
 import sys
 import time
-import psutil
-from threading import Thread, active_count
-import datetime
-import calendar
-import gc
-
-from colorlog import ColoredFormatter
 from logging.handlers import RotatingFileHandler
-from watchdog.observers import Observer
+from threading import Thread, active_count
 
+import psutil
+from colorlog import ColoredFormatter
 from db.monocleWrapper import MonocleWrapper
 from db.rmWrapper import RmWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from mitm_receiver.MITMReceiver import MITMReceiver
 from utils.madGlobals import terminate_mad
 from utils.mappingParser import MappingParser
+from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
 from utils.webhookHelper import WebhookHelper
-from utils.version import MADVersion
+from watchdog.observers import Observer
 from websocket.WebsocketServer import WebsocketServer
 
 log = logging.getLogger()
@@ -43,7 +42,8 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    log.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+    log.error("Uncaught exception", exc_info=(
+        exc_type, exc_value, exc_traceback))
 
 
 sys.excepthook = handle_exception
@@ -139,7 +139,8 @@ def start_ocr_observer(args, db_helper):
     from ocr.fileObserver import checkScreenshot
     observer = Observer()
     log.error(args.raidscreen_path)
-    observer.schedule(checkScreenshot(args, db_helper), path=args.raidscreen_path)
+    observer.schedule(checkScreenshot(args, db_helper),
+                      path=args.raidscreen_path)
     observer.start()
 
 
@@ -149,7 +150,8 @@ def delete_old_logs(minutes):
         return
 
     while not terminate_mad.is_set():
-        log.info('delete_old_logs: Search/Delete logs older than ' + str(minutes) + ' minutes')
+        log.info('delete_old_logs: Search/Delete logs older than ' +
+                 str(minutes) + ' minutes')
 
         now = time.time()
 
@@ -241,7 +243,8 @@ def get_system_infos(db_wrapper):
         log.info('Starting internal Cleanup')
         log.debug('Collecting...')
         n = gc.collect()
-        log.info('Unreachable objects: %s - Remaining garbage: %s - Running threads: %s' % (str(n), str(gc.garbage), str(active_count())))
+        log.info('Unreachable objects: %s - Remaining garbage: %s - Running threads: %s' %
+                 (str(n), str(gc.garbage), str(active_count())))
 
         for obj in gc.garbage:
             for ref in find_referring_graphs(obj):
@@ -255,14 +258,16 @@ def get_system_infos(db_wrapper):
 
         memoryUse = py.memory_info()[0] / 2. ** 30
         cpuUse = py.cpu_percent()
-        log.info('Instance Name: "%s" - Memory usage: %s - CPU usage: %s' % (str(args.status_name), str(memoryUse), str(cpuUse)))
+        log.info('Instance Name: "%s" - Memory usage: %s - CPU usage: %s' %
+                 (str(args.status_name), str(memoryUse), str(cpuUse)))
         collected = None
         if args.stat_gc:
             collected = gc.collect()
             log.info("Garbage collector: collected %d objects." % collected)
         zero = datetime.datetime.utcnow()
         unixnow = calendar.timegm(zero.utctimetuple())
-        db_wrapper.insert_usage(args.status_name, cpuUse, memoryUse, collected, unixnow)
+        db_wrapper.insert_usage(args.status_name, cpuUse,
+                                memoryUse, collected, unixnow)
         time.sleep(args.statistic_interval)
 
 
@@ -326,21 +331,25 @@ if __name__ == "__main__":
         filename = os.path.join('configs', 'mappings.json')
         if not os.path.exists(filename):
             if not args.with_madmin:
-                log.fatal("No mappings.json found - start madmin with with_madmin in config or copy example")
+                log.fatal(
+                    "No mappings.json found - start madmin with with_madmin in config or copy example")
                 sys.exit(1)
 
             log.fatal("No mappings.json found - starting setup mode with madmin.")
-            log.fatal("Open Madmin (ServerIP with Port " + str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
+            log.fatal("Open Madmin (ServerIP with Port " +
+                      str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
             generate_mappingjson()
         else:
 
             try:
                 (device_mappings, routemanagers, auths) = load_mappings(db_wrapper)
             except KeyError as e:
-                log.fatal("Could not parse mappings. Please check those. Description: %s" % str(e))
+                log.fatal(
+                    "Could not parse mappings. Please check those. Description: %s" % str(e))
                 sys.exit(1)
             except RuntimeError as e:
-                log.fatal("There is something wrong with your mappings. Description: %s" % str(e))
+                log.fatal(
+                    "There is something wrong with your mappings. Description: %s" % str(e))
                 sys.exit(1)
 
             if args.only_routes:
@@ -359,8 +368,10 @@ if __name__ == "__main__":
                 if "ocr" in area.get("mode", ""):
                     ocr_enabled = True
                 if ("ocr" in area.get("mode", "") or "pokestop" in area.get("mode", "")) and args.no_ocr:
-                    log.error('No-OCR Mode is activated - No OCR Mode possible.')
-                    log.error('Check your config.ini and be sure that CV2 and Tesseract is installed')
+                    log.error(
+                        'No-OCR Mode is activated - No OCR Mode possible.')
+                    log.error(
+                        'Check your config.ini and be sure that CV2 and Tesseract is installed')
                     sys.exit(1)
 
             if not args.no_ocr:
@@ -390,7 +401,8 @@ if __name__ == "__main__":
                 from webhook.webhookworker import WebhookWorker
 
                 webhook_worker = WebhookWorker(args, db_wrapper, routemanagers)
-                t_whw = Thread(name="webhook_worker", target=webhook_worker.run_worker)
+                t_whw = Thread(name="webhook_worker",
+                               target=webhook_worker.run_worker)
                 t_whw.daemon = False
                 t_whw.start()
 
@@ -406,13 +418,15 @@ if __name__ == "__main__":
         MonRaidImages.runAll(args.pogoasset, db_wrapper=db_wrapper)
 
         log.info('Starting OCR worker')
-        t_observ = Thread(name='observer', target=start_ocr_observer, args=(args, db_wrapper,))
+        t_observ = Thread(
+            name='observer', target=start_ocr_observer, args=(args, db_wrapper,))
         t_observ.daemon = True
         t_observ.start()
 
     if args.with_madmin:
         log.info('Starting Madmin on Port: %s' % str(args.madmin_port))
-        t_flask = Thread(name='madmin', target=start_madmin, args=(args, db_wrapper,))
+        t_flask = Thread(name='madmin', target=start_madmin,
+                         args=(args, db_wrapper,))
         t_flask.daemon = True
         t_flask.start()
 

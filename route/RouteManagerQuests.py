@@ -1,16 +1,19 @@
-import logging
 import collections
+import logging
 import time
+
 from route.RouteManagerBase import RouteManagerBase
 
 log = logging.getLogger(__name__)
 Location = collections.namedtuple('Location', ['lat', 'lng'])
 
+
 class RouteManagerQuests(RouteManagerBase):
     def generate_stop_list(self):
         self._stoplist = []
         time.sleep(5)
-        stops = self.db_wrapper.stop_from_db_without_quests(self.geofence_helper)
+        stops = self.db_wrapper.stop_from_db_without_quests(
+            self.geofence_helper)
         log.info('Detected stops without quests: %s' % str(stops))
         for stop in stops:
             self._stoplist.append(str(stop[0]) + '#' + str(stop[1]))
@@ -77,7 +80,8 @@ class RouteManagerQuests(RouteManagerBase):
             else:
                 self._start_calc = False
                 return False
-            if len(self._route) == 0: return False
+            if len(self._route) == 0:
+                return False
             return True
         finally:
             self._manager_mutex.release()
@@ -105,9 +109,11 @@ class RouteManagerQuests(RouteManagerBase):
             if self._unprocessed_stops[error_stop] < 4:
                 log.warning("Found not processed Stop: %s" % str(error_stop))
                 stop_split = error_stop.split("#")
-                self._stoplistunprocessed.append([stop_split[0], stop_split[1]])
+                self._stoplistunprocessed.append(
+                    [stop_split[0], stop_split[1]])
             else:
-                log.error("Cannot process stop mit lat-lng %s 3 times - please check your db." % str(error_stop))
+                log.error(
+                    "Cannot process stop mit lat-lng %s 3 times - please check your db." % str(error_stop))
 
         if len(self._stoplistunprocessed) > 0:
             log.info('Retry some stops')
@@ -121,7 +127,8 @@ class RouteManagerQuests(RouteManagerBase):
         try:
             if not self._is_started:
                 log.info("Starting routemanager %s" % str(self.name))
-                stops = self.db_wrapper.stop_from_db_without_quests(self.geofence_helper)
+                stops = self.db_wrapper.stop_from_db_without_quests(
+                    self.geofence_helper)
                 log.info('Detected stops without quests: %s' % str(stops))
                 for stop in stops:
                     self._stoplist.append(str(stop[0]) + '#' + str(stop[1]))
@@ -132,7 +139,8 @@ class RouteManagerQuests(RouteManagerBase):
                 self._is_started = True
                 self._first_round_finished = False
                 if not self._first_started:
-                    log.info("First starting quest route - copying original route for later use")
+                    log.info(
+                        "First starting quest route - copying original route for later use")
                     self._routecopy = self._route.copy()
                     self._first_started = True
                 else:
@@ -158,4 +166,3 @@ class RouteManagerQuests(RouteManagerBase):
             return False
         log.info('Getting new Stop')
         return True
-

@@ -1,12 +1,12 @@
 import json
 import logging
-import requests
 import time
 
-from utils.gamemechanicutil import calculate_mon_level
-from utils.gamemechanicutil import get_raid_boss_cp
-from utils.s2Helper import S2Helper
+import requests
+
+from utils.gamemechanicutil import calculate_mon_level, get_raid_boss_cp
 from utils.madGlobals import terminate_mad
+from utils.s2Helper import S2Helper
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +87,8 @@ class WebhookWorker:
                         json.dumps(self.__payload_type_count(payloadToSend)),
                     )
             except Exception as e:
-                log.warning("Exception occured while sending webhook: %s" % str(e))
+                log.warning(
+                    "Exception occured while sending webhook: %s" % str(e))
 
     def __prepare_weather_data(self, weather_data):
         ret = []
@@ -197,7 +198,8 @@ class WebhookWorker:
             # used by RM
             if mon.get("cp_multiplier", None) is not None:
                 mon_payload["cp_multiplier"] = mon["cp_multiplier"]
-                mon_payload["pokemon_level"] = calculate_mon_level(mon["cp_multiplier"])
+                mon_payload["pokemon_level"] = calculate_mon_level(
+                    mon["cp_multiplier"])
 
             # used by Monocle
             if mon.get("level", None) is not None:
@@ -281,7 +283,8 @@ class WebhookWorker:
                 ivlist = manager.settings.get("mon_ids_iv", [])
 
                 # TODO check if area/routemanager is actually active before adding the IDs
-                self.__IV_MON = self.__IV_MON + list(set(ivlist) - set(self.__IV_MON))
+                self.__IV_MON = self.__IV_MON + \
+                    list(set(ivlist) - set(self.__IV_MON))
 
     def run_worker(self):
         log.info("Starting webhook worker thread")
@@ -299,7 +302,8 @@ class WebhookWorker:
             # weather
             if self.__args.weather_webhook:
                 weather = self.__prepare_weather_data(
-                    self.__db_wrapper.get_weather_changed_since(self.__last_check)
+                    self.__db_wrapper.get_weather_changed_since(
+                        self.__last_check)
                 )
                 full_payload += weather
 

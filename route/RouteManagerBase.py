@@ -421,7 +421,6 @@ class RouteManagerBase(ABC):
                 if self._get_coords_after_finish_route():
                     # getting new coords or IV worker
                     self._manager_mutex.release()
-                    return Location(next_lat, next_lng)
                     return self.get_next_location()
                 elif not self._get_coords_after_finish_route():
                     log.info("Not getting new coords - leaving worker")

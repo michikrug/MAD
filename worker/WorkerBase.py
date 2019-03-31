@@ -1,6 +1,5 @@
 import asyncio
 import collections
-import datetime
 import functools
 import logging
 import math
@@ -825,6 +824,9 @@ class WorkerBase(ABC):
         screen = self._communicator.getscreensize().split(' ')
         self._screen_x = screen[0]
         self._screen_y = screen[1]
-        log.debug('Get Screensize of %s: X: %s, Y: %s' %
-                  (str(self._id), str(self._screen_x), str(self._screen_y)))
-        self._resocalc.get_x_y_ratio(self, self._screen_x, self._screen_y)
+        x_offset = self._devicesettings.get("screenshot_x_offset", 0)
+        y_offset = self._devicesettings.get("screenshot_y_offset", 0)
+        log.debug('Get Screensize of %s: X: %s, Y: %s, X-Offset: %s, Y-Offset: %s' %
+                  (str(self._id), str(self._screen_x), str(self._screen_y), str(x_offset), str(y_offset)))
+        self._resocalc.get_x_y_ratio(
+            self, self._screen_x, self._screen_y, x_offset, y_offset)

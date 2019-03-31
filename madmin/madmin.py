@@ -1332,7 +1332,7 @@ def match_type(value):
     return value
 
 
-@app.route('/showsettings', methods=['GET', 'POST'])
+@app.route('/showsettings')
 @auth_required
 def showsettings():
     table = ''
@@ -1375,10 +1375,9 @@ def showsettings():
             delete = '<td><a href="delsetting?type=' + str(mode) + '&area=' + str(
                 _typearea) + '&block=settings&edit=' + str(output[_field]) + '&del=true">[Delete]</a></td>'
 
-            if _quick:
-                line = line + '<tr><td><b>' + \
-                    str(output[_field]) + '</b></td>' + str(edit) + \
-                    str(editsettings) + str(delete) + '</tr>'
+            line = line + '<tr><td><b>' + \
+                str(output[_field]) + '</b></td>' + str(edit) + \
+                str(editsettings) + str(delete) + '</tr>'
 
             if _quick == 'setup':
                 quickadd = 'Assigned areas: ' + \

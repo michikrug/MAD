@@ -714,16 +714,16 @@ def config():
     type = request.args.get('type')
     block = request.args.get('block')
     area = request.args.get('area')
-    fieldwebsite.append('<form action="addedit" id="settings">')
+    fieldwebsite.append('<form action="addedit" id="settings" method="post">')
     fieldwebsite.append(
-        '<input type="hidden" name="block" value="' + block + '">')
+        '<input type="hidden" name="block" value="' + block + '" />')
     fieldwebsite.append(
-        '<input type="hidden" name="mode" value="' + type + '">')
+        '<input type="hidden" name="mode" value="' + type + '" />')
     fieldwebsite.append(
-        '<input type="hidden" name="area" value="' + area + '">')
+        '<input type="hidden" name="area" value="' + area + '" />')
     if edit:
         fieldwebsite.append(
-            '<input type="hidden" name="edit" value="' + edit + '">')
+            '<input type="hidden" name="edit" value="' + edit + '" />')
         with open('configs/mappings.json') as f:
             mapping = json.load(f)
             for oldfields in mapping[area]:
@@ -817,7 +817,7 @@ def config():
             if req in ('true'):
                 req = "required"
             _temp = '<div class="form-group"><label>' + str(field['name']) + '</label><br /><small class="form-text text-muted">' + str(
-                field['settings']['description']) + '</small><select class="form-controll" name="' + str(field['name']) + '" ' + lockvalue + ' ' + req + '>'
+                field['settings']['description']) + '</small><select class="form-control" name="' + str(field['name']) + '" ' + lockvalue + ' ' + req + '>'
             with open('configs/mappings.json') as f:
                 mapping = json.load(f)
             mapping['areas'].append({'name': None})
@@ -850,7 +850,7 @@ def config():
         header = "Add new " + type
 
     fieldwebsite.append(
-        '<button type="submit" class="btn btn-primary">Save</form>')
+        '<button type="submit" class="btn btn-primary">Save</button></form>')
 
     return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings")
 

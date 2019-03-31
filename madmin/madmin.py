@@ -889,16 +889,16 @@ def check_float(number):
         return False
 
 
-@app.route('/addedit', methods=['GET', 'POST'])
+@app.route('/addedit', methods=['POST'])
 @auth_required
 def addedit():
     global device_mappings, areas
-    data = request.args
+    data = request.form
 
-    mode = request.args.get('mode')
-    edit = request.args.get('edit')
-    block = request.args.get('block')
-    area = request.args.get('area')
+    mode = data.get('mode')
+    edit = data.get('edit')
+    block = data.get('block')
+    area = data.get('area')
 
     try:
         with open('configs/mappings.json') as f:
@@ -952,7 +952,7 @@ def addedit():
             if str(block) == str("settings"):
                 mapping[area]['settings'].append(new)
             else:
-                if (settings[area]['has_settings']) in ('true'):
+                if settings[area].get('has_settings', 'false') is 'true':
                     new['settings'] = {}
                 mapping[area].append(new)
 
@@ -1070,7 +1070,7 @@ def showsettings():
     # return jsonify(table)
 
 
-@app.route('/addnew', methods=['GET', 'POST'])
+@app.route('/addnew', methods=['GET'])
 @auth_required
 def addnew():
     area = request.args.get('area')

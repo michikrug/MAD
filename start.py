@@ -27,6 +27,7 @@ log = logging.getLogger()
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language
 
+
 class LogFilter(logging.Filter):
     def __init__(self, level):
         super().__init__()

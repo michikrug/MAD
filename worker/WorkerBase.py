@@ -3,10 +3,10 @@ import collections
 import datetime
 import functools
 import logging
+import math
 import os
 import time
 from abc import ABC, abstractmethod
-from multiprocessing.pool import ThreadPool
 from threading import Event, Lock, Thread, current_thread
 
 from utils.hamming import hamming_distance as hamming_dist
@@ -14,6 +14,7 @@ from utils.madGlobals import (InternalStopWorkerException,
                               WebsocketWorkerRemovedException,
                               WebsocketWorkerTimeoutException)
 from utils.resolution import Resocalculator
+from utils.routeutil import check_max_walkers_reached, check_walker_value_type
 from websocket.communicator import Communicator
 
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -22,11 +23,11 @@ log = logging.getLogger(__name__)
 
 
 class WorkerBase(ABC):
-    def __init__(self, args, id, last_known_state, websocket_handler, route_manager_daytime,
-                 route_manager_nighttime, devicesettings, db_wrapper, timer, pogoWindowManager, NoOcr=True):
+    def __init__(self, args, id, last_known_state, websocket_handler,
+                 walker_routemanager, devicesettings, db_wrapper, pogoWindowManager, NoOcr=True,
+                 walker=None):
         # self.thread_pool = ThreadPool(processes=2)
-        self._route_manager_daytime = route_manager_daytime
-        self._route_manager_nighttime = route_manager_nighttime
+        self._walker_routemanager = walker_routemanager
         self._route_manager_last_time = None
         self._websocket_handler = websocket_handler
         self._communicator = Communicator(
@@ -40,8 +41,9 @@ class WorkerBase(ABC):
         self.loop_tid = None
         self._async_io_looper_thread = None
         self._location_count = 0
-        self._timer = timer
-        self._init = False
+        self._init = self._walker_routemanager.init
+        self._walker = walker
+        self._walkerstart = None
 
         self._lastScreenshotTaken = 0
         self._stop_worker_event = Event()
@@ -56,9 +58,10 @@ class WorkerBase(ABC):
         self._lastStart = ""
         self._pogoWindowManager = pogoWindowManager
 
-        self.current_location = self._devicesettings.get("last_location", None)
-        if self.current_location is None:
-            self.current_location = Location(0.0, 0.0)
+        self.current_location = Location(0.0, 0.0)
+        self.last_location = self._devicesettings.get("last_location", None)
+        if self.last_location is None:
+            self.last_location = Location(0.0, 0.0)
         self.last_processed_location = Location(0.0, 0.0)
 
     @abstractmethod
@@ -176,6 +179,12 @@ class WorkerBase(ABC):
             # no cleanup required here? TODO: signal websocket server somehow
             self._stop_worker_event.set()
             return
+
+        # register worker  in routemanager
+        log.info("Try to register %s in Routemanager %s" %
+                 (str(self._id), str(self._walker_routemanager.name)))
+        self._walker_routemanager.register_worker(self._id)
+
         self._work_mutex.release()
 
         self._async_io_looper_thread = Thread(name=str(self._id) + '_asyncio_' + self._id,
@@ -217,9 +226,7 @@ class WorkerBase(ABC):
         self._cleanup()
         log.info(
             "Internal cleanup of %s signalling end to websocketserver" % str(self._id))
-        self._route_manager_daytime.unregister_worker(self._id)
-        if self._route_manager_nighttime is not None:
-            self._route_manager_nighttime.unregister_worker(self._id)
+        self._walker_routemanager.unregister_worker(self._id)
 
         log.info("Stopping Route")
         # self.stop_worker()
@@ -227,9 +234,7 @@ class WorkerBase(ABC):
             log.info("Stopping worker's asyncio loop")
             self.loop.call_soon_threadsafe(self.loop.stop)
             self._async_io_looper_thread.join()
-        if self._timer is not None:
-            log.info("Stopping switch timer")
-            self._timer.stop_switch()
+
         self._communicator.cleanup_websocket()
         log.info("Internal cleanup of %s finished" % str(self._id))
 
@@ -237,17 +242,31 @@ class WorkerBase(ABC):
         # TODO: signal websocketserver the removal
         try:
             self._internal_pre_work()
-        except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+        except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException) \
+                as e:
             log.error(
                 "Failed initializing worker %s, connection terminated exceptionally" % str(self._id))
             self._internal_cleanup()
             return
 
+        if not check_max_walkers_reached(self._walker, self._walker_routemanager):
+            log.warning('Max. Walkers in Area %s - closing connections' %
+                        str(self._walker_routemanager.name))
+            self._devicesettings['finished'] = True
+            self._internal_cleanup()
+            return
+
         while not self._stop_worker_event.isSet():
-            while self._timer.get_switch() and self._route_manager_nighttime is None:
-                time.sleep(1)
-            # check if stop_worker_event is set again since sleep may have taken ages ;)
-            if self._stop_worker_event.is_set():
+            try:
+                # TODO: consider getting results of health checks and aborting the entire worker?
+                walkercheck = self.check_walker()
+                if not walkercheck:
+                    self._devicesettings['finished'] = True
+                    break
+            except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException) \
+                    as e:
+                log.warning("Worker %s killed by walker settings" %
+                            str(self._id))
                 break
 
             try:
@@ -261,7 +280,7 @@ class WorkerBase(ABC):
 
             try:
                 settings = self._internal_grab_next_location()
-                if settings is None and self._timer.get_switch():
+                if settings is None:
                     continue
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 log.warning("Worker of %s does not support mode that's to be run, "
@@ -301,7 +320,7 @@ class WorkerBase(ABC):
                 if self._applicationArgs.last_scanned:
                     log.info('main: Set new scannedlocation in Database')
 
-                    route_man = self._get_currently_valid_routemanager()
+                    route_man = self._walker_routemanager
                     mode = route_man.mode if route_man else None
                     if mode == None or mode == "iv_mitm" or mode == "mon_mitm":
                         radius = 67
@@ -340,49 +359,86 @@ class WorkerBase(ABC):
             log.error("Failed updating scanned location: %s" % str(e))
             return
 
-    def _get_currently_valid_routemanager(self):
-        valid_modes = self._valid_modes()
-        switch_mode = self._timer.get_switch()
-        if (switch_mode and self._route_manager_nighttime is not None
-                and self._route_manager_nighttime.mode in valid_modes):
-            if self._route_manager_last_time != self._route_manager_nighttime:
-                self._route_manager_daytime.unregister_worker(self._id)
-                # TODO: check if result is positive/negative?
-                self._route_manager_nighttime.register_worker(self._id)
-                self._route_manager_last_time = self._route_manager_nighttime
-            self._init = self._route_manager_nighttime.init
-            return self._route_manager_nighttime
-        elif switch_mode is True and self._route_manager_nighttime is None:
-            if self._route_manager_last_time is not None:
-                self._route_manager_daytime.unregister_worker(self._id)
-                self._route_manager_last_time = None
-            return None
-        elif not switch_mode and self._route_manager_daytime.mode in valid_modes:
-            if self._route_manager_last_time != self._route_manager_daytime:
-                if self._route_manager_nighttime is not None:
-                    self._route_manager_nighttime.unregister_worker(self._id)
-                self._route_manager_daytime.register_worker(self._id)
-                self._route_manager_last_time = self._route_manager_daytime
-                self._init = self._route_manager_daytime.init
-            return self._route_manager_daytime
+    def check_walker(self):
+        mode = self._walker['walkertype']
+        if mode == "countdown":
+            log.info("Checking Walker Mode Countdown")
+            countdown = self._walker['walkervalue']
+            if not countdown:
+                log.error(
+                    "No Value for Mode - check your settings! - kill Worker")
+                return False
+            if self._walkerstart is None:
+                self._walkerstart = math.floor(time.time())
+            else:
+                if math.floor(time.time()) >= int(self._walkerstart) + int(countdown):
+                    return False
+            return True
+        elif mode == "timer":
+            log.info("Checking Walker Mode Timer")
+            exittime = self._walker['walkervalue']
+            if not exittime or ':' not in exittime:
+                log.error(
+                    "No or wrong Value for Mode - check your settings! - kill Worker")
+                return False
+            return check_walker_value_type(exittime)
+        elif mode == "round":
+            log.info("Checking Walker Mode Round")
+            rounds = self._walker['walkervalue']
+            if len(rounds) == 0:
+                log.error(
+                    "No Value for Mode - check your settings! - kill Worker")
+                return False
+            processed_rounds = self._walker_routemanager.get_rounds(self._id)
+            if int(processed_rounds) >= int(rounds):
+                return False
+            return True
+        elif mode == "period":
+            log.info("Checking Walker Mode Period")
+            period = self._walker['walkervalue']
+            if len(period) == 0:
+                log.error(
+                    "No Value for Mode - check your settings! - kill Worker")
+                return False
+            return check_walker_value_type(period)
+        elif mode == "coords":
+            exittime = self._walker['walkervalue']
+            if len(exittime) > 0:
+                return check_walker_value_type(exittime)
+            return True
+        elif mode == "idle":
+            log.info("Checking Walker Mode Idle")
+            if len(self._walker['walkervalue']) == 0:
+                log.error(
+                    "Wrong Value for mode - check your settings! - kill Worker")
+                return False
+            sleeptime = self._walker['walkervalue']
+            log.info('%s going to sleep' % str(self._id))
+            killpogo = False
+            if check_walker_value_type(sleeptime):
+                self._stop_pogo()
+                killpogo = True
+            while not self._stop_worker_event.isSet() and check_walker_value_type(sleeptime):
+                time.sleep(1)
+            log.info('%s just woke up' % str(self._id))
+            if killpogo:
+                self._start_pogo()
+            return False
         else:
-            # log.fatal("Raising internal worker exception")
-            raise InternalStopWorkerException
+            log.error("Dont know this Walker Mode - kill Worker")
+            return False
+        return True
 
     def _internal_grab_next_location(self):
         # TODO: consider adding runWarningThreadEvent.set()
-        self.last_location = self.current_location
         self._last_known_state["last_location"] = self.last_location
 
         log.debug("Requesting next location from routemanager")
         # requesting a location is blocking (iv_mitm will wait for a prioQ item), we really need to clean
         # the workers up...
-        routemanager = self._get_currently_valid_routemanager()
-        if routemanager is None:
-            return None
-        else:
-            self.current_location = routemanager.get_next_location()
-            return routemanager.settings
+        routemanager = self._walker_routemanager
+        self.current_location = routemanager.get_next_location()
+        return routemanager.settings
 
     def _init_routine(self):
         if self._applicationArgs.initial_restart is False:
@@ -395,10 +451,9 @@ class WorkerBase(ABC):
 
     def _check_location_is_valid(self):
         if self.current_location is None:
-            log.info('Current Location is None')
-            while self._timer.get_switch():
-                log.info('Sleeping - Route is finished')
-                time.sleep(30)
+            # there are no more coords - so worker is finished successfully
+            self._devicesettings['finished'] = True
+            return None
         elif self.current_location is not None:
             log.debug('Coords are valid')
             return True
@@ -411,7 +466,7 @@ class WorkerBase(ABC):
             time.sleep(self._devicesettings.get(
                 "post_turn_screen_on_delay", 2))
         # check if pogo is running and start it if necessary
-        log.warning("turnScreenOnAndStartPogo: (Re-)Starting Pogo")
+        log.info("turnScreenOnAndStartPogo: (Re-)Starting Pogo")
         self._start_pogo()
 
     def _check_screen_on(self):

@@ -21,7 +21,7 @@ class testimage(object):
 
         self._resocalc = Resocalculator
         print(self._resocalc.get_x_y_ratio(
-            self, self._screen_x, self._screen_y))
+            self, self._screen_x, self._screen_y, -200, 85))
 
         if self._mode == "menu":
             self._image_check = self.check_menu(self._image)

@@ -178,6 +178,24 @@ def questtask(typeid, condition, target):
         text = _('Evolve {0} Pokemon')
         if re.search(r"'type': 11", condition) is not None:
             text = _('Use an item to evolve a Pokemon')
+        elif re.search(r"'type': 1", condition) is not None:
+            text = _('Evolve {0} {type}Pokemon')
+            arr['wb'] = ''
+            arr['type'] = ''
+            arr['poke'] = ''
+            match_object = re.search(
+                r"'pokemon_type': \[([0-9, ]+)\]", condition)
+            if match_object is not None:
+                pt = match_object.group(1).split(', ')
+                last = len(pt)
+                cur = 1
+                if last == 1:
+                    arr['type'] = pokemonTypes[pt[0]].title() + _('-type ')
+                else:
+                    for ty in pt:
+                        arr['type'] += (_('or ') if last == cur else '') + pokemonTypes[ty].title() + (
+                            _('-type ') if last == cur else '-, ')
+                        cur += 1
         elif re.search(r"'type': 2", condition) is not None:
             arr['wb'] = ''
             arr['type'] = ''

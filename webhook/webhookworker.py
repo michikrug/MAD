@@ -157,7 +157,7 @@ class WebhookWorker:
             if raid["url"] is not None and raid["url"]:
                 raid_payload["url"] = raid["url"]
 
-            if raid["weather_boosted_condition"] is not None:
+            if raid.get("weather_boosted_condition", None) is not None:
                 raid_payload["weather"] = raid["weather_boosted_condition"]
 
             if raid["form"] is not None:

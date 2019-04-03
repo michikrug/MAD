@@ -3,6 +3,7 @@ import shutil
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from functools import reduce
 
 import requests
 
@@ -16,8 +17,8 @@ log = logging.getLogger(__name__)
 
 class RmWrapper(DbWrapperBase):
 
-    def __init__(self, args, webhook_helper):
-        super().__init__(args, webhook_helper)
+    def __init__(self, args):
+        super().__init__(args)
 
         self.__ensure_columns_exist()
 
@@ -503,7 +504,7 @@ class RmWrapper(DbWrapperBase):
         for (gym_id, team_id, latitude, longitude, name, description, url) in res:
             if url is not None:
                 filename = url_image_path + '_' + str(gym_id) + '_.jpg'
-                log.debug('Downloading', filename)
+                log.debug('Downloading %s' % filename)
                 self.__download_img(str(url), str(filename))
 
         log.debug('Finished downloading gym images...')
@@ -601,10 +602,6 @@ class RmWrapper(DbWrapperBase):
                 gameplay_weather, str(now))
 
         self.execute(query, data, commit=True)
-
-        self.webhook_helper.send_weather_webhook(
-            cell_id, gameplay_weather, 0, 0, weather_daytime, now_timestamp
-        )
 
         return True
 
@@ -1101,48 +1098,48 @@ class RmWrapper(DbWrapperBase):
                 to_return[i][1] = list_of_coords[i][1]
             return to_return
 
-    def quests_from_db(self, GUID=False, since=0):
+    def quests_from_db(self, GUID=None, timestamp=None):
         log.debug("{RmWrapper::quests_from_db} called")
         questinfo = {}
+        data = ()
 
-        if not GUID:
-            query = (
-                "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
-                "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
-                "trs_quest.quest_item_id, trs_quest.quest_item_amount, trs_quest.quest_template, "
-                "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp, "
-                "trs_quest.quest_task "
-                "FROM pokestop inner join trs_quest on "
-                "pokestop.pokestop_id = trs_quest.GUID where "
-                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() and "
-                "trs_quest.quest_timestamp > %s "
-                "ORDER BY trs_quest.quest_timestamp DESC"
-            )
-            data = (since, )
-        else:
-            query = (
-                "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
-                "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
-                "trs_quest.quest_item_id, trs_quest.quest_item_amount, trs_quest.quest_template, "
-                "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp, "
-                "trs_quest.quest_task "
-                "FROM pokestop inner join trs_quest on "
-                "pokestop.pokestop_id = trs_quest.GUID where "
-                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() and "
-                "trs_quest.quest_timestamp > %s and "
-                "trs_quest.GUID = %s"
-            )
-            data = (since, GUID)
+        query = (
+            "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
+            "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
+            "trs_quest.quest_item_id, trs_quest.quest_item_amount, "
+            "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, "
+            "trs_quest.quest_timestamp, trs_quest.quest_task, trs_quest.quest_template "
+            "FROM pokestop inner join trs_quest on "
+            "pokestop.pokestop_id = trs_quest.GUID where "
+            "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE()"
+        )
+
+        if GUID is not None:
+            add_query = " and trs_quest.GUID = %s"
+            query = query + add_query
+            data = (GUID,)
+        elif timestamp is not None:
+            add_query = " and trs_quest.quest_timestamp > %s"
+            query = query + add_query
+            data = (timestamp,)
+
+        query = query + " ORDER BY trs_quest.quest_timestamp DESC"
 
         res = self.execute(query, data)
 
         for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id, quest_reward_type,
-             quest_item_id, quest_item_amount, quest_template, name, image, quest_target, quest_condition, quest_timestamp, quest_task) in res:
-            questinfo[pokestop_id] = ({'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
-                                       'quest_type': quest_type, 'quest_stardust': quest_stardust, 'quest_pokemon_id': quest_pokemon_id,
-                                       'quest_reward_type': quest_reward_type, 'quest_item_id': quest_item_id, 'quest_item_amount': quest_item_amount,
-                                       'name': name, 'image': image, 'quest_target': quest_target, 'quest_condition': quest_condition,
-                                       'quest_timestamp': quest_timestamp, 'task': quest_task, 'quest_template': quest_template})
+             quest_item_id, quest_item_amount, name, image, quest_target, quest_condition,
+             quest_timestamp, quest_task, quest_template) in res:
+            questinfo[pokestop_id] = ({
+                'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
+                'quest_type': quest_type, 'quest_stardust': quest_stardust,
+                'quest_pokemon_id': quest_pokemon_id,
+                'quest_reward_type': quest_reward_type, 'quest_item_id': quest_item_id,
+                'quest_item_amount': quest_item_amount, 'name': name, 'image': image,
+                'quest_target': quest_target,
+                'quest_condition': quest_condition, 'quest_timestamp': quest_timestamp,
+                'task': quest_task, 'quest_template': quest_template})
+
         return questinfo
 
     def submit_pokestops_details_map_proto(self, map_proto):
@@ -1380,3 +1377,21 @@ class RmWrapper(DbWrapperBase):
         res = self.execute(query)
 
         return res
+
+    def get_pokemon_spawns(self, hours):
+        log.debug('Fetching pokemon spawns from db')
+        query_where = ''
+        if hours:
+            hours = datetime.utcnow() - timedelta(hours=hours)
+            query_where = ' where disappear_time > \'%s\' ' % str(hours)
+
+        query = (
+            "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(
+                query_where)
+        )
+
+        res = self.execute(query)
+
+        total = reduce(lambda x, y: x + y[1], res, 0)
+
+        return {'pokemon': res, 'total': total}

@@ -626,10 +626,10 @@ def get_gymcoords():
 @app.route("/get_quests")
 @auth_required
 def get_quests():
-    since = request.args.get('since', 0, type=int)
+    timestamp = request.args.get('timestamp', 0, type=int)
     coords = []
 
-    data = db_wrapper.quests_from_db(since=since)
+    data = db_wrapper.quests_from_db(timestamp=timestamp)
 
     for pokestopid in data:
         quest = data[str(pokestopid)]

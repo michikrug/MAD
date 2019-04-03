@@ -1,8 +1,10 @@
+import calendar
 import logging
 import shutil
 import sys
 import time
 from datetime import datetime, timedelta
+from functools import reduce
 
 import requests
 
@@ -14,8 +16,8 @@ log = logging.getLogger(__name__)
 
 
 class MonocleWrapper(DbWrapperBase):
-    def __init__(self, args, webhook_helper):
-        super().__init__(args, webhook_helper)
+    def __init__(self, args):
+        super().__init__(args)
 
         self.__ensure_columns_exist()
 
@@ -182,8 +184,6 @@ class MonocleWrapper(DbWrapperBase):
                 gym, raid_no, unique_hash=unique_hash)
             if found_end_time:
                 egg_hatched = True
-            else:
-                wh_send = False
         else:
             log.info("Updating everything")
             query = (
@@ -196,9 +196,6 @@ class MonocleWrapper(DbWrapperBase):
                 lvl, int(float(capture_time)), start, end, pkm, int(
                     time.time()), gym, int(time.time())
             )
-            # wh_send = True
-            # wh_start = start
-            # wh_end = end
 
         affected_rows = self.execute(query, vals, commit=True)
 
@@ -235,12 +232,6 @@ class MonocleWrapper(DbWrapperBase):
 
             self.execute(query, vals, commit=True)
 
-            wh_send = True
-            if MonWithNoEgg:
-                wh_start = int(end) - 2700
-            else:
-                wh_start = start
-            wh_end = end
             if pkm is None:
                 pkm = 0
 
@@ -764,7 +755,6 @@ class MonocleWrapper(DbWrapperBase):
                     is_in_battle = gym['gym_details'].get(
                         'is_in_battle', False)
                     last_modified = gym['last_modified_timestamp_ms']/1000
-                    is_ex_raid_eligible = gym['gym_details']['is_ex_raid_eligible']
 
                     if is_in_battle:
                         is_in_battle = 1
@@ -779,8 +769,7 @@ class MonocleWrapper(DbWrapperBase):
 
                     vals_fort_sightings.append(
                         (
-                            gym_id, last_modified, team, guardmon, slots,
-                            is_in_battle, now, is_ex_raid_eligible
+                            gym_id, last_modified, team, guardmon, slots, is_in_battle, now
                         )
                     )
 
@@ -1041,51 +1030,47 @@ class MonocleWrapper(DbWrapperBase):
                 to_return[i][1] = list_of_coords[i][1]
             return to_return
 
-    def quests_from_db(self, GUID=False):
+    def quests_from_db(self, GUID=None, timestamp=None):
         log.debug("{MonocleWrapper::quests_from_db} called")
         questinfo = {}
+        data = ()
 
-        if not GUID:
-            query = (
-                "SELECT pokestops.external_id, pokestops.lat, pokestops.lon, trs_quest.quest_type, "
-                "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
-                "trs_quest.quest_item_id, trs_quest.quest_item_amount, "
-                "pokestops.name, pokestops.url, trs_quest.quest_target, trs_quest.quest_condition, "
-                "trs_quest.quest_timestamp,trs_quest.quest_task "
-                "FROM pokestops inner join trs_quest on "
-                "pokestops.external_id = trs_quest.GUID where "
-                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE()"
-            )
-            data = ()
-        else:
-            query = (
-                "SELECT pokestops.external_id, pokestops.lat, pokestops.lon, trs_quest.quest_type, "
-                "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
-                "trs_quest.quest_item_id, trs_quest.quest_item_amount, "
-                "pokestops.name, pokestops.url, trs_quest.quest_target, trs_quest.quest_condition, "
-                "trs_quest.quest_timestamp,trs_quest.quest_task "
-                "FROM pokestops inner join trs_quest on "
-                "pokestops.external_id = trs_quest.GUID where "
-                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() and "
-                "trs_quest.GUID = %s"
-            )
-            data = (GUID, )
+        query = (
+            "SELECT pokestops.external_id, pokestops.lat, pokestops.lon, trs_quest.quest_type, "
+            "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
+            "trs_quest.quest_item_id, trs_quest.quest_item_amount, "
+            "pokestops.name, pokestops.url, trs_quest.quest_target, trs_quest.quest_condition, "
+            "trs_quest.quest_timestamp, trs_quest.quest_task, trs_quest.quest_template "
+            "FROM pokestops inner join trs_quest on "
+            "pokestops.external_id = trs_quest.GUID where "
+            "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE()"
+        )
+
+        if GUID is not None:
+            add_query = " and trs_quest.GUID = %s"
+            query = query + add_query
+            data = (GUID,)
+        elif timestamp is not None:
+            add_query = " and trs_quest.quest_timestamp > %s"
+            query = query + add_query
+            data = (timestamp,)
+
+        query = query + " ORDER BY trs_quest.quest_timestamp DESC"
 
         res = self.execute(query, data)
 
         for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id, quest_reward_type,
              quest_item_id, quest_item_amount, name, image, quest_target, quest_condition,
-             quest_timestamp, quest_task) in res:
-            mon = "%03d" % quest_pokemon_id
+             quest_timestamp, quest_task, quest_template) in res:
             questinfo[pokestop_id] = ({
                 'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
                 'quest_type': quest_type, 'quest_stardust': quest_stardust,
-                'quest_pokemon_id': mon,
+                'quest_pokemon_id': quest_pokemon_id,
                 'quest_reward_type': quest_reward_type, 'quest_item_id': quest_item_id,
                 'quest_item_amount': quest_item_amount, 'name': name, 'image': image,
                 'quest_target': quest_target,
                 'quest_condition': quest_condition, 'quest_timestamp': quest_timestamp,
-                'task': quest_task})
+                'task': quest_task, 'quest_template': quest_template})
         return questinfo
 
     def submit_pokestops_details_map_proto(self, map_proto):
@@ -1141,8 +1126,7 @@ class MonocleWrapper(DbWrapperBase):
                 "longitude": longitude,
                 "team_id": team_id,
                 "weather_boosted_condition": weather_boosted_condition,
-                "is_exclusive": is_exclusive,
-                "is_ex_raid_eligible": is_ex_raid_eligible
+                "is_exclusive": is_exclusive
             })
 
         return ret
@@ -1270,7 +1254,24 @@ class MonocleWrapper(DbWrapperBase):
         )
 
         res = self.execute(query)
+        total = reduce(lambda x, y: x + y[1], res, 0)
 
+        return {'pokemon': res, 'total': total}
+
+    def get_pokemon_spawns(self, hours):
+        log.debug('Fetching pokemon spawns from db')
+        query_where = ''
+        if hours:
+            zero = datetime.datetime.now()
+            hours = calendar.timegm(zero.timetuple()) - hours*60*60
+            query_where = ' where expire_timestamp > %s ' % str(hours)
+
+        query = (
+            "SELECT pokemon_id, count(pokemon_id) from sightings %s group by pokemon_id" % str(
+                query_where)
+        )
+
+        res = self.execute(query)
         return res
 
     def statistics_get_gym_count(self):

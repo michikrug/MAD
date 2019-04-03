@@ -37,14 +37,12 @@ if __name__ == "__main__":
     if not os.path.exists(filename):
         generate_mappingjson()
 
-    webhook_helper = None
-
     if args.db_method == "rm":
-        db_wrapper = RmWrapper(args, webhook_helper)
+        db_wrapper = RmWrapper(args)
     elif args.db_method == "monocle":
-        db_wrapper = MonocleWrapper(args, webhook_helper)
+        db_wrapper = MonocleWrapper(args)
     else:
-        log.error("Invalid db_method in config. Exiting")
+        print('Invalid db_method in config. Exiting')
         sys.exit(1)
 
     version = MADVersion(args, db_wrapper)

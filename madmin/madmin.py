@@ -1251,7 +1251,7 @@ def addedit():
                     _checkfield = 'walkername'
 
                 if str(edit) == str(entry[_checkfield]):
-                    if str(block) == str("settings"):
+                    if str(block) == 'settings':
                         for key, value in datavalue.items():
                             if value == '':
                                 if key in entry['settings']:
@@ -1270,7 +1270,7 @@ def addedit():
                             elif value in area:
                                 continue
                             else:
-                                if str(key) in ('geofence'):
+                                if 'geofence' in str(key):
                                     entry[key] = value
                                 elif str(key) not in ('block', 'area', 'type', 'edit'):
                                     entry[key] = match_type(value)
@@ -1279,12 +1279,12 @@ def addedit():
             new = {}
             for key, value in datavalue.items():
                 if value != '' and value not in area:
-                    if str(key) in ('geofence'):
+                    if 'geofence' in str(key):
                         new[key] = value
                     elif str(key) not in ('block', 'area', 'type', 'edit'):
                         new[key] = match_type(value)
 
-            if str(block) == str("settings"):
+            if str(block) == 'settings':
                 mapping[area]['settings'].append(new)
             else:
                 if settings[area]['has_settings'] == 'true':

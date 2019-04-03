@@ -857,7 +857,7 @@ def addwalker():
                         '<input type="text" name="walkerposition" value="' + str(walkerposition) + '"></div>')
 
     fieldwebsite.append(
-        '<button type="submit" class="btn btn-primary">Save</form>')
+        '<button type="submit" class="btn btn-primary">Save</button></form>')
 
     if edit:
         header = "Edit " + walkerarea + " (" + walker + ")"
@@ -1618,9 +1618,9 @@ if __name__ == "__main__":
     args = parseArgs()
 
     if args.db_method == "rm":
-        db_wrapper = RmWrapper(args, None)
+        db_wrapper = RmWrapper(args)
     elif args.db_method == "monocle":
-        db_wrapper = MonocleWrapper(args, None)
+        db_wrapper = MonocleWrapper(args)
     else:
         log.error("Invalid db_method in config. Exiting")
         sys.exit(1)

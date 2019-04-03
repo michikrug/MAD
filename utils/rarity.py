@@ -1,7 +1,7 @@
 import logging
 import time
-from timeit import default_timer
 from threading import Thread
+from timeit import default_timer
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +56,8 @@ class Rarity(object):
             # Store as an easy lookup table for front-end.
 
             for poke in pokemon:
-                self._rarity[poke[0]] = self.get_pokemon_rarity(total, int(poke[1]))
+                self._rarity[poke[0]] = self.get_pokemon_rarity(
+                    total, int(poke[1]))
 
             duration = default_timer() - start
             log.info('Updated dynamic rarity. It took %.2fs for %d entries.',

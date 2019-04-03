@@ -1,17 +1,16 @@
+import logging
 import shutil
 import sys
 import time
+from datetime import datetime, timedelta, timezone
+from functools import reduce
 
 import requests
 
 from db.dbWrapperBase import DbWrapperBase
-import logging
-from datetime import datetime, timezone, timedelta
-from functools import reduce
-
 from utils.collections import Location
-from utils.s2Helper import S2Helper
 from utils.gamemechanicutil import gen_despawn_timestamp
+from utils.s2Helper import S2Helper
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +42,8 @@ class RmWrapper(DbWrapperBase):
     def auto_hatch_eggs(self):
         log.debug("{RmWrapper::auto_hatch_eggs} called")
         now = (datetime.now())
-        now_timestamp = time.mktime(datetime.utcfromtimestamp(float(received_timestamp)).timetuple())
+        now_timestamp = time.mktime(datetime.utcfromtimestamp(
+            float(received_timestamp)).timetuple())
 
         mon_id = self.application_args.auto_hatch_number
 
@@ -67,7 +67,8 @@ class RmWrapper(DbWrapperBase):
 
         res = self.execute(query_for_count, vals)
         rows_that_need_hatch_count = len(res)
-        log.debug("Rows that need updating: {0}".format(rows_that_need_hatch_count))
+        log.debug("Rows that need updating: {0}".format(
+            rows_that_need_hatch_count))
 
         if rows_that_need_hatch_count > 0:
             counter = 0
@@ -113,7 +114,8 @@ class RmWrapper(DbWrapperBase):
 
     def get_next_raid_hatches(self, delay_after_hatch, geofence_helper=None):
         log.debug("{RmWrapper::get_next_raid_hatches} called")
-        db_time_to_check = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        db_time_to_check = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "SELECT start, latitude, longitude "
@@ -135,7 +137,8 @@ class RmWrapper(DbWrapperBase):
                           % (str(latitude), str(longitude)))
                 continue
             timestamp = self.db_timestring_to_unix_timestamp(str(start))
-            data.append((timestamp + delay_after_hatch, Location(latitude, longitude)))
+            data.append((timestamp + delay_after_hatch,
+                         Location(latitude, longitude)))
 
         log.debug("Latest Q: %s" % str(data))
         return data
@@ -143,7 +146,8 @@ class RmWrapper(DbWrapperBase):
     def submit_raid(self, gym, pkm, lvl, start, end, type, raid_no, capture_time, unique_hash="123",
                     MonWithNoEgg=False):
         log.debug("{RmWrapper::submit_raid} called")
-        log.debug("[Crop: %s (%s) ] submit_raid: Submitting raid" % (str(raid_no), str(unique_hash)))
+        log.debug("[Crop: %s (%s) ] submit_raid: Submitting raid" %
+                  (str(raid_no), str(unique_hash)))
 
         if self.raid_exist(gym, type, raid_no, unique_hash=str(unique_hash), mon=pkm):
             self.refresh_times(gym, raid_no, capture_time)
@@ -153,16 +157,21 @@ class RmWrapper(DbWrapperBase):
             return False
 
         if start is not None:
-            start_db = datetime.utcfromtimestamp(float(start)).strftime("%Y-%m-%d %H:%M:%S")
-            start = time.mktime(datetime.utcfromtimestamp(float(start)).timetuple())
+            start_db = datetime.utcfromtimestamp(
+                float(start)).strftime("%Y-%m-%d %H:%M:%S")
+            start = time.mktime(
+                datetime.utcfromtimestamp(float(start)).timetuple())
 
         if end is not None:
-            end_db = datetime.utcfromtimestamp(float(end)).strftime("%Y-%m-%d %H:%M:%S")
-            end = time.mktime(datetime.utcfromtimestamp(float(end)).timetuple())
+            end_db = datetime.utcfromtimestamp(
+                float(end)).strftime("%Y-%m-%d %H:%M:%S")
+            end = time.mktime(
+                datetime.utcfromtimestamp(float(end)).timetuple())
 
         egg_hatched = False
 
-        now_timestamp = time.mktime(datetime.utcfromtimestamp(float(capture_time)).timetuple())
+        now_timestamp = time.mktime(
+            datetime.utcfromtimestamp(float(capture_time)).timetuple())
         log.debug(now_timestamp)
 
         log.debug("[Crop: %s (%s) ] submit_raid: Submitting something of type %s"
@@ -183,11 +192,13 @@ class RmWrapper(DbWrapperBase):
                 "WHERE gym_id = %s"
             )
             vals = (
-                lvl, now_timestamp, start_db, end_db, pkm, int(time.time()), '999', '1', '1', gym
+                lvl, now_timestamp, start_db, end_db, pkm, int(
+                    time.time()), '999', '1', '1', gym
             )
         elif end is None or start is None:
             # no end or start time given, just update anything there is
-            log.info("Updating without end- or starttime - we should've seen the egg before")
+            log.info(
+                "Updating without end- or starttime - we should've seen the egg before")
             query = (
                 "UPDATE raid "
                 "SET level = %s, pokemon_id = %s, last_scanned = FROM_UNIXTIME(%s), cp = %s, "
@@ -197,7 +208,8 @@ class RmWrapper(DbWrapperBase):
             vals = (
                 lvl, pkm, int(time.time()), '999', '1', '1', gym
             )
-            found_end_time, end_time = self.get_raid_endtime(gym, raid_no, unique_hash=unique_hash)
+            found_end_time, end_time = self.get_raid_endtime(
+                gym, raid_no, unique_hash=unique_hash)
             if found_end_time:
                 egg_hatched = True
         else:
@@ -210,7 +222,8 @@ class RmWrapper(DbWrapperBase):
                 "WHERE gym_id = %s"
             )
             vals = (
-                lvl, now_timestamp, start_db, end_db, pkm, int(time.time()), '999', '1', '1', gym
+                lvl, now_timestamp, start_db, end_db, pkm, int(
+                    time.time()), '999', '1', '1', gym
             )
 
         affected_rows = self.execute(query, vals, commit=True)
@@ -228,7 +241,8 @@ class RmWrapper(DbWrapperBase):
                     "FROM_UNIXTIME(%s), 999, 1, 1)"
                 )
                 vals = (
-                    gym, lvl, now_timestamp, start_db, end_db, pkm, int(time.time())
+                    gym, lvl, now_timestamp, start_db, end_db, pkm, int(
+                        time.time())
                 )
             elif end is None and start is None:
                 log.info("Inserting without end or start")
@@ -245,7 +259,8 @@ class RmWrapper(DbWrapperBase):
                     "VALUES (%s, %s, FROM_UNIXTIME(%s), %s, %s, %s, "
                     "FROM_UNIXTIME(%s), 999, 1, 1)"
                 )
-                vals = (gym, lvl, now_timestamp, start_db, end_db, pkm, int(time.time()))
+                vals = (gym, lvl, now_timestamp, start_db,
+                        end_db, pkm, int(time.time()))
 
             self.execute(query, vals, commit=True)
 
@@ -260,7 +275,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::read_raid_endtime} called")
         log.debug("[Crop: %s (%s) ] read_raid_endtime: Check DB for existing mon"
                   % (str(raid_no), str(unique_hash)))
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "SELECT raid.end "
@@ -294,7 +310,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("[Crop: %s (%s) ] get_raid_endtime: Check DB for existing mon"
                   % (str(raid_no), str(unique_hash)))
 
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
         query = (
             "SELECT UNIX_TIMESTAMP(raid.end) "
             "FROM raid "
@@ -325,7 +342,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::raid_exist} called")
         log.debug("[Crop: %s (%s) ] raid_exist: Check DB for existing entry"
                   % (str(raid_no), str(unique_hash)))
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
         # TODO: consider reducing the code...
 
@@ -391,7 +409,8 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::refresh_times} called")
         log.debug("[Crop: %s (%s) ] raid_exist: Check for EGG"
                   % (str(raid_no), str(unique_hash)))
-        now = datetime.utcfromtimestamp(float(capture_time)).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            float(capture_time)).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "UPDATE gym "
@@ -439,13 +458,15 @@ class RmWrapper(DbWrapperBase):
         data = []
         res = self.execute(query, vals)
         for (gym_id, distance, latitude, longitude, name, description, url) in res:
-            data.append([gym_id, distance, latitude, longitude, name, description, url])
+            data.append([gym_id, distance, latitude,
+                         longitude, name, description, url])
         log.debug("{RmWrapper::get_near_gyms} done")
         return data
 
     def set_scanned_location(self, lat, lng, capture_time):
         log.debug("{RmWrapper::set_scanned_location} called")
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
         cell_id = int(S2Helper.lat_lng_to_cell_id(float(lat), float(lng), 16))
         query = (
             "INSERT INTO scannedlocation (cellid, latitude, longitude, last_modified, done, band1, band2, "
@@ -524,7 +545,8 @@ class RmWrapper(DbWrapperBase):
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             return geofenced_coords
         else:
             import numpy as np
@@ -548,7 +570,8 @@ class RmWrapper(DbWrapperBase):
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             return geofenced_coords
         else:
             import numpy as np
@@ -561,7 +584,8 @@ class RmWrapper(DbWrapperBase):
     def update_insert_weather(self, cell_id, gameplay_weather, capture_time, cloud_level=0, rain_level=0, wind_level=0,
                               snow_level=0, fog_level=0, wind_direction=0, weather_daytime=0):
         log.debug("{RmWrapper::update_insert_weather} called")
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
         real_lat, real_lng = S2Helper.middle_of_cell(cell_id)
         if weather_daytime == 2 and gameplay_weather == 3:
@@ -574,7 +598,8 @@ class RmWrapper(DbWrapperBase):
                 'ON DUPLICATE KEY UPDATE fog_level=%s, cloud_level=%s, snow_level=%s, wind_direction=%s, ' \
                 'world_time=%s, latitude=%s, longitude=%s, gameplay_weather=%s, last_updated=%s'
         data = (cell_id, real_lat, real_lng, cloud_level, rain_level, wind_level, snow_level, fog_level,
-                wind_direction, gameplay_weather, None, None, weather_daytime, str(now),
+                wind_direction, gameplay_weather, None, None, weather_daytime, str(
+                    now),
                 fog_level, cloud_level, snow_level, wind_direction, weather_daytime, real_lat, real_lng,
                 gameplay_weather, str(now))
 
@@ -588,13 +613,15 @@ class RmWrapper(DbWrapperBase):
         if wild_pokemon is None:
             return
 
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
         spawnid = int(str(wild_pokemon['spawnpoint_id']), 16)
 
         getdetspawntime = self.get_detected_endtime(str(spawnid))
         despawn_time_unix = gen_despawn_timestamp(getdetspawntime)
-        despawn_time = datetime.utcfromtimestamp(despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
+        despawn_time = datetime.utcfromtimestamp(
+            despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
 
         latitude = wild_pokemon.get("latitude")
         longitude = wild_pokemon.get("longitude")
@@ -614,9 +641,11 @@ class RmWrapper(DbWrapperBase):
             )
 
         capture_probability = encounter_proto.get("capture_probability")
-        capture_probability_list = capture_probability.get("capture_probability_list")
+        capture_probability_list = capture_probability.get(
+            "capture_probability_list")
         if capture_probability_list is not None:
-            capture_probability_list = capture_probability_list.replace("[", "").replace("]", "").split(",")
+            capture_probability_list = capture_probability_list.replace(
+                "[", "").replace("]", "").split(",")
 
         pokemon_display = pokemon_data.get("display")
         if pokemon_display is None:
@@ -672,7 +701,8 @@ class RmWrapper(DbWrapperBase):
         return True
 
     def submit_mons_map_proto(self, origin, map_proto, mon_ids_iv):
-        log.debug("{RmWrapper::submit_mons_map_proto} called with data received from %s" % str(origin))
+        log.debug(
+            "{RmWrapper::submit_mons_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -698,12 +728,14 @@ class RmWrapper(DbWrapperBase):
                 if encounter_id < 0:
                     encounter_id = encounter_id + 2**64
 
-                now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+                now = datetime.utcfromtimestamp(
+                    time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
                 # get known spawn end time and feed into despawn time calculation
                 getdetspawntime = self.get_detected_endtime(str(spawnid))
                 despawn_time_unix = gen_despawn_timestamp(getdetspawntime)
-                despawn_time = datetime.utcfromtimestamp(despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
+                despawn_time = datetime.utcfromtimestamp(
+                    despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
 
                 if getdetspawntime is None:
                     log.info("{0}: adding mon with id #{1} at {2}, {3}. Despawning at {4} (init) ({5})"
@@ -716,7 +748,8 @@ class RmWrapper(DbWrapperBase):
                     (
                         encounter_id, spawnid, mon_id, lat, lon,
                         despawn_time,
-                        None, None, None, None, None, None, None, None, None,  # TODO: consider .get("XXX", None)
+                        # TODO: consider .get("XXX", None)
+                        None, None, None, None, None, None, None, None, None,
                         wild_mon['pokemon_data']['display']['gender_value'],
                         None, None, None, None, None,
                         wild_mon['pokemon_data']['display']['weather_boosted_value'],
@@ -729,7 +762,8 @@ class RmWrapper(DbWrapperBase):
         return True
 
     def submit_pokestops_map_proto(self, origin, map_proto):
-        log.debug("{RmWrapper::submit_pokestops_map_proto} called with data received from %s" % str(origin))
+        log.debug(
+            "{RmWrapper::submit_pokestops_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -746,19 +780,22 @@ class RmWrapper(DbWrapperBase):
         for cell in cells:
             for fort in cell['forts']:
                 if fort['type'] == 1:
-                    pokestop_args.append(self.__extract_args_single_pokestop(fort))
+                    pokestop_args.append(
+                        self.__extract_args_single_pokestop(fort))
 
         self.executemany(query_pokestops, pokestop_args, commit=True)
         return True
 
     def submit_gyms_map_proto(self, origin, map_proto):
-        log.debug("{RmWrapper::submit_gyms_map_proto} called with data received from %s" % str(origin))
+        log.debug(
+            "{RmWrapper::submit_gyms_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
         gym_args = []
         gym_details_args = []
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query_gym = (
             "INSERT INTO gym (gym_id, team_id, guard_pokemon_id, slots_available, enabled, latitude, longitude, "
@@ -785,7 +822,8 @@ class RmWrapper(DbWrapperBase):
                     longitude = gym['longitude']
                     slots_available = gym['gym_details']['slots_available']
                     last_modified_ts = gym['last_modified_timestamp_ms']/1000
-                    last_modified = datetime.utcfromtimestamp(last_modified_ts).strftime("%Y-%m-%d %H:%M:%S")
+                    last_modified = datetime.utcfromtimestamp(
+                        last_modified_ts).strftime("%Y-%m-%d %H:%M:%S")
 
                     gym_args.append(
                         (
@@ -810,12 +848,14 @@ class RmWrapper(DbWrapperBase):
         return True
 
     def submit_raids_map_proto(self, origin, map_proto):
-        log.debug("{RmWrapper::submit_raids_map_proto} called with data received from %s" % str(origin))
+        log.debug(
+            "{RmWrapper::submit_raids_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
         raid_args = []
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query_raid = (
             "INSERT INTO raid (gym_id, level, spawn, start, end, pokemon_id, cp, move_1, move_2, last_scanned, form, is_exclusive) "
@@ -843,11 +883,15 @@ class RmWrapper(DbWrapperBase):
                         move_2 = 2
                         form = None
 
-                    raidendSec = int(gym['gym_details']['raid_info']['raid_end'] / 1000)
-                    raidspawnSec = int(gym['gym_details']['raid_info']['raid_spawn'] / 1000)
-                    raidbattleSec = int(gym['gym_details']['raid_info']['raid_battle'] / 1000)
+                    raidendSec = int(gym['gym_details']
+                                     ['raid_info']['raid_end'] / 1000)
+                    raidspawnSec = int(
+                        gym['gym_details']['raid_info']['raid_spawn'] / 1000)
+                    raidbattleSec = int(
+                        gym['gym_details']['raid_info']['raid_battle'] / 1000)
 
-                    raidend_date = datetime.utcfromtimestamp(float(raidendSec)).strftime("%Y-%m-%d %H:%M:%S")
+                    raidend_date = datetime.utcfromtimestamp(
+                        float(raidendSec)).strftime("%Y-%m-%d %H:%M:%S")
                     raidspawn_date = datetime.utcfromtimestamp(float(raidspawnSec)).strftime(
                         "%Y-%m-%d %H:%M:%S")
                     raidstart_date = datetime.utcfromtimestamp(float(raidbattleSec)).strftime(
@@ -873,11 +917,13 @@ class RmWrapper(DbWrapperBase):
                         )
                     )
         self.executemany(query_raid, raid_args, commit=True)
-        log.debug("dbWrapper::submit_raids_map_proto: Done submitting raids with data received from %s" % str(origin))
+        log.debug(
+            "dbWrapper::submit_raids_map_proto: Done submitting raids with data received from %s" % str(origin))
         return True
 
     def submit_weather_map_proto(self, origin, map_proto, received_timestamp):
-        log.debug("{RmWrapper::submit_weather_map_proto} called with data received from %s" % str(origin))
+        log.debug(
+            "{RmWrapper::submit_weather_map_proto} called with data received from %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -898,7 +944,8 @@ class RmWrapper(DbWrapperBase):
             # lat, lng, alt = S2Helper.get_position_from_cell(weather_extract['cell_id'])
             time_of_day = map_proto.get("time_of_day_value", 0)
             list_of_weather_args.append(
-                self.__extract_args_single_weather(client_weather, time_of_day, received_timestamp)
+                self.__extract_args_single_weather(
+                    client_weather, time_of_day, received_timestamp)
             )
         self.executemany(query_weather, list_of_weather_args, commit=True)
         return True
@@ -975,14 +1022,17 @@ class RmWrapper(DbWrapperBase):
         if stop_data['type'] != 1:
             log.warning("%s is not a pokestop" % str(stop_data))
             return None
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
-        last_modified = datetime.utcfromtimestamp(stop_data['last_modified_timestamp_ms']/1000).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        last_modified = datetime.utcfromtimestamp(
+            stop_data['last_modified_timestamp_ms']/1000).strftime("%Y-%m-%d %H:%M:%S")
         # lure isn't present anymore...
         lure = '1970-01-01 00:00:00'
         return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now
 
     def __extract_args_single_weather(self, client_weather_data, time_of_day, received_timestamp):
-        now = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime('%Y-%m-%d %H:%M:%S')
         cell_id = client_weather_data["cell_id"]
         real_lat, real_lng = S2Helper.middle_of_cell(cell_id)
 
@@ -1030,14 +1080,13 @@ class RmWrapper(DbWrapperBase):
         log.debug("{RmWrapper::stop_from_db_without_questsb} called")
         questinfo = {}
 
-
         query = (
-                "SELECT pokestop.latitude, pokestop.longitude "
-                "FROM pokestop left join trs_quest on "
-                "pokestop.pokestop_id = trs_quest.GUID where "
-                "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) <> CURDATE() "
-                "or trs_quest.GUID IS NULL"
-            )
+            "SELECT pokestop.latitude, pokestop.longitude "
+            "FROM pokestop left join trs_quest on "
+            "pokestop.pokestop_id = trs_quest.GUID where "
+            "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) <> CURDATE() "
+            "or trs_quest.GUID IS NULL"
+        )
 
         res = self.execute(query)
         list_of_coords = []
@@ -1045,7 +1094,8 @@ class RmWrapper(DbWrapperBase):
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             return geofenced_coords
         else:
             import numpy as np
@@ -1128,7 +1178,8 @@ class RmWrapper(DbWrapperBase):
             "WHERE raid.last_scanned >= %s"
         )
 
-        tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        tsdt = datetime.utcfromtimestamp(
+            timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self.execute(query, (tsdt, ))
         ret = []
 
@@ -1137,25 +1188,25 @@ class RmWrapper(DbWrapperBase):
                 name, url, latitude, longitude, team_id,
                 weather_boosted_condition) in res:
             ret.append({
-                    "gym_id": gym_id,
-                    "level": level,
-                    "spawn": int(spawn.replace(tzinfo=timezone.utc).timestamp()),
-                    "start": int(start.replace(tzinfo=timezone.utc).timestamp()),
-                    "end": int(end.replace(tzinfo=timezone.utc).timestamp()),
-                    "pokemon_id": pokemon_id,
-                    "cp": cp,
-                    "move_1": move_1,
-                    "move_2": move_2,
-                    "last_scanned": int(last_scanned.replace(tzinfo=timezone.utc).timestamp()),
-                    "form": form,
-                    "name": name,
-                    "url": url,
-                    "latitude": latitude,
-                    "longitude": longitude,
-                    "team_id": team_id,
-                    "weather_boosted_condition": weather_boosted_condition,
-                    "is_exclusive": is_exclusive
-                })
+                "gym_id": gym_id,
+                "level": level,
+                "spawn": int(spawn.replace(tzinfo=timezone.utc).timestamp()),
+                "start": int(start.replace(tzinfo=timezone.utc).timestamp()),
+                "end": int(end.replace(tzinfo=timezone.utc).timestamp()),
+                "pokemon_id": pokemon_id,
+                "cp": cp,
+                "move_1": move_1,
+                "move_2": move_2,
+                "last_scanned": int(last_scanned.replace(tzinfo=timezone.utc).timestamp()),
+                "form": form,
+                "name": name,
+                "url": url,
+                "latitude": latitude,
+                "longitude": longitude,
+                "team_id": team_id,
+                "weather_boosted_condition": weather_boosted_condition,
+                "is_exclusive": is_exclusive
+            })
 
         return ret
 
@@ -1169,7 +1220,8 @@ class RmWrapper(DbWrapperBase):
             "WHERE last_modified >= %s"
         )
 
-        tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        tsdt = datetime.utcfromtimestamp(
+            timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self.execute(query, (tsdt, ))
         ret = []
 
@@ -1213,7 +1265,8 @@ class RmWrapper(DbWrapperBase):
             "WHERE last_updated >= %s"
         )
 
-        tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        tsdt = datetime.utcfromtimestamp(
+            timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self.execute(query, (tsdt, ))
         ret = []
 
@@ -1250,7 +1303,8 @@ class RmWrapper(DbWrapperBase):
             "WHERE last_modified >= %s"
         )
 
-        tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        tsdt = datetime.utcfromtimestamp(
+            timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self.execute(query, (tsdt, ))
         ret = []
 
@@ -1281,7 +1335,8 @@ class RmWrapper(DbWrapperBase):
             return None
         image = stop_data.get('image_urls', None)
         name = stop_data.get('name', None)
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
         last_modified = '1970-01-01 00:00:00'
 
         return stop_data['fort_id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, now, name, image[0]
@@ -1295,8 +1350,8 @@ class RmWrapper(DbWrapperBase):
             query_where = ' where disappear_time > \'%s\' ' % str(minutes)
 
         query = (
-                "SELECT  %s, count(pokemon_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon %s "
-                "group by IV, day(disappear_time), hour(disappear_time) order by timestamp" %
+            "SELECT  %s, count(pokemon_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon %s "
+            "group by IV, day(disappear_time), hour(disappear_time) order by timestamp" %
                 (str(query_date), str(query_where))
         )
         res = self.execute(query)
@@ -1307,8 +1362,8 @@ class RmWrapper(DbWrapperBase):
         log.debug('Fetching gym count from db')
 
         query = (
-                "SELECT if (team_id=0, 'WHITE', if (team_id=1, 'BLUE', if (team_id=2, 'RED', 'YELLOW'))) "
-                "as Color, count(team_id) as Count FROM `gym` group by team_id"
+            "SELECT if (team_id=0, 'WHITE', if (team_id=1, 'BLUE', if (team_id=2, 'RED', 'YELLOW'))) "
+            "as Color, count(team_id) as Count FROM `gym` group by team_id"
 
         )
         res = self.execute(query)
@@ -1319,12 +1374,12 @@ class RmWrapper(DbWrapperBase):
         log.debug('Fetching gym count from db')
 
         query = (
-                "SELECT "
-                "if(FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d') is NULL,'NO QUEST',"
-                "FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')) as Quest, "
-                "count(pokestop.pokestop_id) as Count FROM pokestop left join trs_quest "
-                "on pokestop.pokestop_id = trs_quest.GUID "
-                "group by FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')"
+            "SELECT "
+            "if(FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d') is NULL,'NO QUEST',"
+            "FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')) as Quest, "
+            "count(pokestop.pokestop_id) as Count FROM pokestop left join trs_quest "
+            "on pokestop.pokestop_id = trs_quest.GUID "
+            "group by FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')"
 
         )
         res = self.execute(query)
@@ -1339,7 +1394,8 @@ class RmWrapper(DbWrapperBase):
             query_where = ' where disappear_time > \'%s\' ' % str(hours)
 
         query = (
-            "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(query_where)
+            "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(
+                query_where)
         )
 
         res = self.execute(query)
@@ -1347,5 +1403,3 @@ class RmWrapper(DbWrapperBase):
         total = reduce(lambda x, y: x + y[1], res, 0)
 
         return {'pokemon': res, 'total': total}
-
-

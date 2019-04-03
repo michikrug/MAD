@@ -1,21 +1,20 @@
-import sys
 import json
-import math
-import time
-from datetime import datetime, timedelta
 import logging
-import mysql
+import math
+import sys
+import time
+from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
 from threading import Lock, Semaphore
 
+import mysql
+import numpy as np
 from bitstring import BitArray
 from mysql.connector import OperationalError
 from mysql.connector.pooling import MySQLConnectionPool
-from abc import ABC, abstractmethod
-import numpy as np
-
 from utils.collections import Location
-from utils.s2Helper import S2Helper
 from utils.questGen import questtask
+from utils.s2Helper import S2Helper
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +31,8 @@ class DbWrapperBase(ABC):
         self.database = args.dbname
         self.pool = None
         self.pool_mutex = Lock()
-        self.connection_semaphore = Semaphore(self.application_args.db_poolsize)
+        self.connection_semaphore = Semaphore(
+            self.application_args.db_poolsize)
         self.dbconfig = {"database": self.database, "user": self.user, "host": self.host, "password": self.password,
                          "port": self.port}
         self._init_pool()
@@ -74,10 +74,12 @@ class DbWrapperBase(ABC):
         self.execute(alter_query, commit=True)
 
         if self._check_column_exists(field["table"], field["column"]) == 1:
-            log.info("Successfully added '{}.{}' column".format(field["table"], field["column"]))
+            log.info("Successfully added '{}.{}' column".format(
+                field["table"], field["column"]))
             return
         else:
-            log.fatal("Couldn't create required column {}.{}'".format(field["table"], field["column"]))
+            log.fatal("Couldn't create required column {}.{}'".format(
+                field["table"], field["column"]))
             sys.exit(1)
 
     def close(self, conn, cursor):
@@ -439,7 +441,8 @@ class DbWrapperBase(ABC):
 
     def check_for_hash(self, imghash, type, raid_no, distance, unique_hash="123"):
         log.debug("{DbWrapperBase::check_for_hash} called")
-        log.debug("[Crop: %s (%s) ] check_for_hash: Checking for hash in db" % (str(raid_no), str(unique_hash)))
+        log.debug("[Crop: %s (%s) ] check_for_hash: Checking for hash in db" % (
+            str(raid_no), str(unique_hash)))
 
         query = (
             "SELECT id, hash, "
@@ -460,14 +463,16 @@ class DbWrapperBase(ABC):
                   (str(raid_no), str(unique_hash), str(number_of_rows)))
 
         if number_of_rows > 0:
-            log.debug("[Crop: %s (%s) ] check_for_hash: returning found ID" % (str(raid_no), str(unique_hash)))
+            log.debug("[Crop: %s (%s) ] check_for_hash: returning found ID" % (
+                str(raid_no), str(unique_hash)))
             for row in res:
                 log.debug("[Crop: %s (%s) ] check_for_hash: ID = %s"
                           % (str(raid_no), str(unique_hash), str(row[0])))
                 log.debug("{DbWrapperBase::check_for_hash} done")
                 return True, row[0], row[1], row[4], row[5]
         else:
-            log.debug("[Crop: %s (%s) ] check_for_hash: No matching hash found" % (str(raid_no), str(unique_hash)))
+            log.debug("[Crop: %s (%s) ] check_for_hash: No matching hash found" % (
+                str(raid_no), str(unique_hash)))
             log.debug("{DbWrapperBase::check_for_hash} done")
             return False, None, None, None, None
 
@@ -524,9 +529,9 @@ class DbWrapperBase(ABC):
         log.debug('Valid ids: %s' % ids)
 
         query = (
-                "DELETE FROM trshash "
-                "WHERE " + field + " " + mode + " (%s) "
-                                                "AND type like %s"
+            "DELETE FROM trshash "
+            "WHERE " + field + " " + mode + " (%s) "
+            "AND type like %s"
         )
         vals = (str(ids), str(type),)
         log.debug(query)
@@ -568,8 +573,8 @@ class DbWrapperBase(ABC):
         spawnret = {}
 
         query = (
-                "SELECT spawnpoint, spawndef "
-                "FROM trs_spawn where spawnpoint in (%s)" % (spawnids)
+            "SELECT spawnpoint, spawndef "
+            "FROM trs_spawn where spawnpoint in (%s)" % (spawnids)
         )
         # vals = (spawn_id,)
 
@@ -579,7 +584,8 @@ class DbWrapperBase(ABC):
         return spawnret
 
     def submit_spawnpoints_map_proto(self, origin, map_proto):
-        log.debug("{DbWrapperBase::submit_spawnpoints_map_proto} called with data received by %s" % str(origin))
+        log.debug(
+            "{DbWrapperBase::submit_spawnpoints_map_proto} called with data received by %s" % str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -615,7 +621,8 @@ class DbWrapperBase(ABC):
         for cell in cells:
             for wild_mon in cell["wild_pokemon"]:
                 spawnid = int(str(wild_mon['spawnpoint_id']), 16)
-                lat, lng, alt = S2Helper.get_position_from_cell(int(str(wild_mon['spawnpoint_id']) + '00000', 16))
+                lat, lng, alt = S2Helper.get_position_from_cell(
+                    int(str(wild_mon['spawnpoint_id']) + '00000', 16))
                 despawntime = wild_mon['time_till_hidden']
 
                 minpos = self._get_min_pos_in_array()
@@ -623,9 +630,11 @@ class DbWrapperBase(ABC):
 
                 spawndef_ = spawndef.get(spawnid, False)
                 if spawndef_:
-                    newspawndef = self._set_spawn_see_minutesgroup(spawndef_, minpos)
+                    newspawndef = self._set_spawn_see_minutesgroup(
+                        spawndef_, minpos)
                 else:
-                    newspawndef = self._set_spawn_see_minutesgroup(DbWrapperBase.def_spawn, minpos)
+                    newspawndef = self._set_spawn_see_minutesgroup(
+                        DbWrapperBase.def_spawn, minpos)
 
                 last_scanned = None
                 last_non_scanned = None
@@ -654,7 +663,8 @@ class DbWrapperBase(ABC):
                     )
 
         self.executemany(query_spawnpoints, spawnpoint_args, commit=True)
-        self.executemany(query_spawnpoints_unseen, spawnpoint_args_unseen, commit=True)
+        self.executemany(query_spawnpoints_unseen,
+                         spawnpoint_args_unseen, commit=True)
 
     def submitspsightings(self, spid, encid, secs):
         log.debug("{DbWrapperBase::submitspsightings} called")
@@ -702,17 +712,20 @@ class DbWrapperBase(ABC):
         list_of_coords = []
         log.debug("{DbWrapperBase::get_detected_spawns} executing select query")
         res = self.execute(query)
-        log.debug("{DbWrapperBase::get_detected_spawns} result of query: %s" % str(res))
+        log.debug(
+            "{DbWrapperBase::get_detected_spawns} result of query: %s" % str(res))
         for (latitude, longitude) in res:
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
             log.debug("{DbWrapperBase::get_detected_spawns} applying geofence")
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             log.debug(geofenced_coords)
             return geofenced_coords
         else:
-            log.debug("{DbWrapperBase::get_detected_spawns} converting to numpy")
+            log.debug(
+                "{DbWrapperBase::get_detected_spawns} converting to numpy")
             to_return = np.zeros(shape=(len(list_of_coords), 2))
             for i in range(len(to_return)):
                 to_return[i][0] = list_of_coords[i][0]
@@ -728,19 +741,24 @@ class DbWrapperBase(ABC):
             "WHERE calc_endminsec is NULL"
         )
         list_of_coords = []
-        log.debug("{DbWrapperBase::get_undetected_spawns} executing select query")
+        log.debug(
+            "{DbWrapperBase::get_undetected_spawns} executing select query")
         res = self.execute(query)
-        log.debug("{DbWrapperBase::get_undetected_spawns} result of query: %s" % str(res))
+        log.debug(
+            "{DbWrapperBase::get_undetected_spawns} result of query: %s" % str(res))
         for (latitude, longitude) in res:
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            log.debug("{DbWrapperBase::get_undetected_spawns} applying geofence")
-            geofenced_coords = geofence_helper.get_geofenced_coordinates(list_of_coords)
+            log.debug(
+                "{DbWrapperBase::get_undetected_spawns} applying geofence")
+            geofenced_coords = geofence_helper.get_geofenced_coordinates(
+                list_of_coords)
             log.debug(geofenced_coords)
             return geofenced_coords
         else:
-            log.debug("{DbWrapperBase::get_undetected_spawns} converting to numpy")
+            log.debug(
+                "{DbWrapperBase::get_undetected_spawns} converting to numpy")
             to_return = np.zeros(shape=(len(list_of_coords), 2))
             for i in range(len(to_return)):
                 to_return[i][0] = list_of_coords[i][0]
@@ -768,7 +786,8 @@ class DbWrapperBase(ABC):
 
     def _gen_endtime(self, known_despawn):
         hrmi = known_despawn.split(':')
-        known_despawn = datetime.now().replace(hour=0, minute=int(hrmi[0]), second=int(hrmi[1]), microsecond=0)
+        known_despawn = datetime.now().replace(
+            hour=0, minute=int(hrmi[0]), second=int(hrmi[1]), microsecond=0)
         now = datetime.now()
         if now.minute <= known_despawn.minute:
             despawn = now + timedelta(minutes=known_despawn.minute - now.minute,
@@ -872,7 +891,7 @@ class DbWrapperBase(ABC):
         current_time_of_day = datetime.now().replace(microsecond=0)
 
         log.debug("DbWrapperBase::retrieve_next_spawns called")
-        query =(
+        query = (
             "SELECT latitude, longitude, spawndef, calc_endminsec FROM trs_spawn WHERE calc_endminsec IS NOT NULL and "
             "DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') between DATE_FORMAT(DATE_ADD(NOW(), "
             "INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') and DATE_FORMAT(DATE_ADD(NOW(), "
@@ -887,10 +906,10 @@ class DbWrapperBase(ABC):
             endminsec_split = calc_endminsec.split(":")
             minutes = int(endminsec_split[0])
             seconds = int(endminsec_split[1])
-            temp_date = current_time_of_day.replace(minute=minutes, second=seconds)
+            temp_date = current_time_of_day.replace(
+                minute=minutes, second=seconds)
             if minutes < datetime.now().minute:
                 temp_date = temp_date + timedelta(hours=1)
-
 
             if temp_date < current_time_of_day:
                 # spawn has already happened, we should've added it in the past, let's move on
@@ -899,7 +918,8 @@ class DbWrapperBase(ABC):
 
             spawn_duration_minutes = 60 if spawndef == 15 else 30
 
-            timestamp = time.mktime(temp_date.timetuple()) - spawn_duration_minutes * 60
+            timestamp = time.mktime(temp_date.timetuple()) - \
+                spawn_duration_minutes * 60
             # check if we calculated a time in the past, if so, add an hour to it...
             timestamp = timestamp + 60 * 60 if timestamp < current_time else timestamp
             # TODO: consider the following since I am not sure if the prio Q clustering handles stuff properly yet
@@ -920,18 +940,27 @@ class DbWrapperBase(ABC):
             return False
         if 'challenge_quest' not in map_proto:
             return False
-        quest_type = map_proto['challenge_quest']['quest'].get("quest_type", None)
-        quest_template = map_proto['challenge_quest']['quest'].get("template_id", None)
+        quest_type = map_proto['challenge_quest']['quest'].get(
+            "quest_type", None)
+        quest_template = map_proto['challenge_quest']['quest'].get(
+            "template_id", None)
         if map_proto['challenge_quest']['quest'].get("quest_rewards", None):
-            rewardtype = map_proto['challenge_quest']['quest']['quest_rewards'][0].get("type", None)
-            reward = map_proto['challenge_quest']['quest'].get("quest_rewards", None)
-            item = map_proto['challenge_quest']['quest']['quest_rewards'][0]['item'].get("item", None)
-            itemamount = map_proto['challenge_quest']['quest']['quest_rewards'][0]['item'].get("amount", None)
-            stardust = map_proto['challenge_quest']['quest']['quest_rewards'][0].get("stardust", None)
+            rewardtype = map_proto['challenge_quest']['quest']['quest_rewards'][0].get(
+                "type", None)
+            reward = map_proto['challenge_quest']['quest'].get(
+                "quest_rewards", None)
+            item = map_proto['challenge_quest']['quest']['quest_rewards'][0]['item'].get(
+                "item", None)
+            itemamount = map_proto['challenge_quest']['quest']['quest_rewards'][0]['item'].get(
+                "amount", None)
+            stardust = map_proto['challenge_quest']['quest']['quest_rewards'][0].get(
+                "stardust", None)
             pokemon_id = map_proto['challenge_quest']['quest']['quest_rewards'][0]['pokemon_encounter'].get(
                 "pokemon_id", None)
-            target = map_proto['challenge_quest']['quest']['goal'].get("target", None)
-            condition = map_proto['challenge_quest']['quest']['goal'].get("condition", None)
+            target = map_proto['challenge_quest']['quest']['goal'].get(
+                "target", None)
+            condition = map_proto['challenge_quest']['quest']['goal'].get(
+                "condition", None)
 
             task = questtask(int(quest_type), str(condition), int(target))
 
@@ -947,7 +976,8 @@ class DbWrapperBase(ABC):
                 "quest_task=VALUES(quest_task), quest_template=VALUES(quest_template)"
             )
             vals = (
-                fort_id, quest_type, time.time(), stardust, pokemon_id, rewardtype, item, itemamount, target,
+                fort_id, quest_type, time.time(
+                ), stardust, pokemon_id, rewardtype, item, itemamount, target,
                 str(condition), str(reward), task, quest_template
             )
             log.debug("{DbWrapperBase::submit_quest_proto} submitted quest typ %s at stop %s" % (
@@ -973,7 +1003,6 @@ class DbWrapperBase(ABC):
                  ' rebootingOption TEXT NOT NULL, '
                  ' restartCounter TEXT NOT NULL, '
                  ' PRIMARY KEY (origin))')
-
 
         self.execute(query, commit=True)
 
@@ -1025,7 +1054,8 @@ class DbWrapperBase(ABC):
             "init=VALUES(init), rebootingOption=VALUES(rebootingOption), restartCounter=VALUES(restartCounter)"
         )
         vals = (
-            data["Origin"], str(data["CurrentPos"]), str(data["LastPos"]), data["RoutePos"], data["RouteMax"],
+            data["Origin"], str(data["CurrentPos"]), str(
+                data["LastPos"]), data["RoutePos"], data["RouteMax"],
             data["Routemanager"], data["RebootCounter"], data["LastProtoDateTime"],
             data["Init"], data["RebootingOption"], data["RestartCounter"]
         )
@@ -1080,7 +1110,7 @@ class DbWrapperBase(ABC):
         )
 
         result = self.execute(query)
-        for (origin, currentPos, lastPos, routePos, routeMax, routemanager, \
+        for (origin, currentPos, lastPos, routePos, routeMax, routemanager,
                 rebootCounter, lastProtoDateTime, lastPogoRestart, init, rebootingOption, restartCounter,
                 globalrebootcount, globalrestartcount, lastPogoReboot) in result:
             status = {
@@ -1110,15 +1140,16 @@ class DbWrapperBase(ABC):
         log.debug('Fetching quests count from db')
         query_where = ''
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(quest_timestamp), '%y-%m-%d %k:00:00')) * 1000 " \
-                                                                                                   "as Timestamp"
+            "as Timestamp"
         if days:
             days = datetime.utcnow() - timedelta(days=days)
-            query_where = ' WHERE FROM_UNIXTIME(quest_timestamp) > \'%s\' ' % str(days)
+            query_where = ' WHERE FROM_UNIXTIME(quest_timestamp) > \'%s\' ' % str(
+                days)
 
         query = (
-                "SELECT %s, count(GUID) as Count  FROM trs_quest %s "
-                "group by day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp))"
-                "order by quest_timestamp" %
+            "SELECT %s, count(GUID) as Count  FROM trs_quest %s "
+            "group by day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp))"
+            "order by quest_timestamp" %
                 (str(query_date), str(query_where))
         )
 
@@ -1132,18 +1163,19 @@ class DbWrapperBase(ABC):
 
         if minutes:
             days = datetime.now() - timedelta(minutes=int(minutes))
-            query_where = ' WHERE FROM_UNIXTIME(timestamp) > \'%s\' ' % str(days)
+            query_where = ' WHERE FROM_UNIXTIME(timestamp) > \'%s\' ' % str(
+                days)
 
         if instance is not None:
-            query_where = query_where + ' and instance = \'%s\' ' % str(instance)
+            query_where = query_where + \
+                ' and instance = \'%s\' ' % str(instance)
 
         query = (
-                "SELECT cpu, memory, garbage, timestamp, instance FROM trs_usage %s "
-                "order by timestamp" %
+            "SELECT cpu, memory, garbage, timestamp, instance FROM trs_usage %s "
+            "order by timestamp" %
                 (str(query_where))
         )
 
         res = self.execute(query)
 
         return res
-

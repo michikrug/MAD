@@ -1,7 +1,7 @@
 import datetime
 import logging
 import time
-from threading import Thread, Event
+from threading import Event, Thread
 
 log = logging.getLogger(__name__)
 
@@ -74,7 +74,8 @@ class Timer(object):
                             '[%s] - Switching back - here we go ...' % str(self._id))
                         self.set_switch(False)
                     if self.__stop_switchtimer.is_set():
-                        log.info("[%s] switchtimer stopping in switchmode" % str(self._id))
+                        log.info(
+                            "[%s] switchtimer stopping in switchmode" % str(self._id))
                         self.set_switch(False)
                     time.sleep(30)
             time.sleep(30)

@@ -10,8 +10,8 @@ import sys
 import threading
 import time
 from functools import wraps
-from pathlib import Path
 from math import floor
+from pathlib import Path
 from shutil import copyfile
 
 from flask import (Flask, jsonify, make_response, redirect, render_template,
@@ -706,6 +706,7 @@ def modify_mon():
 @auth_required
 def pushAssets(path):
     return send_from_directory(conf_args.pogoasset, path)
+
 
 @app.route('/addwalker')
 @auth_required
@@ -1560,7 +1561,8 @@ def game_stats():
 
     spawn = {'iv': iv, 'noniv': noniv, 'sum': sum}
 
-    stats = {'spawn': spawn, 'gym': gym, 'quest': quest, 'stop': stop, 'usage': usage}
+    stats = {'spawn': spawn, 'gym': gym,
+             'quest': quest, 'stop': stop, 'usage': usage}
     return jsonify(stats)
 
 

@@ -48,7 +48,6 @@
         $("#navgyms").addClass("active");
         $.getJSON({
             url: "get_gyms",
-            data: {_: new Date().getTime()},
             success: function (result) {
                 setGrid('#show-data', result);
             }

@@ -36,7 +36,6 @@
         $("#navscreens").addClass("active");
         $.getJSON({
             url: "get_screens",
-            data: {_: new Date().getTime()},
             success: function (result) {
                 setGrid('#show-data', result);
             }

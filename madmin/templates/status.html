@@ -72,7 +72,6 @@
         return $.ajax({
             type: "GET",
             url: "get_status",
-            data: {_: new Date().getTime()},
             success: function (result) {
                 return result;
             }

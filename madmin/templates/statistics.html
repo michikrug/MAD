@@ -106,7 +106,7 @@
             type: "GET",
             cache: false,
             dataType: "json",
-            data: { minutes_spawn: "{{ minutes_spawn }}", minutes_usage: "{{ minutes_usage }}", _: new Date().getTime() },
+            data: { minutes_spawn: "{{ minutes_spawn }}", minutes_usage: "{{ minutes_usage }}" },
             success: function (result) {
                 spawn = result.spawn
                 quest = result.quest

@@ -77,7 +77,6 @@
         $.ajax({
             type: "GET",
             url: "get_unknows",
-            data: { _: new Date().getTime() },
             success: function (result) {
                 setGrid('#show-data', result);
             }

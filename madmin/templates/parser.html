@@ -105,7 +105,7 @@
   function updateOrder(data) {
     $.getJSON({
       url: "savesortwalker",
-      data: { walkernr: "{{ walkernr }}", edit: "{{ edit }}", position: data, _: new Date().getTime() },
+      data: { walkernr: "{{ walkernr }}", edit: "{{ edit }}", position: data },
       success: function () {
         location.reload();
       }

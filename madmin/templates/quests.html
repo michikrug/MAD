@@ -54,7 +54,6 @@
         $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif').lstrip('/') }}" width=100px /><br /><h2>Load..</h2>' });
         $.getJSON({
             url: "get_quests",
-            data: {_: new Date().getTime()},
             success: function (result) {
                 setGrid('#show-data', result);
             },

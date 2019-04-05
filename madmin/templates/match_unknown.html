@@ -43,7 +43,7 @@
         $("#navunknown").addClass("active");
         $.getJSON({
             url: "near_gym",
-            data: {lat: "{{ lat }}", lon: "{{ lon }}", _: new Date().getTime()},
+            data: { lat: "{{ lat }}", lon: "{{ lon }}" },
             success: function (result) {
                 setGrid('#show-data', result);
             }

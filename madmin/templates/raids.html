@@ -83,7 +83,6 @@
         $("#navraids").addClass("active");
         $.getJSON({
             url: "get_raids",
-            data: {_: new Date().getTime()},
             success: function (result) {
                 setGrid('#show-data', result);
             }

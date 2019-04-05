@@ -25,6 +25,8 @@ sys.path.append("..")  # Adds higher directory to python modules path.
 
 
 app = Flask(__name__)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 2592000
+
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 log = logging.getLogger(__name__)
@@ -85,7 +87,8 @@ def after_request(response):
     #                     'Content-Type,Authorization')
     #response.headers.add('Access-Control-Allow-Methods',
     #                     'GET,PUT,POST,DELETE,OPTIONS')
-    response.headers.add('Cache-Control', 'no-cache, no-store, must-revalidate')
+    if response.headers['Content-Type'].split(';')[0] in ('application/json', 'text/html'):
+        response.headers.add('Cache-Control', 'no-cache, no-store, must-revalidate')
     return response
 
 

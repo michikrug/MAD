@@ -44,7 +44,6 @@
         $("#navraids").addClass("active");
         $.getJSON({
             url: "get_mons",
-            data: {_: new Date().getTime()},
             success: function (result) {
                 setGrid('#show-data', result);
             }

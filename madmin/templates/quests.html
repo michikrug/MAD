@@ -55,6 +55,7 @@
         $.ajax({
             type: "GET",
             url: "get_quests",
+            data: {_: new Date().getTime()},
             success: function (result) {
                 setGrid('#show-data', result);
             },

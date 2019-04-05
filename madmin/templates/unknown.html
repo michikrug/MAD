@@ -73,11 +73,11 @@
     }
 
     $(document).ready(function () {
-    $("#navunknown").addClass("active");
-
+        $("#navunknown").addClass("active");
         $.ajax({
             type: "GET",
             url: "get_unknows",
+            data: { _: new Date().getTime() },
             success: function (result) {
                 setGrid('#show-data', result);
             }

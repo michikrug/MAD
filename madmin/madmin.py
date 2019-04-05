@@ -700,19 +700,21 @@ def pushAssets(path):
     return send_from_directory('../' + conf_args.pogoasset, path)
 
 
-@app.route('/addwalker')
+@app.route('/addwalker', methods=['GET', 'POST'])
 @auth_required
 def addwalker():
+    args = request.form if request.form else request.args
+
     fieldwebsite = []
     walkervalue = ""
     walkerposition = ""
     walkermax = ""
     walkertext = ""
-    edit = request.args.get('edit')
-    walker = request.args.get('walker')
-    add = request.args.get('add')
+    edit = args.get('edit')
+    walker = args.get('walker')
+    add = args.get('add')
 
-    walkernr = request.args.get('walkernr')
+    walkernr = args.get('walkernr')
 
     with open('configs/mappings.json') as f:
         mapping = json.load(f)
@@ -720,17 +722,17 @@ def addwalker():
             mapping['walker'] = []
 
     if add:
-        walkerarea = request.args.get('walkerarea')
-        walkertype = request.args.get('walkertype')
-        walkervalue = request.args.get('walkervalue')
-        walkernr = request.args.get('walkernr')
-        walkermax = request.args.get('walkermax')
-        walkertext = request.args.get('walkertext').replace(' ', '_')
-        walkerposition = request.args.get('walkerposition', False)
+        walkerarea = args.get('walkerarea')
+        walkertype = args.get('walkertype')
+        walkervalue = args.get('walkervalue')
+        walkernr = args.get('walkernr')
+        walkermax = args.get('walkermax')
+        walkertext = args.get('walkertext').replace(' ', '_')
+        walkerposition = args.get('walkerposition', False)
         if not walkerposition:
             walkerposition = False
-        oldwalkerposition = request.args.get('oldwalkerposition')
-        edit = request.args.get('edit')
+        oldwalkerposition = args.get('oldwalkerposition')
+        edit = args.get('edit')
 
         walkerlist = {'walkerarea': walkerarea, 'walkertype': walkertype, 'walkervalue': walkervalue,
                       'walkermax': walkermax, 'walkertext': walkertext}
@@ -765,7 +767,7 @@ def addwalker():
             return redirect(getBasePath(request) + "/config?type=walker&area=walker&block=fields&edit=" + str(walker), code=302)
 
     if walker and edit:
-        walkerposition = request.args.get('walkerposition')
+        walkerposition = args.get('walkerposition')
         _walkerval = mapping['walker'][int(
             walkernr)]['setup'][int(walkerposition)]
         walkerarea = _walkerval['walkerarea']
@@ -867,7 +869,7 @@ def addwalker():
     return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings")
 
 
-@app.route('/savesortwalker', methods=['GET', 'POST'])
+@app.route('/savesortwalker', methods=['GET'])
 @auth_required
 def savesortwalker():
     walkernr = request.args.get('walkernr')

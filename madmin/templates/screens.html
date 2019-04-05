@@ -34,8 +34,7 @@
 
     $(document).ready(function () {
         $("#navscreens").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_screens",
             data: {_: new Date().getTime()},
             success: function (result) {

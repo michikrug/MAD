@@ -103,7 +103,7 @@
     }
   }).disableSelection();
   function updateOrder(data) {
-    $.ajax({
+    $.getJSON({
       url: "savesortwalker",
       data: { walkernr: "{{ walkernr }}", edit: "{{ edit }}", position: data, _: new Date().getTime() },
       success: function () {

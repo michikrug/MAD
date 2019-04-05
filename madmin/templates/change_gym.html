@@ -48,8 +48,7 @@
     $(document).ready(function () {
         var displayResources = $('#show-data');
         displayResources.text('Loading data ...');
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "near_gym",
             data: {lat: "{{ lat }}", lon: "{{ lon }}", _: new Date().getTime()},
             success: function (result) {

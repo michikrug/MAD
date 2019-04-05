@@ -47,8 +47,7 @@
 
     $(document).ready(function () {
         $("#navraids").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "near_gym",
             data: {lat: "{{ lat }}", lon: "{{ lon }}", _: new Date().getTime()},
             success: function (result) {

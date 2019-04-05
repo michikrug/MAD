@@ -46,8 +46,7 @@
 
     $(document).ready(function () {
         $("#navgyms").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_gyms",
             data: {_: new Date().getTime()},
             success: function (result) {

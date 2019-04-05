@@ -69,8 +69,7 @@
     }
 
     function getStatusData() {
-        return $.ajax({
-            type: "GET",
+        return $.getJSON({
             url: "get_status",
             success: function (result) {
                 return result;

@@ -101,11 +101,8 @@
 
         $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif').lstrip('/') }}" width="100px" /><br /><h2>Load...</h2>' });
 
-        $.ajax({
+        $.getJSON({
             url: "get_game_stats",
-            type: "GET",
-            cache: false,
-            dataType: "json",
             data: { minutes_spawn: "{{ minutes_spawn }}", minutes_usage: "{{ minutes_usage }}" },
             success: function (result) {
                 spawn = result.spawn

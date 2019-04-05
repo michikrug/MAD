@@ -80,11 +80,12 @@ def run_job():
 @app.after_request
 @auth_required
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers',
-                         'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods',
-                         'GET,PUT,POST,DELETE,OPTIONS')
+    #response.headers.add('Access-Control-Allow-Origin', '*')
+    #response.headers.add('Access-Control-Allow-Headers',
+    #                     'Content-Type,Authorization')
+    #response.headers.add('Access-Control-Allow-Methods',
+    #                     'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Cache-Control', 'no-cache, no-store, must-revalidate')
     return response
 
 
@@ -779,7 +780,7 @@ def addwalker():
             walkermax = ''
         edit = True
 
-    fieldwebsite.append('<form action="addwalker" id="settings">')
+    fieldwebsite.append('<form action="addwalker" id="settings" method="post">')
     fieldwebsite.append(
         '<input type="hidden" name="walker" value="' + walker + '">')
     fieldwebsite.append('<input type="hidden" name="add" value=True>')

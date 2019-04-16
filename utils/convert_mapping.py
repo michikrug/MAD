@@ -1,8 +1,8 @@
 import json
-import logging
 import shutil
 
-log = logging.getLogger(__name__)
+from loguru import logger
+
 mapping_file = './configs/mappings.json'
 save_mapping_file = './configs/mappings_org.json'
 
@@ -15,8 +15,8 @@ def convert_mappings():
     walker = []
     walkersetup = []
     if "walker" not in __raw_json:
-        log.info("Unconverted mapping file found")
-        log.info("Saving current file")
+        logger.info("Unconverted mapping file found")
+        logger.info("Saving current file")
         shutil.copy(mapping_file, save_mapping_file)
         __raw_json['walker'] = []
         count = 0
@@ -24,7 +24,7 @@ def convert_mappings():
         exist = {}
 
         for dev in __raw_json['devices']:
-            log.info("Converting device %s" % str(dev['origin']))
+            logger.info("Converting device {}", str(dev['origin']))
 
             walkersetup = []
             daytime_area = dev.get('daytime_area', False)
@@ -63,4 +63,4 @@ def convert_mappings():
 
         with open(mapping_file, 'w') as outfile:
             json.dump(__raw_json, outfile, indent=4, sort_keys=True)
-            log.info('Finished converting mapping file')
+            logger.info('Finished converting mapping file')

@@ -1,5 +1,3 @@
-import logging
-# import geopy
 import math
 import multiprocessing
 import sys
@@ -7,19 +5,12 @@ import sys
 import gpxdata
 import s2sphere
 from geopy import Point, distance
+from loguru import logger
 # from utils.collections import Location
 # from utils.geo import get_middle_of_coord_list, get_distance_of_two_points_in_meters
 from utils.collections import Location
 from utils.geo import (get_distance_of_two_points_in_meters,
                        get_middle_of_coord_list)
-
-# import sys
-
-
-# import math
-
-
-log = logging.getLogger(__name__)
 
 
 class S2Helper:
@@ -45,6 +36,15 @@ class S2Helper:
         return lat_lng.lat().degrees, lat_lng.lng().degrees
 
     @staticmethod
+    def coords_of_cell(cell_id):
+        cell = s2sphere.Cell(s2sphere.CellId(int(cell_id)))
+        coords = []
+        for v in range(0, 4):
+            vertex = s2sphere.LatLng.from_point(cell.get_vertex(v))
+            coords.append([vertex.lat().degrees, vertex.lng().degrees])
+        return coords
+
+    @staticmethod
     def calc_s2_cells(north, south, west, east, cell_size=16):
         centers_in_area = []
         region = s2sphere.RegionCoverer()
@@ -54,8 +54,8 @@ class S2Helper:
         p2 = s2sphere.LatLng.from_degrees(south, east)
         cell_ids = region.get_covering(
             s2sphere.LatLngRect.from_point_pair(p1, p2))
-        log.debug('Detecting ' + str(len(cell_ids)) +
-                  ' L{} Cells in Area'.format(str(cell_size)))
+        logger.debug('Detecting ' + str(len(cell_ids)) +
+                     ' L{} Cells in Area'.format(str(cell_size)))
         for cell_id in cell_ids:
             split_cell_id = str(cell_id).split(' ')
             position = S2Helper.get_position_from_cell(
@@ -74,7 +74,7 @@ class S2Helper:
     @staticmethod
     def get_s2_cells_from_fence(geofence, cell_size=16):
         _geofence = geofence
-        log.warning("Calculating corners of fences")
+        logger.warning("Calculating corners of fences")
         south, east, north, west = _geofence.get_polygon_from_fence()
         calc_route_data = []
         region = s2sphere.RegionCoverer()
@@ -82,17 +82,17 @@ class S2Helper:
         region.max_level = cell_size
         p1 = s2sphere.LatLng.from_degrees(north, west)
         p2 = s2sphere.LatLng.from_degrees(south, east)
-        log.warning("Calculating coverage of region")
+        logger.warning("Calculating coverage of region")
         cell_ids = region.get_covering(
             s2sphere.LatLngRect.from_point_pair(p1, p2))
 
-        log.warning("Iterating cell_ids")
+        logger.warning("Iterating cell_ids")
         for cell_id in cell_ids:
             split_cell_id = str(cell_id).split(' ')
             position = S2Helper.middle_of_cell(int(split_cell_id[1], 16))
             calc_route_data.append([position[0], position[1]])
-        log.debug('Detecting ' + str(len(calc_route_data)) +
-                  ' L{} Cells in Area'.format(str(cell_size)))
+        logger.debug('Detecting ' + str(len(calc_route_data)) +
+                     ' L{} Cells in Area'.format(str(cell_size)))
 
         return calc_route_data
 
@@ -148,7 +148,7 @@ class S2Helper:
 
         # This will loop thorugh all the rings in the hex from the centre
         # moving outwards
-        log.info("Calculating positions for init scan")
+        logger.info("Calculating positions for init scan")
         num_cores = multiprocessing.cpu_count()
         with multiprocessing.Pool(processes=num_cores) as pool:
             temp = [pool.apply(S2Helper._generate_star_locs, args=(
@@ -171,15 +171,15 @@ class S2Helper:
         #             loc = S2Helper.get_new_coords(star_loc, distance * j, 210 + 60 * i)
         #             results.append(loc)
 
-        log.info("Filtering positions for init scan")
+        logger.info("Filtering positions for init scan")
         # Geofence results.
         if geofence_helper is not None and geofence_helper.is_enabled():
             results = geofence_helper.get_geofenced_coordinates(results)
             if not results:
-                log.error('No cells regarded as valid for desired scan area. '
-                          'Check your provided geofences. Aborting.')
+                logger.error('No cells regarded as valid for desired scan area. '
+                             'Check your provided geofences. Aborting.')
                 sys.exit(1)
-        log.info("Ordering location")
+        logger.info("Ordering location")
         results = S2Helper.order_location_list_rows(results)
 
         return results

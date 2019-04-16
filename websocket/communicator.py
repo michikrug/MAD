@@ -1,12 +1,8 @@
-import datetime
-import logging
-import time
 from threading import Lock
 
 import gpxdata
+from loguru import logger
 from utils.geo import get_distance_of_two_points_in_meters
-
-log = logging.getLogger(__name__)
 
 
 class Communicator:
@@ -22,11 +18,11 @@ class Communicator:
         self.__sendMutex = Lock()
 
     def cleanup_websocket(self):
-        log.info(
-            "Communicator of %s acquiring lock to cleanup worker in websocket" % str(self.id))
+        logger.info(
+            "Communicator of {} acquiring lock to cleanup worker in websocket", str(self.id))
         self.__sendMutex.acquire()
         try:
-            log.info("Communicator of %s calling cleanup" % str(self.id))
+            logger.info("Communicator of {} calling cleanup", str(self.id))
             self.websocketHandler.clean_up_user(
                 self.id, self.worker_instance_ref)
         finally:
@@ -46,8 +42,8 @@ class Communicator:
 
     def stopApp(self, packageName):
         if not self.__runAndOk("more stop %s\r\n" % (packageName), self.__commandTimeout):
-            log.error(
-                "Failed stopping %s, please check if SU has been granted" % packageName)
+            logger.error(
+                "Failed stopping {}, please check if SU has been granted", packageName)
             return False
         else:
             return True
@@ -94,22 +90,22 @@ class Communicator:
         if encoded is None:
             return False
         elif isinstance(encoded, str):
-            log.debug("Screenshot response not binary")
+            logger.debug("Screenshot response not binary")
             if "KO: " in encoded:
-                log.error(
+                logger.error(
                     "getScreenshot: Could not retrieve screenshot. Check if mediaprojection is enabled!")
                 return False
             elif "OK:" not in encoded:
-                log.error("getScreenshot: response not OK")
+                logger.error("getScreenshot: response not OK")
                 return False
             return False
         else:
-            log.debug("Storing screenshot...")
+            logger.debug("Storing screenshot...")
 
             fh = open(path, "wb")
             fh.write(encoded)
             fh.close()
-            log.debug("Done storing, returning")
+            logger.debug("Done storing, returning")
             return True
 
     def getScreenshot(self, path):
@@ -122,26 +118,32 @@ class Communicator:
         if encoded is None:
             return False
         elif isinstance(encoded, str):
-            log.debug("Screenshot response not binary")
+            logger.debug("Screenshot response not binary")
             if "KO: " in encoded:
-                log.error(
+                logger.error(
                     "getScreenshot: Could not retrieve screenshot. Check if mediaprojection is enabled!")
                 return False
             elif "OK:" not in encoded:
-                log.error("getScreenshot: response not OK")
+                logger.error("getScreenshot: response not OK")
                 return False
             return False
         else:
-            log.debug("Storing screenshot...")
+            logger.debug("Storing screenshot...")
 
             fh = open(path, "wb")
             fh.write(encoded)
             fh.close()
-            log.debug("Done storing, returning")
+            logger.debug("Done storing, returning")
             return True
 
     def backButton(self):
         return self.__runAndOk("screen back\r\n", self.__commandTimeout)
+
+    def homeButton(self):
+        return self.__runAndOk("touch keyevent 3", self.__commandTimeout)
+
+    def sendText(self, text):
+        return self.__runAndOk("touch text " + str(text), self.__commandTimeout)
 
     def isScreenOn(self):
         self.__sendMutex.acquire()

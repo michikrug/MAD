@@ -1,6 +1,4 @@
 import json
-import logging
-import math
 import sys
 import time
 from abc import ABC, abstractmethod
@@ -10,13 +8,11 @@ from threading import Lock, Semaphore
 import mysql
 import numpy as np
 from bitstring import BitArray
-from mysql.connector import OperationalError
+from loguru import logger
 from mysql.connector.pooling import MySQLConnectionPool
 from utils.collections import Location
 from utils.questGen import questtask
 from utils.s2Helper import S2Helper
-
-log = logging.getLogger(__name__)
 
 
 class DbWrapperBase(ABC):
@@ -38,11 +34,11 @@ class DbWrapperBase(ABC):
         self._init_pool()
 
     def _init_pool(self):
-        log.info("Connecting pool to DB")
+        logger.info("Connecting pool to DB")
         self.pool_mutex.acquire()
-        self.pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="db_wrapper_pool",
-                                                                pool_size=self.application_args.db_poolsize,
-                                                                **self.dbconfig)
+        self.pool = MySQLConnectionPool(pool_name="db_wrapper_pool",
+                                        pool_size=self.application_args.db_poolsize,
+                                        **self.dbconfig)
         self.pool_mutex.release()
 
     def _check_column_exists(self, table, column):
@@ -74,12 +70,12 @@ class DbWrapperBase(ABC):
         self.execute(alter_query, commit=True)
 
         if self._check_column_exists(field["table"], field["column"]) == 1:
-            log.info("Successfully added '{}.{}' column".format(
-                field["table"], field["column"]))
+            logger.info("Successfully added '{}.{}' column",
+                        field["table"], field["column"])
             return
         else:
-            log.fatal("Couldn't create required column {}.{}'".format(
-                field["table"], field["column"]))
+            logger.error("Couldn't create required column {}.{}'",
+                         field["table"], field["column"])
             sys.exit(1)
 
     def close(self, conn, cursor):
@@ -109,7 +105,7 @@ class DbWrapperBase(ABC):
         # try:
         #     cursor = conn.cursor()
         # except OperationalError as e:
-        #     log.error("OperationalError trying to acquire a DB cursor: %s" % str(e))
+        #     logger.error("OperationalError trying to acquire a DB cursor: {}", str(e))
         #     conn.rollback()
         #     return None
         try:
@@ -125,10 +121,10 @@ class DbWrapperBase(ABC):
                 res = cursor.fetchall()
                 return res
         except mysql.connector.Error as err:
-            log.error("Failed executing query: %s" % str(err))
+            logger.error("Failed executing query: {}", str(err))
             return None
         except Exception as e:
-            log.error("Unspecified exception in dbWrapper: %s" % str(e))
+            logger.error("Unspecified exception in dbWrapper: {}", str(e))
             return None
         finally:
             self.close(conn, cursor)
@@ -158,10 +154,10 @@ class DbWrapperBase(ABC):
                 res = cursor.fetchall()
                 return res
         except mysql.connector.Error as err:
-            log.error("Failed executing query: %s" % str(err))
+            logger.error("Failed executing query: {}", str(err))
             return None
         except Exception as e:
-            log.error("Unspecified exception in dbWrapper: %s" % str(e))
+            logger.error("Unspecified exception in dbWrapper: {}", str(e))
             return None
         finally:
             self.close(conn, cursor)
@@ -266,6 +262,14 @@ class DbWrapperBase(ABC):
         """
         Retrieve all the gyms valid within the area set by geofence_helper
         :return: numpy array with coords
+        """
+        pass
+
+    @abstractmethod
+    def update_encounters_from_db(self, geofence_helper, latest=0):
+        """
+        Retrieve all encountered ids inside the geofence.
+        :return: the new value of latest and a dict like encounter_id: disappear_time
         """
         pass
 
@@ -400,8 +404,9 @@ class DbWrapperBase(ABC):
         """
         In order to store 'hashes' of crops/images, we require a table to store those hashes
         """
-        log.debug("{DbWrapperBase::create_hash_database_if_not_exists} called")
-        log.debug('Creating hash db in database')
+        logger.debug(
+            "DbWrapperBase::create_hash_database_if_not_exists called")
+        logger.debug('Creating hash db in database')
 
         query = (' Create table if not exists trshash ( ' +
                  ' hashid MEDIUMINT NOT NULL AUTO_INCREMENT, ' +
@@ -419,8 +424,9 @@ class DbWrapperBase(ABC):
         """
         In order to store 'hashes' of crops/images, we require a table to store those hashes
         """
-        log.debug("{DbWrapperBase::create_quest_database_if_not_exists} called")
-        log.debug('Creating hash db in database')
+        logger.debug(
+            "DbWrapperBase::create_quest_database_if_not_exists called")
+        logger.debug('Creating hash db in database')
 
         query = (' Create table if not exists trs_quest ( ' +
                  ' GUID varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,' +
@@ -440,9 +446,9 @@ class DbWrapperBase(ABC):
         return True
 
     def check_for_hash(self, imghash, type, raid_no, distance, unique_hash="123"):
-        log.debug("{DbWrapperBase::check_for_hash} called")
-        log.debug("[Crop: %s (%s) ] check_for_hash: Checking for hash in db" % (
-            str(raid_no), str(unique_hash)))
+        logger.debug("DbWrapperBase::check_for_hash called")
+        logger.debug("[Crop: {} ({})] check_for_hash: Checking for hash in db", str(
+            raid_no), str(unique_hash))
 
         query = (
             "SELECT id, hash, "
@@ -459,39 +465,39 @@ class DbWrapperBase(ABC):
         res = self.execute(query, vals)
         number_of_rows = len(res)
 
-        log.debug("[Crop: %s (%s) ] check_for_hash: Found hashes in database: %s" %
-                  (str(raid_no), str(unique_hash), str(number_of_rows)))
+        logger.debug("[Crop: {} ({})] check_for_hash: Found hashes in database: {}", str(
+            raid_no), str(unique_hash), str(number_of_rows))
 
         if number_of_rows > 0:
-            log.debug("[Crop: %s (%s) ] check_for_hash: returning found ID" % (
-                str(raid_no), str(unique_hash)))
+            logger.debug("[Crop: {} ({})] check_for_hash: returning found ID", str(
+                raid_no), str(unique_hash))
             for row in res:
-                log.debug("[Crop: %s (%s) ] check_for_hash: ID = %s"
-                          % (str(raid_no), str(unique_hash), str(row[0])))
-                log.debug("{DbWrapperBase::check_for_hash} done")
+                logger.debug("[Crop: {} ({})] check_for_hash: ID = {}", str(
+                    raid_no), str(unique_hash), str(row[0]))
+                logger.debug("{DbWrapperBase::check_for_hash} done")
                 return True, row[0], row[1], row[4], row[5]
         else:
-            log.debug("[Crop: %s (%s) ] check_for_hash: No matching hash found" % (
-                str(raid_no), str(unique_hash)))
-            log.debug("{DbWrapperBase::check_for_hash} done")
+            logger.debug("[Crop: {} ({})] check_for_hash: No matching hash found", str(
+                raid_no), str(unique_hash))
+            logger.debug("{DbWrapperBase::check_for_hash done")
             return False, None, None, None, None
 
     def get_all_hash(self, type):
-        log.debug("{DbWrapperBase::get_all_hash} called")
+        logger.debug("DbWrapperBase::get_all_hash called")
         query = (
             "SELECT id, hash, type, count, modify "
             "FROM trshash "
             "HAVING type = %s"
         )
         vals = (str(type),)
-        log.debug(query)
+        logger.debug(query)
 
         res = self.execute(query, vals)
 
         return res
 
     def insert_hash(self, imghash, type, id, raid_no, unique_hash="123"):
-        log.debug("{DbWrapperBase::insert_hash} called")
+        logger.debug("DbWrapperBase::insert_hash called")
         if type == 'raid':
             distance = 4
         else:
@@ -500,8 +506,8 @@ class DbWrapperBase(ABC):
         double_check = self.check_for_hash(imghash, type, raid_no, distance)
 
         if double_check[0]:
-            log.debug("[Crop: %s (%s) ] insert_hash: Already in DB, updating counter"
-                      % (str(raid_no), str(unique_hash)))
+            logger.debug("[Crop: {} ({})] insert_hash: Already in DB, updating counter", str(
+                raid_no), str(unique_hash))
 
         # TODO: consider INSERT... ON DUPLICATE KEY UPDATE ??
 
@@ -520,13 +526,13 @@ class DbWrapperBase(ABC):
             vals = (str(imghash),)
 
         self.execute(query, vals, commit=True)
-        log.debug("{DbWrapperBase::insert_hash} done")
+        logger.debug("DbWrapperBase::insert_hash done")
         return True
 
     def delete_hash_table(self, ids, type, mode=' not in ', field=' id '):
-        log.debug("{DbWrapperBase::delete_hash_table} called")
-        log.debug('Deleting old Hashes of type %s' % type)
-        log.debug('Valid ids: %s' % ids)
+        logger.debug("DbWrapperBase::delete_hash_table called")
+        logger.debug('Deleting old Hashes of type {}', type)
+        logger.debug('Valid ids: {}', ids)
 
         query = (
             "DELETE FROM trshash "
@@ -534,13 +540,13 @@ class DbWrapperBase(ABC):
             "AND type like %s"
         )
         vals = (str(ids), str(type),)
-        log.debug(query)
+        logger.debug(query)
 
         self.execute(query, vals, commit=True)
         return True
 
     def clear_hash_gyms(self, mons):
-        log.debug("{DbWrapperBase::clear_hash_gyms} called")
+        logger.debug("{DbWrapperBase::clear_hash_gyms} called")
         data = []
         query = (
             "SELECT hashid "
@@ -556,18 +562,18 @@ class DbWrapperBase(ABC):
                 data.append(int(dbid[0]))
 
         _mon_list = ','.join(map(str, data))
-        log.debug('clearHashGyms: Read Raid Hashes with known Mons')
+        logger.debug('clearHashGyms: Read Raid Hashes with known Mons')
         if len(data) > 0:
             query = ('DELETE FROM trshash ' +
                      ' WHERE hashid NOT IN (' + _mon_list + ')' +
                      ' AND type=\'raid\'')
             self.execute(query, commit=True)
-        log.info('clearHashGyms: Deleted Raidhashes with unknown mons')
+        logger.info('clearHashGyms: Deleted Raidhashes with unknown mons')
 
     def getspawndef(self, spawn_id):
         if not spawn_id:
             return False
-        log.debug("{DbWrapperBase::getspawndef} called")
+        logger.debug("DbWrapperBase::getspawndef called")
 
         spawnids = ",".join(map(str, spawn_id))
         spawnret = {}
@@ -584,8 +590,8 @@ class DbWrapperBase(ABC):
         return spawnret
 
     def submit_spawnpoints_map_proto(self, origin, map_proto):
-        log.debug(
-            "{DbWrapperBase::submit_spawnpoints_map_proto} called with data received by %s" % str(origin))
+        logger.debug(
+            "DbWrapperBase::submit_spawnpoints_map_proto called with data received by {}", str(origin))
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -667,7 +673,7 @@ class DbWrapperBase(ABC):
                          spawnpoint_args_unseen, commit=True)
 
     def submitspsightings(self, spid, encid, secs):
-        log.debug("{DbWrapperBase::submitspsightings} called")
+        logger.debug("DbWrapperBase::submitspsightings called")
         if 0 <= int(secs) <= 90000:
             query = (
                 "INSERT INTO trs_spawnsightings (encounter_id, spawnpoint_id, tth_secs) "
@@ -688,7 +694,7 @@ class DbWrapperBase(ABC):
         self.execute(query, vals, commit=True)
 
     def get_spawn_infos(self):
-        log.debug("{DbWrapperBase::get_spawn_infos} called")
+        logger.debug("DbWrapperBase::get_spawn_infos called")
         query = (
             "SELECT count(spawnpoint), "
             "ROUND ( "
@@ -697,35 +703,37 @@ class DbWrapperBase(ABC):
         )
 
         found = self.execute(query)
-        log.info("Spawnpoint statistics: %s, Spawnpoints with detected endtime: %s"
-                 % (str(found[0][0]), str(found[0][1])))
+        logger.info("Spawnpoint statistics: {}, Spawnpoints with detected endtime: {}", str(
+            found[0][0]), str(found[0][1]))
 
         return float(found[0][1])
 
     def get_detected_spawns(self, geofence_helper):
-        log.debug("{DbWrapperBase::get_detected_spawns} called")
+        logger.debug("{DbWrapperBase::get_detected_spawns} called")
 
         query = (
             "SELECT latitude, longitude "
             "FROM trs_spawn"
         )
         list_of_coords = []
-        log.debug("{DbWrapperBase::get_detected_spawns} executing select query")
+        logger.debug(
+            "DbWrapperBase::get_detected_spawns executing select query")
         res = self.execute(query)
-        log.debug(
-            "{DbWrapperBase::get_detected_spawns} result of query: %s" % str(res))
+        logger.debug(
+            "DbWrapperBase::get_detected_spawns result of query: {}", str(res))
         for (latitude, longitude) in res:
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            log.debug("{DbWrapperBase::get_detected_spawns} applying geofence")
+            logger.debug(
+                "DbWrapperBase::get_detected_spawns applying geofence")
             geofenced_coords = geofence_helper.get_geofenced_coordinates(
                 list_of_coords)
-            log.debug(geofenced_coords)
+            logger.debug(geofenced_coords)
             return geofenced_coords
         else:
-            log.debug(
-                "{DbWrapperBase::get_detected_spawns} converting to numpy")
+            logger.debug(
+                "DbWrapperBase::get_detected_spawns converting to numpy")
             to_return = np.zeros(shape=(len(list_of_coords), 2))
             for i in range(len(to_return)):
                 to_return[i][0] = list_of_coords[i][0]
@@ -733,7 +741,7 @@ class DbWrapperBase(ABC):
             return to_return
 
     def get_undetected_spawns(self, geofence_helper):
-        log.debug("{DbWrapperBase::get_undetected_spawns} called")
+        logger.debug("DbWrapperBase::get_undetected_spawns called")
 
         query = (
             "SELECT latitude, longitude "
@@ -741,24 +749,24 @@ class DbWrapperBase(ABC):
             "WHERE calc_endminsec is NULL"
         )
         list_of_coords = []
-        log.debug(
-            "{DbWrapperBase::get_undetected_spawns} executing select query")
+        logger.debug(
+            "DbWrapperBase::get_undetected_spawns executing select query")
         res = self.execute(query)
-        log.debug(
-            "{DbWrapperBase::get_undetected_spawns} result of query: %s" % str(res))
+        logger.debug(
+            "DbWrapperBase::get_undetected_spawns result of query: {}", str(res))
         for (latitude, longitude) in res:
             list_of_coords.append([latitude, longitude])
 
         if geofence_helper is not None:
-            log.debug(
-                "{DbWrapperBase::get_undetected_spawns} applying geofence")
+            logger.debug(
+                "DbWrapperBase::get_undetected_spawns applying geofence")
             geofenced_coords = geofence_helper.get_geofenced_coordinates(
                 list_of_coords)
-            log.debug(geofenced_coords)
+            logger.debug(geofenced_coords)
             return geofenced_coords
         else:
-            log.debug(
-                "{DbWrapperBase::get_undetected_spawns} converting to numpy")
+            logger.debug(
+                "DbWrapperBase::get_undetected_spawns converting to numpy")
             to_return = np.zeros(shape=(len(list_of_coords), 2))
             for i in range(len(to_return)):
                 to_return[i][0] = list_of_coords[i][0]
@@ -766,7 +774,7 @@ class DbWrapperBase(ABC):
             return to_return
 
     def get_detected_endtime(self, spawn_id):
-        log.debug("{DbWrapperBase::get_detected_endtime} called")
+        logger.debug("DbWrapperBase::get_detected_endtime called")
 
         query = (
             "SELECT calc_endminsec "
@@ -835,7 +843,7 @@ class DbWrapperBase(ABC):
         return b.uint
 
     def check_and_create_spawn_tables(self):
-        log.debug("{DbWrapperBase::check_and_create_spawn_tables} called")
+        logger.debug("DbWrapperBase::check_and_create_spawn_tables called")
 
         query_trs_spawn = ('CREATE TABLE IF NOT EXISTS `trs_spawn` ('
                            '`spawnpoint` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL, '
@@ -867,7 +875,7 @@ class DbWrapperBase(ABC):
         self.execute(query_trs_spawnsightings, commit=True)
 
     def download_spawns(self):
-        log.debug("dbWrapper::download_spawns")
+        logger.debug("dbWrapper::download_spawns")
         spawn = {}
 
         query = (
@@ -890,7 +898,7 @@ class DbWrapperBase(ABC):
         """
         current_time_of_day = datetime.now().replace(microsecond=0)
 
-        log.debug("DbWrapperBase::retrieve_next_spawns called")
+        logger.debug("DbWrapperBase::retrieve_next_spawns called")
         query = (
             "SELECT latitude, longitude, spawndef, calc_endminsec FROM trs_spawn WHERE calc_endminsec IS NOT NULL and "
             "DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') between DATE_FORMAT(DATE_ADD(NOW(), "
@@ -934,7 +942,7 @@ class DbWrapperBase(ABC):
         return next_up
 
     def submit_quest_proto(self, map_proto):
-        log.debug("{DbWrapperBase::submit_quest_proto} called")
+        logger.debug("{DbWrapperBase::submit_quest_proto} called")
         fort_id = map_proto.get("fort_id", None)
         if fort_id is None:
             return False
@@ -980,14 +988,15 @@ class DbWrapperBase(ABC):
                 ), stardust, pokemon_id, rewardtype, item, itemamount, target,
                 str(condition), str(reward), task, quest_template
             )
-            log.debug("{DbWrapperBase::submit_quest_proto} submitted quest typ %s at stop %s" % (
-                str(quest_type), str(fort_id)))
+            logger.debug("DbWrapperBase::submit_quest_proto submitted quest typ {} at stop {}", str(
+                quest_type), str(fort_id))
             self.execute(query_quests, vals, commit=True)
 
         return True
 
     def create_status_database_if_not_exists(self):
-        log.debug("{DbWrapperBase::create_status_database_if_not_exists} called")
+        logger.debug(
+            "DbWrapperBase::create_status_database_if_not_exists called")
 
         query = ('CREATE table IF NOT EXISTS trs_status ( '
                  'origin VARCHAR(50) NOT NULL, '
@@ -1010,7 +1019,8 @@ class DbWrapperBase(ABC):
         return True
 
     def create_usage_database_if_not_exists(self):
-        log.debug("{DbWrapperBase::create_usage_database_if_not_exists} called")
+        logger.debug(
+            "DbWrapperBase::create_usage_database_if_not_exists called")
 
         query = ('CREATE TABLE if not exists trs_usage ( '
                  'usage_id INT(10) NOT NULL AUTO_INCREMENT, '
@@ -1027,7 +1037,7 @@ class DbWrapperBase(ABC):
         return True
 
     def insert_usage(self, instance, cpu, mem, garbage, timestamp):
-        log.debug("dbWrapper::insert_usage")
+        logger.debug("dbWrapper::insert_usage")
 
         query = (
             "INSERT into trs_usage (instance, cpu, memory, garbage, timestamp) VALUES "
@@ -1041,7 +1051,7 @@ class DbWrapperBase(ABC):
         return
 
     def save_status(self, data):
-        log.debug("dbWrapper::save_status")
+        logger.debug("dbWrapper::save_status")
 
         query = (
             "INSERT INTO trs_status (origin, currentPos, lastPos, routePos, routeMax, "
@@ -1064,7 +1074,7 @@ class DbWrapperBase(ABC):
         return
 
     def save_last_reboot(self, origin):
-        log.debug("dbWrapper::save_last_reboot")
+        logger.debug("dbWrapper::save_last_reboot")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = (
             "INSERT INTO trs_status(origin, lastPogoReboot, globalrebootcount) "
@@ -1080,7 +1090,7 @@ class DbWrapperBase(ABC):
         return
 
     def save_last_restart(self, origin):
-        log.debug("dbWrapper::save_last_restart")
+        logger.debug("dbWrapper::save_last_restart")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = (
             "INSERT INTO trs_status(origin, lastPogoRestart, globalrestartcount) "
@@ -1096,7 +1106,7 @@ class DbWrapperBase(ABC):
         return
 
     def download_status(self):
-        log.debug("dbWrapper::download_status")
+        logger.debug("dbWrapper::download_status")
         workerstatus = []
 
         query = (
@@ -1134,10 +1144,11 @@ class DbWrapperBase(ABC):
         return str(json.dumps(workerstatus, indent=4, sort_keys=True))
 
     def statistics_get_quests_count(self, days):
-        log.debug('Fetching quests count from db')
+        logger.debug('Fetching quests count from db')
         query_where = ''
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(quest_timestamp), '%y-%m-%d %k:00:00')) * 1000 " \
             "as Timestamp"
+
         if days:
             days = datetime.utcnow() - timedelta(days=days)
             query_where = ' WHERE FROM_UNIXTIME(quest_timestamp) > \'%s\' ' % str(
@@ -1155,7 +1166,7 @@ class DbWrapperBase(ABC):
         return res
 
     def statistics_get_usage_count(self, minutes=120, instance=None):
-        log.debug('Fetching usage from db')
+        logger.debug('Fetching usage from db')
         query_where = ''
 
         if minutes:

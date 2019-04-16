@@ -1,11 +1,8 @@
-import logging
 import os
 import sys
 from time import strftime
 
 import configargparse
-
-log = logging.getLogger(__name__)
 
 
 def memoize(function):
@@ -171,9 +168,16 @@ def parseArgs():
                         help='Send Ex-raids to the webhook if detected')
     parser.add_argument('-whst', '--webhook_start_time', default=0,
                         help='Debug: Set initial timestamp to fetch changed elements from the DB to send via WH.')
+    parser.add_argument('-whmps', '--webhook_max_payload_size', default=0, type=int,
+                        help='Split up the payload into chunks and send multiple requests. Default: 0 (unlimited)')
     # weather
     parser.add_argument('-w', '--weather', action='store_true', default=False,
                         help='Read weather and post to db - if supported! (Default: False)')
+
+    # folder
+    parser.add_argument('--file_path',
+                        help='Defines directory to save worker stats- and position files and calculated routes',
+                        default='files')
 
     # Statistics
     parser.add_argument('-stco', '--stat_gc', action='store_true', default=False,
@@ -217,6 +221,15 @@ def parseArgs():
     parser.add_argument('-ump', '--use_media_projection', action='store_true', default=False,
                         help='Use Media Projection for image transfer (OCR) (Default: False)')
 
+    # adb
+    parser.add_argument('-adb', '--use_adb', action='store_true', default=False,
+                        help='Use ADB for phonecontrol (Default: False)')
+    parser.add_argument('-adbservip', '--adb_server_ip', default='127.0.0.1',
+                        help='IP address of ADB server (Default: 127.0.0.1)')
+
+    parser.add_argument('-adpservprt', '--adb_server_port', type=int, default=5037,
+                        help='Port of ADB server (Default: 5037)')
+
     # log settings
     parser.add_argument('--no-file-logs',
                         help=('Disable logging to files. ' +
@@ -235,17 +248,6 @@ def parseArgs():
     parser.add_argument('-sn', '--status-name', default=str(os.getpid()),
                         help=('Enable status page database update using ' +
                               'STATUS_NAME as main worker name.'))
-
-    parser.add_argument('-lr', '--log-rotation',
-                        help=('Active log rotation. (Default: Disable)'),
-                        action='store_true', default=False)
-
-    parser.add_argument('-lrbc', '--log-rotation-backup-count', default=10, type=int,
-                        help=('Number of Log Rotation Backup Files. (Default: 10)'))
-
-    parser.add_argument('-lrfs', '--log-rotation-file-size', default=10485760, type=int,
-                        help=('Filesize of Log Files in bytes (Default: 10485760 = 10 MB)'))
-
     parser.add_argument('-cla', '--cleanup-age', default=0, type=int,
                         help='Delete logs older than X minutes. Default: 0')
 

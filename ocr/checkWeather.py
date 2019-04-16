@@ -1,12 +1,10 @@
 import glob
-import logging
 import os
 
 import cv2
 import imutils
 import numpy as np
-
-log = logging.getLogger(__name__)
+from loguru import logger
 
 weatherImages = {
     'weatherIcon_small_sunny.png': 1,
@@ -27,19 +25,20 @@ def weather_image_matching(weather_icon_name, screenshot_name):
     weather_icon = cv2.imread(weather_icon_name, 3)
 
     if weather_icon is None:
-        log.error('weather_image_matching: %s appears to be corrupted' %
-                  str(weather_icon_name))
+        # TODO missing parameter
+        logger.error(
+            'weather_image_matching: {} appears to be corrupted', str(weather_icon_name))
         return 0
 
     screenshot_img = cv2.imread(screenshot_name, 3)
 
     if screenshot_img is None:
-        log.error('weather_image_matching: %s appears to be corrupted' %
-                  str(screenshot_name))
+        logger.error(
+            'weather_image_matching: {} appears to be corrupted', str(screenshot_name))
         return 0
 
-    height_f, width_f, _ = screenshot_img.shape
-    screenshot_img = screenshot_img[0:int(height_f/7), 0:width_f]
+    height_f, width_f, = screenshot_img.shape
+    screenshot_img = screenshot_img[0: int(height_f/7), 0: width_f]
 
     resized = imutils.resize(
         weather_icon, width=int(weather_icon.shape[1] * 1))
@@ -88,12 +87,12 @@ def checkWeather(raidpic):
 
     if foundweather[0] > 0:
         weatherName = foundweather[1].split('.')
-        log.info('The weather on the screenshot could be identified  (%s)' %
-                 str(weatherName[0].replace('_', ' ')))
+        logger.info('The weather on the screenshot could be identified ({})', str(
+            weatherName[0].replace('_', ' ')))
         return True, weatherImages[os.path.basename(foundweather[1])]
         # True, WeatherID
         # send to database !
     else:
-        log.error('The weather on the screenshot could not be identified')
+        logger.error('The weather on the screenshot could not be identified')
         return False, False
         # nothing to do

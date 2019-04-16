@@ -1,15 +1,13 @@
 import glob
 import json
-import logging
 import os
 import os.path
 from shutil import copyfile
 
 import cv2
 import numpy as np
+from loguru import logger
 from PIL import Image
-
-log = logging.getLogger(__name__)
 
 
 class MonRaidImages(object):
@@ -19,7 +17,7 @@ class MonRaidImages(object):
 
         monList = []
 
-        log.info('Processing Pokemon Matching....')
+        logger.info('Processing Pokemon Matching....')
         with open('raidmons.json') as f:
             data = json.load(f)
 
@@ -27,13 +25,13 @@ class MonRaidImages(object):
         filePath = os.path.dirname(monImgPath)
 
         if not os.path.exists(filePath):
-            log.info('ocr/mon_img directory created')
+            logger.info('ocr/mon_img directory created')
             os.makedirs(filePath)
 
         assetPath = pogoassets_path
 
         if not os.path.exists(assetPath):
-            log.error('PogoAssets not found')
+            logger.error('PogoAssets not found')
             exit(0)
 
         for file in glob.glob(monImgPath + "*mon*.png"):
@@ -61,7 +59,8 @@ class MonRaidImages(object):
                         str(mon) + '_' + frmadd + '.png'
 
                     if not os.path.isfile(monFileAsset):
-                        log.error('File ' + str(monFileAsset) + ' not found')
+                        logger.error(
+                            'File ' + str(monFileAsset) + ' not found')
                         exit(0)
 
                     copyfile(monFileAsset, monFile)
@@ -101,11 +100,11 @@ class MonRaidImages(object):
 
     @staticmethod
     def copyWeather(pogoasset):
-        log.info('Processing Weather Pics')
+        logger.info('Processing Weather Pics')
         weatherImgPath = os.getcwd() + '/ocr/weather/'
         filePath = os.path.dirname(weatherImgPath)
         if not os.path.exists(filePath):
-            log.info('weather directory created')
+            logger.info('weather directory created')
             os.makedirs(filePath)
         assetPath = pogoasset
 

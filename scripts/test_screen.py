@@ -12,7 +12,7 @@ sys.path.append("..")
 
 
 class testimage(object):
-    def __init__(self, image, mode):
+    def __init__(self, image, mode, xoffset=0, yoffset=0):
 
         self._image = cv2.imread(image)
         self._screen_y, self._screen_x, _ = self._image.shape
@@ -21,10 +21,16 @@ class testimage(object):
 
         self._resocalc = Resocalculator
         print(self._resocalc.get_x_y_ratio(
-            self, self._screen_x, self._screen_y, -200, 85))
+            self, self._screen_x, self._screen_y, xoffset, yoffset))
 
         if self._mode == "menu":
             self._image_check = self.check_menu(self._image)
+
+        if self._mode == "open_close_menu":
+            self._image_check = self.open_close_menu(self._image)
+
+        if self._mode == "open_quest_menu":
+            self._image_check = self.open_quest_menu(self._image)
 
         if self._mode == "open_del_item":
             self._image_check = self.open_del_item(self._image)
@@ -58,13 +64,26 @@ class testimage(object):
         if self._mode == "read_item_text":
             self._image_check = self.get_delete_item_text(self._image)
 
+        cv2.namedWindow("output", cv2.WINDOW_KEEPRATIO)
         cv2.imshow("output", self._image_check)
         cv2.waitKey(0)
+
+    def open_close_menu(self, image):
+        print('Open Close Menu')
+        x, y = self._resocalc.get_close_main_button_coords(self)[0], self._resocalc.get_close_main_button_coords(self)[
+            1]
+        return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
 
     def check_menu(self, image):
         print('Check PokemonGo Menu')
         x, y = self._resocalc.get_item_menu_coords(
             self)[0], self._resocalc.get_item_menu_coords(self)[1]
+        return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
+
+    def open_quest_menu(self, image):
+        print('Open Quest Menu')
+        x, y = self._resocalc.get_coords_quest_menu(
+            self)[0], self._resocalc.get_coords_quest_menu(self)[1]
         return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
 
     def open_del_item(self, image):
@@ -189,6 +208,15 @@ class testimage(object):
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required=True, help="Path to the image")
 ap.add_argument("-m", "--mode", required=True, help="Type of Image")
+ap.add_argument("-xo", "--xoffset", required=False, help="X Offset")
+ap.add_argument("-yo", "--yoffset", required=False, help="Y Offset")
 args = vars(ap.parse_args())
 
-test = testimage(args["image"], args["mode"])
+xoffset = 0
+if args["xoffset"]:
+    xoffset = int(args["xoffset"])
+yoffset = 0
+if args["yoffset"]:
+    yoffset = int(args["yoffset"])
+
+test = testimage(args["image"], args["mode"], xoffset, yoffset)

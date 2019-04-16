@@ -1,8 +1,7 @@
 import datetime
-import logging
 import re
 
-log = logging.getLogger(__name__)
+from loguru import logger
 
 
 def check_walker_value_type(value):
@@ -14,7 +13,7 @@ def check_walker_value_type(value):
         elif match.group(2):
             return check_time_period(value)
 
-    log.error("Wrong Value for mode - check your settings! - kill Worker")
+    logger.error("Wrong Value for mode - check your settings! - kill Worker")
     return False
 
 

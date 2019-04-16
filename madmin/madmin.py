@@ -205,12 +205,12 @@ def get_phonescreens():
                                 'screenshot%s.png' % str(phonename))
         if os.path.isfile(filename):
             image_resize(filename, width=400)
-            screen = "/screenshot/madmin/screenshot" + str(phonename) + ".png"
+            screen = "screenshot/madmin/screenshot" + str(phonename) + ".png"
             screens_phone.append(generate_phones(
                 phonename, add_text, adb_option, screen))
 
         else:
-            screen = "/static/dummy.png"
+            screen = "static/dummy.png"
             screens_phone.append(generate_phones(
                 phonename, add_text, adb_option, screen, True))
 
@@ -219,18 +219,18 @@ def get_phonescreens():
             for pho in device_mappings:
                 if phonename.serial == device_mappings[pho].get('adb', False):
                     adb_option = True
-                    add_text = '<b>ADB - no WS<img src="/static/warning.png" width="20px" ' \
+                    add_text = '<b>ADB - no WS<img src="static/warning.png" width="20px" ' \
                                'alt="NO websocket connection!"></b>'
                     filename = os.path.join(
                         conf_args.temp_path, 'screenshot%s.png' % str(pho))
                     if os.path.isfile(filename):
                         image_resize(filename, width=400)
-                        screen = "/screenshot/madmin/screenshot" + \
+                        screen = "screenshot/madmin/screenshot" + \
                             str(pho) + ".png"
                         screens_phone.append(generate_phones(
                             pho, add_text, adb_option, screen))
                     else:
-                        screen = "/static/dummy.png"
+                        screen = "static/dummy.png"
                         screens_phone.append(generate_phones(
                             pho, add_text, adb_option, screen, True))
 

@@ -1,8 +1,10 @@
 import json
-from loguru import logger
-from pathlib import Path
 import os
+from pathlib import Path
+
+from loguru import logger
 from utils.walkerArgs import parseArgs
+
 args = parseArgs()
 
 

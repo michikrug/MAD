@@ -104,7 +104,7 @@ class GeofenceHelper:
                         'name': name,
                         'polygon': []
                     })
-                    log.debug('Found geofence: %s.', name)
+                    logger.debug('Found geofence: {}', name)
                 else:  # Coordinate line.
                     lat, lon = line.split(",")
                     latLon = {'lat': float(lat), 'lon': float(lon)}

@@ -305,7 +305,7 @@ def click_screenshot():
         temp_comm.click(int(real_click_x), int(real_click_y))
 
     time.sleep(1)
-    return redirect('take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
 
 
 @app.route('/swipe_screenshot', methods=['GET'])
@@ -340,7 +340,7 @@ def swipe_screenshot():
             real_click_y), int(real_click_xe), int(real_click_ye))
 
     time.sleep(1)
-    return redirect('take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
 
 
 @app.route('/quit_pogo', methods=['GET'])
@@ -357,7 +357,7 @@ def quit_pogo():
         temp_comm = ws_server.get_origin_communicator(origin)
         temp_comm.stopApp("com.nianticlabs.pokemongo")
         logger.info('MADMin: WS command successfully ({})', str(origin))
-    return redirect('take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
 
 
 @app.route('/restart_phone', methods=['GET'])
@@ -373,7 +373,7 @@ def restart_phone():
     else:
         temp_comm = ws_server.get_origin_communicator(origin)
         temp_comm.reboot()
-    return redirect('phonecontrol')
+    return redirect(getBasePath(request) + '/phonecontrol')
 
 
 @app.route('/send_gps', methods=['GET'])
@@ -398,7 +398,7 @@ def send_gps():
     except Exception as e:
         logger.exception(
             'MADmin: Exception occurred while set gps coords: {}.', e)
-    return redirect('take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
 
 
 @app.route('/send_text', methods=['GET'])
@@ -417,7 +417,7 @@ def send_text():
     else:
         temp_comm = ws_server.get_origin_communicator(origin)
         temp_comm.sendText(text)
-    return redirect('take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
 
 
 @app.route('/send_command', methods=['GET'])
@@ -442,7 +442,7 @@ def send_command():
         elif command == 'back':
             temp_comm.backButton()
 
-    return redirect('take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
 
 
 @app.route('/screens', methods=['GET'])

@@ -7,8 +7,8 @@ import time
 from abc import ABC, abstractmethod
 from threading import Event, Lock, Thread, current_thread
 
-from loguru import logger
 from utils.hamming import hamming_distance as hamming_dist
+from utils.logging import logger
 from utils.madGlobals import (InternalStopWorkerException,
                               WebsocketWorkerRemovedException,
                               WebsocketWorkerTimeoutException)

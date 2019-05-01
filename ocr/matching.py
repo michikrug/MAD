@@ -3,8 +3,8 @@ import os
 import cv2
 import imutils
 import numpy as np
-from loguru import logger
 from PIL import Image
+from utils.logging import logger
 
 
 def fort_image_matching(url_img_name, fort_img_name, zoom, value, raidNo, hash, checkX=False, radius=None, x1=0.30, x2=0.62, y1=0.62, y2=1.23):
@@ -100,4 +100,5 @@ if __name__ == '__main__':
     fort_id = 'raid1'
     fort_img_path = os.getcwd() + '/' + str(fort_id) + '.jpg'
     url_img_path = os.getcwd() + 'ocr/mon_img/ic_raid_egg_rare.png'
-    logger.debug(fort_image_matching(url_img_path, fort_img_path, True, 0, 0, 0))
+    logger.debug(fort_image_matching(
+        url_img_path, fort_img_path, True, 0, 0, 0))

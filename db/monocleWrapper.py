@@ -6,10 +6,10 @@ from datetime import datetime, timedelta
 from functools import reduce
 
 import requests
-
 from db.dbWrapperBase import DbWrapperBase
 from loguru import logger
 from utils.collections import Location
+from utils.logging import logger
 from utils.s2Helper import S2Helper
 
 
@@ -42,7 +42,7 @@ class MonocleWrapper(DbWrapperBase):
             self._check_create_column(field)
 
     def auto_hatch_eggs(self):
-        logger.info("{MonocleWrapper::auto_hatch_eggs} called")
+        logger.info("MonocleWrapper::auto_hatch_eggs called")
 
         mon_id = self.application_args.auto_hatch_number
 
@@ -153,8 +153,8 @@ class MonocleWrapper(DbWrapperBase):
             start = end - (int(self.application_args.raid_time) * 60)
             query = (
                 "UPDATE raids "
-                "SET level = %s, time_spawn = %s, time_battle = %s, time_end = FROM_UNIXTIME(%s), "
-                "pokemon_id = %s, last_updated = %s, "
+                "SET level = %s, time_spawn = %s, time_battle = %s, time_end = %s, "
+                "pokemon_id = %s, last_updated = %s "
                 "WHERE fort_id = %s AND time_end >= %s"
             )
             vals = (
@@ -171,8 +171,8 @@ class MonocleWrapper(DbWrapperBase):
                 "Updating without end- or starttime - we should've seen the egg before")
             query = (
                 "UPDATE raids "
-                "SET level = %s, pokemon_id = %s, last_updated = %s, "
-                "WHERE gym_id = %s AND time_end >= %s"
+                "SET level = %s, pokemon_id = %s, last_updated = %s "
+                "WHERE fort_id = %s AND time_end >= %s"
             )
             vals = (
                 lvl, pkm, int(time.time()), gym, int(time.time())
@@ -187,8 +187,9 @@ class MonocleWrapper(DbWrapperBase):
             query = (
                 "UPDATE raids "
                 "SET level = %s, time_spawn = %s, time_battle = %s, time_end = %s, "
-                "pokemon_id = %s, last_updated = %s, "
-                "WHERE gym_id = %s AND time_end >= %s"
+                "pokemon_id = %s, last_updated = %s "
+                "WHERE fort_id = %s AND time_end >= %s"
+
             )
             vals = (
                 lvl, int(float(capture_time)), start, end, pkm, int(
@@ -205,12 +206,12 @@ class MonocleWrapper(DbWrapperBase):
                 start = end - 45 * 60
                 query = (
                     "INSERT INTO raids (fort_id, level, time_spawn, time_battle, time_end, "
-                    "pokemon_id "
+                    "pokemon_id) "
                     "VALUES(%s, %s, %s, %s, %s, %s)"
                 )
                 vals = (
                     gym, lvl, int(float(capture_time)
-                                  ), start, end, pkm, int(time.time())
+                                  ), start, end, pkm
                 )
             elif end is None or start is None:
                 logger.info("Inserting without end or start")
@@ -222,8 +223,9 @@ class MonocleWrapper(DbWrapperBase):
                 logger.info("Inserting everything")
                 query = (
                     "INSERT INTO raids (fort_id, level, time_spawn, time_battle, time_end, "
-                    "pokemon_id "
-                    "VALUES (%s, %s, %s, %s, %s, %s)"
+                    "pokemon_id, last_updated) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+
                 )
                 vals = (gym, lvl, int(float(capture_time)),
                         start, end, pkm, int(time.time()))
@@ -388,7 +390,7 @@ class MonocleWrapper(DbWrapperBase):
             "* sin(radians(lat))"
             ")"
             ") "
-            "AS distance, forts.lat, forts.lon, forts.name, forts.url "
+            "AS distance, forts.lat, forts.lon, forts.name, forts.name, forts.url "
             "FROM forts "
             "HAVING distance <= %s OR distance IS NULL "
             "ORDER BY distance"
@@ -398,8 +400,11 @@ class MonocleWrapper(DbWrapperBase):
         )
         data = []
         res = self.execute(query, vals)
-        for (id) in res:
-            data.append(id)
+
+        for (id, distance, latitude, longitude, name, description, url) in res:
+            data.append([gym_id, distance, latitude,
+                         longitude, name, description, url])
+        logger.debug("{MonocleWrapper::get_near_gyms} done")
         return data
 
     def set_scanned_location(self, lat, lng, capture_time, radius):
@@ -437,22 +442,23 @@ class MonocleWrapper(DbWrapperBase):
         gyminfo = {}
 
         query = (
-            "SELECT forts.external_id, forts.lat, forts.lon, forts.name, forts.url, "
-            "IFNULL(forts.park, 'unknown'), IFNULL(forts.sponsor,0), fort_sightings.team "
+            "SELECT forts.id, forts.lat, forts.lon, forts.name, forts.url, "
+            "IFNULL(forts.park, 'unknown'), IFNULL(forts.sponsor,0), "
+            "IFNULL(fort_sightings.team, 0) "
             "FROM forts "
-            "INNER JOIN fort_sightings ON forts.id = fort_sightings.fort_id "
+            "LEFT JOIN fort_sightings ON forts.id = fort_sightings.fort_id "
             "WHERE forts.external_id IS NOT NULL "
         )
 
         res = self.execute(query)
 
-        for (external_id, lat, lon, name, url, park, sponsor, team) in res:
-            gyminfo[external_id] = self.__encode_hash_json(team,
-                                                           float(lat),
-                                                           float(lon),
-                                                           str(name).replace(
-                                                               '"', '\\"')
-                                                           .replace('\n', '\\n'), str(url), park, sponsor)
+        for (id, lat, lon, name, url, park, sponsor, team) in res:
+            gyminfo[str(id)] = self.__encode_hash_json(team,
+                                                       float(lat),
+                                                       float(lon),
+                                                       str(name).replace(
+                                                           '"', '\\"')
+                                                       .replace('\n', '\\n'), str(url), park, sponsor)
         return gyminfo
 
     def gyms_from_db(self, geofence_helper):
@@ -481,7 +487,7 @@ class MonocleWrapper(DbWrapperBase):
             return to_return
 
     def update_encounters_from_db(self, geofence_helper, latest=0):
-        logger.debug("{monocleWrapper::update_encounters_from_db} called")
+        logger.debug("monocleWrapper::update_encounters_from_db called")
         if geofence_helper is None:
             logger.error("No geofence_helper! Not fetching encounters.")
             return 0, {}
@@ -675,24 +681,18 @@ class MonocleWrapper(DbWrapperBase):
 
                 s2_weather_cell_id = S2Helper.lat_lng_to_cell_id(
                     lat, lon, level=10)
-
-                despawn_time = datetime.now() + timedelta(seconds=300)
-                despawn_time_unix = int(time.mktime(despawn_time.timetuple()))
-
-                init = True
-
                 getdetspawntime = self.get_detected_endtime(str(spawnid))
 
                 if getdetspawntime:
                     despawn_time = self._gen_endtime(getdetspawntime)
                     despawn_time_unix = despawn_time
-                    init = False
-
-                if init:
-                    logger.info("{0}: adding mon (#{1}) at {2}, {3}. Despaws at {4} (init)", str(
+                    logger.info("{0}: adding mon (#{1}) at {2}, {3}. Despawns at {4} (non-init)", str(
                         origin), wild_mon['pokemon_data']['id'], lat, lon, despawn_time)
                 else:
-                    logger.info("{0}: adding mon (#{1}) at {2}, {3}. Despawns at {4} (non-init)", str(
+                    despawn_time = datetime.now() + timedelta(seconds=300)
+                    despawn_time_unix = int(
+                        time.mktime(despawn_time.timetuple()))
+                    logger.info("{0}: adding mon (#{1}) at {2}, {3}. Despaws at {4} (init)", str(
                         origin), wild_mon['pokemon_data']['id'], lat, lon, despawn_time)
 
                 mon_id = wild_mon['pokemon_data']['id']
@@ -1021,7 +1021,7 @@ class MonocleWrapper(DbWrapperBase):
         )
 
     def check_stop_quest(self, latitude, longitude):
-        logger.debug("{MonocleWrapper::stops_from_db} called")
+        logger.debug("MonocleWrapper::stops_from_db called")
         query = (
             "SELECT trs_quest.GUID from trs_quest inner join pokestops on pokestops.external_id = trs_quest.GUID "
             "where from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d') = "
@@ -1040,7 +1040,7 @@ class MonocleWrapper(DbWrapperBase):
             return False
 
     def stop_from_db_without_quests(self, geofence_helper):
-        logger.debug("{RmWrapper::stop_from_db_without_questsb} called")
+        logger.debug("RmWrapper::stop_from_db_without_questsb called")
 
         query = (
             "SELECT pokestops.lat, pokestops.lon "
@@ -1068,7 +1068,7 @@ class MonocleWrapper(DbWrapperBase):
             return to_return
 
     def quests_from_db(self, GUID=None, timestamp=None):
-        logger.debug("{MonocleWrapper::quests_from_db} called")
+        logger.debug("MonocleWrapper::quests_from_db called")
         questinfo = {}
         data = ()
 
@@ -1112,7 +1112,7 @@ class MonocleWrapper(DbWrapperBase):
 
     def submit_pokestops_details_map_proto(self, map_proto):
         logger.debug(
-            "{MonocleWrapper::submit_pokestops_details_map_proto} called")
+            "MonocleWrapper::submit_pokestops_details_map_proto called")
         pokestop_args = []
         # now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -1174,8 +1174,10 @@ class MonocleWrapper(DbWrapperBase):
         query = (
             "SELECT encounter_id, spawn_id, pokemon_id, lat, lon, expire_timestamp, "
             "atk_iv, def_iv, sta_iv, move_1, move_2, cp, weight, gender, form, costume, "
-            "weather_boosted_condition, updated, level "
+            "weather_boosted_condition, updated, level, "
+            "(trs_spawn.calc_endminsec IS NOT NULL) AS verified "
             "FROM sightings "
+            "LEFT JOIN trs_spawn ON sightings.spawn_id = trs_spawn.spawnpoint "
             "WHERE updated >= %s"
         )
 
@@ -1185,8 +1187,8 @@ class MonocleWrapper(DbWrapperBase):
         for (encounter_id, spawnpoint_id, pokemon_id, latitude,
                 longitude, disappear_time, individual_attack,
                 individual_defense, individual_stamina, move_1, move_2,
-                cp, weight, gender, form, costume,
-                weather_boosted_condition, last_modified, level) in res:
+                cp, weight, gender, form, costume, weather_boosted_condition,
+                last_modified, level, verified) in res:
             ret.append({
                 "encounter_id": encounter_id,
                 "pokemon_id": pokemon_id,
@@ -1206,7 +1208,8 @@ class MonocleWrapper(DbWrapperBase):
                 "costume": costume,
                 "weight": weight,
                 "weather_boosted_condition": weather_boosted_condition,
-                "level": level
+                "level": level,
+                "spawn_verified": verified == 1
             })
 
         return ret

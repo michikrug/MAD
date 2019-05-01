@@ -1,6 +1,6 @@
 from threading import Lock
 
-from loguru import logger
+from utils.logging import logger
 from utils.stats import PlayerStats
 
 

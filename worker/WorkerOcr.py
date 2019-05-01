@@ -3,9 +3,9 @@ import time
 from shutil import copyfile
 from threading import Event, Thread
 
-from loguru import logger
 from ocr.checkWeather import checkWeather
 from utils.geo import get_distance_of_two_points_in_meters
+from utils.logging import logger
 from utils.madGlobals import (InternalStopWorkerException,
                               WebsocketWorkerRemovedException)
 from utils.s2Helper import S2Helper

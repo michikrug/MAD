@@ -2,7 +2,7 @@ import os
 import sys
 import time
 
-from loguru import logger
+from utils.logging import logger
 
 log = logger
 

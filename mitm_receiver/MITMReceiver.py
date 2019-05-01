@@ -8,10 +8,8 @@ from queue import Queue
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
-
-from loguru import logger
 from utils.authHelper import check_auth
-from utils.logging import MadLoggerUtils
+from utils.logging import LogLevelChanger, logger
 
 app = Flask(__name__)
 allowed_origins = None
@@ -96,7 +94,7 @@ class MITMReceiver(object):
 
     def run_receiver(self):
         httpsrv = WSGIServer((self.__listen_ip, int(
-            self.__listen_port)), self.app.wsgi_app, log=MadLoggerUtils)
+            self.__listen_port)), self.app.wsgi_app, log=LogLevelChanger)
         httpsrv.serve_forever()
 
     def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, options=None, methods_passed=None):

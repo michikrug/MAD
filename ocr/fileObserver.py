@@ -6,7 +6,7 @@ from threading import Thread
 
 import cv2
 import numpy as np
-from loguru import logger
+from utils.logging import logger
 from watchdog.events import PatternMatchingEventHandler
 
 from .segscanner import Scanner

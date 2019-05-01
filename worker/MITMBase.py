@@ -4,7 +4,7 @@ import time
 from abc import abstractmethod
 from datetime import datetime
 
-from loguru import logger
+from utils.logging import logger
 from utils.madGlobals import InternalStopWorkerException
 from worker.WorkerBase import WorkerBase
 

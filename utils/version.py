@@ -1,7 +1,7 @@
 import json
 import sys
 
-from loguru import logger
+from utils.logging import logger
 
 from .convert_mapping import convert_mappings
 

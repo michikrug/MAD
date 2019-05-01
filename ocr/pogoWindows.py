@@ -8,10 +8,10 @@ import time
 import cv2
 import numpy as np
 import pytesseract
+from PIL import Image
 # from numpy import round, ones, uint8
 # from tinynumpy import tinynumpy as np
-from loguru import logger
-from PIL import Image
+from utils.logging import logger
 
 Coordinate = collections.namedtuple("Coordinate", ['x', 'y'])
 Bounds = collections.namedtuple("Bounds", ['top', 'bottom', 'left', 'right'])
@@ -87,7 +87,7 @@ class PogoWindows:
         height, width, _ = screenshotRead.shape
 
         if crop:
-            screenshotRead = screenshotRead[int(height) - int(int(height / 4.5)):int(height),
+            screenshotRead = screenshotRead[int(height) - int(int(height / 4)):int(height),
                                             int(int(width) / 2) - int(int(width) / 8):int(int(width) / 2) + int(
                                             int(width) / 8)]
 
@@ -537,13 +537,13 @@ class PogoWindows:
             return False
 
         height, width, _ = screenshotRead.shape
-        gray = screenshotRead[int(height) - int(round(height / 6)):int(height),
+        gray = screenshotRead[int(height) - int(round(height / 5)):int(height),
                               0: int(int(width) / 4)]
         height_, width_, _ = gray.shape
         radMin = int((width / float(6.8) - 3) / 2)
         radMax = int((width / float(6) + 3) / 2)
         gray = cv2.GaussianBlur(gray, (3, 3), 0)
-        gray = cv2.Canny(gray, 100, 50, apertureSize=3)
+        gray = cv2.Canny(gray, 200, 50, apertureSize=3)
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, width / 8, param1=100, param2=15, minRadius=radMin,
                                    maxRadius=radMax)
         if circles is not None:

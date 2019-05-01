@@ -5,11 +5,11 @@ from datetime import datetime, timedelta, timezone
 from functools import reduce
 
 import requests
-
 from db.dbWrapperBase import DbWrapperBase
 from loguru import logger
 from utils.collections import Location
 from utils.gamemechanicutil import gen_despawn_timestamp
+from utils.logging import logger
 from utils.s2Helper import S2Helper
 
 
@@ -189,7 +189,7 @@ class RmWrapper(DbWrapperBase):
                 "WHERE gym_id = %s"
             )
             vals = (
-                lvl, now_timestamp, start_db, end_db, pkm, int(
+                lvl, now_timestamp, start, end_db, pkm, int(
                     time.time()), '999', '1', '1', gym
             )
         elif end is None or start is None:
@@ -294,7 +294,7 @@ class RmWrapper(DbWrapperBase):
                     raid_no), str(unique_hash), str(number_of_rows))
                 logger.info("[Crop: {} ({})] read_raid_endtime: Endtime already submitted", str(
                     raid_no), str(unique_hash))
-                logger.debug("{RmWrapper::read_raid_endtime} done")
+                logger.debug("RmWrapper::read_raid_endtime done")
                 return True
 
         logger.info("[Crop: {} ({})] read_raid_endtime: Endtime is new", str(
@@ -554,7 +554,7 @@ class RmWrapper(DbWrapperBase):
         return geofenced_coords
 
     def update_encounters_from_db(self, geofence_helper, latest=0):
-        logger.debug("{RmWrapper::update_encounters_from_db} called")
+        logger.debug("RmWrapper::update_encounters_from_db called")
         if geofence_helper is None:
             logger.error("No geofence_helper! Not fetching encounters.")
             return 0, {}
@@ -1029,6 +1029,8 @@ class RmWrapper(DbWrapperBase):
 
     def __download_img(self, url, file_name):
         retry = 1
+        if not url:
+            return
         while retry <= 5:
             try:
                 r = requests.get(url, stream=True, timeout=10)
@@ -1241,11 +1243,13 @@ class RmWrapper(DbWrapperBase):
 
     def get_mon_changed_since(self, timestamp):
         query = (
-            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, "
+            "SELECT encounter_id, spawnpoint_id, pokemon_id, pokemon.latitude, pokemon.longitude, "
             "disappear_time, individual_attack, individual_defense, individual_stamina, "
             "move_1, move_2, cp, cp_multiplier, weight, height, gender, form, costume, "
-            "boosted_weather, last_modified "
+            "boosted_weather, last_modified, "
+            "(trs_spawn.calc_endminsec IS NOT NULL) AS verified "
             "FROM pokemon "
+            "LEFT JOIN trs_spawn ON pokemon.spawnpoint_id = trs_spawn.spawnpoint "
             "WHERE last_modified >= %s"
         )
 
@@ -1258,7 +1262,7 @@ class RmWrapper(DbWrapperBase):
                 longitude, disappear_time, individual_attack,
                 individual_defense, individual_stamina, move_1, move_2,
                 cp, cp_multiplier, weight, height, gender, form, costume,
-                boosted_weather, last_modified) in res:
+                boosted_weather, last_modified, verified) in res:
             ret.append({
                 "encounter_id": encounter_id,
                 "pokemon_id": pokemon_id,
@@ -1279,7 +1283,8 @@ class RmWrapper(DbWrapperBase):
                 "costume": costume,
                 "height": height,
                 "weight": weight,
-                "weather_boosted_condition": boosted_weather
+                "weather_boosted_condition": boosted_weather,
+                "spawn_verified": verified == 1
             })
 
         return ret

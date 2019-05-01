@@ -8,6 +8,7 @@ from route.RouteManagerIV import RouteManagerIV
 from route.RouteManagerMon import RouteManagerMon
 from route.RouteManagerQuests import RouteManagerQuests
 from route.RouteManagerRaids import RouteManagerRaids
+from utils.logging import logger
 from utils.s2Helper import S2Helper
 
 mode_mapping = {

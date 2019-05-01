@@ -3,9 +3,9 @@ import os
 import time
 from threading import Event, Thread
 
-from loguru import logger
 from utils.geo import (get_distance_of_two_points_in_meters,
                        get_lat_lng_offsets_by_distance)
+from utils.logging import logger
 from utils.madGlobals import (InternalStopWorkerException,
                               WebsocketWorkerRemovedException)
 from worker.MITMBase import MITMBase

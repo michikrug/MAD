@@ -1,5 +1,5 @@
-from loguru import logger
 from route.RouteManagerBase import RouteManagerBase
+from utils.logging import logger
 
 
 class RouteManagerIV(RouteManagerBase):

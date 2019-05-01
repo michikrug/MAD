@@ -4,7 +4,7 @@ import os
 import cv2
 import imutils
 import numpy as np
-from loguru import logger
+from utils.logging import logger
 
 weatherImages = {
     'weatherIcon_small_sunny.png': 1,

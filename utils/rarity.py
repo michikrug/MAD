@@ -2,7 +2,7 @@ import time
 from threading import Thread
 from timeit import default_timer
 
-from loguru import logger
+from utils.logging import logger
 
 
 class Rarity(object):

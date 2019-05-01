@@ -3,7 +3,7 @@ import os
 import cv2
 import imutils
 import numpy as np
-from loguru import logger
+from utils.logging import logger
 
 
 def mon_image_matching(args, url_img_name, fort_img_name, raidNo, hash):

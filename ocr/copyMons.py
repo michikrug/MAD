@@ -6,8 +6,8 @@ from shutil import copyfile
 
 import cv2
 import numpy as np
-from loguru import logger
 from PIL import Image
+from utils.logging import logger
 
 
 class MonRaidImages(object):

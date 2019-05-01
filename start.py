@@ -14,7 +14,7 @@ from db.rmWrapper import RmWrapper
 from loguru import logger
 from mitm_receiver.MitmMapper import MitmMapper
 from mitm_receiver.MITMReceiver import MITMReceiver
-from utils.logging import initLogging
+from utils.logging import initLogging, logger
 from utils.madGlobals import terminate_mad
 from utils.mappingParser import MappingParser
 from utils.rarity import Rarity
@@ -63,7 +63,6 @@ def install_thread_excepthook():
 def start_ocr_observer(args, db_helper):
     from ocr.fileObserver import checkScreenshot
     observer = Observer()
-    logger.error(args.raidscreen_path)
     observer.schedule(checkScreenshot(args, db_helper),
                       path=args.raidscreen_path)
     observer.start()
@@ -346,15 +345,13 @@ if __name__ == "__main__":
                              target=get_system_infos, args=(db_wrapper,))
             t_usage.daemon = False
             t_usage.start()
-        else:
-            logger.warning("Dont collect system usage just for MADmin")
 
     try:
         while True:
             time.sleep(10)
     finally:
         db_wrapper = None
-        logger.error("Stop called")
+        logger.success("Stop called")
         terminate_mad.set()
         # now cleanup all threads...
         # TODO: check against args or init variables to None...

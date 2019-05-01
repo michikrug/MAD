@@ -1,8 +1,8 @@
 import collections
 import time
 
-from loguru import logger
 from route.RouteManagerBase import RouteManagerBase
+from utils.logging import logger
 
 Location = collections.namedtuple('Location', ['lat', 'lng'])
 

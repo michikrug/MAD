@@ -2,7 +2,7 @@ import datetime
 import time
 from threading import Event, Thread
 
-from loguru import logger
+from utils.logging import logger
 
 
 class Timer(object):

@@ -5,12 +5,12 @@ import sys
 import gpxdata
 import s2sphere
 from geopy import Point, distance
-from loguru import logger
 # from utils.collections import Location
 # from utils.geo import get_middle_of_coord_list, get_distance_of_two_points_in_meters
 from utils.collections import Location
 from utils.geo import (get_distance_of_two_points_in_meters,
                        get_middle_of_coord_list)
+from utils.logging import logger
 
 
 class S2Helper:

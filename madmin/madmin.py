@@ -3,7 +3,6 @@ import datetime
 import glob
 import json
 import os
-import platform
 import re
 import sys
 import threading
@@ -13,16 +12,16 @@ from math import floor
 from pathlib import Path
 from shutil import copyfile
 
+import cv2
 from flask import (Flask, jsonify, make_response, redirect, render_template,
                    request, send_from_directory)
-from gevent.pywsgi import WSGIServer
-
-import cv2
 from flask_caching import Cache
-from loguru import logger
+from gevent.pywsgi import WSGIServer
 from utils.adb import ADBConnect
+from utils.functions import (creation_date, generate_path, generate_phones,
+                             image_resize)
 from utils.language import i8ln, open_json_file
-from utils.logging import MadLoggerUtils
+from utils.logging import LogLevelChanger, logger
 from utils.mappingParser import MappingParser
 from utils.questGen import generate_quest
 
@@ -42,9 +41,6 @@ ws_server = None
 datetimeformat = None
 adb_connect = None
 
-with open('madmin/static/vars/template/phone.tpl', 'r') as file:
-    phone_template = file.read().replace('\n', '')
-
 
 def madmin_start(arg_args, arg_db_wrapper, glob_ws_server):
     global conf_args, device_mappings, db_wrapper, areas, ws_server, datetimeformat, adb_connect
@@ -61,7 +57,7 @@ def madmin_start(arg_args, arg_db_wrapper, glob_ws_server):
         datetimeformat = '%Y-%m-%d %H:%M:%S'
 
     httpsrv = WSGIServer((arg_args.madmin_ip, int(
-        arg_args.madmin_port)), app.wsgi_app, log=MadLoggerUtils)
+        arg_args.madmin_port)), app.wsgi_app, log=LogLevelChanger)
     httpsrv.serve_forever()
 
 
@@ -81,9 +77,6 @@ def auth_required(func):
     return decorated
 
 
-# @app.before_first_request
-# def init():
-#     task = my_task.apply_async()
 def run_job():
     try:
         while True:
@@ -118,68 +111,17 @@ def after_request(response):
     # response.headers.add('Access-Control-Allow-Methods',
     #                     'GET,PUT,POST,DELETE,OPTIONS')
     if response.headers['Content-Type'].split(';')[0] in ('application/json', 'text/html'):
-        response.headers.add('Cache-Control', 'no-cache, no-store, must-revalidate')
+        response.headers.add(
+            'Cache-Control', 'no-cache, no-store, must-revalidate')
     return response
-
-
-def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
-    # initialize the dimensions of the image to be resized and
-    # grab the image size
-    dim = None
-    filename = os.path.basename(image)
-    image = cv2.imread(image, 3)
-    (h, w) = image.shape[:2]
-
-    # if both the width and height are None, then return the
-    # original image
-    if width is None and height is None:
-        return image
-
-    # check to see if the width is None
-    if width is None:
-        # calculate the ratio of the height and construct the
-        # dimensions
-        r = height / float(h)
-        dim = (int(w * r), height)
-
-    # otherwise, the height is None
-    else:
-        # calculate the ratio of the width and construct the
-        # dimensions
-        r = width / float(w)
-        dim = (width, int(h * r))
-
-    # resize the image
-    resized = cv2.resize(image, dim, interpolation=inter)
-    cv2.imwrite("temp/madmin/" + str(filename), resized,
-                [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
-
-    # return the resized image
-    return
-
-
-def generate_phones(phonename, add_text, adb_option, screen, dummy=False):
-    if not dummy:
-        creationdate = datetime.datetime.fromtimestamp(
-            os.path.getmtime("temp/screenshot" + str(phonename) + ".png")).strftime(datetimeformat)
-    else:
-        creationdate = 'No Screen available'
-
-    return (
-        phone_template.replace('<<phonename>>', phonename)
-        .replace('<<adb_option>>', str(adb_option))
-        .replace('<<add_text>>', add_text)
-        .replace('<<screen>>', screen)
-        .replace('<<creationdate>>', creationdate)
-    )
 
 
 @app.route('/phonecontrol', methods=['GET'])
 @auth_required
 @nocache
 def get_phonescreens():
-    if not os.path.exists("temp/madmin"):
-        os.makedirs("temp/madmin")
+    if not os.path.exists(os.path.join(conf_args.temp_path, "madmin")):
+        os.makedirs(os.path.join(conf_args.temp_path, "madmin"))
     global device_mappings
     global ws_server
 
@@ -204,15 +146,17 @@ def get_phonescreens():
         filename = os.path.join(conf_args.temp_path,
                                 'screenshot%s.png' % str(phonename))
         if os.path.isfile(filename):
-            image_resize(filename, width=400)
+            image_resize(filename, os.path.join(
+                conf_args.temp_path, "madmin"), width=250)
             screen = "screenshot/madmin/screenshot" + str(phonename) + ".png"
-            screens_phone.append(generate_phones(
-                phonename, add_text, adb_option, screen))
-
+            screens_phone.append(
+                generate_phones(phonename, add_text, adb_option,
+                                screen, filename, datetimeformat, dummy=False)
+            )
         else:
             screen = "static/dummy.png"
             screens_phone.append(generate_phones(
-                phonename, add_text, adb_option, screen, True))
+                phonename, add_text, adb_option, screen, filename, datetimeformat, dummy=True))
 
     for phonename in adb_connect.return_adb_devices():
         if phonename.serial not in ws_connected_phones:
@@ -224,35 +168,40 @@ def get_phonescreens():
                     filename = os.path.join(
                         conf_args.temp_path, 'screenshot%s.png' % str(pho))
                     if os.path.isfile(filename):
-                        image_resize(filename, width=400)
+                        image_resize(filename, os.path.join(
+                            conf_args.temp_path, "madmin"), width=250)
                         screen = "screenshot/madmin/screenshot" + \
                             str(pho) + ".png"
                         screens_phone.append(generate_phones(
-                            pho, add_text, adb_option, screen))
+                            pho, add_text, adb_option, screen, filename, datetimeformat, dummy=False)
+                        )
                     else:
                         screen = "static/dummy.png"
-                        screens_phone.append(generate_phones(
-                            pho, add_text, adb_option, screen, True))
+                        screens_phone.append(
+                            generate_phones(pho, add_text, adb_option, screen, filename, datetimeformat,
+                                            dummy=True)
+                        )
 
-    return render_template('phonescreens.html', editform=screens_phone, header="Phonecontrol", title="Phonecontrol")
+    return render_template('phonescreens.html', editform=screens_phone, header="Phonecontrol", title="Phonecontrol",
+                           running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/screenshot/<path:path>', methods=['GET'])
 @auth_required
 @nocache
 def pushscreens(path):
-    return send_from_directory('../temp', path)
+    return send_from_directory(generate_path(conf_args.temp_path), path)
 
 
 @app.route('/static/<path:path>', methods=['GET'])
 @auth_required
 def pushstatic(path):
-    return send_from_directory('../madmin/static', path)
+    return send_from_directory(generate_path('madmin/static'), path)
 
 
 @app.route('/take_screenshot', methods=['GET'])
 @auth_required
-def take_screenshot():
+def take_screenshot(origin=None, useadb=None):
     global ws_server
     origin = request.args.get('origin')
     useadb = request.args.get('adb', False)
@@ -270,10 +219,11 @@ def take_screenshot():
         temp_comm.get_screenshot_single(os.path.join(
             conf_args.temp_path, 'screenshot%s.png' % str(origin)))
 
-    image_resize("temp/screenshot" + str(origin) + ".png", width=400)
+    image_resize(os.path.join(conf_args.temp_path, "screenshot" + str(origin) + ".png"),
+                 os.path.join(conf_args.temp_path, "madmin"), width=250)
 
     creationdate = datetime.datetime.fromtimestamp(
-        os.path.getmtime(os.path.join(conf_args.temp_path, 'screenshot%s.png' % str(origin)))).strftime(datetimeformat)
+        creation_date(os.path.join(conf_args.temp_path, 'screenshot%s.png' % str(origin)))).strftime(datetimeformat)
 
     return creationdate
 
@@ -304,8 +254,8 @@ def click_screenshot():
         temp_comm = ws_server.get_origin_communicator(origin)
         temp_comm.click(int(real_click_x), int(real_click_y))
 
-    time.sleep(1)
-    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    time.sleep(2)
+    return take_screenshot(origin, useadb)
 
 
 @app.route('/swipe_screenshot', methods=['GET'])
@@ -339,8 +289,8 @@ def swipe_screenshot():
         temp_comm.touchandhold(int(real_click_x), int(
             real_click_y), int(real_click_xe), int(real_click_ye))
 
-    time.sleep(1)
-    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    time.sleep(2)
+    return take_screenshot(origin, useadb)
 
 
 @app.route('/quit_pogo', methods=['GET'])
@@ -357,7 +307,9 @@ def quit_pogo():
         temp_comm = ws_server.get_origin_communicator(origin)
         temp_comm.stopApp("com.nianticlabs.pokemongo")
         logger.info('MADMin: WS command successfully ({})', str(origin))
-    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+
+    time.sleep(2)
+    return take_screenshot(origin, useadb)
 
 
 @app.route('/restart_phone', methods=['GET'])
@@ -381,7 +333,11 @@ def restart_phone():
 def send_gps():
     global ws_server
     origin = request.args.get('origin')
+
     useadb = request.args.get('adb')
+    if useadb is None:
+        useadb = device_mappings[origin].get('adb', False)
+
     coords = request.args.get('coords').replace(' ', '').split(',')
     sleeptime = request.args.get('sleeptime', "0")
     if len(coords) < 2:
@@ -398,7 +354,9 @@ def send_gps():
     except Exception as e:
         logger.exception(
             'MADmin: Exception occurred while set gps coords: {}.', e)
-    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+
+    time.sleep(2)
+    return take_screenshot(origin, useadb)
 
 
 @app.route('/send_text', methods=['GET'])
@@ -417,7 +375,9 @@ def send_text():
     else:
         temp_comm = ws_server.get_origin_communicator(origin)
         temp_comm.sendText(text)
-    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+
+    time.sleep(2)
+    return take_screenshot(origin, useadb)
 
 
 @app.route('/send_command', methods=['GET'])
@@ -442,48 +402,60 @@ def send_command():
         elif command == 'back':
             temp_comm.backButton()
 
-    return redirect(getBasePath(request) + '/take_screenshot?origin=' + str(origin) + '&adb=' + str(useadb))
+    time.sleep(2)
+    return take_screenshot(origin, useadb)
 
 
 @app.route('/screens', methods=['GET'])
 @auth_required
 def screens():
-    return render_template('screens.html', responsive=str(conf_args.madmin_noresponsive).lower(), title="show success Screens")
+    return render_template('screens.html', responsive=str(conf_args.madmin_noresponsive).lower(),
+                           title="show success Screens", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/', methods=['GET'])
 @auth_required
 def root():
+    print(conf_args.only_ocr)
     return render_template('index.html', running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/raids', methods=['GET'])
 @auth_required
 def raids():
-    return render_template('raids.html', sort=str(conf_args.madmin_sort), responsive=str(conf_args.madmin_noresponsive).lower(), title="show Raid Matching")
+    return render_template('raids.html', sort=str(conf_args.madmin_sort),
+                           responsive=str(
+                               conf_args.madmin_noresponsive).lower(),
+                           title="show Raid Matching", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/gyms', methods=['GET'])
 @auth_required
 def gyms():
-    return render_template('gyms.html', sort=conf_args.madmin_sort, responsive=str(conf_args.madmin_noresponsive).lower(), title="show Gym Matching")
+    return render_template('gyms.html', sort=conf_args.madmin_sort,
+                           responsive=str(
+                               conf_args.madmin_noresponsive).lower(),
+                           title="show Gym Matching", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/unknown', methods=['GET'])
 @auth_required
 def unknown():
-    return render_template('unknown.html', responsive=str(conf_args.madmin_noresponsive).lower(), title="show unkown Gym")
+    return render_template('unknown.html', responsive=str(conf_args.madmin_noresponsive).lower(),
+                           title="show unkown Gym", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/map', methods=['GET'])
 @auth_required
 def map():
-    return render_template('map.html', lat=conf_args.home_lat, lng=conf_args.home_lng)
+    return render_template('map.html', lat=conf_args.home_lat, lng=conf_args.home_lng,
+                           running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/quests', methods=['GET'])
 def quest():
-    return render_template('quests.html', responsive=str(conf_args.madmin_noresponsive).lower(), title="show daily Quests")
+    return render_template('quests.html', responsive=str(conf_args.madmin_noresponsive).lower(),
+                           title="show daily Quests", running_ocr=(conf_args.only_ocr))
 
 
 @app.route("/submit_hash")
@@ -510,7 +482,7 @@ def modify_raid_gym():
     lvl = request.args.get('lvl')
 
     newJsonString = encodeHashJson(id, lvl, mon)
-    db_wrapper.delete_hash_table('"' + str(hash) + '"', 'raid', 'in', 'hash')
+    db_wrapper.delete_hash_table(str(hash), 'raid', 'in', 'hash')
     db_wrapper.insert_hash(hash, 'raid', newJsonString,
                            '999', unique_hash="madmin")
 
@@ -526,7 +498,7 @@ def modify_raid_mon():
     lvl = request.args.get('lvl')
 
     newJsonString = encodeHashJson(id, lvl, mon)
-    db_wrapper.delete_hash_table('"' + str(hash) + '"', 'raid', 'in', 'hash')
+    db_wrapper.delete_hash_table(str(hash), 'raid', 'in', 'hash')
     db_wrapper.insert_hash(hash, 'raid', newJsonString,
                            '999', unique_hash="madmin")
 
@@ -539,7 +511,7 @@ def modify_gym_hash():
     hash = request.args.get('hash')
     id = request.args.get('id')
 
-    db_wrapper.delete_hash_table('"' + str(hash) + '"', 'gym', 'in', 'hash')
+    db_wrapper.delete_hash_table(str(hash), 'gym', 'in', 'hash')
     db_wrapper.insert_hash(hash, 'gym', id, '999', unique_hash="madmin")
 
     return redirect(getBasePath(request) + "/gyms", code=302)
@@ -570,7 +542,6 @@ def near_gym():
         gymid = str(closegym[0])
         dist = str(closegym[1])
         gymImage = 'gym_img/_' + str(gymid) + '_.jpg'
-
         name = 'unknown'
         lat = '0'
         lon = '0'
@@ -601,7 +572,7 @@ def delete_hash():
     if not hash or not type:
         return 'Missing Argument...'
 
-    db_wrapper.delete_hash_table('"' + str(hash) + '"', type, 'in', 'hash')
+    db_wrapper.delete_hash_table(str(hash), type, 'in', 'hash')
     for file in glob.glob("ocr/www_hash/*" + str(hash) + ".jpg"):
         os.remove(file)
 
@@ -664,7 +635,8 @@ def get_gyms():
                         "\\", r"\\").replace('"', '').replace("\n", "")
 
             gymJson = ({'id': gymid, 'lat': lat, 'lon': lon, 'hashvalue': hashvalue,
-                        'filename': file[4:], 'name': name, 'description': description, 'gymimage': gymImage, 'count': count, 'creation': creationdate, 'modify': modify})
+                        'filename': file[4:], 'name': name, 'description': description,
+                        'gymimage': gymImage, 'count': count, 'creation': creationdate, 'modify': modify})
             gyms.append(gymJson)
 
         else:
@@ -722,13 +694,10 @@ def get_raids():
                 eggPic = 'asset/static_assets/png/ic_raid_egg_legendary.png'
 
             creationdate = datetime.datetime.fromtimestamp(
-                creation_date(file)).strftime('%Y-%m-%d %H:%M:%S')
+                creation_date(file)).strftime(datetimeformat)
 
-            if conf_args.madmin_time == "12":
-                creationdate = datetime.datetime.strptime(
-                    creationdate, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %I:%M:%S %p')
-                modify = datetime.datetime.strptime(
-                    modify, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %I:%M:%S %p')
+            modify = datetime.datetime.strptime(
+                modify, '%Y-%m-%d %H:%M:%S').strftime(datetimeformat)
 
             name = 'unknown'
             lat = '0'
@@ -746,8 +715,10 @@ def get_raids():
                     description = data[str(gymid)]["description"].replace(
                         "\\", r"\\").replace('"', '').replace("\n", "")
 
-            raidJson = ({'id': gymid, 'lat': lat, 'lon': lon, 'hashvalue': hashvalue, 'filename': file[4:], 'name': name, 'description': description, 'gymimage': gymImage,
-                         'count': count, 'creation': creationdate, 'modify': modify,  'level': lvl, 'mon': mon, 'type': type, 'eggPic': eggPic, 'monPic': monPic, 'monname': monName})
+            raidJson = ({'id': gymid, 'lat': lat, 'lon': lon, 'hashvalue': hashvalue, 'filename': file[4:],
+                         'name': name, 'description': description, 'gymimage': gymImage,
+                         'count': count, 'creation': creationdate, 'modify': modify,  'level': lvl,
+                         'mon': mon, 'type': type, 'eggPic': eggPic, 'monPic': monPic, 'monname': monName})
             raids.append(raidJson)
         else:
             log.debug("File: " + str(file) + " not found in Database")
@@ -809,9 +780,9 @@ def get_screens():
     return jsonify(screens)
 
 
-@app.route("/get_unknows")
+@app.route("/get_unknowns")
 @auth_required
-def get_unknows():
+def get_unknowns():
     unk = []
     for file in glob.glob("ocr/www_hash/unkgym_*.jpg"):
         unkfile = re.search(
@@ -1002,13 +973,13 @@ def pushScreens(path):
     return send_from_directory('../' + conf_args.raidscreen_path, path)
 
 
-@app.route('/match_unknows', methods=['GET'])
+@app.route('/match_unknowns', methods=['GET'])
 @auth_required
-def match_unknows():
+def match_unknowns():
     hash = request.args.get('hash')
     lat = request.args.get('lat')
     lon = request.args.get('lon')
-    return render_template('match_unknown.html', hash=hash, lat=lat, lon=lon, responsive=str(conf_args.madmin_noresponsive).lower(), title="match Unkown")
+    return render_template('match_unknown.html', hash=hash, lat=lat, lon=lon, responsive=str(conf_args.madmin_noresponsive).lower(), title="match Unknown", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/modify_raid', methods=['GET'])
@@ -1019,7 +990,7 @@ def modify_raid():
     lon = request.args.get('lon')
     lvl = request.args.get('lvl')
     mon = request.args.get('mon')
-    return render_template('change_raid.html', hash=hash, lat=lat, lon=lon, lvl=lvl, mon=mon, responsive=str(conf_args.madmin_noresponsive).lower(), title="change Raid")
+    return render_template('change_raid.html', hash=hash, lat=lat, lon=lon, lvl=lvl, mon=mon, responsive=str(conf_args.madmin_noresponsive).lower(), title="change Raid", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/modify_gym', methods=['GET'])
@@ -1028,7 +999,7 @@ def modify_gym():
     hash = request.args.get('hash')
     lat = request.args.get('lat')
     lon = request.args.get('lon')
-    return render_template('change_gym.html', hash=hash, lat=lat, lon=lon, responsive=str(conf_args.madmin_noresponsive).lower(), title="change Gym")
+    return render_template('change_gym.html', hash=hash, lat=lat, lon=lon, responsive=str(conf_args.madmin_noresponsive).lower(), title="change Gym", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/modify_mon', methods=['GET'])
@@ -1037,7 +1008,7 @@ def modify_mon():
     hash = request.args.get('hash')
     gym = request.args.get('gym')
     lvl = request.args.get('lvl')
-    return render_template('change_mon.html', hash=hash, gym=gym, lvl=lvl, responsive=str(conf_args.madmin_noresponsive).lower(), title="change Mon")
+    return render_template('change_mon.html', hash=hash, gym=gym, lvl=lvl, responsive=str(conf_args.madmin_noresponsive).lower(), title="change Mon", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/asset/<path:path>', methods=['GET'])
@@ -1046,7 +1017,7 @@ def pushAssets(path):
     return send_from_directory('../' + conf_args.pogoasset, path)
 
 
-@app.route('/addwalker', methods=['GET', 'POST'])
+@app.route('/addwalker')
 @auth_required
 def addwalker():
     args = request.form if request.form else request.args
@@ -1110,7 +1081,8 @@ def addwalker():
         with open('configs/mappings.json', 'w') as outfile:
             json.dump(mapping, outfile, indent=4, sort_keys=True)
 
-            return redirect(getBasePath(request) + "/config?type=walker&area=walker&block=fields&edit=" + str(walker), code=302)
+            return redirect(getBasePath(request) + "/config?type=walker&area=walker&block=fields&edit="
+                            + str(walker), code=302)
 
     if walker and edit:
         walkerposition = args.get('walkerposition')
@@ -1213,7 +1185,8 @@ def addwalker():
     else:
         header = "Add new " + walker
 
-    return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings")
+    return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings",
+                           running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/savesortwalker', methods=['GET'])
@@ -1584,7 +1557,7 @@ def config():
             '<button type="submit" class="btn btn-primary">Save</button></form>')
 
     return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings",
-                           walkernr=_walkernr, edit=edit)
+                           walkernr=_walkernr, edit=edit, running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/delsetting', methods=['GET'])
@@ -1611,7 +1584,7 @@ def delsetting():
         if 'devicepool' in entry:
             _checkfield = 'devicepool'
 
-        if str(edit) in str(entry[_checkfield]):
+        if str(edit) == str(entry[_checkfield]):
             del mapping[area][key]
 
     with open('configs/mappings.json', 'w') as outfile:
@@ -1841,8 +1814,9 @@ def showsettings():
 
         table = table + header + subheader + line
 
-    return render_template('settings.html', settings='<table>' + globalheader + '<tbody>' + table + '</tbody></table>', title="Mapping Editor",
-                           responsive=str(conf_args.madmin_noresponsive).lower())
+    return render_template('settings.html', settings='<table>' + globalheader + '<tbody>' + table + '</tbody></table>',
+                           title="Mapping Editor", responsive=str(conf_args.madmin_noresponsive).lower(),
+                           running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/addnew', methods=['GET'])
@@ -1859,13 +1833,14 @@ def addnew():
         line = line + '<h3><a href="config?type=' + str(output['name']) + '&area=' + str(
             area) + '&block=fields">'+str(output['name'])+'</a></h3><h5>'+str(output['description'])+'</h5><hr>'
 
-    return render_template('sel_type.html', line=line, title="Type selector")
+    return render_template('sel_type.html', line=line, title="Type selector", running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/status', methods=['GET'])
 @auth_required
 def status():
-    return render_template('status.html', responsive=str(conf_args.madmin_noresponsive).lower(), title="Worker status")
+    return render_template('status.html', responsive=str(conf_args.madmin_noresponsive).lower(), title="Worker status",
+                           running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/statistics', methods=['GET'])
@@ -1879,7 +1854,7 @@ def statistics():
         minutes_spawn = 120
 
     return render_template('statistics.html', title="MAD Statisics", minutes_spawn=minutes_spawn,
-                           minutes_usage=minutes_usage, time=conf_args.madmin_time)
+                           minutes_usage=minutes_usage, time=conf_args.madmin_time, running_ocr=(conf_args.only_ocr))
 
 
 @app.route('/get_status', methods=['GET'])
@@ -1887,13 +1862,6 @@ def statistics():
 def get_status():
     data = json.loads(db_wrapper.download_status())
     return jsonify(data)
-
-
-def datetime_from_utc_to_local(utc_datetime):
-    now_timestamp = time.time()
-    offset = datetime.datetime.fromtimestamp(
-        now_timestamp) - datetime.datetime.utcfromtimestamp(now_timestamp)
-    return int(utc_datetime + offset.total_seconds()) * 1000
 
 
 @app.route('/get_game_stats', methods=['GET'])
@@ -2019,39 +1987,3 @@ def getAllHash(type):
 
 def getCoordFloat(coordinate):
     return floor(float(coordinate) * (10 ** 5)) / float(10 ** 5)
-
-
-def creation_date(path_to_file):
-    """
-    Try to get the date that a file was created, falling back to when it was
-    last modified if that isn't possible.
-    See http://stackoverflow.com/a/39501288/1709587 for explanation.
-    """
-    if platform.system() == 'Windows':
-        return os.path.getctime(path_to_file)
-    else:
-        stat = os.stat(path_to_file)
-        try:
-            return stat.st_birthtime
-        except AttributeError:
-            # We're probably on Linux. No easy way to get creation dates here,
-            # so we'll settle for when its content was last modified.
-            return stat.st_mtime
-
-
-if __name__ == "__main__":
-    from utils.walkerArgs import parseArgs
-    from db.monocleWrapper import MonocleWrapper
-    from db.rmWrapper import RmWrapper
-
-    args = parseArgs()
-
-    if args.db_method == "rm":
-        db_wrapper = RmWrapper(args)
-    elif args.db_method == "monocle":
-        db_wrapper = MonocleWrapper(args)
-    else:
-        log.error("Invalid db_method in config. Exiting")
-        sys.exit(1)
-
-    app.run()

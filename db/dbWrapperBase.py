@@ -8,9 +8,9 @@ from threading import Lock, Semaphore
 import mysql
 import numpy as np
 from bitstring import BitArray
-from loguru import logger
 from mysql.connector.pooling import MySQLConnectionPool
 from utils.collections import Location
+from utils.logging import logger
 from utils.questGen import questtask
 from utils.s2Helper import S2Helper
 
@@ -474,12 +474,12 @@ class DbWrapperBase(ABC):
             for row in res:
                 logger.debug("[Crop: {} ({})] check_for_hash: ID = {}", str(
                     raid_no), str(unique_hash), str(row[0]))
-                logger.debug("{DbWrapperBase::check_for_hash} done")
+                logger.debug("DbWrapperBase::check_for_hash done")
                 return True, row[0], row[1], row[4], row[5]
         else:
             logger.debug("[Crop: {} ({})] check_for_hash: No matching hash found", str(
                 raid_no), str(unique_hash))
-            logger.debug("{DbWrapperBase::check_for_hash done")
+            logger.debug("DbWrapperBase::check_for_hash done")
             return False, None, None, None, None
 
     def get_all_hash(self, type):
@@ -539,14 +539,14 @@ class DbWrapperBase(ABC):
             "WHERE " + field + " " + mode + " (%s) "
             "AND type like %s"
         )
-        vals = (str(ids), str(type),)
+        vals = (str(ids), str(type))
         logger.debug(query)
 
         self.execute(query, vals, commit=True)
         return True
 
     def clear_hash_gyms(self, mons):
-        logger.debug("{DbWrapperBase::clear_hash_gyms} called")
+        logger.debug("DbWrapperBase::clear_hash_gyms called")
         data = []
         query = (
             "SELECT hashid "
@@ -709,7 +709,7 @@ class DbWrapperBase(ABC):
         return float(found[0][1])
 
     def get_detected_spawns(self, geofence_helper):
-        logger.debug("{DbWrapperBase::get_detected_spawns} called")
+        logger.debug("DbWrapperBase::get_detected_spawns called")
 
         query = (
             "SELECT latitude, longitude "
@@ -942,7 +942,7 @@ class DbWrapperBase(ABC):
         return next_up
 
     def submit_quest_proto(self, map_proto):
-        logger.debug("{DbWrapperBase::submit_quest_proto} called")
+        logger.debug("DbWrapperBase::submit_quest_proto called")
         fort_id = map_proto.get("fort_id", None)
         if fort_id is None:
             return False

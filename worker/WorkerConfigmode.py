@@ -1,7 +1,7 @@
 import time
 from threading import Event, Lock, Thread, current_thread
 
-from loguru import logger
+from utils.logging import logger
 from websocket.communicator import Communicator
 
 

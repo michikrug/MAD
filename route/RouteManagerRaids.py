@@ -1,8 +1,8 @@
 from threading import Event, Thread
 
-from loguru import logger
 from route.routecalc.ClusteringHelper import ClusteringHelper
 from route.RouteManagerBase import RouteManagerBase
+from utils.logging import logger
 
 
 class RouteManagerRaids(RouteManagerBase):

@@ -8,6 +8,7 @@ from queue import Queue
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
+
 from utils.authHelper import check_auth
 from utils.logging import LogLevelChanger, logger
 

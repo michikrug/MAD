@@ -12,11 +12,12 @@ from math import floor
 from pathlib import Path
 from shutil import copyfile
 
-import cv2
 from flask import (Flask, jsonify, make_response, redirect, render_template,
                    request, send_from_directory)
-from flask_caching import Cache
 from gevent.pywsgi import WSGIServer
+
+import cv2
+from flask_caching import Cache
 from utils.adb import ADBConnect
 from utils.functions import (creation_date, generate_path, generate_phones,
                              image_resize)

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from functools import reduce
 
 import requests
+
 from db.dbWrapperBase import DbWrapperBase
 from loguru import logger
 from utils.collections import Location

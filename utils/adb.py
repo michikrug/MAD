@@ -2,6 +2,7 @@ import os
 import sys
 import time
 
+from utils.functions import pngtojpg
 from utils.logging import logger
 
 log = logger
@@ -61,14 +62,17 @@ class ADBConnect(object):
                 'MADmin: Exception occurred while sending shell command ({}): {}.', str(origin), e)
         return False
 
-    def make_screenshot(self, adb, origin):
+    def make_screenshot(self, adb, origin, extenstion):
         try:
             device = self._client.device(adb)
             if device is not None:
                 logger.info('MADmin: Using ADB ({})', str(origin))
                 result = device.screencap()
-                with open(os.path.join(self._args.temp_path, 'screenshot%s.png' % str(origin)), "wb") as fp:
+                # TODO: adjust with devicesettings
+                with open(os.path.join(self._args.temp_path, 'screenshot_%s.png' % str(origin)), "wb") as fp:
                     fp.write(result)
+                if extenstion == "jpg":
+                    pngtojpg(os.path.join(self._args.temp_path, 'screenshot_%s.png' % str(origin)))
                 return True
         except Exception as e:
             logger.exception(

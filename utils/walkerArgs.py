@@ -154,7 +154,10 @@ def parseArgs():
     parser.add_argument('-wh', '--webhook', action='store_true', default=False,
                         help='Activate webhook support')
     parser.add_argument('-whurl', '--webhook_url', default='',
-                        help='URL endpoint/s for webhooks (seperated by commas) with [<type>] for restriction like [mon|weather|raid]http://example.org/foo/bar - urls have to start with http*')
+                        help='URL endpoint/s for webhooks (seperated by commas) with [<type>] '
+                             'for restriction like [mon|weather|raid]http://example.org/foo/bar '
+                             '- urls have to start with http*')
+
     parser.add_argument('-whea', '--webhook_excluded_areas', default="",
                         help='Comma-separated list of area names to exclude elements from within to be sent to a webhook')
     parser.add_argument('-pwh', '--pokemon_webhook', action='store_true', default=False,
@@ -163,6 +166,8 @@ def parseArgs():
                         help='Activate weather webhook support')
     parser.add_argument('-qwh', '--quest_webhook', action='store_true', default=False,
                         help='Activate quest webhook support')
+    parser.add_argument('-qwhf', '--quest_webhook_flavor', choices=['default', 'poracle'], default='default',
+                        help='Webhook format for Quests: default or poracle compatible')
     parser.add_argument('-gwh', '--gym_webhook', action='store_true', default=False,
                         help='Activate gym webhook support')
     parser.add_argument('-whser', '--webhook_submit_exraids', action='store_true', default=False,
@@ -219,8 +224,6 @@ def parseArgs():
 
     parser.add_argument('-rdt', '--raid_time', default='45', type=int,
                         help='Raid Battle time in minutes. (Default: 45)')
-    parser.add_argument('-ump', '--use_media_projection', action='store_true', default=False,
-                        help='Use Media Projection for image transfer (OCR) (Default: False)')
 
     # adb
     parser.add_argument('-adb', '--use_adb', action='store_true', default=False,

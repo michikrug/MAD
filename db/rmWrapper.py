@@ -3,11 +3,11 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from functools import reduce
+from typing import List
 
 import requests
 
 from db.dbWrapperBase import DbWrapperBase
-from loguru import logger
 from utils.collections import Location
 from utils.gamemechanicutil import gen_despawn_timestamp
 from utils.logging import logger
@@ -211,7 +211,6 @@ class RmWrapper(DbWrapperBase):
             if found_end_time:
                 egg_hatched = True
         else:
-            logger.info("Updating everything")
             query = (
                 "UPDATE raid "
                 "SET level = %s, spawn = FROM_UNIXTIME(%s), start = %s, end = %s, "
@@ -230,7 +229,7 @@ class RmWrapper(DbWrapperBase):
             # we need to insert the raid...
             if MonWithNoEgg:
                 # submit mon without egg info -> we have an endtime
-                logger.info("Inserting mon without egg")
+                logger.debug("Inserting mon without egg")
                 start = end - (int(self.application_args.raid_time) * 60)
                 query = (
                     "INSERT INTO raid (gym_id, level, spawn, start, end, pokemon_id, last_scanned, cp, "
@@ -243,13 +242,12 @@ class RmWrapper(DbWrapperBase):
                         time.time())
                 )
             elif end is None and start is None:
-                logger.info("Inserting without end or start")
+                logger.debug("Inserting without end or start")
                 # no end or start time given, just inserting won't help much...
                 logger.warning("Useless to insert without endtime...")
                 return False
             else:
                 # we have start and end, mon is either with egg or we're submitting an egg
-                logger.info("Inserting everything")
                 start = int(end) - (int(self.application_args.raid_time) * 60)
                 query = (
                     "INSERT INTO raid (gym_id, level, spawn, start, end, pokemon_id, last_scanned, cp, "
@@ -262,8 +260,8 @@ class RmWrapper(DbWrapperBase):
 
             self.execute(query, vals, commit=True)
 
-        logger.info("[Crop: {} ({})] submit_raid: Submit finished",
-                    str(raid_no), str(unique_hash))
+        logger.debug("[Crop: {} ({})] submit_raid: Submit finished",
+                     str(raid_no), str(unique_hash))
         self.refresh_times(gym, raid_no, capture_time)
 
         logger.debug("RmWrapper::submit_raid done")
@@ -293,12 +291,12 @@ class RmWrapper(DbWrapperBase):
             for row in res:
                 logger.debug("[Crop: {} ({})] read_raid_endtime: Found Rows: {}", str(
                     raid_no), str(unique_hash), str(number_of_rows))
-                logger.info("[Crop: {} ({})] read_raid_endtime: Endtime already submitted", str(
+                logger.debug("[Crop: {} ({})] read_raid_endtime: Endtime already submitted", str(
                     raid_no), str(unique_hash))
                 logger.debug("RmWrapper::read_raid_endtime done")
                 return True
 
-        logger.info("[Crop: {} ({})] read_raid_endtime: Endtime is new", str(
+        logger.debug("[Crop: {} ({})] read_raid_endtime: Endtime is new", str(
             raid_no), str(unique_hash))
         logger.debug("RmWrapper::read_raid_endtime done")
         return False
@@ -363,13 +361,13 @@ class RmWrapper(DbWrapperBase):
             if number_of_rows > 0:
                 logger.debug("[Crop: {} ({})] raid_exist: Found Rows: {}", str(
                     raid_no), str(unique_hash), str(number_of_rows))
-                logger.info("[Crop: {} ({})] raid_exist: Egg already submitted", str(
+                logger.debug("[Crop: {} ({})] raid_exist: Egg already submitted", str(
                     raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return True
             else:
-                logger.info("[Crop: {} ({})] raid_exist: Egg is new",
-                            str(raid_no), str(unique_hash))
+                logger.debug("[Crop: {} ({})] raid_exist: Egg is new",
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
         else:
@@ -393,13 +391,13 @@ class RmWrapper(DbWrapperBase):
             if number_of_rows > 0:
                 logger.debug("[Crop: {} ({})] raid_exist: Found Rows: {}", str(
                     raid_no), str(unique_hash), str(number_of_rows))
-                logger.info("[Crop: {} ({})] raid_exist: Mon already submitted", str(
+                logger.debug("[Crop: {} ({})] raid_exist: Mon already submitted", str(
                     raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return True
             else:
-                logger.info("[Crop: {} ({})] raid_exist: Mon is new",
-                            str(raid_no), str(unique_hash))
+                logger.debug("[Crop: {} ({})] raid_exist: Mon is new",
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
 
@@ -544,9 +542,9 @@ class RmWrapper(DbWrapperBase):
             "latitude <= %s AND longitude <= %s"
         )
         res = self.execute(query, rectangle)
-        list_of_coords = []
+        list_of_coords: List[Location] = []
         for (latitude, longitude) in res:
-            list_of_coords.append([latitude, longitude])
+            list_of_coords.append(Location(latitude, longitude))
         logger.debug("Got {} coordinates in this rect (minLat, minLon, "
                      "maxLat, maxLon): {}", len(list_of_coords), str(rectangle))
 
@@ -603,21 +601,21 @@ class RmWrapper(DbWrapperBase):
         )
 
         res = self.execute(query)
-        list_of_coords = []
+        list_of_coords: List[Location] = []
         for (latitude, longitude) in res:
-            list_of_coords.append([latitude, longitude])
+            list_of_coords.append(Location(latitude, longitude))
 
         if geofence_helper is not None:
             geofenced_coords = geofence_helper.get_geofenced_coordinates(
                 list_of_coords)
             return geofenced_coords
         else:
-            import numpy as np
-            to_return = np.zeros(shape=(len(list_of_coords), 2))
-            for i in range(len(to_return)):
-                to_return[i][0] = list_of_coords[i][0]
-                to_return[i][1] = list_of_coords[i][1]
-            return to_return
+            # import numpy as np
+            # to_return = np.zeros(shape=(len(list_of_coords), 2))
+            # for i in range(len(to_return)):
+            #     to_return[i][0] = list_of_coords[i][0]
+            #     to_return[i][1] = list_of_coords[i][1]
+            return list_of_coords
 
     def update_insert_weather(self, cell_id, gameplay_weather, capture_time, cloud_level=0, rain_level=0, wind_level=0,
                               snow_level=0, fog_level=0, wind_direction=0, weather_daytime=0):
@@ -645,7 +643,7 @@ class RmWrapper(DbWrapperBase):
 
         return True
 
-    def submit_mon_iv(self, origin, timestamp, encounter_proto):
+    def submit_mon_iv(self, origin, timestamp, encounter_proto, stats):
         logger.debug("Updating IV sent by {}", str(origin))
         wild_pokemon = encounter_proto.get("wild_pokemon", None)
         if wild_pokemon is None:
@@ -669,12 +667,15 @@ class RmWrapper(DbWrapperBase):
         if encounter_id < 0:
             encounter_id = encounter_id + 2**64
 
+        stats.stats_collect_mon_iv(encounter_id)
+
         if getdetspawntime is None:
-            logger.info("{}: updating IV mon #{} at {}, {}. Despawning at {} (init)",
-                        str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+
+            logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (init)",
+                         str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
         else:
-            logger.info("{}: updating IV mon #{} at {}, {}. Despawning at {} (non-init)",
-                        str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+            logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (non-init)",
+                         str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
 
         capture_probability = encounter_proto.get("capture_probability")
         capture_probability_list = capture_probability.get(
@@ -730,7 +731,7 @@ class RmWrapper(DbWrapperBase):
 
         return True
 
-    def submit_mons_map_proto(self, origin, map_proto, mon_ids_iv):
+    def submit_mons_map_proto(self, origin, map_proto, mon_ids_iv, stats):
         logger.debug(
             "RmWrapper::submit_mons_map_proto called with data received from {}", str(origin))
         cells = map_proto.get("cells", None)
@@ -757,6 +758,8 @@ class RmWrapper(DbWrapperBase):
                 if encounter_id < 0:
                     encounter_id = encounter_id + 2**64
 
+                stats.stats_collect_mon(encounter_id)
+
                 now = datetime.utcfromtimestamp(
                     time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -767,11 +770,11 @@ class RmWrapper(DbWrapperBase):
                     despawn_time_unix).strftime('%Y-%m-%d %H:%M:%S')
 
                 if getdetspawntime is None:
-                    logger.info("{}: adding mon (#{}) at {}, {}. Despawns at {} (init) ({})", str(
+                    logger.debug("{}: adding mon (#{}) at {}, {}. Despawns at {} (init) ({})", str(
                         origin), mon_id, lat, lon, despawn_time, spawnid)
                 else:
-                    logger.info("{}: adding mon (#{}) at {}, {}. Despawns at {} (non-init) ({})",
-                                str(origin), mon_id, lat, lon, despawn_time, spawnid)
+                    logger.debug("{}: adding mon (#{}) at {}, {}. Despawns at {} (non-init) ({})",
+                                 str(origin), mon_id, lat, lon, despawn_time, spawnid)
 
                 mon_args.append(
                     (
@@ -878,7 +881,7 @@ class RmWrapper(DbWrapperBase):
         logger.debug("{}: submit_gyms done", str(origin))
         return True
 
-    def submit_raids_map_proto(self, origin, map_proto):
+    def submit_raids_map_proto(self, origin, map_proto, stats):
         logger.debug(
             "RmWrapper::submit_raids_map_proto called with data received from {}", str(origin))
         cells = map_proto.get("cells", None)
@@ -932,8 +935,10 @@ class RmWrapper(DbWrapperBase):
                     level = gym['gym_details']['raid_info']['level']
                     gymid = gym['id']
 
-                    logger.info("Adding/Updating gym {} with level {} ending at {}",
-                                str(gymid), str(level), str(raidend_date))
+                    stats.stats_collect_raid(gymid)
+
+                    logger.debug("Adding/Updating gym {} with level {} ending at {}",
+                                 str(gymid), str(level), str(raidend_date))
 
                     raid_args.append(
                         (
@@ -1121,26 +1126,25 @@ class RmWrapper(DbWrapperBase):
         )
 
         res = self.execute(query)
-        list_of_coords = []
+        list_of_coords: List[Location] = []
         for (latitude, longitude) in res:
-            list_of_coords.append([latitude, longitude])
+            list_of_coords.append(Location(latitude, longitude))
 
         if geofence_helper is not None:
             geofenced_coords = geofence_helper.get_geofenced_coordinates(
                 list_of_coords)
             return geofenced_coords
         else:
-            import numpy as np
-            to_return = np.zeros(shape=(len(list_of_coords), 2))
-            for i in range(len(to_return)):
-                to_return[i][0] = list_of_coords[i][0]
-                to_return[i][1] = list_of_coords[i][1]
-            return to_return
+            # import numpy as np
+            # to_return = np.zeros(shape=(len(list_of_coords), 2))
+            # for i in range(len(to_return)):
+            #     to_return[i][0] = list_of_coords[i][0]
+            #     to_return[i][1] = list_of_coords[i][1]
+            return list_of_coords
 
-    def quests_from_db(self, GUID=None, timestamp=None):
+    def quests_from_db(self, neLat=None, neLon=None, swLat=None, swLon=None, oNeLat=None, oNeLon=None, oSwLat=None, oSwLon=None, timestamp=None):
         logger.debug("RmWrapper::quests_from_db called")
         questinfo = {}
-        data = ()
 
         query = (
             "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
@@ -1148,23 +1152,32 @@ class RmWrapper(DbWrapperBase):
             "trs_quest.quest_item_id, trs_quest.quest_item_amount, "
             "pokestop.name, pokestop.image, trs_quest.quest_target, trs_quest.quest_condition, "
             "trs_quest.quest_timestamp, trs_quest.quest_task, trs_quest.quest_template "
-            "FROM pokestop inner join trs_quest on "
-            "pokestop.pokestop_id = trs_quest.GUID where "
-            "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE()"
+            "FROM pokestop INNER JOIN trs_quest ON pokestop.pokestop_id = trs_quest.GUID "
+            "WHERE DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() "
         )
 
-        if GUID is not None:
-            add_query = " and trs_quest.GUID = %s"
-            query = query + add_query
-            data = (GUID,)
+        query_where = ""
+
+        if neLat is not None and neLon is not None and swLat is not None and swLon is not None:
+            oquery_where = (
+                " AND (latitude >= {} AND longitude >= {} "
+                " AND latitude <= {} AND longitude <= {}) "
+            ).format(swLat, swLon, neLat, neLon)
+
+            query_where = query_where + oquery_where
+
+        if oNeLat is not None and oNeLon is not None and oSwLat is not None and oSwLon is not None:
+            oquery_where = (
+                " AND NOT (latitude >= {} AND longitude >= {} "
+                " AND latitude <= {} AND longitude <= {}) "
+            ).format(oSwLat, oSwLon, oNeLat, oNeLon)
+
+            query_where = query_where + oquery_where
         elif timestamp is not None:
-            add_query = " and trs_quest.quest_timestamp >= %s"
-            query = query + add_query
-            data = (timestamp,)
+            oquery_where = " AND trs_quest.quest_timestamp >= {}".format(timestamp)
+            query_where = query_where + oquery_where
 
-        query = query + " ORDER BY trs_quest.quest_timestamp DESC"
-
-        res = self.execute(query, data)
+        res = self.execute(query + query_where)
 
         for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id, quest_reward_type,
              quest_item_id, quest_item_amount, name, image, quest_target, quest_condition,
@@ -1378,16 +1391,25 @@ class RmWrapper(DbWrapperBase):
     def statistics_get_pokemon_count(self, minutes):
         logger.debug('Fetching pokemon spawns count from db')
         query_where = ''
-        query_date = "unix_timestamp(DATE_FORMAT(disappear_time, '%y-%m-%d %k:00:00')) as timestamp"
+        query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00')) as timestamp"
         if minutes:
-            minutes = datetime.utcnow() - timedelta(minutes=int(minutes))
-            query_where = ' where disappear_time > \'%s\' ' % str(minutes)
+            minutes = datetime.now().replace(
+                minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
+            query_where = ' where FROM_UNIXTIME(timestamp_scan) > \'%s\' ' % str(minutes)
+
+        # SELECT unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00')) as timestamp,
+        # count(DISTINCT type_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon join trs_stats_detect_raw
+        # on pokemon.encounter_id=trs_stats_detect_raw.type_id where FROM_UNIXTIME(timestamp_scan)
+        # > '2019-05-04 10:47:47.259159' group by IV, day(FROM_UNIXTIME(timestamp_scan)),
+        # hour(FROM_UNIXTIME(timestamp_scan)) order by timestamp
 
         query = (
-            "SELECT  %s, count(pokemon_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon %s "
-            "group by IV, day(disappear_time), hour(disappear_time) order by timestamp" %
+            "SELECT  %s, count(DISTINCT type_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon join "
+            "trs_stats_detect_raw on pokemon.encounter_id=trs_stats_detect_raw.type_id %s "
+            "group by IV, day(FROM_UNIXTIME(timestamp_scan)), hour(FROM_UNIXTIME(timestamp_scan)) order by timestamp" %
                 (str(query_date), str(query_where))
         )
+
         res = self.execute(query)
 
         return res
@@ -1400,6 +1422,7 @@ class RmWrapper(DbWrapperBase):
             "as Color, count(team_id) as Count FROM `gym` group by team_id"
 
         )
+
         res = self.execute(query)
 
         return res
@@ -1437,3 +1460,101 @@ class RmWrapper(DbWrapperBase):
         total = reduce(lambda x, y: x + y[1], res, 0)
 
         return {'pokemon': res, 'total': total}
+
+    def get_best_pokemon_spawns(self):
+        logger.debug('Fetching best pokemon spawns from db')
+        query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:%i:00'))"
+
+        query = (
+            "SELECT encounter_id, GROUP_CONCAT(DISTINCT worker order by worker asc SEPARATOR ', '), pokemon_id, "
+            "%s, individual_attack, individual_defense, individual_stamina, cp_multiplier, cp FROM pokemon join "
+            "trs_stats_detect_raw on pokemon.encounter_id=type_id WHERE "
+            "individual_attack>14 and individual_defense>14 and individual_stamina>14 and "
+            "trs_stats_detect_raw.type='mon' group by encounter_id "
+            "order by trs_stats_detect_raw.timestamp_scan desc limit 30" %
+                (str(query_date))
+        )
+
+        res = self.execute(query)
+        return res
+
+    def delete_stop(self, latitude: float, longitude: float):
+        logger.debug('Deleting stop from db')
+        query = (
+            "delete from pokestop where latitude=%s and longitude=%s"
+        )
+        del_vars = (latitude, longitude)
+        self.execute(query, del_vars, commit=True)
+
+    def get_gyms_in_rectangle(self, neLat, neLon, swLat, swLon, oNeLat=None, oNeLon=None, oSwLat=None, oSwLon=None, timestamp=None):
+        gyms = {}
+
+        # base query to fetch gyms
+        query = (
+            "SELECT gym.gym_id, gym.latitude, gym.longitude, "
+            "gymdetails.name, gymdetails.url, gym.team_id, "
+            "gym.last_modified, raid.level, raid.spawn, raid.start, "
+            "raid.end, raid.pokemon_id, raid.form "
+            "FROM gym "
+            "INNER JOIN gymdetails ON gym.gym_id = gymdetails.gym_id "
+            "LEFT JOIN raid ON raid.gym_id = gym.gym_id "
+        )
+
+        # fetch gyms only in a certain rectangle
+        query_where = (
+            " WHERE (latitude >= {} AND longitude >= {} "
+            " AND latitude <= {} AND longitude <= {}) "
+        ).format(swLat, swLon, neLat, neLon)
+
+        # but don't fetch gyms from a known rectangle
+        if oNeLat is not None and oNeLon is not None and oSwLat is not None and oSwLon is not None:
+            oquery_where = (
+                " AND NOT (latitude >= {} AND longitude >= {} "
+                " AND latitude <= {} AND longitude <= {}) "
+            ).format(oSwLat, oSwLon, oNeLat, oNeLon)
+
+            query_where = query_where + oquery_where
+
+        # there's no old rectangle so check for a timestamp to send only updated stuff
+        elif timestamp is not None:
+            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+
+            # TODO ish: until we don't show any other information like raids
+            #          we can use last_modified, since that will give us actual
+            #          changes like gym color change
+            oquery_where = " AND last_modified >= '{}' ".format(tsdt)
+
+            query_where = query_where + oquery_where
+
+        res = self.execute(query + query_where)
+
+        for (gym_id, latitude, longitude, name, url, team_id, last_updated,
+                level, spawn, start, end, mon_id, form) in res:
+
+            nowts = datetime.utcfromtimestamp(time.time()).timestamp()
+
+            # check if we found a raid and if it's still active
+            if end is None or nowts > int(end.replace(tzinfo=timezone.utc).timestamp()):
+                raid = None
+            else:
+                raid = {
+                    "spawn": int(spawn.replace(tzinfo=timezone.utc).timestamp()),
+                    "start": int(start.replace(tzinfo=timezone.utc).timestamp()),
+                    "end": int(end.replace(tzinfo=timezone.utc).timestamp()),
+                    "mon": mon_id,
+                    "form": form,
+                    "level": level
+                }
+
+            gyms[gym_id] = {
+                "id": gym_id,
+                "name": name,
+                "url": url,
+                "latitude": latitude,
+                "longitude": longitude,
+                "team_id": team_id,
+                "last_updated": last_updated,
+                "raid": raid
+            }
+
+        return gyms

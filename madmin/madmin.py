@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import ast
 import datetime
 import glob
 import json
@@ -21,8 +22,12 @@ from flask_caching import Cache
 from utils.adb import ADBConnect
 from utils.functions import (creation_date, generate_path, generate_phones,
                              image_resize)
+from utils.gamemechanicutil import (calculate_iv, calculate_mon_level,
+                                    get_raid_boss_cp)
+from utils.geo import get_distance_of_two_points_in_meters
 from utils.language import i8ln, open_json_file
 from utils.logging import LogLevelChanger, logger
+from utils.madGlobals import ScreenshotType
 from utils.mappingParser import MappingParser
 from utils.questGen import generate_quest
 
@@ -41,6 +46,14 @@ areas = None
 ws_server = None
 datetimeformat = None
 adb_connect = None
+
+
+def __generate_device_screenshot_path(phone_name: str):
+    screenshot_ending: str = ".jpg"
+    if device_mappings[phone_name].get("screenshot_type", "jpeg") == "png":
+        screenshot_ending = ".png"
+    screenshot_filename = "screenshot_{}{}".format(phone_name, screenshot_ending)
+    return os.path.join(conf_args.temp_path, screenshot_filename)
 
 
 def madmin_start(arg_args, arg_db_wrapper, glob_ws_server):
@@ -144,12 +157,12 @@ def get_phonescreens():
         else:
             ws_connected_phones.append(adb)
 
-        filename = os.path.join(conf_args.temp_path,
-                                'screenshot%s.png' % str(phonename))
+        filename = __generate_device_screenshot_path(phonename)
         if os.path.isfile(filename):
+            screenshot_ending: str = ".jpg"
             image_resize(filename, os.path.join(
                 conf_args.temp_path, "madmin"), width=250)
-            screen = "screenshot/madmin/screenshot" + str(phonename) + ".png"
+            screen = "screenshot/madmin/screenshot_" + str(phonename) + screenshot_ending
             screens_phone.append(
                 generate_phones(phonename, add_text, adb_option,
                                 screen, filename, datetimeformat, dummy=False)
@@ -166,13 +179,12 @@ def get_phonescreens():
                     adb_option = True
                     add_text = '<b>ADB - no WS<img src="static/warning.png" width="20px" ' \
                                'alt="NO websocket connection!"></b>'
-                    filename = os.path.join(
-                        conf_args.temp_path, 'screenshot%s.png' % str(pho))
+                    filename = __generate_device_screenshot_path(pho)
                     if os.path.isfile(filename):
                         image_resize(filename, os.path.join(
                             conf_args.temp_path, "madmin"), width=250)
-                        screen = "screenshot/madmin/screenshot" + \
-                            str(pho) + ".png"
+                        screenshot_ending: str = ".jpg"
+                        screen = "screenshot/madmin/screenshot_" + str(pho) + screenshot_ending
                         screens_phone.append(generate_phones(
                             pho, add_text, adb_option, screen, filename, datetimeformat, dummy=False)
                         )
@@ -209,22 +221,25 @@ def take_screenshot(origin=None, useadb=None):
     logger.info('MADmin: Making screenshot ({})', str(origin))
     adb = device_mappings[origin].get('adb', False)
 
-    if useadb == 'True' and adb_connect.make_screenshot(adb, origin):
+    if useadb == 'True' and adb_connect.make_screenshot(adb, origin, "jpg"):
         logger.info('MADMin: ADB screenshot successfully ({})', str(origin))
-    elif conf_args.use_media_projection:
-        temp_comm = ws_server.get_origin_communicator(origin)
-        temp_comm.getScreenshot(os.path.join(
-            conf_args.temp_path, 'screenshot%s.png' % str(origin)))
     else:
-        temp_comm = ws_server.get_origin_communicator(origin)
-        temp_comm.get_screenshot_single(os.path.join(
-            conf_args.temp_path, 'screenshot%s.png' % str(origin)))
 
-    image_resize(os.path.join(conf_args.temp_path, "screenshot" + str(origin) + ".png"),
-                 os.path.join(conf_args.temp_path, "madmin"), width=250)
+        screenshot_type: ScreenshotType = ScreenshotType.JPEG
+        if device_mappings[origin].get("screenshot_type", "jpeg") == "png":
+            screenshot_type = ScreenshotType.PNG
+
+        screenshot_quality: int = device_mappings[origin].get("screenshot_quality", 80)
+
+        temp_comm = ws_server.get_origin_communicator(origin)
+        temp_comm.get_screenshot(__generate_device_screenshot_path(origin),
+                                 screenshot_quality, screenshot_type)
+
+    filename = __generate_device_screenshot_path(origin)
+    image_resize(filename, os.path.join(conf_args.temp_path, "madmin"), width=250)
 
     creationdate = datetime.datetime.fromtimestamp(
-        creation_date(os.path.join(conf_args.temp_path, 'screenshot%s.png' % str(origin)))).strftime(datetimeformat)
+        creation_date(filename)).strftime(datetimeformat)
 
     return creationdate
 
@@ -238,8 +253,7 @@ def click_screenshot():
     click_y = request.args.get('clicky')
     useadb = request.args.get('adb')
 
-    filename = os.path.join(conf_args.temp_path,
-                            'screenshot%s.png' % str(origin))
+    filename = __generate_device_screenshot_path(origin)
     img = cv2.imread(filename, 0)
     height, width = img.shape[:2]
 
@@ -270,8 +284,7 @@ def swipe_screenshot():
     click_ye = request.args.get('clickye')
     useadb = request.args.get('adb')
 
-    filename = os.path.join(conf_args.temp_path,
-                            'screenshot%s.png' % str(origin))
+    filename = __generate_device_screenshot_path(origin)
     img = cv2.imread(filename, 0)
     height, width = img.shape[:2]
 
@@ -417,7 +430,6 @@ def screens():
 @app.route('/', methods=['GET'])
 @auth_required
 def root():
-    print(conf_args.only_ocr)
     return render_template('index.html', running_ocr=(conf_args.only_ocr))
 
 
@@ -449,8 +461,10 @@ def unknown():
 @app.route('/map', methods=['GET'])
 @auth_required
 def map():
+    setlat = request.args.get('lat', 0)
+    setlng = request.args.get('lng', 0)
     return render_template('map.html', lat=conf_args.home_lat, lng=conf_args.home_lng,
-                           running_ocr=(conf_args.only_ocr))
+                           running_ocr=(conf_args.only_ocr), setlat=setlat, setlng=setlng)
 
 
 @app.route('/quests', methods=['GET'])
@@ -903,39 +917,70 @@ def get_route():
 @app.route("/get_spawns")
 @auth_required
 def get_spawns():
+    neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+    timestamp = request.args.get("timestamp", None)
+
     coords = []
-    data = json.loads(db_wrapper.download_spawns())
+    data = json.loads(
+        db_wrapper.download_spawns(
+            neLat,
+            neLon,
+            swLat,
+            swLon,
+            oNeLat=oNeLat,
+            oNeLon=oNeLon,
+            oSwLat=oSwLat,
+            oSwLon=oSwLon,
+            timestamp=timestamp
+        )
+    )
 
     for spawnid in data:
         spawn = data[str(spawnid)]
         coords.append({
-            'endtime': spawn['endtime'],
-            'lat': spawn['lat'],
-            'lon': spawn['lon'],
-            'spawndef': spawn['spawndef'],
-            'lastscan': spawn['lastscan']
+            "id": spawn["id"],
+            "endtime": spawn["endtime"],
+            "lat": spawn["lat"],
+            "lon": spawn["lon"],
+            "spawndef": spawn["spawndef"],
+            "lastscan": spawn["lastscan"]
         })
 
     return jsonify(coords)
 
 
-@cache.cached()
 @app.route("/get_gymcoords")
 @auth_required
 def get_gymcoords():
+    neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+    timestamp = request.args.get("timestamp", None)
+
     coords = []
 
-    data = db_wrapper.get_gym_infos()
+    data = db_wrapper.get_gyms_in_rectangle(
+        neLat,
+        neLon,
+        swLat,
+        swLon,
+        oNeLat=oNeLat,
+        oNeLon=oNeLon,
+        oSwLat=oSwLat,
+        oSwLon=oSwLon,
+        timestamp=timestamp
+    )
 
     for gymid in data:
         gym = data[str(gymid)]
+
         coords.append({
-            'id': gymid,
-            'name': gym['name'],
-            'img': gym['url'],
-            'lat': gym['latitude'],
-            'lon': gym['longitude'],
-            'team_id': gym['team_id']
+            "id": gymid,
+            "name": gym["name"],
+            "img": gym["url"],
+            "lat": gym["latitude"],
+            "lon": gym["longitude"],
+            "team_id": gym["team_id"],
+            "last_updated": gym["last_updated"],
+            "raid": gym["raid"]
         })
 
     return jsonify(coords)
@@ -944,10 +989,22 @@ def get_gymcoords():
 @app.route("/get_quests")
 @auth_required
 def get_quests():
-    timestamp = request.args.get('timestamp', 0, type=int)
     coords = []
 
-    data = db_wrapper.quests_from_db(timestamp=timestamp)
+    neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+    timestamp = request.args.get('timestamp', 0, type=int)
+
+    data = db_wrapper.quests_from_db(
+        neLat=neLat,
+        neLon=neLon,
+        swLat=swLat,
+        swLon=swLon,
+        oNeLat=oNeLat,
+        oNeLon=oNeLon,
+        oSwLat=oSwLat,
+        oSwLon=oSwLon,
+        timestamp=timestamp
+    )
 
     for pokestopid in data:
         quest = data[str(pokestopid)]
@@ -1163,7 +1220,7 @@ def addwalker():
 
     fieldwebsite.append('<div class="form-group"><label>Value for Walkermode</label><br />'
                         '<small class="form-text text-muted"></small>'
-                        '<input type="text" name="walkervalue" value="' + str(walkervalue) + '"></div>')
+                        '<input type="text" name="walkervalue" value="' + str(walkervalue) + '" data-rule-validatewalkervalue="true"></div>')
 
     fieldwebsite.append('<div class="form-group"><label>Max. Walker in Area</label><br />'
                         '<small class="form-text text-muted">Empty = infinitely</small>'
@@ -1318,6 +1375,7 @@ def config():
 
     for field in compfields[block]:
         lock = field['settings'].get("lockonedit", False)
+        showmonsidpicker = field['settings'].get("showmonsidpicker", False)
         lockvalue = 'readonly' if lock and edit else ''
         req = 'required' if field['settings'].get(
             'require', 'false') == 'true' else ''
@@ -1334,6 +1392,12 @@ def config():
             formStr = '<div class="form-group">'
             formStr += '<label>' + str(field['name']) + '</label><br /><small class="form-text text-muted">' + str(
                 field['settings']['description']) + '</small>'
+
+            # No idea how/where to put that link, ended with this one
+            if showmonsidpicker:
+                monsidpicker_link = '<a href=showmonsidpicker?edit=' + \
+                    str(edit) + '&type=' + str(type) + '>[BETA ID Picker]</a>'
+                formStr += monsidpicker_link
             if field['settings']['type'] == 'text':
                 formStr += '<input type="text" name="' + \
                     str(field['name']) + '" value="' + val + \
@@ -1519,7 +1583,6 @@ def config():
                         oldvalues_split = oldvalues[field['settings']['name']].replace(
                             " ", "").split(",")
                 else:
-                    print(oldvalues[field['name']])
                     if oldvalues[field['name']] is not None:
                         oldvalues_split = oldvalues[field['name']].replace(
                             " ", "").split(",")
@@ -1844,6 +1907,118 @@ def status():
                            running_ocr=(conf_args.only_ocr))
 
 
+@app.route('/statistics_detection_worker_data', methods=['GET'])
+@auth_required
+def statistics_detection_worker_data():
+    minutes = request.args.get('minutes', 120)
+    worker = request.args.get('worker')
+
+    # spawns
+    mon = []
+    mon_iv = []
+    raid = []
+    quest = []
+    usage = []
+
+    data = db_wrapper.statistics_get_detection_count(minutes=minutes, worker=worker)
+    for dat in data:
+        mon.append([dat[0] * 1000, int(dat[2])])
+        mon_iv.append([dat[0] * 1000, int(dat[3])])
+        raid.append([dat[0] * 1000, int(dat[4])])
+        quest.append([dat[0] * 1000, int(dat[5])])
+
+    usage.append({'label': 'Mon', 'data': mon})
+    usage.append({'label': 'Mon_IV', 'data': mon_iv})
+    usage.append({'label': 'Raid', 'data': raid})
+    usage.append({'label': 'Quest', 'data': quest})
+
+    # locations avg
+    locations_avg = []
+
+    data = db_wrapper.statistics_get_avg_data_time(minutes=minutes, worker=worker)
+    for dat in data:
+        dtime = datetime.datetime.fromtimestamp(dat[0]).strftime(datetimeformat)
+        locations_avg.append({'dtime': dtime, 'ok_locations': dat[3], 'avg_datareceive': float(dat[4]),
+                              'transporttype': dat[1], 'type': dat[5]})
+
+    # locations
+    ok = []
+    nok = []
+    sumloc = []
+    locations = []
+    data = db_wrapper.statistics_get_locations(minutes=minutes, worker=worker)
+    for dat in data:
+        ok.append([dat[0] * 1000, int(dat[3])])
+        nok.append([dat[0] * 1000, int(dat[4])])
+        sumloc.append([dat[0] * 1000, int(dat[2])])
+
+    locations.append({'label': 'Locations', 'data': sumloc})
+    locations.append({'label': 'Locations_ok', 'data': ok})
+    locations.append({'label': 'Locations_nok', 'data': nok})
+
+    # dataratio
+    loctionratio = []
+    data = db_wrapper.statistics_get_locations_dataratio(minutes=minutes, worker=worker)
+    if len(data) > 0:
+        for dat in data:
+            loctionratio.append({'label': dat[3], 'data': dat[2]})
+    else:
+        loctionratio.append({'label': '', 'data': 0})
+
+    # all spaws
+    all_spawns = []
+    data = db_wrapper.statistics_get_detection_count(grouped=False, worker=worker)
+    all_spawns.append({'type': 'Mon', 'amount': int(data[0][2])})
+    all_spawns.append({'type': 'Mon_IV', 'amount': int(data[0][3])})
+    all_spawns.append({'type': 'Raid', 'amount': int(data[0][4])})
+    all_spawns.append({'type': 'Quest', 'amount': int(data[0][5])})
+
+    # raw detection data
+    detections_raw = []
+    data = db_wrapper.statistics_get_detection_raw(minutes=minutes, worker=worker)
+    for dat in data:
+        detections_raw.append({'type': dat[1], 'id': dat[2], 'count': dat[3]})
+
+    # location raw
+    location_raw = []
+    last_lat = 0
+    last_lng = 0
+    distance = 0
+    data = db_wrapper.statistics_get_location_raw(minutes=minutes, worker=worker)
+    for dat in data:
+        if last_lat != 0 and last_lng != 0:
+            distance = round(get_distance_of_two_points_in_meters(
+                last_lat, last_lng, dat[1], dat[2]), 2)
+            last_lat = dat[1]
+            last_lng = dat[2]
+        if last_lat == 0 and last_lng == 0:
+            last_lat = dat[1]
+            last_lng = dat[2]
+        if dat[1] == 0 and dat[2] == 0:
+            distance = ''
+
+        location_raw.append({'lat': dat[1], 'lng': dat[2], 'distance': distance, 'type': dat[3], 'data': dat[4],
+                             'fix_ts': datetime.datetime.fromtimestamp(dat[5]).strftime(datetimeformat),
+                             'data_ts': datetime.datetime.fromtimestamp(dat[6]).strftime(datetimeformat),
+                             'transporttype': dat[8]})
+
+    workerstats = {'avg': locations_avg, 'receiving': usage, 'locations': locations,
+                   'ratio': loctionratio, 'allspawns': all_spawns, 'detections_raw': detections_raw,
+                   'location_raw': location_raw}
+    return jsonify(workerstats)
+
+
+@app.route('/statistics_detection_worker', methods=['GET'])
+@auth_required
+def statistics_detection_worker():
+    minutes = request.args.get('minutes', 120)
+    worker = request.args.get('worker')
+
+    return render_template('statistics_worker.html', title="MAD Worker Statisics", minutes=minutes,
+                           time=conf_args.madmin_time, worker=worker, running_ocr=conf_args.only_ocr,
+                           responsive=str(conf_args.madmin_noresponsive).lower())
+
+
 @app.route('/statistics', methods=['GET'])
 @auth_required
 def statistics():
@@ -1855,7 +2030,8 @@ def statistics():
         minutes_spawn = 120
 
     return render_template('statistics.html', title="MAD Statisics", minutes_spawn=minutes_spawn,
-                           minutes_usage=minutes_usage, time=conf_args.madmin_time, running_ocr=(conf_args.only_ocr))
+                           minutes_usage=minutes_usage, time=conf_args.madmin_time, running_ocr=conf_args.only_ocr,
+                           responsive=str(conf_args.madmin_noresponsive).lower())
 
 
 @app.route('/get_status', methods=['GET'])
@@ -1868,8 +2044,30 @@ def get_status():
 @app.route('/get_game_stats', methods=['GET'])
 @auth_required
 def game_stats():
-    minutes_usage = request.args.get('minutes_usage')
-    minutes_spawn = request.args.get('minutes_spawn')
+    minutes_usage = request.args.get('minutes_usage', 10)
+    minutes_spawn = request.args.get('minutes_spawn', 10)
+
+    data = db_wrapper.statistics_get_location_info()
+    location_info = []
+    for dat in data:
+        location_info.append({'worker': str(dat[0]), 'locations': str(dat[1]), 'locationsok': str(dat[2]),
+                              'locationsnok': str(dat[3]), 'ratio': str(dat[4]), })
+
+    # empty scans
+    data = db_wrapper.statistics_get_all_empty_scanns()
+    detection_empty = []
+    for dat in data:
+        detection_empty.append({'lat': str(dat[1]), 'lng': str(dat[2]), 'worker': str(dat[3]),
+                                'count': str(dat[0]), 'type': str(dat[4]), 'lastscan': str(dat[5]),
+                                'countsuccess': str(dat[6])})
+
+    # statistics_get_detection_count
+    data = db_wrapper.statistics_get_detection_count(grouped=False)
+    detection = []
+    for dat in data:
+        detection.append({'worker': str(dat[1]), 'mons': str(dat[2]), 'mons_iv': str(dat[3]),
+                          'raids': str(dat[4]), 'quests': str(dat[5])})
+
     # Stop
     stop = []
     data = db_wrapper.statistics_get_stop_quest()
@@ -1951,8 +2149,26 @@ def game_stats():
 
     spawn = {'iv': iv, 'noniv': noniv, 'sum': sum}
 
-    stats = {'spawn': spawn, 'gym': gym,
-             'quest': quest, 'stop': stop, 'usage': usage}
+    # good_spawns avg
+    good_spawns = []
+    data = db_wrapper.get_best_pokemon_spawns()
+    for dat in data:
+        mon = "%03d" % dat[2]
+        monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
+        monName_raw = (get_raid_boss_cp(dat[2]))
+        monName = i8ln(monName_raw['name'])
+        if conf_args.db_method == "rm":
+            lvl = calculate_mon_level(dat[7])
+        else:
+            lvl = dat[7]
+        good_spawns.append({'id': dat[2], 'iv': round(calculate_iv(dat[4], dat[5], dat[6]), 0),
+                            'lvl': lvl, 'cp': dat[8], 'img': monPic,
+                            'name': monName,
+                            'periode': datetime.datetime.fromtimestamp(dat[3]).strftime(datetimeformat)})
+
+    stats = {'spawn': spawn, 'gym': gym, 'detection': detection, 'detection_empty': detection_empty,
+             'quest': quest, 'stop': stop, 'usage': usage, 'good_spawns': good_spawns,
+             'location_info': location_info}
     return jsonify(stats)
 
 
@@ -1988,3 +2204,103 @@ def getAllHash(type):
 
 def getCoordFloat(coordinate):
     return floor(float(coordinate) * (10 ** 5)) / float(10 ** 5)
+
+
+@app.route('/showmonsidpicker', methods=['GET', 'POST'])
+@auth_required
+def showmonsidpicker():
+    edit = request.args.get('edit')
+    type = request.args.get('type')
+    header = ""
+    title = ""
+
+    if request.method == 'GET' and (not edit or not type):
+        return render_template('showmonsidpicker.html', error_msg="How did you end up here? Missing params.", header=header, title=title)
+
+    with open('configs/mappings.json') as f:
+        mapping = json.load(f)
+
+    if "areas" not in mapping:
+        return render_template('showmonsidpicker.html', error_msg="No areas defined at all, please configure first.", header=header, title=title)
+
+    this_area = None
+    this_area_index = -1
+    for t_area in mapping["areas"]:
+        this_area_index += 1
+        if t_area["name"] == edit and t_area["mode"] == type:
+            this_area = t_area
+            break
+
+    if this_area == None:
+        return render_template('showmonsidpicker.html', error_msg="No area (" + edit + " with mode: " + type + ") found in mappings, add it first.", header=header, title=title)
+
+    title = "Mons ID Picker for " + edit
+    header = "Editing area " + edit + " (" + type + ")"
+    backurl = "config?type="+type+"&area=areas&block=settings&edit="+edit
+
+    if "settings" not in this_area:
+        return render_template('showmonsidpicker.html', error_msg="No settings key found for area " + edit + "(" + type + "). Configure it first.", header=header, title=title)
+
+    if request.method == 'POST':
+        new_mons_list = request.form.get('current_mons_list')
+        if not new_mons_list:
+            return redirect("/showsettings", code=302)
+
+        mapping["areas"][this_area_index]["settings"]["mon_ids_iv"] = ast.literal_eval(
+            new_mons_list)
+
+        with open('configs/mappings.json', 'w') as outfile:
+            json.dump(mapping, outfile, indent=4, sort_keys=True)
+        return redirect(backurl, code=302)
+
+    if "mon_ids_iv" not in this_area["settings"]:
+        current_mons = []
+    else:
+        current_mons = this_area["settings"]["mon_ids_iv"]
+
+    mondata = open_json_file('pokemon')
+
+    current_mons_list = []
+
+    for mon_id in current_mons:
+        try:
+            mon_name = i8ln(mondata[str(mon_id)]["name"])
+        except KeyError:
+            mon_name = "No-name-in-file-please-fix"
+        current_mons_list.append({"mon_name": mon_name, "mon_id": str(mon_id)})
+
+    # Why o.O
+    stripped_mondata = {}
+    for mon_id in mondata:
+        stripped_mondata[mondata[str(mon_id)]["name"]] = mon_id
+        if os.environ['LANGUAGE'] != "en":
+            try:
+                localized_name = i8ln(mondata[str(mon_id)]["name"])
+                stripped_mondata[localized_name] = mon_id
+            except KeyError:
+                pass
+
+    formhiddeninput = '<form action="showmonsidpicker?edit=' + edit + \
+        '&type=' + type + '" id="showmonsidpicker" method="post">'
+    formhiddeninput += '<input type="hidden" id="current_mons_list" name="current_mons_list" value="' + \
+        str(current_mons) + '">'
+    formhiddeninput += '<button type="submit" class="btn btn-success">Save</button></form>'
+    return render_template('showmonsidpicker.html', backurl=backurl, formhiddeninput=formhiddeninput, current_mons_list=current_mons_list, stripped_mondata=stripped_mondata, header=header, title=title)
+
+
+def getBoundParameter(request):
+    neLat = request.args.get('neLat')
+    neLon = request.args.get('neLon')
+    swLat = request.args.get('swLat')
+    swLon = request.args.get('swLon')
+    oNeLat = request.args.get('oNeLat', None)
+    oNeLon = request.args.get('oNeLon', None)
+    oSwLat = request.args.get('oSwLat', None)
+    oSwLon = request.args.get('oSwLon', None)
+
+    # reset old bounds to None if they're equal
+    # this will tell the query to only fetch new/updated elements
+    if neLat == oNeLat and neLon == oNeLon and swLat == oSwLat and swLon == oSwLon:
+        oNeLat = oNeLon = oSwLat = oSwLon = None
+
+    return neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon

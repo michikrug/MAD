@@ -6,7 +6,7 @@ from utils.geo import (get_distance_of_two_points_in_meters,
                        get_lat_lng_offsets_by_distance)
 from utils.logging import logger
 from utils.madGlobals import InternalStopWorkerException
-from worker.MITMBase import MITMBase
+from worker.MITMBase import LatestReceivedType, MITMBase
 
 
 class WorkerMITM(MITMBase):
@@ -36,14 +36,15 @@ class WorkerMITM(MITMBase):
                                                         float(
                                                             self.current_location.lat),
                                                         float(self.current_location.lng))
-        logger.info('Moving {} meters to the next position',
-                    round(distance, 2))
+        logger.debug('Moving {} meters to the next position', round(distance, 2))
         delay_used = 0
         speed = routemanager.settings.get("speed", 0)
         max_distance = routemanager.settings.get("max_distance", None)
         if (speed == 0 or
                 (max_distance and 0 < max_distance < distance)
                 or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
+            logger.debug("main: Teleporting...")
+            self._transporttype = 0
             self._communicator.setLocation(
                 self.current_location.lat, self.current_location.lng, 0)
             # the time we will take as a starting point to wait for data...
@@ -92,6 +93,7 @@ class WorkerMITM(MITMBase):
                 time.sleep(1)
         else:
             logger.info("main: Walking...")
+            self._transporttype = 1
             self._communicator.walkFromTo(self.last_location.lat, self.last_location.lng,
                                           self.current_location.lat, self.current_location.lng, speed)
             # the time we will take as a starting point to wait for data...
@@ -100,6 +102,7 @@ class WorkerMITM(MITMBase):
         time.sleep(float(delay_used))
         self._devicesettings["last_location"] = self.current_location
         self.last_location = self.current_location
+        self._waittime_without_delays = time.time()
         return cur_time, True
 
     def _pre_location_update(self):
@@ -123,6 +126,7 @@ class WorkerMITM(MITMBase):
         cur_time = time.time()
         start_result = False
         while not pogo_topmost:
+            self._mitm_mapper.set_injection_status(self._id, False)
             start_result = self._communicator.startApp(
                 "com.nianticlabs.pokemongo")
             time.sleep(1)
@@ -130,7 +134,6 @@ class WorkerMITM(MITMBase):
         reached_raidtab = False
         if start_result:
             logger.warning("startPogo: Starting pogo...")
-            time.sleep(self._devicesettings.get("post_pogo_start_delay", 60))
             self._last_known_state["lastPogoRestart"] = cur_time
 
             # let's handle the login and stuff
@@ -208,7 +211,7 @@ class WorkerMITM(MITMBase):
                                         values_dict=injected_settings)
 
     def _wait_data_worker(self, latest, proto_to_wait_for, timestamp):
-        data_requested = None
+        data_requested = LatestReceivedType.UNDEFINED
         if latest is None:
             logger.debug(
                 "Nothing received from {} since MAD started", str(self._id))
@@ -230,7 +233,7 @@ class WorkerMITM(MITMBase):
                 latest_data = latest_proto.get("values", None)
                 if latest_data is None:
                     time.sleep(0.5)
-                    return None
+                    return LatestReceivedType.UNDEFINED
                 elif current_mode in ["mon_mitm", "iv_mitm"]:
                     # check if the GMO contains mons
                     for data_extract in latest_data['payload']['cells']:

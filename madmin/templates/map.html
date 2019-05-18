@@ -4,18 +4,48 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
  crossorigin="" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-sidebar-v2@3.0.6/css/leaflet-sidebar.min.css" />
-<link rel="stylesheet" href="static/style/madmin.css?1557412980" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css">
+<link rel="stylesheet" href="static/style/madmin.css?1558081243" />
 {% endblock %}
 
 {% block scripts %}
-<script src="https://use.fontawesome.com/releases/v5.6.3/js/all.js" integrity="sha384-EIHISlAOj4zgYieurP0SdoiBYfGJKkgWedPHH4jCzpCXLmzVsw1ouK59MuUtP4a1"
- crossorigin="anonymous" defer></script>
+<script defer src="https://use.fontawesome.com/releases/v5.8.2/js/all.js" integrity="sha384-DJ25uNYET2XCl5ZF++U8eNxPWqcKohUUBUpKGlNLMchM7q4Wjg2CUpjHLaL8yYPH" crossorigin="anonymous"></script>
 <script src="https://vuejs.org/js/vue.min.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet-sidebar-v2@3.0.6/js/leaflet-sidebar.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
 <script>
+  var locInjectBtn = L.easyButton({
+    position: "bottomright",
+    states: [{
+      stateName: 'scanmode-activate',
+      icon: 'fa-satellite-dish',
+      title: 'Enable click-to-scan mode',
+      onClick: function(btn, map) {
+        clickToScanActive = true;
+        L.DomUtil.addClass(map._container, 'crosshair-cursor-enabled');
+        btn.state('scanmode-deactivate');
+      }
+    }, {
+      stateName: 'scanmode-deactivate',
+      icon: 'fa-satellite-dish',
+      title: 'Disable click-to-scan mode',
+      onClick: function(btn, map) {
+        clickToScanActive = false;
+        L.DomUtil.removeClass(map._container, 'crosshair-cursor-enabled');
+        btn.state('scanmode-activate');
+      }
+    }]
+  });
+
+  $(document).on("hidden.bs.modal", "#injectionModal", function(e) {
+    locInjectBtn.state("scanmode-activate");
+    clickToScanActive = false;
+    L.DomUtil.removeClass(map._container, 'crosshair-cursor-enabled');
+  });
+
   L.Marker.addInitHook(function() {
     if (this.options.virtual) {
       this.on('add', function() {
@@ -63,9 +93,11 @@
     }
   });
 
-  // main map element
+  // globals
   var map;
-  var mapclick = 0;
+  var init = true;
+  var fetchTimeout = null;
+  var clickToScanActive = false;
 
   // object to hold all the markers and elements
   var leaflet_data = {
@@ -79,8 +111,6 @@
     workers: {}
   };
 
-  Vue.config.devtools = true;
-
   new Vue({
     el: '#app',
     data: {
@@ -93,7 +123,7 @@
           spawns: false,
           gyms: false,
           quests: false,
-          workers: false
+          workers: false,
         },
         dyn: {
           routes: {},
@@ -144,28 +174,29 @@
     },
     watch: {
       "layers.stat.gyms": function(newVal, oldVal) {
-        if (newVal) {
+        if (newVal && !init) {
           this.map_fetch_gyms(this.buildUrlFilter(true));
         }
 
+        this.changeStaticLayer("raids", oldVal, newVal);
         this.changeStaticLayer("gyms", oldVal, newVal);
       },
       "layers.stat.spawns": function(newVal, oldVal) {
-        if (newVal) {
+        if (newVal && !init) {
           this.map_fetch_spawns(this.buildUrlFilter(true));
         }
 
         this.changeStaticLayer("spawns", oldVal, newVal);
       },
       "layers.stat.workers": function(newVal, oldVal) {
-        if (newVal) {
+        if (newVal && !init) {
           this.map_fetch_workers(this.buildUrlFilter(true));
         }
 
         this.changeStaticLayer("workers", oldVal, newVal);
       },
       "layers.stat.quests": function(newVal, oldVal) {
-        if (newVal) {
+        if (newVal && !init) {
           this.map_fetch_quests(this.buildUrlFilter(true));
         }
 
@@ -247,7 +278,11 @@
             var name = worker["name"];
 
             if ($this["workers"][name]) {
-              leaflet_data["workers"][name].setLatLng([worker["lat"], worker["lon"]]);
+              leaflet_data["workers"][name].setLatLng([worker["lat"], worker["lon"]])
+
+              if (map.hasLayer(leaflet_data["workers"][name])) {
+                leaflet_data["workers"][name].bringToFront();
+              }
             } else {
               $this.workers[name] = worker;
 
@@ -325,36 +360,32 @@
             if ($this["raids"][gym["id"]]) {
               /// TODO remove past raids
               // end time is different -> new raid
-              if ($this["raids"][gym["id"]]["end"] != gym["raid"]["end"]) {
+              if ($this["raids"][gym["id"]]["end"] != gym["raid"]["end"] || gym["raid"]["end"] > (new Date().getTime()/1000)) {
+                map.removeLayer(leaflet_data["raids"][gym["id"]]);
                 delete leaflet_data["raids"][gym["id"]];
               }
             }
 
-            if (gym["raid"] != null) {
-              $this["raids"][gym["id"]] = gym["raid"];
-
-              switch (gym["raid"]["level"]) {
-                case 1:
-                case 2:
-                  raidcolor = "#FF46F3";
-                  break;
-                case 3:
-                case 4:
-                  raidcolor = "#F0B87C";
-                  break;
-                case 5:
-                  raidcolor = "#222222";
-                  break;
+            if (gym["raid"] != null && gym["raid"]["end"] > (new Date().getTime()/1000)) {
+              if (map.hasLayer(leaflet_data["raids"][gym["id"]])) {
+                return;
               }
 
-              leaflet_data["raids"][gym["id"]] = L.circle([gym["lat"], gym["lon"]], {
-                id: gym["id"],
-                radius: 14,
-                color: raidcolor,
-                weight: 3,
-                opacity: 0.9,
-                fillOpacity: 0.0
+              $this["raids"][gym["id"]] = gym["raid"];
+
+              var icon = L.divIcon({
+                html: gym["raid"]["level"],
+                className: "raidIcon",
+                iconAnchor: [-1*(18 - map.getZoom()), -1*(18 - map.getZoom())]
               });
+
+              leaflet_data["raids"][gym["id"]] = L.marker([gym["lat"], gym["lon"]], {
+                id: gym["id"],
+                icon: icon,
+                interactive: false
+              });
+
+              leaflet_data["raids"][gym["id"]].addTo(map);
             }
           });
         });
@@ -387,6 +418,7 @@
 
             route.coordinates.forEach(function (coord) {
               circle = L.circle(coord, {
+                pane: "routes",
                 radius: cradius,
                 color: color,
                 fillColor: color,
@@ -406,7 +438,14 @@
             }
 
             // add route to layergroup
-            L.geoJSON(geojson, { style: { "color": color, "weight": 2, "opacity": 0.5 } }).addTo(group);
+            L.geoJSON(geojson, {
+              pane: "routes",
+              style: {
+                "color": color,
+                "weight": 2,
+                "opacity": 0.5
+              }
+            }).addTo(group);
 
             // add layergroup to management object
             leaflet_data["routes"][name] = group;
@@ -543,7 +582,14 @@
             }
 
             // add geofence to layergroup
-            L.geoJSON(geojson, { style: { "color": $this.getRandomColor(), "weight": 2, "opacity": 0.25 } }).addTo(group);
+            L.geoJSON(geojson, {
+              pane: "geofences",
+              style: {
+                "color": $this.getRandomColor(),
+                "weight": 2,
+                "opacity": 0.25
+              }
+            }).addTo(group);
 
             // add layergroup to management object
             leaflet_data["geofences"][name] = group;
@@ -646,7 +692,8 @@
             break;
         }
 
-        return `<div class="quest">
+        return `
+          <div class="quest">
             <div class="task"><i class="fa fa-question-circle"></i> Task: <strong>${quest_task}</strong></div>
             <div class="reward"><i class="fa fa-trophy"></i> Reward: <strong>${rewardtext}</strong></div>
             <div class="rewardImg" style="background-image: url(${image}); background-size: ${size}"></div>
@@ -655,38 +702,102 @@
       build_stop_popup(marker) {
         var quest = this.quests[marker.options.id];
 
-        return `<div class="content">
-            <div class="image" style="background: url(${quest['url']}) center center no-repeat;"></div>
-            <div class="name"><strong>${quest['name']}</strong></div>
-            <div class="id"><i class="fa fa-fingerprint"></i> <span>${quest['pokestop_id']}</span></div>
+        return `
+          <div class="content">
+            <div class="image" style="background: url(${quest["url"]}) center center no-repeat;"></div>
+            <div class="name"><strong>${quest["name"]}</strong></div>
+            <div class="id"><i class="fa fa-fingerprint"></i> <span>${quest["pokestop_id"]}</span></div>
             <div class="coords">
               <i class="fa fa-map-pin"></i>
-              <a href="https://maps.google.com/?q=${quest['latitude']},${quest['longitude']}">${quest['latitude']}, ${quest['longitude']}</a>
+              <a href="https://maps.google.com/?q=${quest["latitude"]},${quest["longitude"]}">${quest["latitude"]}, ${quest["longitude"]}</a>
             </div>
-            <div id="questTimestamp"><i class="fa fa-clock"></i> Scanned: ${new Date(quest['timestamp']*1000).toLocaleString()}</div>
+            <div id="questTimestamp"><i class="fa fa-clock"></i> Scanned: ${moment(quest['timestamp']*1000).format("YYYY-MM-DD HH:mm:ss")}</div>
             <br>
             ${this.build_quest(quest['quest_reward_type_raw'], quest['quest_task'], quest['pokemon_id'], quest['item_id'], quest['item_amount'], quest['pokemon_name'], quest['item_type'])}
           </div>`;
       },
       build_gym_popup(marker) {
         gym = this.gyms[marker.options.id];
+        raid = this.raids[marker.options.id];
 
-        return `<div class="content">
-            <div class="image" style="background: url(${gym['img']}) center center no-repeat;"></div>
-            <div class="name"><strong>${gym['name']}</strong></div>
-            <div class="id"><i class="fa fa-fingerprint"></i> <span>${gym['id']}</span></div>
+        raidContent = "";
+        if (raid) {
+          var monText = "";
+          if (raid["mon"]) {
+            var mon = String.prototype.padStart.call(raid["mon"], 3, 0);
+            var form = String.prototype.padStart.call(raid["form"], 2, 0);
+            var image = `asset/pokemon_icons/pokemon_icon_${mon}_${form}.png`;
+            var monText = `<div class="monId"><i class="fas fa-ghost"></i> Mon: <strong>#${raid["mon"]}</strong></div>`
+          } else {
+            switch (raid["level"]) {
+              case 1:
+              case 2:
+                var image = "asset/static_assets/png/ic_raid_egg_normal.png";
+                break;
+              case 3:
+              case 4:
+                var image = "asset/static_assets/png/ic_raid_egg_rare.png";
+                break;
+              case 5:
+                var image = "asset/static_assets/png/ic_raid_egg_legendary.png";
+                break;
+            }
+          }
+
+          var levelStars = `<i class="fas fa-star"></i>`.repeat(raid["level"]);
+
+          var now = moment();
+          var spawn = moment(raid["spawn"]*1000);
+          var start = moment(raid["start"]*1000);
+          var end = moment(raid["end"]*1000);
+
+          var activeText = "";
+          var endText = "";
+          if (now.isAfter(start) && now.isBefore(end)) {
+            var activeText = `<span class="text-success">(active <i class="fa fa-ghost"></i>)</span>`;
+            var endText = `(${now.to(end)})`;
+          } else if (now.isBefore(start)) {
+            var activeText = `(${now.to(start)})`;
+          } else if (now.isAfter(end)) {
+            var endText = `(${end.from(now)})`;
+          }
+
+          var raidtimeformat = "HH:mm:ss";
+          var raidContent = `
+            <br>
+            <div class="raid">
+              <div class="level"><i class="fas fa-arrow-circle-up"></i> Level: <strong>${levelStars}</strong></div>
+              ${monText}
+              <div class="hatch"><i class="fa fa-egg"></i> Spawn: <strong>${spawn.format(raidtimeformat)}</strong></div>
+              <div class="start"><i class="fa fa-hourglass-start"></i> Start: <strong>${start.format(raidtimeformat)} ${activeText}</strong></div>
+              <div class="end"><i class="fas fa-hourglass-end"></i> End: <strong>${end.format(raidtimeformat)} ${endText}</strong></div>
+              <div class="raidImg" style="background-image: url(${image}); background-size: 100%"></div>
+            </div>`;
+        }
+
+
+        var timeformat = "YYYY-MM-DD HH:mm:ss";
+        var last_scanned = moment(gym["last_scanned"]*1000);
+        console.log(gym["last_scanned"]);
+
+        return `
+          <div class="content">
+            <div class="image" style="background: url(${gym["img"]}) center center no-repeat;"></div>
+            <div class="name"><strong>${gym["name"]}</strong></div>
+            <div class="id"><i class="fa fa-fingerprint"></i> <span>${gym["id"]}</span></div>
             <div class="coords">
               <i class="fa fa-map-pin"></i>
-              <a href="https://maps.google.com/?q=${gym['lat']},${gym['lon']}">${gym['lat']}, ${gym['lon']}</a>
+              <a href="https://maps.google.com/?q=${gym["lat"]},${gym["lon"]}">${gym["lat"]}, ${gym["lon"]}</a>
            </div>
+           <div class="timestamp"><i class="fa fa-clock"></i> Scanned: ${last_scanned.format(timeformat)}</div>
+           ${raidContent}
           </div>`;
       },
       build_spawn_popup(marker) {
         spawn = this.spawns[marker.options.id];
 
-
         if (spawn['endtime'] !== null) {
-          var timeformat = 'YYYY-MM-DD HH:mm:ss';
+          var timeformat = "YYYY-MM-DD HH:mm:ss";
 
           var endsplit = spawn['endtime'].split(':');
           var endMinute = parseInt(endsplit[0]);
@@ -714,29 +825,32 @@
             despawntime.add(1, 'h');
           }
 
+          var activeText = "";
           if (now.isBetween(spawntime, despawntime)) {
             var activeText = `<span class="text-success">(active <i class="fa fa-ghost"></i>)</span>`;
-          } else {
-            var activeText = "";
           }
 
           var spawntiming = `
             <div class="spawn"><i class="fa fa-hourglass-start"></i> Spawn: <strong>${spawntime.format(timeformat)} ${activeText}</strong></div>
-            <div class="despawn"><i class="fa fa-hourglass-end"></i> Despawn: <strong>${spawntime.format(timeformat)}</strong></div>`;
+            <div class="despawn"><i class="fa fa-hourglass-end"></i> Despawn: <strong>${despawntime.format(timeformat)}</strong></div>`;
         } else {
           var spawntiming = "";
         }
 
-        return `<div class="content">
+        return `
+          <div class="content">
+            <div class="id"><i class="fa fa-fingerprint"></i> <span>${spawn["id"]}</span></div>
+            <div class="coords">
+              <i class="fa fa-map-pin"></i>
+              <a href="https://maps.google.com/?q=${spawn["lat"]},${spawn["lon"]}">${spawn["lat"].toFixed(6)}, ${spawn["lon"].toFixed(6)}</a>
+           </div>
+           <div class="timestamp"><i class="fa fa-clock"></i> Scanned: ${spawn["lastscan"]}</div>
+           <br>
             <div class="spawnContent">
             <div class="spawnType"><i class="fa fa-wrench"></i> Type: <strong>${type || "Unknown"}</strong> spawnpoint</div>
               <div class="spawnTiming">${spawntiming}</div>
             </div>
-            <div class="id"><i class="fa fa-fingerprint"></i> <span>${spawn['id']}</span></div>
-            <div class="coords">
-              <i class="fa fa-map-pin"></i>
-              <a href="https://maps.google.com/?q=${spawn['lat']},${spawn['lon']}">${spawn['lat'].toFixed(6)}, ${spawn['lon'].toFixed(6)}</a>
-           </div>`;
+          </div>`;
       },
       getStoredSetting(name, defaultval) {
         var val = localStorage.getItem('settings');
@@ -778,8 +892,14 @@
         this.updateStoredSetting('center', center.lat + ',' + center.lng);
         this.updateBounds();
 
-        // TODO remove this
-        setTimeout(function() { $this.map_fetch_everything() }, 100);
+        if (fetchTimeout) {
+          clearTimeout(fetchTimeout);
+          fetchTimeout = null;
+        }
+
+        fetchTimeout = setTimeout(function() {
+          $this.map_fetch_everything();
+        }, 500);
       },
       l_event_zoomed() {
         var $this = this;
@@ -791,22 +911,19 @@
           leaflet_data["gyms"][id].setRadius(Math.pow((20 - map.getZoom()), 2.5));
         });
 
-        // TODO remove this
-        setTimeout(function() { $this.map_fetch_everything() }, 100);
+        if (fetchTimeout) {
+          clearTimeout(fetchTimeout);
+          fetchTimeout = null;
+        }
+
+        fetchTimeout = setTimeout(function() {
+          $this.map_fetch_everything();
+        }, 500);
       },
       l_event_click(e) {
-        $this = this;
-        mapclick = mapclick + 1;
-
-        setTimeout(function() {
-          if(mapclick == 1) {
-            $('#injectionModal').data('coords', e.latlng.lat + ',' + e.latlng.lng).modal();
-            mapclick = 0;
-          }
-        }, 250);
-      },
-      l_event_dbclick(e) {
-        mapclick = 0;
+        if(clickToScanActive) {
+          $('#injectionModal').data('coords', e.latlng.lat + ',' + e.latlng.lng).modal();
+        }
       },
       updateBounds(isOld) {
         if (!isOld) {
@@ -843,17 +960,21 @@
         return lonlat;
       },
       initMap() {
-        $this = this;
-
         // get stored settings
         this.settings.maptiles = this.getStoredSetting("settings-maptiles", "cartodblight");
         this.settings.routes.coordinateRadius.raids = this.getStoredSetting('settings-coordinateRadius-raids', 490);
         this.settings.routes.coordinateRadius.quests = this.getStoredSetting('settings-coordinateRadius-quests', 40);
         this.settings.routes.coordinateRadius.mons = this.getStoredSetting('settings-coordinateRadius-mons', 67);
-        var statlayers = Object.keys(this.layers.stat);
         for (index of Object.keys(this.layers.stat)) {
           this.layers.stat[index] = this.getStoredSetting("layer-stat-"+index, false);
         }
+
+        // magic thingy to prevent double-loading data
+        // after we initially restored settings
+        // from stored settings
+        this.$nextTick(function() {
+          init = false;
+        });
 
         // get stored center and zoom level if they exists
         const storedZoom = this.getStoredSetting('zoomlevel', 3);
@@ -868,10 +989,20 @@
           preferCanvas: true
         }).setView(storedCenter.split(','), storedZoom);
 
+        // add custom button
+        locInjectBtn.addTo(map);
+
+        // extra panes to make sure routes and
+        // geofences are below everything else
+        map.createPane("geofences");
+        map.createPane("routes");
+
+        // move zoom controls
         L.control.zoom({
           position: 'bottomright'
         }).addTo(map);
 
+        // add sidebar
         var sidebar = L.control.sidebar({
           autopan: false,
           closeButton: true,
@@ -900,11 +1031,6 @@
         map.on('zoomend', this.l_event_zoomed);
         map.on('moveend', this.l_event_moveend);
         map.on('click', this.l_event_click);
-        map.on('dblclick', this.l_event_dbclick);
-
-        sidebar.on("content", function(event) {
-          $this.updateStoredSetting("sidebartab", event.id);
-        });
       },
       buildUrlFilter(force = false) {
         var oSwLat = this.getStoredSetting("oSwLat", null);
@@ -967,81 +1093,90 @@
     <div class="leaflet-sidebar-content">
       <div class="leaflet-sidebar-pane" id="points">
         <h1 class="leaflet-sidebar-header bg-dark">Points<div class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></div></h1>
-        <ul class="list-group list-group-flush">
-          {% raw %}
-          <li v-for="(item, index) in layers.stat" class="list-group-item layer-item d-flex">
-            <div class="flex-grow-1">{{ index }}</div>
-            <div class="custom-control custom-switch">
-              <input :id="index" type="checkbox" v-model="layers.stat[index]" class="custom-control-input" />
-              <label :for="index" class="custom-control-label"></label>
-            </div>
-          </li>
-          {% endraw %}
-        </ul>
+        <div class="sidebar-pane-content">
+          <ul class="list-group list-group-flush">
+            {% raw %}
+            <li v-for="(item, index) in layers.stat" class="list-group-item layer-item d-flex">
+              <div class="flex-grow-1">{{ index }}</div>
+              <div class="custom-control custom-switch">
+                <input :id="index" type="checkbox" v-model="layers.stat[index]" class="custom-control-input" />
+                <label :for="index" class="custom-control-label"></label>
+              </div>
+            </li>
+            {% endraw %}
+          </ul>
+        </div>
       </div>
 
       <div class="leaflet-sidebar-pane" id="routes">
         <h1 class="leaflet-sidebar-header bg-dark">Routes<div class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></div></h1>
-        <ul class="list-group list-group-flush">
-          {% raw %}
-          <li v-for="(route, index) in layers.dyn.routes" class="list-group-item layer-item justify-content-between d-flex align-items-center">
-            <div class="flex-grow-1">{{ index }}</div>
-            <span class="badge badge-secondary" style="margin-right: 5px;">{{ route.mode }}</span>
-            <div class="custom-control custom-switch">
-              <input :id="index" type="checkbox" v-model="route.show" class="custom-control-input" />
-              <label :for="index" class="custom-control-label"></label>
-            </div>
-          </li>
-          {% endraw %}
-        </ul>
+        <div class="sidebar-pane-content">
+          <ul class="list-group list-group-flush">
+            {% raw %}
+            <li v-for="(route, index) in layers.dyn.routes" class="list-group-item layer-item justify-content-between d-flex align-items-center">
+              <div class="flex-grow-1">{{ index }}</div>
+              <span class="badge badge-secondary" style="margin-right: 5px;">{{ route.mode }}</span>
+              <div class="custom-control custom-switch">
+                <input :id="index" type="checkbox" v-model="route.show" class="custom-control-input" />
+                <label :for="index" class="custom-control-label"></label>
+              </div>
+            </li>
+            {% endraw %}
+          </ul>
+        </div>
       </div>
 
       <div class="leaflet-sidebar-pane" id="geofences">
         <h1 class="leaflet-sidebar-header bg-dark">Geofences<div class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></div></h1>
-        <ul class="list-group list-group-flush">
-          {% raw %}
-          <li v-for="(fence, index) in layers.dyn.geofences" class="list-group-item layer-item d-flex">
-            <div class="flex-grow-1">{{ index }}</div>
-            <div class="custom-control custom-switch">
-              <input :id="'fence'+index" type="checkbox" v-model="fence.show" class="custom-control-input" />
-              <label :for="'fence'+index" class="custom-control-label"></label>
-            </div>
-          </li>
-          {% endraw %}
+        <div class="sidebar-pane-content">
+          <ul class="list-group list-group-flush">
+            {% raw %}
+            <li v-for="(fence, index) in layers.dyn.geofences" class="list-group-item layer-item d-flex">
+              <div class="flex-grow-1">{{ index }}</div>
+              <div class="custom-control custom-switch">
+                <input :id="'fence'+index" type="checkbox" v-model="fence.show" class="custom-control-input" />
+                <label :for="'fence'+index" class="custom-control-label"></label>
+              </div>
+            </li>
+            {% endraw %}
+          </ul>
+        </div>
       </div>
 
       <div class="leaflet-sidebar-pane" id="settings">
         <h1 class="leaflet-sidebar-header bg-dark">Settings<div class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></div></h1>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item layer-item d-flex">
-            <div class="flex-grow-1"><strong>Raids visual radius</strong></div>
-            <div class="custom-control custom-switch">
-              <input id="raidcoordinateradius" type="number" v-model="settings.routes.coordinateRadius.raids" max="1100" class="form-control form-control-sm" />
-            </div>
-          </li>
-          <li class="list-group-item layer-item d-flex">
-            <div class="flex-grow-1"><strong>Mons visual radius</strong></div>
-            <div class="custom-control custom-switch">
-              <input id="moncoordinateradius" type="number" v-model="settings.routes.coordinateRadius.mons" max="1100" class="form-control form-control-sm" />
-            </div>
-          </li>
-          <li class="list-group-item layer-item d-flex">
-            <div class="flex-grow-1"><strong>Quests visual radius</strong></div>
-            <div class="custom-control custom-switch">
-              <input id="questcoordinateradius" type="number" v-model="settings.routes.coordinateRadius.quests" max="1100" class="form-control form-control-sm" />
-            </div>
-          </li>
-          <li class="list-group-item layer-item d-flex">
-            <div class="flex-grow-1"><strong>Map tiles</strong></div>
-            <div class="form-group">
-              {% raw %}
-              <select class="form-control form-control-sm" v-model="settings.maptiles">
-                <option v-for="(maptile, index) in maptiles" v-bind:value="index">{{ maptile.name }}</option>
-              </select>
-              {% endraw %}
-            </div>
-          </li>
-        </ul>
+        <div class="sidebar-pane-content">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item layer-item d-flex">
+              <div class="flex-grow-1"><strong>Raids visual radius</strong></div>
+              <div class="custom-control custom-switch">
+                <input id="raidcoordinateradius" type="number" v-model="settings.routes.coordinateRadius.raids" max="1100" class="form-control form-control-sm" />
+              </div>
+            </li>
+            <li class="list-group-item layer-item d-flex">
+              <div class="flex-grow-1"><strong>Mons visual radius</strong></div>
+              <div class="custom-control custom-switch">
+                <input id="moncoordinateradius" type="number" v-model="settings.routes.coordinateRadius.mons" max="1100" class="form-control form-control-sm" />
+              </div>
+            </li>
+            <li class="list-group-item layer-item d-flex">
+              <div class="flex-grow-1"><strong>Quests visual radius</strong></div>
+              <div class="custom-control custom-switch">
+                <input id="questcoordinateradius" type="number" v-model="settings.routes.coordinateRadius.quests" max="1100" class="form-control form-control-sm" />
+              </div>
+            </li>
+            <li class="list-group-item layer-item d-flex">
+              <div class="flex-grow-1"><strong>Map tiles</strong></div>
+              <div class="form-group">
+                {% raw %}
+                <select class="form-control form-control-sm" v-model="settings.maptiles">
+                  <option v-for="(maptile, index) in maptiles" v-bind:value="index">{{ maptile.name }}</option>
+                </select>
+                {% endraw %}
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>

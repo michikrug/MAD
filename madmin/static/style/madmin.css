@@ -7,6 +7,14 @@ div.container[role="main"] {
   padding: 0px !important;
 }
 
+.leaflet-routes-pane {
+  z-index: 399;
+}
+
+.leaflet-geofences-pane {
+  z-index: 398;
+}
+
 .spawnpopup .leaflet-popup-content {
   width: 300px !important;
   margin: 13px !important;
@@ -73,6 +81,7 @@ div.container[role="main"] {
   white-space: nowrap;
 }
 
+.leaflet-popup-content .raid .raidImg,
 .leaflet-popup-content .quest .rewardImg {
   background-repeat: no-repeat;
   background-position: center center;
@@ -115,7 +124,6 @@ div.container[role="main"] {
 }
 
 .leaflet-sidebar {
-  z-index: 1000;
   font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
 
@@ -129,4 +137,39 @@ li.list-group-item.layer-item {
 
 .leaflet-sidebar.collapsed {
   width: 44px !important;
+}
+
+.leaflet-sidebar-header {
+  width: 420px;
+  z-index: 99;
+  position: fixed;
+}
+
+.sidebar-pane-content {
+  margin-top: 30px;
+}
+
+.raidIcon {
+  font-size: 12px;
+  display: block;
+  width: 20px !important;
+  height: 20px !important;
+  background: #000;
+  color: #FFF;
+  font-weight: bold;
+  border-radius: 10px;
+  text-align: center;
+  line-height: 20px;
+}
+
+.easy-button-button {
+  font-size: 20px;
+}
+
+.state-scanmode-deactivate {
+  color: #ccc;
+}
+
+.leaflet-container.crosshair-cursor-enabled {
+  cursor: crosshair;
 }

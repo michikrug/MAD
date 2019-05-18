@@ -22,9 +22,9 @@ def get_delete_item_coords(x):
 
 
 def trash_image_matching(screen_img):
-
     clicklist: List[Trash] = []
     screen = cv2.imread(screen_img)
+    # print (screen.shape[:2])
     screen = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
 
     if screen is None:
@@ -40,11 +40,12 @@ def trash_image_matching(screen_img):
     if trash.mean() == 255 or trash.mean() == 0:
         return clicklist
 
-    (tH, tW) = trash.shape[:2]
-
-    if width <= 1080:
+    if width <= 1080 and width > 720:
         sc_from = 0.5
         sc_till = 1
+    elif width == 720:
+        sc_from = 0.5
+        sc_till = 0.7
     else:
         sc_from = 0.1
         sc_till = 2
@@ -53,14 +54,11 @@ def trash_image_matching(screen_img):
 
         resized = imutils.resize(
             trash, width=int(trash.shape[1] * scale))
-
-        # cv2.namedWindow("output", cv2.WINDOW_KEEPRATIO)
-        # cv2.imshow("output", resized)
-        # cv2.waitKey(0)
+        (tH, tW) = resized.shape[:2]
 
         last_y_coord = 0
         res = cv2.matchTemplate(screen, resized, cv2.TM_CCOEFF_NORMED)
-        threshold = 0.45
+        threshold = 0.5
         loc = np.where(res >= threshold)
         boxcount = 0
         for pt in zip(*loc[::-1]):
@@ -78,13 +76,13 @@ def trash_image_matching(screen_img):
                                 (_quest_x - 50 < x_coord < _quest_x + 50):
                             clicklist.append(Trash(x_coord, y_coord))
                             last_y_coord = y_coord
-                            # cv2.rectangle(screen, pt, (pt[0] + tW, pt[1] + tH), (255, 255, 255), 2)
+                            # cv2.rectangle(screen, pt, (pt[0] + tW, pt[1] + tH), (128, 128, 128), 2)
                 else:
                     if (_inventory_x - 50 < x_coord < _inventory_x + 50) or \
                             (_quest_x - 50 < x_coord < _quest_x + 50):
                         clicklist.append(Trash(x_coord, y_coord))
                         last_y_coord = y_coord
-                        # cv2.rectangle(screen, pt, (pt[0] + tW, pt[1] + tH), (255, 255, 255), 2)
+                        # cv2.rectangle(screen, pt, (pt[0] + tW, pt[1] + tH), (128, 128, 128), 2)
                 boxcount += 1
 
         # cv2.namedWindow("output", cv2.WINDOW_KEEPRATIO)
@@ -101,4 +99,4 @@ if __name__ == '__main__':
     fort_id = 'raid1'
     fort_img_path = os.getcwd() + '/' + str(fort_id) + '.jpg'
     url_img_path = os.getcwd() + 'ocr/mon_img/ic_raid_egg_rare.png'
-    # print (trash_image_matching('box_redmi.jpg'))
+    # print (trash_image_matching('screenshot_x96mini.png'))

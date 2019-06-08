@@ -895,7 +895,7 @@ class config(object):
 
         title = "Mons ID Picker for " + edit
         header = "Editing area " + edit + " (" + type + ")"
-        backurl = "config?type=" + type + "&area=areas&block=settings&edit=" + edit
+        backurl = getBasePath(request) + "/config?type=" + type + "&area=areas&block=settings&edit=" + edit
 
         if "settings" not in this_area:
             return render_template('showmonsidpicker.html',

@@ -275,18 +275,6 @@ class MappingManager:
             if area["geofence_included"] is None:
                 raise RuntimeError("Cannot work without geofence_included")
 
-            geofence_included = Path(area["geofence_included"])
-            if not geofence_included.is_file():
-                raise RuntimeError(
-                    "Geofence included file for '{}' does not exist.".format(area["name"]))
-
-            geofence_excluded_raw_path = area.get("geofence_excluded", None)
-            if geofence_excluded_raw_path is not None:
-                geofence_excluded = Path(geofence_excluded_raw_path)
-                if not geofence_excluded.is_file():
-                    raise RuntimeError(
-                        "Geofence excluded file is specified but does not exist")
-
             area_dict = {"mode": area["mode"],
                          "geofence_included": area["geofence_included"],
                          "geofence_excluded": area.get("geofence_excluded", None),

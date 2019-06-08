@@ -1,7 +1,6 @@
 import json
 import math
 import sys
-
 import time
 from multiprocessing import JoinableQueue, Process
 from typing import Optional
@@ -11,9 +10,9 @@ from gevent.pywsgi import WSGIServer
 
 from mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mitm_receiver.MitmMapper import MitmMapper
-from utils.MappingManager import MappingManager
 from utils.authHelper import check_auth
 from utils.logging import LogLevelChanger, logger
+from utils.MappingManager import MappingManager
 
 app = Flask(__name__)
 mapping_manager: Optional[MappingManager] = None
@@ -34,9 +33,10 @@ class EndpointAction(object):
             logger.warning("Missing Origin header in request")
             self.response = Response(status=500, headers={})
             abort = True
-        elif (mapping_manager.get_all_devicemappings().keys() is not None
-              and (origin is None or origin not in mapping_manager.get_all_devicemappings().keys())):
-            logger.warning("MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
+        elif (mapping_manager.get_all_devicemappings().keys() is not None and
+              (origin is None or origin not in mapping_manager.get_all_devicemappings().keys())):
+            logger.warning(
+                "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
             self.response = Response(status=403, headers={})
             abort = True
         elif mapping_manager.get_auths() is not None:  # TODO check auth properly...

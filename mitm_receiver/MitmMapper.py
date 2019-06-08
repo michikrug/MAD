@@ -4,9 +4,9 @@ from multiprocessing.managers import SyncManager
 
 from db.DbFactory import DbFactory
 from db.dbWrapperBase import DbWrapperBase
-from utils.MappingManager import MappingManager
 from utils.collections import Location
 from utils.logging import logger
+from utils.MappingManager import MappingManager
 from utils.stats import PlayerStats
 from utils.walkerArgs import parseArgs
 
@@ -29,7 +29,8 @@ class MitmMapper(object):
         if mapping_manager is not None:
             for origin in mapping_manager.get_all_devicemappings().keys():
                 self.__mapping[origin] = {}
-                self.__playerstats[origin] = PlayerStats(origin, self.__application_args, self.__db_wrapper)
+                self.__playerstats[origin] = PlayerStats(
+                    origin, self.__application_args, self.__db_wrapper)
                 self.__playerstats[origin].open_player_stats()
 
     def get_mon_ids_iv(self, origin):

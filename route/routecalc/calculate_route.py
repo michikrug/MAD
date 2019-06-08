@@ -41,7 +41,7 @@ def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=
             for line in route:
                 lineSplit = line.split(',')
                 export_data.append({'lat': float(lineSplit[0].replace('\n', '')),
-                                'lng': float(lineSplit[1].replace('\n', ''))})
+                                    'lng': float(lineSplit[1].replace('\n', ''))})
         return export_data
 
     lessCoordinates = coords
@@ -93,5 +93,3 @@ def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=
 
     # return json.dumps(export_data)
     return export_data
-
-

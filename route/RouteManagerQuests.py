@@ -1,6 +1,6 @@
 import collections
 import time
-from typing import List, Dict
+from typing import Dict, List
 
 from db.dbWrapperBase import DbWrapperBase
 from route.RouteManagerBase import RouteManagerBase
@@ -109,7 +109,8 @@ class RouteManagerQuests(RouteManagerBase):
                     logger.warning("Found stop not processed yet: {}".format(str(stop)))
                     list_of_stops_to_return.append(stop)
                 else:
-                    logger.error("Stop {} has not been processed thrice in a row, please check your DB".format(str(stop)))
+                    logger.error(
+                        "Stop {} has not been processed thrice in a row, please check your DB".format(str(stop)))
 
             if len(list_of_stops_to_return) > 0:
                 logger.info("Found stops not yet processed, retrying those in the next round")

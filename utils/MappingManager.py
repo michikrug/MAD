@@ -1,12 +1,12 @@
 import json
 import os
 import time
-from multiprocessing import Lock, Event
+from multiprocessing import Event, Lock
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from threading import Thread
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from db.dbWrapperBase import DbWrapperBase
 from geofence.geofenceHelper import GeofenceHelper
@@ -19,32 +19,32 @@ from utils.s2Helper import S2Helper
 mode_mapping = {
     "raids_mitm": {
         "s2_cell_level": 13,
-        "range":         490,
-        "range_init":    490,
-        "max_count":     100000
+        "range": 490,
+        "range_init": 490,
+        "max_count": 100000
 
     },
-    "mon_mitm":   {
+    "mon_mitm": {
         "s2_cell_level": 17,
-        "range":         67,
-        "range_init":    67,
-        "max_count":     100000
+        "range": 67,
+        "range_init": 67,
+        "max_count": 100000
     },
     "raids_ocr": {
-        "range":         490,
-        "range_init":    490,
-        "max_count":     7
+        "range": 490,
+        "range_init": 490,
+        "max_count": 7
     },
-    "pokestops":  {
+    "pokestops": {
         "s2_cell_level": 13,
-        "range":         1,
-        "range_init":    490,
-        "max_count":     100000
+        "range": 1,
+        "range_init": 490,
+        "max_count": 100000
     },
     "iv_mitm": {
-        "range":      0,
+        "range": 0,
         "range_init": 0,
-        "max_count":  999999
+        "max_count": 999999
     }
 }
 
@@ -287,10 +287,10 @@ class MappingManager:
                     raise RuntimeError(
                         "Geofence excluded file is specified but does not exist")
 
-            area_dict = {"mode":              area["mode"],
+            area_dict = {"mode": area["mode"],
                          "geofence_included": area["geofence_included"],
                          "geofence_excluded": area.get("geofence_excluded", None),
-                         "routecalc":         area["routecalc"]}
+                         "routecalc": area["routecalc"]}
             # also build a routemanager for each area...
 
             # grab coords
@@ -301,23 +301,29 @@ class MappingManager:
             mode = area["mode"]
             # build routemanagers
             route_manager = RouteManagerFactory.get_routemanager(self.__db_wrapper, None,
-                                                                 mode_mapping.get(mode, {}).get("range", 0),
-                                                                 mode_mapping.get(mode, {}).get("max_count", 99999999),
+                                                                 mode_mapping.get(
+                                                                     mode, {}).get("range", 0),
+                                                                 mode_mapping.get(mode, {}).get(
+                                                                     "max_count", 99999999),
                                                                  area["geofence_included"],
-                                                                 area.get("geofence_excluded", None),
-                                                                 mode=mode, settings=area.get("settings", None),
+                                                                 area.get(
+                                                                     "geofence_excluded", None),
+                                                                 mode=mode, settings=area.get(
+                                                                     "settings", None),
                                                                  init=area.get("init", False),
                                                                  name=area.get("name", "unknown"),
                                                                  level=area.get("level", False),
                                                                  coords_spawns_known=area.get(
-                                                                         "coords_spawns_known", False),
+                                                                     "coords_spawns_known", False),
                                                                  routefile=area["routecalc"],
-                                                                 calctype=area.get("route_calc_algorithm", "optimized")
+                                                                 calctype=area.get(
+                                                                     "route_calc_algorithm", "optimized")
                                                                  )
 
             if mode not in ("iv_mitm", "idle"):
                 coords = self.__fetch_coords(mode, geofence_helper,
-                                             coords_spawns_known=area.get("coords_spawns_known", False),
+                                             coords_spawns_known=area.get(
+                                                 "coords_spawns_known", False),
                                              init=area.get("init", False),
                                              range_init=mode_mapping.get(area["mode"], {}).get("range_init", 630))
                 route_manager.add_coords_list(coords)
@@ -339,8 +345,8 @@ class MappingManager:
                             os.remove(routefile + '.calc')
                         with open(routefile + '.calc', 'a') as f:
                             for loc in coords:
-                                f.write(str(loc.lat) + ', ' +
-                                        str(loc.lng) + '\n')
+                                f.write(str(loc.lat) + ', '
+                                        + str(loc.lng) + '\n')
                     # gotta feed the route to routemanager... TODO: without recalc...
                     proc = thread_pool.apply_async(route_manager.recalc_route, args=(1, 99999999,
                                                                                      0, False))
@@ -407,11 +413,11 @@ class MappingManager:
                 if coords_spawns_known:
                     logger.debug("Reading known Spawnpoints from DB")
                     coords = self.__db_wrapper.get_detected_spawns(
-                            geofence_helper)
+                        geofence_helper)
                 else:
                     logger.debug("Reading unknown Spawnpoints from DB")
                     coords = self.__db_wrapper.get_undetected_spawns(
-                            geofence_helper)
+                        geofence_helper)
             elif mode == "pokestops":
                 coords = self.__db_wrapper.stops_from_db(geofence_helper)
             else:
@@ -517,7 +523,7 @@ class MappingManager:
                 # File has changed in the last refresh_time_sec seconds.
                 if time_diff_sec < refresh_time_sec:
                     logger.info(
-                            'Change found in {}. Updating device mappings.', filename)
+                        'Change found in {}. Updating device mappings.', filename)
                     self.__update()
                 else:
                     logger.debug('No change found in {}.', filename)
@@ -526,4 +532,4 @@ class MappingManager:
                 break
             except Exception as e:
                 logger.exception(
-                        'Exception occurred while updating device mappings: {}.', e)
+                    'Exception occurred while updating device mappings: {}.', e)

@@ -1,19 +1,18 @@
 import sys
 
-from flask import (Flask)
+from flask import Flask
 from gevent.pywsgi import WSGIServer
 
 from db.dbWrapperBase import DbWrapperBase
-from utils.MappingManager import MappingManager
-from utils.logging import LogLevelChanger, logger
-
-# routes
-from madmin.routes.statistics import statistics
+from madmin.routes.config import config
 from madmin.routes.control import control
 from madmin.routes.map import map
-from madmin.routes.config import config
 from madmin.routes.ocr import ocr
 from madmin.routes.path import path
+# routes
+from madmin.routes.statistics import statistics
+from utils.logging import LogLevelChanger, logger
+from utils.MappingManager import MappingManager
 
 sys.path.append("..")  # Adds higher directory to python modules path.
 
@@ -43,4 +42,3 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                          'GET,PUT,POST,DELETE,OPTIONS')
     return response
-

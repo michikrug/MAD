@@ -1,8 +1,8 @@
 import datetime
 import re
 
-from utils.MappingManager import MappingManager
 from utils.logging import logger
+from utils.MappingManager import MappingManager
 
 
 def check_walker_value_type(value):
@@ -56,4 +56,3 @@ def pre_check_value(walker_settings):
             return True
         return check_walker_value_type(walkervalue)
     return True
-

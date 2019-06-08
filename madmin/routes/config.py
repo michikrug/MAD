@@ -1,10 +1,12 @@
 import ast
-import os
 import json
-from flask import (render_template, request, redirect)
+import os
+
+from flask import redirect, render_template, request
+
 from madmin.functions import auth_required, getBasePath
-from utils.language import i8ln, open_json_file
 from utils.adb import ADBConnect
+from utils.language import i8ln, open_json_file
 
 
 class config(object):
@@ -171,7 +173,7 @@ class config(object):
                 if str(walkertype).lower() in str(option).lower():
                     sel = 'selected'
             _temp = _temp + '<option value="' + \
-                    str(option) + '" ' + sel + '>' + str(option) + '</option>'
+                str(option) + '" ' + sel + '>' + str(option) + '</option>'
             sel = ''
         _temp = _temp + '</select></div>'
         fieldwebsite.append(str(_temp))
@@ -179,7 +181,7 @@ class config(object):
         fieldwebsite.append('<div class="form-group"><label>Value for Walkermode</label><br />'
                             '<small class="form-text text-muted"></small>'
                             '<input type="text" name="walkervalue" value="' + str(
-            walkervalue) + '" data-rule-validatewalkervalue="true"></div>')
+                                walkervalue) + '" data-rule-validatewalkervalue="true"></div>')
 
         fieldwebsite.append('<div class="form-group"><label>Max. Walker in Area</label><br />'
                             '<small class="form-text text-muted">Empty = infinitely</small>'
@@ -423,7 +425,7 @@ class config(object):
                                 if str(oldvalues[field['name']]).lower() in str(option).lower():
                                     sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                            str(option) + '" ' + sel + '>' + str(option) + '</option>'
+                        str(option) + '" ' + sel + '>' + str(option) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -455,8 +457,8 @@ class config(object):
                                 if not option['name']:
                                     sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                            str(option['name']) + '" ' + sel + '>' + \
-                            str(option['name']) + '</option>'
+                        str(option['name']) + '" ' + sel + '>' + \
+                        str(option['name']) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -489,8 +491,8 @@ class config(object):
                                 if not option['name']:
                                     sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                            str(option['name']) + '" ' + sel + '>' + \
-                            str(option['name']) + '</option>'
+                        str(option['name']) + '" ' + sel + '>' + \
+                        str(option['name']) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -513,8 +515,8 @@ class config(object):
                             if not option['walkername']:
                                 sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                            str(option['walkername']) + '" ' + sel + '>' + \
-                            str(option['walkername']) + '</option>'
+                        str(option['walkername']) + '" ' + sel + '>' + \
+                        str(option['walkername']) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -538,8 +540,8 @@ class config(object):
                             if not option['devicepool']:
                                 sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                            str(option['devicepool']) + '" ' + sel + '>' + \
-                            str(option['devicepool']) + '</option>'
+                        str(option['devicepool']) + '" ' + sel + '>' + \
+                        str(option['devicepool']) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -583,8 +585,8 @@ class config(object):
                                     if not option['name']:
                                         sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                            str(option['name']) + '" ' + sel + '>' + \
-                            str(option['name']) + '</option>'
+                        str(option['name']) + '" ' + sel + '>' + \
+                        str(option['name']) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -721,7 +723,6 @@ class config(object):
         with open('configs/mappings.json', 'w') as outfile:
             json.dump(mapping, outfile, indent=4, sort_keys=True)
 
-
         return redirect(getBasePath(request) + "/showsettings", code=302)
 
     def match_type(self, value):
@@ -800,8 +801,8 @@ class config(object):
                                                                                  '[Delete]</a></td>'
 
                 line = line + '<tr><td><b>' + \
-                       str(output[_field]) + '</b></td>' + str(edit) + \
-                       str(editsettings) + str(delete) + '</tr>'
+                    str(output[_field]) + '</b></td>' + str(edit) + \
+                    str(editsettings) + str(delete) + '</tr>'
 
                 if _quick == 'setup':
                     quickadd = 'Assigned areas: ' + \
@@ -810,30 +811,30 @@ class config(object):
                         quickadd = quickadd + area.get('walkerarea') + ' | '
 
                     quickline = quickline + '<tr><td></td><td colspan="3" class="quick">' + \
-                                str(
-                                    quickadd) + ' </td><td style="display: none;"></td><td style="display: none;">' \
-                                                '</td><td style="display: none;"></td>'
+                        str(
+                            quickadd) + ' </td><td style="display: none;"></td><td style="display: none;">' \
+                        '</td><td style="display: none;"></td>'
 
                 elif _quick:
                     for quickfield in _quick.split('|'):
                         if output.get(quickfield, False):
                             quickadd = quickadd + \
-                                       str(quickfield) + ': ' + \
-                                       str(output.get(quickfield, '')).split(
-                                           '\n')[0] + '<br>'
+                                str(quickfield) + ': ' + \
+                                str(output.get(quickfield, '')).split(
+                                    '\n')[0] + '<br>'
                     quickline = quickline + '<tr><td></td><td class="quick">' + \
-                                str(quickadd) + '</td>'
+                        str(quickadd) + '</td>'
 
                 quickadd = ''
                 if _quicksett:
                     for quickfield in _quicksett.split('|'):
                         if output['settings'].get(quickfield, False):
                             quickadd = quickadd + \
-                                       str(quickfield) + ': ' + \
-                                       str(output['settings'].get(
-                                           quickfield, '')) + '<br>'
+                                str(quickfield) + ': ' + \
+                                str(output['settings'].get(
+                                    quickfield, '')) + '<br>'
                     quickline = quickline + '<td colspan="2" class="quick">' + \
-                                str(quickadd) + '</td><td style="display: none;"></td></tr>'
+                        str(quickadd) + '</td><td style="display: none;"></td></tr>'
 
                 line = line + quickline
 
@@ -889,7 +890,8 @@ class config(object):
 
         if this_area == None:
             return render_template('showmonsidpicker.html',
-                                   error_msg="No area (" + edit + " with mode: " + type + ") found in mappings, add it first.",
+                                   error_msg="No area (" + edit + " with mode: " +
+                                   type + ") found in mappings, add it first.",
                                    header=header, title=title)
 
         title = "Mons ID Picker for " + edit
@@ -898,7 +900,8 @@ class config(object):
 
         if "settings" not in this_area:
             return render_template('showmonsidpicker.html',
-                                   error_msg="No settings key found for area " + edit + "(" + type + "). Configure it first.",
+                                   error_msg="No settings key found for area " +
+                                   edit + "(" + type + "). Configure it first.",
                                    header=header, title=title)
 
         if request.method == 'POST':
@@ -906,7 +909,8 @@ class config(object):
             if not new_mons_list:
                 return redirect("/showsettings", code=302)
 
-            mapping["areas"][this_area_index]["settings"]["mon_ids_iv"] = ast.literal_eval(new_mons_list)
+            mapping["areas"][this_area_index]["settings"]["mon_ids_iv"] = ast.literal_eval(
+                new_mons_list)
 
             with open('configs/mappings.json', 'w') as outfile:
                 json.dump(mapping, outfile, indent=4, sort_keys=True)
@@ -939,15 +943,11 @@ class config(object):
                 except KeyError:
                     pass
 
-        formhiddeninput = '<form action="showmonsidpicker?edit=' + edit + '&type=' + type + '" id="showmonsidpicker" method="post">'
+        formhiddeninput = '<form action="showmonsidpicker?edit=' + edit + \
+            '&type=' + type + '" id="showmonsidpicker" method="post">'
         formhiddeninput += '<input type="hidden" id="current_mons_list" name="current_mons_list" value="' + str(
             current_mons) + '">'
         formhiddeninput += '<button type="submit" class="btn btn-success">Save</button></form>'
         return render_template('showmonsidpicker.html', backurl=backurl, formhiddeninput=formhiddeninput,
                                current_mons_list=current_mons_list, stripped_mondata=stripped_mondata, header=header,
                                title=title)
-
-
-
-
-

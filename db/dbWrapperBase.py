@@ -9,7 +9,6 @@ from typing import List, Optional
 import mysql
 from bitstring import BitArray
 from mysql.connector.pooling import MySQLConnectionPool
-
 from utils.collections import Location
 from utils.logging import logger
 from utils.questGen import questtask
@@ -566,7 +565,6 @@ class DbWrapperBase(ABC):
         vals = (str(ids), str(type))
         logger.debug(query)
 
-
         self.execute(query, vals, commit=True)
         return True
 
@@ -966,7 +964,7 @@ class DbWrapperBase(ABC):
             minutes = int(endminsec_split[0])
             seconds = int(endminsec_split[1])
             temp_date = current_time_of_day.replace(
-                    minute=minutes, second=seconds)
+                minute=minutes, second=seconds)
 
             spawn_duration_minutes = 60 if spawndef == 15 else 30
 
@@ -1235,7 +1233,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)
@@ -1253,7 +1251,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)
@@ -1488,7 +1486,7 @@ class DbWrapperBase(ABC):
 
     def statistics_get_all_empty_scanns(self):
         logger.debug('Fetching all empty locations from db')
-        query =(
+        query = (
             "SELECT count(b.id) as Count, b.lat, b.lng, GROUP_CONCAT(DISTINCT b.worker order by worker asc "
             "SEPARATOR ', '), if(b.type=0,'Normal','PrioQ'), max(b.period), (select count(c.id) "
             "from trs_stats_location_raw c where c.lat=b.lat and c.lng=b.lng and c.success=1) as successcount from "
@@ -1538,10 +1536,10 @@ class DbWrapperBase(ABC):
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
         query = (
-                "SELECT %s, lat, lng, if(type=0,'Normal',if(type=1,'PrioQ', if(type=2,'Startup',"
-                "if(type=3,'Reboot','Restart')))), if(success=1,'OK','NOK'), fix_ts, "
-                "if(data_ts=0,fix_ts,data_ts), count, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
-                "'other')) from trs_stats_location_raw %s %s order by id asc" %
+            "SELECT %s, lat, lng, if(type=0,'Normal',if(type=1,'PrioQ', if(type=2,'Startup',"
+            "if(type=3,'Reboot','Restart')))), if(success=1,'OK','NOK'), fix_ts, "
+            "if(data_ts=0,fix_ts,data_ts), count, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
+            "'other')) from trs_stats_location_raw %s %s order by id asc" %
                 (str(query_date), (query_where), str(worker_where))
         )
 
@@ -1550,7 +1548,7 @@ class DbWrapperBase(ABC):
 
     def statistics_get_location_info(self):
         logger.debug('Fetching all empty locations from db')
-        query =(
+        query = (
             "select worker, sum(location_count), sum(location_ok), sum(location_nok), "
             "sum(location_nok) / sum(location_count) * 100 as Loc_fail_rate "
             "from trs_stats_location "

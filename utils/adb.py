@@ -2,8 +2,9 @@ import os
 import sys
 import time
 
-from utils.logging import logger
 from utils.functions import pngtojpg
+from utils.logging import logger
+
 log = logger
 
 

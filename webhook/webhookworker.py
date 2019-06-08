@@ -185,6 +185,7 @@ class WebhookWorker:
                 "quest_task": quest["quest_task"],
                 "quest_condition": quest["quest_condition"].replace("'", '"').lower(),
                 "quest_template": quest["quest_template"],
+                "quest_reward": quest["quest_reward"],
             }
 
         # Other known type is Poracle/RDM compatible.

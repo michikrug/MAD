@@ -296,7 +296,7 @@ class PogoWindows:
             for x1, y1, x2, y2 in line:
 
                 if y1 == y2 and x2 - x1 <= maxLineLength and x2 - x1 >= minLineLength and y1 > height / 2 \
-                        and (x2-x1)/2 + x1 < width/2+100 and (x2 - x1)/2+x1 > width/2-100:
+                        and (x2 - x1) / 2 + x1 < width / 2 + 100 and (x2 - x1) / 2 + x1 > width / 2 - 100:
 
                     lineCount += 1
                     __y = y2
@@ -488,7 +488,7 @@ class PogoWindows:
         time.sleep(4)
         return False
 
-    def __check_close_present(self, filename, identifier, communicator,  radiusratio=12, Xcord=True):
+    def __check_close_present(self, filename, identifier, communicator, radiusratio=12, Xcord=True):
         if not os.path.isfile(filename):
             logger.warning(
                 "__check_close_present: {} does not exist", str(filename))
@@ -586,6 +586,13 @@ class PogoWindows:
         w = y1 - y2
         gray = cv2.cvtColor(screenshot_read, cv2.COLOR_BGR2GRAY)
         gray = gray[int(y2):(int(y2) + int(w)), int(x2):(int(x2) + int(h))]
+        scale_percent = 200  # percent of original size
+        width = int(gray.shape[1] * scale_percent / 100)
+        height = int(gray.shape[0] * scale_percent / 100)
+        dim = (width, height)
+
+        # resize image
+        gray = cv2.resize(gray, dim, interpolation=cv2.INTER_AREA)
         cv2.imwrite(temp_path_item, gray)
         text = pytesseract.image_to_string(Image.open(temp_path_item))
         return text
@@ -627,7 +634,7 @@ class PogoWindows:
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
             for (x, y, r) in circles:
-                if x < width_ - width_/3:
+                if x < width_ - width_ / 3:
                     mainscreen += 1
 
         if mainscreen > 0:

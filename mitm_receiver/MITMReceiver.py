@@ -2,19 +2,20 @@ import json
 import math
 import sys
 import time
-from datetime import datetime
-from queue import Queue
-from threading import Thread
+from multiprocessing import JoinableQueue, Process
+from typing import Optional
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
 
+from mitm_receiver.MITMDataProcessor import MitmDataProcessor
+from mitm_receiver.MitmMapper import MitmMapper
 from utils.authHelper import check_auth
 from utils.logging import LogLevelChanger, logger
+from utils.MappingManager import MappingManager
 
 app = Flask(__name__)
-allowed_origins = None
-auths = None
+mapping_manager: Optional[MappingManager] = None
 application_args = None
 
 
@@ -25,19 +26,22 @@ class EndpointAction(object):
         self.response = Response(status=200, headers={})
 
     def __call__(self, *args):
-        global allowed_origins, application_args, auths
+        global application_args, mapping_manager
         origin = request.headers.get('Origin')
         abort = False
         if not origin:
             logger.warning("Missing Origin header in request")
             self.response = Response(status=500, headers={})
             abort = True
-        elif allowed_origins and (origin is None or origin not in allowed_origins):
+        elif (mapping_manager.get_all_devicemappings().keys() is not None and
+              (origin is None or origin not in mapping_manager.get_all_devicemappings().keys())):
+            logger.warning(
+                "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
             self.response = Response(status=403, headers={})
             abort = True
-        elif auths is not None:  # TODO check auth properly...
+        elif mapping_manager.get_auths() is not None:  # TODO check auth properly...
             auth = request.headers.get('Authorization', None)
-            if auth is None or not check_auth(auth, application_args, auths):
+            if auth is None or not check_auth(auth, application_args, mapping_manager.get_auths()):
                 logger.warning(
                     "Unauthorized attempt to POST from {}", str(request.remote_addr))
                 self.response = Response(status=403, headers={})
@@ -61,14 +65,16 @@ class EndpointAction(object):
         return self.response
 
 
-class MITMReceiver(object):
-    def __init__(self, listen_ip, listen_port, mitm_mapper, args_passed, auths_passed, db_wrapper):
-        global application_args, auths
+class MITMReceiver(Process):
+    def __init__(self, listen_ip, listen_port, mitm_mapper, args_passed, mapping_manager_arg: MappingManager,
+                 db_wrapper, name=None):
+        global application_args, mapping_manager
+        Process.__init__(self, name=name)
         application_args = args_passed
-        auths = auths_passed
+        mapping_manager = mapping_manager_arg
         self.__listen_ip = listen_ip
         self.__listen_port = listen_port
-        self.__mitm_mapper = mitm_mapper
+        self.__mitm_mapper: MitmMapper = mitm_mapper
         self.app = Flask("MITMReceiver")
         self.add_endpoint(endpoint='/', endpoint_name='receive_protos', handler=self.proto_endpoint,
                           methods_passed=['POST'])
@@ -76,26 +82,36 @@ class MITMReceiver(object):
                           methods_passed=['GET'])
         self.add_endpoint(endpoint='/get_addresses/', endpoint_name='get_addresses/', handler=self.get_addresses,
                           methods_passed=['GET'])
-        self._data_queue: Queue = Queue()
+        self._data_queue: JoinableQueue = JoinableQueue()
         self._db_wrapper = db_wrapper
         self.worker_threads = []
         for i in range(application_args.mitmreceiver_data_workers):
-            t = Thread(name='MITMReceiver-%s' % str(i), target=self.received_data_worker)
-            t.start()
-            self.worker_threads.append(t)
+            data_processor: MitmDataProcessor = MitmDataProcessor(self._data_queue, application_args,
+                                                                  self.__mitm_mapper, db_wrapper,
+                                                                  name='MITMReceiver-%s' % str(i))
+            data_processor.start()
+            self.worker_threads.append(data_processor)
 
-    def stop_receiver(self):
-        global application_args
+    def shutdown(self):
+        logger.info("MITMReceiver stop called...")
         self._data_queue.join()
+        logger.info("Adding None to queue")
         for i in range(application_args.mitmreceiver_data_workers):
             self._data_queue.put(None)
+        logger.info("Trying to join workers...")
         for t in self.worker_threads:
             t.join()
+        self._data_queue.close()
+        logger.info("Workers stopped...")
 
-    def run_receiver(self):
+    def run(self):
         httpsrv = WSGIServer((self.__listen_ip, int(
             self.__listen_port)), self.app.wsgi_app, log=LogLevelChanger)
-        httpsrv.serve_forever()
+        try:
+            httpsrv.serve_forever()
+        except KeyboardInterrupt as e:
+            httpsrv.close()
+            logger.info("Received STOP signal in MITMReceiver")
 
     def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, options=None, methods_passed=None):
         if methods_passed is None:
@@ -143,77 +159,3 @@ class MITMReceiver(object):
         with open('configs/addresses.json') as f:
             address_object = json.load(f)
         return json.dumps(address_object)
-
-    def received_data_worker(self):
-        while True:
-            item = self._data_queue.get()
-            items_left = self._data_queue.qsize()
-            logger.debug(
-                "MITM data processing worker retrieved data. Queue length left afterwards: {}", str(items_left))
-            if items_left > 50:  # TODO: no magic number
-                logger.warning(
-                    "MITM data processing workers are falling behind! Queue length: {}", str(items_left))
-            if item is None:
-                logger.warning("Received none from queue of data")
-                break
-            self.process_data(item[0], item[1], item[2])
-            self._data_queue.task_done()
-
-    @logger.catch
-    def process_data(self, received_timestamp, data, origin):
-        global application_args
-        if origin not in self.__mitm_mapper.playerstats:
-            logger.warning(
-                "Not processing data of {} since origin is unknown", str(origin))
-            return
-        type = data.get("type", None)
-        raw = data.get("raw", False)
-
-        if raw:
-            logger.debug5("Received raw payload: {}", data["payload"])
-
-        if type and not raw:
-            self.__mitm_mapper.playerstats[origin].stats_collector(type)
-
-            logger.debug4("Received payload: {}", data["payload"])
-
-            if type == 106:
-                # process GetMapObject
-                logger.success("Processing GMO received from {}. Received at {}", str(
-                    origin), str(datetime.fromtimestamp(received_timestamp)))
-
-                if application_args.weather:
-                    self._db_wrapper.submit_weather_map_proto(
-                        origin, data["payload"], received_timestamp)
-
-                self._db_wrapper.submit_pokestops_map_proto(
-                    origin, data["payload"])
-                self._db_wrapper.submit_gyms_map_proto(origin, data["payload"])
-                self._db_wrapper.submit_raids_map_proto(
-                    origin, data["payload"], self.__mitm_mapper.playerstats[origin])
-
-                self._db_wrapper.submit_spawnpoints_map_proto(
-                    origin, data["payload"])
-                mon_ids_iv = self.__mitm_mapper.get_mon_ids_iv(origin)
-                self._db_wrapper.submit_mons_map_proto(
-                    origin, data["payload"], mon_ids_iv, self.__mitm_mapper.playerstats[origin])
-            elif type == 102:
-                playerlevel = self.__mitm_mapper.playerstats[origin].get_level(
-                )
-                if playerlevel >= 30:
-                    logger.info("Processing Encounter received from {} at {}", str(
-                        origin), str(received_timestamp))
-                    self._db_wrapper.submit_mon_iv(
-                        origin, received_timestamp, data["payload"], self.__mitm_mapper.playerstats[origin])
-                else:
-                    logger.debug(
-                        'Playerlevel lower than 30 - not processing encounter Data')
-            elif type == 101:
-                self._db_wrapper.submit_quest_proto(
-                    data["payload"], self.__mitm_mapper.playerstats[origin])
-            elif type == 104:
-                self._db_wrapper.submit_pokestops_details_map_proto(
-                    data["payload"])
-            elif type == 4:
-                self.__mitm_mapper.playerstats[origin].gen_player_stats(
-                    data["payload"])

@@ -38,7 +38,7 @@ def weather_image_matching(weather_icon_name, screenshot_name):
         return 0
 
     height_f, width_f, = screenshot_img.shape
-    screenshot_img = screenshot_img[0: int(height_f/7), 0: width_f]
+    screenshot_img = screenshot_img[0: int(height_f / 7), 0: width_f]
 
     resized = imutils.resize(
         weather_icon, width=int(weather_icon.shape[1] * 1))
@@ -67,7 +67,7 @@ def weather_image_matching(weather_icon_name, screenshot_name):
 
         (endX, endY) = (int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
 
-        if endY > height_f/7 and endX < width_f/2:
+        if endY > height_f / 7 and endX < width_f / 2:
             maxVal = 0
 
         if not found or maxVal > found[0]:

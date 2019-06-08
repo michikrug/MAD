@@ -80,7 +80,7 @@ class MonRaidImages(object):
                         [240, 240, 240]), np.array([255, 255, 255]))
                     cv2.imwrite(monFile, monAsset)
                     crop = cv2.imread(monFile, 3)
-                    crop = crop[0:int(height), 0:int((width/10)*10)]
+                    crop = crop[0:int(height), 0:int((width / 10) * 10)]
                     kernel = np.ones((2, 2), np.uint8)
                     crop = cv2.erode(crop, kernel, iterations=1)
                     kernel = np.ones((3, 3), np.uint8)

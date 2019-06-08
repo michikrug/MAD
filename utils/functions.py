@@ -11,7 +11,7 @@ with open('madmin/static/vars/template/phone.tpl', 'r') as file:
 
 
 def creation_date(path_to_file):
-    return os.path.getctime(path_to_file)
+    return os.path.getmtime(path_to_file)
 
 
 def generate_path(path):

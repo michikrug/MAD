@@ -1,3 +1,6 @@
+import heapq
+from typing import List
+
 from route.RouteManagerBase import RouteManagerBase
 from utils.logging import logger
 
@@ -24,7 +27,16 @@ class RouteManagerIV(RouteManagerBase):
         for prio in latest_priorities:
             new_list.append(prio[2])
         self.encounter_ids_left = new_list
-        return latest_priorities
+
+        self._manager_mutex.acquire()
+        heapq.heapify(latest_priorities)
+        self._prio_queue = latest_priorities
+        self._manager_mutex.release()
+        return None
+        # return latest_priorities
+
+    def get_encounter_ids_left(self) -> List[int]:
+        return self.encounter_ids_left
 
     def _get_coords_post_init(self):
         # not necessary
@@ -44,7 +56,7 @@ class RouteManagerIV(RouteManagerBase):
                                   routefile=routefile, init=init,
                                   name=name, settings=settings, mode=mode
                                   )
-        self.encounter_ids_left = []
+        self.encounter_ids_left: List[int] = []
         self.starve_route = True
         if self.delay_after_timestamp_prio is None:
             # just set a value to enable the queue

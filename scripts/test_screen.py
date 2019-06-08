@@ -151,7 +151,7 @@ class testimage(object):
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
             for (x, y, r) in circles:
-                raidhash = output[y-r-1:y+r+1, x-r-1:x+r+1]
+                raidhash = output[y - r - 1:y + r + 1, x - r - 1:x + r + 1]
                 cv2.imshow("output", np.hstack([raidhash]))
                 cv2.waitKey(0)
         else:
@@ -166,10 +166,10 @@ class testimage(object):
         #y2 += self._resocalc.get_next_item_coord(self)
         #y1 += self._resocalc.get_next_item_coord(self)
         #y2 += self._resocalc.get_next_item_coord(self)
-        h = x1-x2
-        w = y1-y2
+        h = x1 - x2
+        w = y1 - y2
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray = gray[int(y2):(int(y2)+int(w)), int(x2):(int(x2)+int(h))]
+        gray = gray[int(y2):(int(y2) + int(w)), int(x2):(int(x2) + int(h))]
         cv2.imshow("output", gray)
         cv2.waitKey(0)
         filename = "{}.png".format(os.getpid())

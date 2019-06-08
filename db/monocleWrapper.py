@@ -4,7 +4,8 @@ import sys
 import time
 from datetime import datetime, timedelta
 from functools import reduce
-from typing import List
+from multiprocessing.managers import SyncManager
+from typing import List, Optional
 
 import requests
 
@@ -12,6 +13,10 @@ from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.logging import logger
 from utils.s2Helper import S2Helper
+
+
+class MonocleWrapperManager(SyncManager):
+    pass
 
 
 class MonocleWrapper(DbWrapperBase):
@@ -403,8 +408,7 @@ class MonocleWrapper(DbWrapperBase):
         res = self.execute(query, vals)
 
         for (id, distance, latitude, longitude, name, description, url) in res:
-            data.append([gym_id, distance, latitude,
-                         longitude, name, description, url])
+            data.append([id, distance, latitude, longitude, name, description, url])
         logger.debug("{MonocleWrapper::get_near_gyms} done")
         return data
 
@@ -568,7 +572,7 @@ class MonocleWrapper(DbWrapperBase):
 
         self.execute(query, vals, commit=True)
 
-    def submit_mon_iv(self, origin, timestamp, encounter_proto, stats):
+    def submit_mon_iv(self, origin: str, timestamp: float, encounter_proto: dict, mitm_mapper):
         logger.debug("Updating IV sent by {}", str(origin))
         wild_pokemon = encounter_proto.get("wild_pokemon", None)
         if wild_pokemon is None:
@@ -588,7 +592,7 @@ class MonocleWrapper(DbWrapperBase):
         if encounter_id < 0:
             encounter_id = encounter_id + 2 ** 64
 
-        stats.stats_collect_mon_iv(encounter_id)
+        mitm_mapper.collect_mon_iv_stats(origin, str(encounter_id))
 
         latitude = wild_pokemon.get("latitude")
         longitude = wild_pokemon.get("longitude")
@@ -660,7 +664,7 @@ class MonocleWrapper(DbWrapperBase):
         )
         self.execute(query_insert, vals, commit=True)
 
-    def submit_mons_map_proto(self, origin, map_proto, mon_ids_iv, stats):
+    def submit_mons_map_proto(self, origin: str, map_proto: dict, mon_ids_iv: Optional[List[int]], mitm_mapper):
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -682,7 +686,7 @@ class MonocleWrapper(DbWrapperBase):
                 if encounter_id < 0:
                     encounter_id = encounter_id + 2 ** 64
 
-                stats.stats_collect_mon(encounter_id)
+                mitm_mapper.collect_mon_stats(origin, str(encounter_id))
 
                 s2_weather_cell_id = S2Helper.lat_lng_to_cell_id(
                     lat, lon, level=10)
@@ -793,7 +797,7 @@ class MonocleWrapper(DbWrapperBase):
                     slots = gym['gym_details']['slots_available']
                     is_in_battle = gym['gym_details'].get(
                         'is_in_battle', False)
-                    last_modified = gym['last_modified_timestamp_ms']/1000
+                    last_modified = gym['last_modified_timestamp_ms'] / 1000
                     is_ex_raid_eligible = gym['gym_details']['is_ex_raid_eligible']
 
                     if is_in_battle:
@@ -819,7 +823,7 @@ class MonocleWrapper(DbWrapperBase):
                          vals_fort_sightings, commit=True)
         return True
 
-    def submit_raids_map_proto(self, origin, map_proto, stats):
+    def submit_raids_map_proto(self, origin: str, map_proto: dict, mitm_mapper):
         cells = map_proto.get("cells", None)
         if cells is None:
             return False
@@ -862,7 +866,7 @@ class MonocleWrapper(DbWrapperBase):
                     level = gym['gym_details']['raid_info']['level']
                     gymid = gym['id']
 
-                    stats.stats_collect_raid(gymid)
+                    mitm_mapper.collect_raid_stats(origin, gymid)
 
                     now = time.time()
 
@@ -953,13 +957,20 @@ class MonocleWrapper(DbWrapperBase):
                 continue
 
             next_to_encounter.append(
-                (
-                    i, Location(lat, lon), encounter_id
-                )
+                (pokemon_id, Location(lat, lon), encounter_id)
             )
-            i += 1
 
-        return next_to_encounter
+        # now filter by the order of eligible_mon_ids
+        to_be_encountered = []
+        i = 0
+        for mon_prio in eligible_mon_ids:
+            for mon in next_to_encounter:
+                if mon_prio == mon[0]:
+                    to_be_encountered.append(
+                        (i, mon[1], mon[2])
+                    )
+            i += 1
+        return to_be_encountered
 
     def __download_img(self, url, file_name):
         retry = 1
@@ -1046,16 +1057,20 @@ class MonocleWrapper(DbWrapperBase):
             logger.debug('Pokestop has not a quest with CURDATE()')
             return False
 
-    def stop_from_db_without_quests(self, geofence_helper):
+    def stop_from_db_without_quests(self, geofence_helper, levelmode):
         logger.debug("MonocleWrapper::stop_from_db_without_quests called")
 
         query = (
             "SELECT pokestops.lat, pokestops.lon "
             "FROM pokestops left join trs_quest on "
-            "pokestops.external_id = trs_quest.GUID where "
-            "DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) <> CURDATE() "
-            "or trs_quest.GUID IS NULL"
+            "pokestops.external_id = trs_quest.GUID  "
         )
+
+        if not levelmode:
+            query_addon = "where DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) <> CURDATE() "\
+                          "or trs_quest.GUID IS NULL"
+
+            query = query + query_addon
 
         res = self.execute(query)
         list_of_coords = []
@@ -1321,7 +1336,7 @@ class MonocleWrapper(DbWrapperBase):
         query_where = ''
         if hours:
             zero = datetime.now()
-            hours = calendar.timegm(zero.timetuple()) - hours*60*60
+            hours = calendar.timegm(zero.timetuple()) - hours * 60 * 60
             query_where = ' where expire_timestamp > %s ' % str(hours)
 
         query = (
@@ -1457,3 +1472,21 @@ class MonocleWrapper(DbWrapperBase):
             }
 
         return gyms
+
+    def check_stop_quest_level(self, worker, latitude, longitude):
+        logger.debug("RmWrapper::stops_from_db called")
+        query = (
+            "SELECT trs_stats_detect_raw.type_id "
+            "from trs_stats_detect_raw inner join pokestops on pokestops.external_id = trs_stats_detect_raw.type_id "
+            "where pokestops.lat=%s and pokestops.lon=%s and trs_stats_detect_raw.worker=%s"
+        )
+        data = (latitude, longitude, worker)
+
+        res = self.execute(query, data)
+        number_of_rows = len(res)
+        if number_of_rows > 0:
+            logger.debug('Pokestop already visited')
+            return True
+        else:
+            logger.debug('Pokestop not visited till now')
+            return False

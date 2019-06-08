@@ -142,6 +142,8 @@ def questtask(typeid, condition, target):
             text = _('Catch {0} {poke}')
     elif typeid == 5:
         text = _('Spin {0} Pokestops or Gyms')
+        if re.search(r'"type": 12', condition) is not None:
+            text = _('Spin {0} never visited Pokestops or Gyms')
     elif typeid == 6:
         text = _('Hatch {0} Eggs')
     elif typeid == 7:
@@ -224,7 +226,7 @@ def questtask(typeid, condition, target):
             arr['curve'] = _('Curveball ')
         match_object = re.search(r'"throw_type": ([0-9]{2})', condition)
         if match_object is not None:
-            arr['type'] = throwTypes[match_object.group(1)]+" "
+            arr['type'] = throwTypes[match_object.group(1)] + " "
         text = _('Make {0} {type}{curve}Throws{inrow}')
     elif typeid == 17:
         text = _('Earn {0} Candies walking with your buddy')
@@ -243,7 +245,7 @@ def questtask(typeid, condition, target):
         arr['0'] = _('a')
 
     for key, val in arr.items():
-        text = text.replace('{'+key+'}', str(val))
+        text = text.replace('{' + key + '}', str(val))
 
     text = text.replace('  ', ' ')
 

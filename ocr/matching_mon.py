@@ -51,7 +51,7 @@ def mon_image_matching(args, url_img_name, fort_img_name, raidNo, hash):
 
         (endX, endY) = (int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
 
-        if endY < height_f/2 or endX < width_f/2 or endY > height_f/2+height_f/2*0.4 or endY < height_f/2+height_f/2*0.3:
+        if endY < height_f / 2 or endX < width_f / 2 or endY > height_f / 2 + height_f / 2 * 0.4 or endY < height_f / 2 + height_f / 2 * 0.3:
             maxVal = 0.0
 
         logger.debug('[Crop: ' + str(raidNo) + ' (' + str(hash) + ') ] ' + 'Filename: ' +

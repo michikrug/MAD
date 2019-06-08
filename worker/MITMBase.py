@@ -5,8 +5,11 @@ from abc import abstractmethod
 from datetime import datetime
 from enum import Enum
 
+from mitm_receiver.MitmMapper import MitmMapper
+from ocr.pogoWindows import PogoWindows
 from utils.logging import logger
 from utils.madGlobals import InternalStopWorkerException
+from utils.MappingManager import MappingManager
 from worker.WorkerBase import WorkerBase
 
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -19,15 +22,14 @@ class LatestReceivedType(Enum):
     MON = 3
     CLEAR = 4
 
-# get_trash_click_positions
-
 
 class MITMBase(WorkerBase):
-    def __init__(self, args, id, last_known_state, websocket_handler,
-                 walker_routemanager, devicesettings, db_wrapper, mitm_mapper, pogoWindowManager,
+    def __init__(self, args, id, last_known_state, websocket_handler, mapping_manager: MappingManager,
+                 routemanager_name: str, db_wrapper, mitm_mapper: MitmMapper, pogoWindowManager: PogoWindows,
                  NoOcr=False, walker=None):
         WorkerBase.__init__(self, args, id, last_known_state, websocket_handler,
-                            walker_routemanager, devicesettings, db_wrapper=db_wrapper, NoOcr=True,
+                            mapping_manager=mapping_manager, routemanager_name=routemanager_name,
+                            db_wrapper=db_wrapper, NoOcr=True,
                             pogoWindowManager=pogoWindowManager, walker=walker)
 
         self._reboot_count = 0
@@ -36,15 +38,15 @@ class MITMBase(WorkerBase):
         self._mitm_mapper = mitm_mapper
         self._latest_encounter_update = 0
         self._encounter_ids = {}
-        self._stats = mitm_mapper.return_player_object(id)
 
-        self._stats.stats_collect_location_data(self.current_location, 1, time.time(),
-                                                2, 0,
-                                                self._walker_routemanager.get_walker_type(), 99)
+        self._mitm_mapper.collect_location_stats(self._id, self.current_location, 1, time.time(), 2, 0,
+                                                 self._mapping_manager.routemanager_get_mode(
+                                                     self._routemanager_name),
+                                                 99)
 
     def _wait_for_data(self, timestamp: float = time.time(), proto_to_wait_for=106, timeout=None):
         if timeout is None:
-            timeout = self._devicesettings.get("mitm_wait_timeout", 45)
+            timeout = self.get_devicesettings_value("mitm_wait_timeout", 45)
 
         # let's fetch the latest data to add the offset to timeout (in case phone and server times are off...)
         latest = self._mitm_mapper.request_latest(self._id)
@@ -53,8 +55,9 @@ class MITMBase(WorkerBase):
 
         # we can now construct the rough estimate of the diff of time of mobile vs time of server, subtract our
         # timestamp by the diff
+        # TODO: discuss, probably wiser to add to timeout or get the diff of how long it takes for RGC to issue a cmd
         timestamp = timestamp - (timestamp_last_received - timestamp_last_data)
-        #
+
         # if timestamp_last_data is not None and timestamp_last_received is not None:
         #     # add the difference of the two timestamps to timeout
         #     timeout += (timestamp_last_received - timestamp_last_data)
@@ -64,64 +67,68 @@ class MITMBase(WorkerBase):
         data_requested = LatestReceivedType.UNDEFINED
 
         while (data_requested == LatestReceivedType.UNDEFINED
-                and timestamp + timeout >= math.floor(time.time() - (timestamp_last_received - timestamp_last_data))):
+                and timestamp + timeout >= math.floor(time.time())):
             latest = self._mitm_mapper.request_latest(self._id)
             data_requested = self._wait_data_worker(
                 latest, proto_to_wait_for, timestamp)
             time.sleep(1)
 
+        position_type = self._mapping_manager.routemanager_get_position_type(
+            self._routemanager_name, self._id)
+        if position_type is None:
+            logger.warning(
+                "Mappings/Routemanagers have changed, stopping worker to be created again")
+            raise InternalStopWorkerException
         if data_requested != LatestReceivedType.UNDEFINED:
             logger.debug('Got the data requested...')
             self._reboot_count = 0
             self._restart_count = 0
             self._rec_data_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            self._stats.stats_collect_location_data(
-                self.current_location, 1, self._waittime_without_delays,
-                self._walker_routemanager.get_position_type(self._id),
-                time.time(),
-                self._walker_routemanager.get_walker_type(), self._transporttype)
+            self._mitm_mapper.collect_location_stats(self._id, self.current_location, 1, self._waittime_without_delays,
+                                                     position_type, time.time(),
+                                                     self._mapping_manager.routemanager_get_mode(
+                                                         self._routemanager_name), self._transporttype)
         else:
             # TODO: timeout also happens if there is no useful data such as mons nearby in mon_mitm mode, we need to
             # TODO: be more precise (timeout vs empty data)
             logger.warning("Timeout waiting for data")
 
-            self._stats.stats_collect_location_data(
-                self.current_location, 0, self._waittime_without_delays,
-                self._walker_routemanager.get_position_type(self._id), 0,
-                self._walker_routemanager.get_walker_type(), self._transporttype)
+            self._mitm_mapper.collect_location_stats(self._id, self.current_location, 0, self._waittime_without_delays,
+                                                     position_type, 0,
+                                                     self._mapping_manager.routemanager_get_mode(
+                                                         self._routemanager_name), self._transporttype)
 
             self._restart_count += 1
 
-            restart_thresh = self._devicesettings.get("restart_thresh", 5)
-            reboot_thresh = self._devicesettings.get("reboot_thresh", 3)
-            if self._walker_routemanager is not None:
+            restart_thresh = self.get_devicesettings_value("restart_thresh", 5)
+            reboot_thresh = self.get_devicesettings_value("reboot_thresh", 3)
+            if self._mapping_manager.routemanager_get_route_stats(self._routemanager_name) is not None:
                 if self._init:
-                    restart_thresh = self._devicesettings.get(
-                        "restart_thresh", 5) * 2
-                    reboot_thresh = self._devicesettings.get(
-                        "reboot_thresh", 3) * 2
+                    restart_thresh = self.get_devicesettings_value("restart_thresh", 5) * 2
+                    reboot_thresh = self.get_devicesettings_value("reboot_thresh", 3) * 2
 
             if self._restart_count > restart_thresh:
                 self._reboot_count += 1
                 if self._reboot_count > reboot_thresh \
-                        and self._devicesettings.get("reboot", False):
+                        and self.get_devicesettings_value("reboot", False):
                     logger.error("Rebooting {}", str(self._id))
-                    self._reboot()
+                    self._reboot(mitm_mapper=self._mitm_mapper)
                     raise InternalStopWorkerException
 
                 # self._mitm_mapper.
                 self._restart_count = 0
-                self._restart_pogo(True)
+                self._restart_pogo(True, self._mitm_mapper)
 
         self.worker_stats()
         return data_requested
 
     def _wait_for_injection(self):
+        self._not_injected_count = 0
         while not self._mitm_mapper.get_injection_status(self._id):
             if self._not_injected_count >= 20:
                 logger.error("Worker {} not get injected in time - reboot", str(self._id))
-                self._reboot()
+                self._reboot(self._mitm_mapper)
                 return False
             logger.info("Worker {} is not injected till now (Count: {})",
                         str(self._id), str(self._not_injected_count))
@@ -157,7 +164,7 @@ class MITMBase(WorkerBase):
             self._resocalc.get_confirm_delete_quest_coords(self)[1]
 
         for trash in range(len(trashcancheck)):
-            logger.info("Delete old quest {}", int(trash)+1)
+            logger.info("Delete old quest {}", int(trash) + 1)
             self._communicator.click(int(trashcancheck[0].x), int(trashcancheck[0].y))
             time.sleep(1 + int(delayadd))
             self._communicator.click(int(x), int(y))
@@ -208,36 +215,43 @@ class MITMBase(WorkerBase):
         return
 
     def worker_stats(self):
-        routemanager = self._walker_routemanager
         logger.debug('===============================')
         logger.debug('Worker Stats')
         logger.debug('Origin: {}', str(self._id))
-        logger.debug('Routemanager: {}', str(routemanager.name))
+        logger.debug('Routemanager: {}', str(self._routemanager_name))
         logger.debug('Restart Counter: {}', str(self._restart_count))
         logger.debug('Reboot Counter: {}', str(self._reboot_count))
         logger.debug('Reboot Option: {}', str(
-            self._devicesettings.get("reboot", False)))
+            self.get_devicesettings_value("reboot", False)))
         logger.debug('Current Pos: {} {}', str(
             self.current_location.lat), str(self.current_location.lng))
         logger.debug('Last Pos: {} {}', str(
             self.last_location.lat), str(self.last_location.lng))
-        logger.debug('Route Pos: {} - Route Length: {}', str(
-            routemanager.get_route_status()[0]), str(routemanager.get_route_status()[1]))
-        logger.debug('Init Mode: {}', str(routemanager.init))
+        routemanager_status = self._mapping_manager.routemanager_get_route_stats(
+            self._routemanager_name)
+        if routemanager_status is None:
+            logger.warning("Routemanager not available")
+            routemanager_status = [None, None]
+        else:
+            logger.debug('Route Pos: {} - Route Length: {}',
+                         str(routemanager_status[0]), str(routemanager_status[1]))
+        routemanager_init: bool = self._mapping_manager.routemanager_get_init(
+            self._routemanager_name)
+        logger.debug('Init Mode: {}', str(routemanager_init))
         logger.debug('Last Date/Time of Data: {}', str(self._rec_data_time))
         logger.debug('===============================')
 
         dataToSave = {
-            'Origin':            self._id,
-            'Routemanager':      str(routemanager.name),
-            'RebootCounter':     str(self._reboot_count),
-            'RestartCounter':    str(self._restart_count),
-            'RebootingOption':   str(self._devicesettings.get("reboot", False)),
-            'CurrentPos':        str(self.current_location.lat) + ", " + str(self.current_location.lng),
-            'LastPos':           str(self.last_location.lat) + ", " + str(self.last_location.lng),
-            'RoutePos':          str(routemanager.get_route_status()[0]),
-            'RouteMax':          str(routemanager.get_route_status()[1]),
-            'Init':              str(routemanager.init),
+            'Origin': self._id,
+            'Routemanager': str(self._routemanager_name),
+            'RebootCounter': str(self._reboot_count),
+            'RestartCounter': str(self._restart_count),
+            'RebootingOption': str(self.get_devicesettings_value("reboot", False)),
+            'CurrentPos': str(self.current_location.lat) + ", " + str(self.current_location.lng),
+            'LastPos': str(self.last_location.lat) + ", " + str(self.last_location.lng),
+            'RoutePos': str(routemanager_status[0]),
+            'RouteMax': str(routemanager_status[1]),
+            'Init': str(routemanager_init),
             'LastProtoDateTime': str(self._rec_data_time)
         }
 

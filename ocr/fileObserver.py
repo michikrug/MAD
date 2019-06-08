@@ -69,8 +69,8 @@ class checkScreenshot(PatternMatchingEventHandler):
                 raidNo += 1
                 raidCropFilepath = os.path.join(self.args.temp_path, str(
                     hash) + "_raidcrop" + str(raidNo) + ".jpg")
-                new_crop = orgScreen[y-r-int((r*2*0.03)):y+r+int(
-                    (r*2*0.75)), x-r-int((r*2*0.03)):x+r+int((r*2*0.3))]
+                new_crop = orgScreen[y - r - int((r * 2 * 0.03)):y + r + int(
+                    (r * 2 * 0.75)), x - r - int((r * 2 * 0.03)):x + r + int((r * 2 * 0.3))]
                 cv2.imwrite(raidCropFilepath, new_crop)
                 logger.info("Starting processing of crop")
                 self.thread_pool.apply_async(RaidScan.process, args=(raidCropFilepath, self.args, self.db_wrapper,

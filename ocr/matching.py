@@ -25,8 +25,8 @@ def fort_image_matching(url_img_name, fort_img_name, zoom, value, raidNo, hash, 
         if width_f < 180:
             tempFile = str(hash) + "_resize_" + str(raidNo) + ".jpg"
             img_temp = Image.open(fort_img_name)
-            wsize = int((float(img_temp.size[0]))*2)
-            hsize = int((float(img_temp.size[1]))*2)
+            wsize = int((float(img_temp.size[0])) * 2)
+            hsize = int((float(img_temp.size[1])) * 2)
             img_temp = img_temp.resize((wsize, hsize), Image.ANTIALIAS)
             img_temp.save(tempFile)
             fort_img = cv2.imread(tempFile, 3)
@@ -37,24 +37,24 @@ def fort_image_matching(url_img_name, fort_img_name, zoom, value, raidNo, hash, 
             # else:
             #     fort_img = fort_img[int((height_f/2)-(height_f/2.5)):int((height_f/2)+(height_f/2.5)), int((width_f/2)-(width_f/2)):int((width_f/2)+(width_f/2))]
 
-        x1 = int(round(radius*2*0.03)+(radius*x1))
-        x2 = int(round(radius*2*0.03)+(radius*x2))
-        y1 = int(round(radius*2*0.03)+(radius*y1))
-        y2 = int(round(radius*2*0.03)+(radius*y2))
+        x1 = int(round(radius * 2 * 0.03) + (radius * x1))
+        x2 = int(round(radius * 2 * 0.03) + (radius * x2))
+        y1 = int(round(radius * 2 * 0.03) + (radius * y1))
+        y2 = int(round(radius * 2 * 0.03) + (radius * y2))
 
         crop = url_img[int(y1):int(y2), int(x1):int(x2)]
 
         height_f, width_f, channel_f = fort_img.shape
 
-        npValue = radius/217.0
-        npFrom = radius/161.0
-        matchCount = radius/10.0 + 2
+        npValue = radius / 217.0
+        npFrom = radius / 161.0
+        matchCount = radius / 10.0 + 2
 
     else:
         tempFile = str(hash) + "_resize_" + str(raidNo) + ".jpg"
         img_temp = Image.open(fort_img_name)
-        wsize = int((float(img_temp.size[0]))*2)
-        hsize = int((float(img_temp.size[1]))*2)
+        wsize = int((float(img_temp.size[0])) * 2)
+        hsize = int((float(img_temp.size[1])) * 2)
         img_temp = img_temp.resize((wsize, hsize), Image.ANTIALIAS)
         img_temp.save(tempFile)
         fort_img = cv2.imread(tempFile, 3)
@@ -90,7 +90,7 @@ def fort_image_matching(url_img_name, fort_img_name, zoom, value, raidNo, hash, 
     (maxVal, maxLoc, r) = found
     (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
 
-    if not found or found[0] < value or (checkX and startX > width_f/2):
+    if not found or found[0] < value or (checkX and startX > width_f / 2):
         return 0.0
 
     return found[0]

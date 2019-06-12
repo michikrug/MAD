@@ -266,7 +266,7 @@ class RmWrapper(DbWrapperBase):
             self.execute(query, vals, commit=True)
 
         logger.debug("[Crop: {} ({})] submit_raid: Submit finished",
-                    str(raid_no), str(unique_hash))
+                     str(raid_no), str(unique_hash))
         self.refresh_times(gym, raid_no, capture_time)
 
         logger.debug("RmWrapper::submit_raid done")
@@ -372,7 +372,7 @@ class RmWrapper(DbWrapperBase):
                 return True
             else:
                 logger.debug("[Crop: {} ({})] raid_exist: Egg is new",
-                            str(raid_no), str(unique_hash))
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
         else:
@@ -402,7 +402,7 @@ class RmWrapper(DbWrapperBase):
                 return True
             else:
                 logger.debug("[Crop: {} ({})] raid_exist: Mon is new",
-                            str(raid_no), str(unique_hash))
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
 
@@ -680,10 +680,10 @@ class RmWrapper(DbWrapperBase):
         if getdetspawntime is None:
 
             logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (init)",
-                        str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+                         str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
         else:
             logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (non-init)",
-                        str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+                         str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
 
         capture_probability = encounter_proto.get("capture_probability")
         capture_probability_list = capture_probability.get(
@@ -788,7 +788,7 @@ class RmWrapper(DbWrapperBase):
                         origin), mon_id, lat, lon, despawn_time, spawnid)
                 else:
                     logger.debug("{}: adding mon (#{}) at {}, {}. Despawns at {} (non-init) ({})",
-                                str(origin), mon_id, lat, lon, despawn_time, spawnid)
+                                 str(origin), mon_id, lat, lon, despawn_time, spawnid)
 
                 mon_args.append(
                     (
@@ -868,7 +868,7 @@ class RmWrapper(DbWrapperBase):
                     latitude = gym['latitude']
                     longitude = gym['longitude']
                     slots_available = gym['gym_details']['slots_available']
-                    last_modified_ts = gym['last_modified_timestamp_ms']/1000
+                    last_modified_ts = gym['last_modified_timestamp_ms'] / 1000
                     last_modified = datetime.utcfromtimestamp(
                         last_modified_ts).strftime("%Y-%m-%d %H:%M:%S")
                     is_ex_raid_eligible = gym['gym_details']['is_ex_raid_eligible']
@@ -1037,7 +1037,7 @@ class RmWrapper(DbWrapperBase):
                 continue
 
             next_to_encounter.append(
-                    (pokemon_id, Location(latitude, longitude), encounter_id)
+                (pokemon_id, Location(latitude, longitude), encounter_id)
             )
 
         # now filter by the order of eligible_mon_ids
@@ -1047,7 +1047,7 @@ class RmWrapper(DbWrapperBase):
             for mon in next_to_encounter:
                 if mon_prio == mon[0]:
                     to_be_encountered.append(
-                            (i, mon[1], mon[2])
+                        (i, mon[1], mon[2])
                     )
             i += 1
         return to_be_encountered
@@ -1087,7 +1087,7 @@ class RmWrapper(DbWrapperBase):
         now = datetime.utcfromtimestamp(
             time.time()).strftime("%Y-%m-%d %H:%M:%S")
         last_modified = datetime.utcfromtimestamp(
-            stop_data['last_modified_timestamp_ms']/1000).strftime("%Y-%m-%d %H:%M:%S")
+            stop_data['last_modified_timestamp_ms'] / 1000).strftime("%Y-%m-%d %H:%M:%S")
         # lure isn't present anymore...
         lure = '1970-01-01 00:00:00'
         return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now
@@ -1500,12 +1500,12 @@ class RmWrapper(DbWrapperBase):
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:%i:00'))"
 
         query = (
-                "SELECT encounter_id, GROUP_CONCAT(DISTINCT worker order by worker asc SEPARATOR ', '), pokemon_id, "
-                "%s, individual_attack, individual_defense, individual_stamina, cp_multiplier, cp FROM pokemon join "
-                "trs_stats_detect_raw on pokemon.encounter_id=type_id WHERE "
-                "individual_attack>14 and individual_defense>14 and individual_stamina>14 and "
-                "trs_stats_detect_raw.type in ('mon', 'mon_iv') group by encounter_id "
-                "order by trs_stats_detect_raw.timestamp_scan desc limit 30" %
+            "SELECT encounter_id, GROUP_CONCAT(DISTINCT worker order by worker asc SEPARATOR ', '), pokemon_id, "
+            "%s, individual_attack, individual_defense, individual_stamina, cp_multiplier, cp FROM pokemon join "
+            "trs_stats_detect_raw on pokemon.encounter_id=type_id WHERE "
+            "individual_attack>14 and individual_defense>14 and individual_stamina>14 and "
+            "trs_stats_detect_raw.type in ('mon', 'mon_iv') group by encounter_id "
+            "order by trs_stats_detect_raw.timestamp_scan desc limit 30" %
                 (str(query_date))
         )
 

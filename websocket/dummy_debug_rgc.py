@@ -39,7 +39,8 @@ async def hello(websocket, path):
             if isinstance(response, str):
                 print("Response: {}".format(str(response.strip())))
             else:
-                print("Received binary data starting with {}. Storing it.".format(str(response[:10])))
+                print("Received binary data starting with {}. Storing it.".format(
+                    str(response[:10])))
                 fh = open("derp.jpg", "wb")
                 fh.write(response)
                 fh.close()

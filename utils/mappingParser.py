@@ -16,27 +16,27 @@ from utils.s2Helper import S2Helper
 mode_mapping = {
     "raids_mitm": {
         "s2_cell_level": 13,
-        "range":         490,
-        "range_init":    490,
-        "max_count":     100000
+        "range": 490,
+        "range_init": 490,
+        "max_count": 100000
 
     },
-    "mon_mitm":   {
+    "mon_mitm": {
         "s2_cell_level": 17,
-        "range":         67,
-        "range_init":    67,
-        "max_count":     100000
+        "range": 67,
+        "range_init": 67,
+        "max_count": 100000
     },
     "raids_ocr": {
-        "range":         490,
-        "range_init":    490,
-        "max_count":     7
+        "range": 490,
+        "range_init": 490,
+        "max_count": 7
     },
-    "pokestops":  {
+    "pokestops": {
         "s2_cell_level": 13,
-        "range":         1,
-        "range_init":    490,
-        "max_count":     100000
+        "range": 1,
+        "range_init": 490,
+        "max_count": 100000
     }
 }
 
@@ -84,10 +84,10 @@ class MappingParser(object):
                     raise RuntimeError(
                         "Geofence excluded file is specified but does not exist")
 
-            area_dict = {"mode":              area["mode"],
+            area_dict = {"mode": area["mode"],
                          "geofence_included": area["geofence_included"],
                          "geofence_excluded": area.get("geofence_excluded", None),
-                         "routecalc":         area["routecalc"]}
+                         "routecalc": area["routecalc"]}
             # also build a routemanager for each area...
 
             # grab coords
@@ -212,8 +212,8 @@ class MappingParser(object):
                             os.remove(routefile + '.calc')
                         with open(routefile + '.calc', 'a') as f:
                             for loc in coords:
-                                f.write(str(loc.lat) + ', ' +
-                                        str(loc.lng) + '\n')
+                                f.write(str(loc.lat) + ', '
+                                        + str(loc.lng) + '\n')
                     # gotta feed the route to routemanager... TODO: without recalc...
                     proc = thread_pool.apply_async(route_manager.recalc_route, args=(1, 99999999,
                                                                                      0, False))

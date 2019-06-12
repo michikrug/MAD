@@ -1,6 +1,6 @@
 import collections
 import time
-from typing import List, Dict
+from typing import Dict, List
 
 from db.dbWrapperBase import DbWrapperBase
 from route.RouteManagerBase import RouteManagerBase
@@ -110,7 +110,8 @@ class RouteManagerQuests(RouteManagerBase):
                     logger.warning("Found stop not processed yet: {}".format(str(stop)))
                     list_of_stops_to_return.append(stop)
                 else:
-                    logger.error("Stop {} has not been processed thrice in a row, please check your DB".format(str(stop)))
+                    logger.error(
+                        "Stop {} has not been processed thrice in a row, please check your DB".format(str(stop)))
 
             if len(list_of_stops_to_return) > 0:
                 logger.info("Found stops not yet processed, retrying those in the next round")
@@ -145,14 +146,15 @@ class RouteManagerQuests(RouteManagerBase):
 
                 for route_location in self._stoplist:
                     if route_location not in self._route:
-                        logger.warning("Stop with coords {} seems new and not in route.", str(route_location))
+                        logger.warning(
+                            "Stop with coords {} seems new and not in route.", str(route_location))
 
                 if len(stops) == 0:
                     logger.info('No unprocessed  Stops detected - quit worker')
                     self._route: List[Location] = []
 
                 if 0 < len(stops) < len(self._route) \
-                        and (len(stops)-len(self._route)) * 100 / len(stops) < 80:
+                        and (len(stops) - len(self._route)) * 100 / len(stops) < 80:
                     # Calculating new route because 80 percent of stops are processed
                     logger.info('There are less stops without quest than routepositions - recalc')
                     self._route = list(set(self._route) - (set(self._route) - set(stops)))
@@ -165,7 +167,6 @@ class RouteManagerQuests(RouteManagerBase):
                     self._init_route_queue()
 
                 logger.info('Getting {} positions in route', len(self._route))
-
 
         finally:
             self._manager_mutex.release()

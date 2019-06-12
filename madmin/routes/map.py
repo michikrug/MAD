@@ -1,17 +1,17 @@
 import json
 import os
+from pathlib import Path
 from typing import List, Optional
 
-from flask import (Flask, jsonify, render_template, request)
-from flask_caching import Cache
+from flask import Flask, jsonify, render_template, request
 
 from db.dbWrapperBase import DbWrapperBase
-from madmin.functions import auth_required, getCoordFloat, getBoundParameter
-from utils.MappingManager import MappingManager
+from flask_caching import Cache
+from madmin.functions import auth_required, getBoundParameter, getCoordFloat
 from utils.collections import Location
-from utils.questGen import generate_quest
-from pathlib import Path
+from utils.MappingManager import MappingManager
 from utils.mappingParser import MappingParser
+from utils.questGen import generate_quest
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
@@ -147,7 +147,8 @@ class map(object):
         # areas = self._mapping_manager.get_areas()
         for routemanager in routemanager_names:
             mode = self._mapping_manager.routemanager_get_mode(routemanager)
-            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_route(routemanager)
+            route: Optional[List[Location]
+                            ] = self._mapping_manager.routemanager_get_current_route(routemanager)
 
             if route is None:
                 continue

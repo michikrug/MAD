@@ -1,20 +1,19 @@
 import asyncio
 import collections
+import logging
 import math
 import queue
 import sys
 import time
-import logging
 from threading import Event, Lock, Thread
 
 import websockets
-
-from utils.MappingManager import MappingManager
 from utils.authHelper import check_auth
-from utils.logging import logger, InterceptHandler
+from utils.logging import InterceptHandler, logger
 from utils.madGlobals import (WebsocketWorkerRemovedException,
                               WebsocketWorkerTimeoutException,
                               WrongAreaInWalker)
+from utils.MappingManager import MappingManager
 from utils.routeutil import pre_check_value
 from worker.WorkerConfigmode import WorkerConfigmode
 from worker.WorkerMITM import WorkerMITM
@@ -187,10 +186,13 @@ class WebsocketServer(object):
 
             if client_mapping.get("walker", None) is not None:
                 if "walker_area_index" not in devicesettings:
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', 0)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'walker_area_index', 0)
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'last_action_time', None)
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'last_cleanup_time', None)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'last_action_time', None)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'last_cleanup_time', None)
 
                 walker_index = devicesettings.get('walker_area_index', 0)
 
@@ -200,14 +202,15 @@ class WebsocketServer(object):
                         logger.info(
                             'Something wrong with last round - get back to old area')
                         walker_index -= 1
-                        self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', walker_index)
+                        self.__mapping_manager.set_devicesetting_value_of(
+                            origin, 'walker_area_index', walker_index)
                         # devicesettings['walker_area_index'] = walker_index
 
                 walker_area_array = client_mapping["walker"]
                 walker_settings = walker_area_array[walker_index]
 
                 # preckeck walker setting
-                while not pre_check_value(walker_settings) and walker_index-1 <= len(walker_area_array):
+                while not pre_check_value(walker_settings) and walker_index - 1 <= len(walker_area_array):
                     walker_area_name = walker_area_array[walker_index]['walkerarea']
                     logger.info(
                         '{} dont using area {} - Walkervalue out of range', str(origin), str(walker_area_name))
@@ -215,18 +218,21 @@ class WebsocketServer(object):
                         logger.error(
                             'Dont find any working area - check your config')
                         walker_index = 0
-                        self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', walker_index)
+                        self.__mapping_manager.set_devicesetting_value_of(
+                            origin, 'walker_area_index', walker_index)
                         walker_settings = walker_area_array[walker_index]
                         break
                     walker_index += 1
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', walker_index)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'walker_area_index', walker_index)
                     walker_settings = walker_area_array[walker_index]
 
                 devicesettings = self.__mapping_manager.get_devicesettings_of(origin)
 
                 if devicesettings['walker_area_index'] >= len(walker_area_array):
                     # check if array is smaller then expected - f.e. on the fly changes in mappings.json
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', 0)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'walker_area_index', 0)
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
                     walker_index = 0
 
@@ -237,16 +243,20 @@ class WebsocketServer(object):
 
                 logger.debug('Devicesettings {}: {}', str(origin), devicesettings)
                 logger.info('{} using walker area {} [{}/{}]', str(origin), str(
-                    walker_area_name), str(walker_index+1), str(len(walker_area_array)))
-                walker_routemanager_mode = self.__mapping_manager.routemanager_get_mode(walker_area_name)
-                self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', walker_index+1)
+                    walker_area_name), str(walker_index + 1), str(len(walker_area_array)))
+                walker_routemanager_mode = self.__mapping_manager.routemanager_get_mode(
+                    walker_area_name)
+                self.__mapping_manager.set_devicesetting_value_of(
+                    origin, 'walker_area_index', walker_index + 1)
                 self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
                 if walker_index >= len(walker_area_array) - 1:
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', 0)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'walker_area_index', 0)
 
                 # set global mon_iv
                 client_mapping['mon_ids_iv'] = \
-                    self.__mapping_manager.routemanager_get_settings(walker_area_name).get("mon_ids_iv", [])
+                    self.__mapping_manager.routemanager_get_settings(
+                        walker_area_name).get("mon_ids_iv", [])
 
             else:
                 walker_routemanager_mode = None
@@ -286,7 +296,7 @@ class WebsocketServer(object):
             new_worker_thread.daemon = False
 
             self.__current_users[origin] = [new_worker_thread,
-                                        worker, websocket_client_connection, 0]
+                                            worker, websocket_client_connection, 0]
             new_worker_thread.start()
         except WrongAreaInWalker:
             logger.error('Unknown Area in Walker settings - check config')
@@ -374,8 +384,8 @@ class WebsocketServer(object):
         :return:
         """
         self.__current_users_mutex.acquire()
-        if worker_id in self.__current_users.keys() and (worker_instance is None
-                                                         or self.__current_users[worker_id][1] == worker_instance):
+        if worker_id in self.__current_users.keys() and (worker_instance is None or
+                                                         self.__current_users[worker_id][1] == worker_instance):
             if self.__current_users[worker_id][2].open:
                 logger.info("Calling close for {}...", str(worker_id))
                 asyncio.ensure_future(

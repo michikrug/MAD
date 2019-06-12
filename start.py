@@ -1,34 +1,33 @@
-import sys
-py_version = sys.version_info
-if py_version.major < 3 or (py_version.major < 3 and py_version.minor < 6):
-    print("MAD requires at least python 3.6! Your version: {}.{}"
-          .format(py_version.major, py_version.minor))
-    sys.exit(1)
-from multiprocessing import Process
-from typing import Optional
-
-from utils.MappingManager import MappingManager, MappingManagerManager
-
 import calendar
 import datetime
 import gc
 import glob
 import os
+import sys
 import time
+from multiprocessing import Process
 from threading import Thread, active_count
+from typing import Optional
 
 import psutil
-
 from db.DbFactory import DbFactory
 from mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mitm_receiver.MITMReceiver import MITMReceiver
 from utils.logging import initLogging, logger
 from utils.madGlobals import terminate_mad
+from utils.MappingManager import MappingManager, MappingManagerManager
 from utils.rarity import Rarity
 from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
 from watchdog.observers import Observer
 from websocket.WebsocketServer import WebsocketServer
+
+py_version = sys.version_info
+if py_version.major < 3 or (py_version.major < 3 and py_version.minor < 6):
+    print("MAD requires at least python 3.6! Your version: {}.{}"
+          .format(py_version.major, py_version.minor))
+    sys.exit(1)
+
 
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language
@@ -137,7 +136,7 @@ def get_system_infos(db_wrapper):
         logger.debug('Collecting...')
         n = gc.collect()
         logger.debug('Unreachable objects: {} - Remaining garbage: {} - Running threads: {}',
-                    str(n), str(gc.garbage), str(active_count()))
+                     str(n), str(gc.garbage), str(active_count()))
 
         for obj in gc.garbage:
             for ref in find_referring_graphs(obj):
@@ -229,8 +228,8 @@ if __name__ == "__main__":
 
             logger.error(
                 "No mappings.json found - starting setup mode with madmin.")
-            logger.error("Open Madmin (ServerIP with Port " +
-                         str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
+            logger.error("Open Madmin (ServerIP with Port "
+                         + str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
             generate_mappingjson()
         else:
             if args.only_routes:
@@ -270,7 +269,8 @@ if __name__ == "__main__":
             mitm_receiver_process.start()
 
             logger.info('Starting scanner')
-            ws_server = WebsocketServer(args, mitm_mapper, db_wrapper, mapping_manager, pogoWindowManager)
+            ws_server = WebsocketServer(args, mitm_mapper, db_wrapper,
+                                        mapping_manager, pogoWindowManager)
             t_ws = Thread(name='scanner', target=ws_server.start_server)
             t_ws.daemon = False
             t_ws.start()

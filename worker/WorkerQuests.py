@@ -90,7 +90,8 @@ class WorkerQuests(MITMBase):
         self._update_injection_settings()
 
     def _move_to_location(self):
-        if not self._mapping_manager.routemanager_present(self._routemanager_name):
+        if not self._mapping_manager.routemanager_present(self._routemanager_name) \
+                or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
         if not self._level_mode:
             # check if stop has a quest from today
@@ -276,6 +277,7 @@ class WorkerQuests(MITMBase):
             delay_used = delay_used - timediff
         else:
             logger.debug("No last action time found - no calculation")
+            delay_used = -1
 
         if delay_used < 0:
             logger.info('No more cooldowntime - start over')
@@ -299,6 +301,12 @@ class WorkerQuests(MITMBase):
 
     def _post_move_location_routine(self, timestamp: float):
         if self._stop_worker_event.is_set():
+            raise InternalStopWorkerException
+        position_type = self._mapping_manager.routemanager_get_position_type(
+            self._routemanager_name, self._id)
+        if position_type is None:
+            logger.warning(
+                "Mappings/Routemanagers have changed, stopping worker to be created again")
             raise InternalStopWorkerException
         self._work_mutex.acquire()
         if not self._mapping_manager.routemanager_get_init(self._routemanager_name):
@@ -385,7 +393,7 @@ class WorkerQuests(MITMBase):
         stop_inventory_clear = Event()
         stop_screen_clear = Event()
         logger.info('Cleanup Box')
-        not_allow = ('Gift', 'Geschenk', 'Glücksei', 'Glucks-Ei', 'Glücks-Ei', 'Lucky Egg', 'FrenchNameForLuckyEgg',
+        not_allow = ('Gift', 'Geschenk', 'Glücksei', 'Glucks-Ei', 'Glücks-Ei', 'Lucky Egg', 'CEuf Chance',
                      'Cadeau', 'Appareil photo', 'Wunderbox', 'Mystery Box', 'Boîte Mystère')
         x, y = self._resocalc.get_close_main_button_coords(self)[0], self._resocalc.get_close_main_button_coords(self)[
             1]
@@ -594,6 +602,7 @@ class WorkerQuests(MITMBase):
             self._stop_process_time = math.floor(time.time())
             self._waittime_without_delays = self._stop_process_time
             self._open_gym(self._delay_add)
+            self.set_devicesettings_value('last_action_time', time.time())
             data_received = self._wait_for_data(
                 timestamp=self._stop_process_time, proto_to_wait_for=104, timeout=35)
             if data_received == LatestReceivedType.GYM:
@@ -641,7 +650,6 @@ class WorkerQuests(MITMBase):
                 logger.error('Softban - waiting...')
                 time.sleep(10)
                 if self._open_pokestop(timestamp) is None:
-                    self.set_devicesettings_value('last_action_time', time.time())
                     return
             else:
                 logger.info("Likely already spun this stop or brief softban, trying again")
@@ -654,7 +662,6 @@ class WorkerQuests(MITMBase):
                 self._turn_map(self._delay_add)
                 time.sleep(1)
                 if self._open_pokestop(timestamp) is None:
-                    self.set_devicesettings_value('last_action_time', time.time())
                     return
                 to += 1
 

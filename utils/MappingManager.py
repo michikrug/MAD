@@ -37,7 +37,7 @@ mode_mapping = {
     },
     "pokestops": {
         "s2_cell_level": 13,
-        "range": 1,
+        "range": 0.001,
         "range_init": 490,
         "max_count": 100000
     },
@@ -467,19 +467,17 @@ class MappingManager:
                         self._devicemappings[dev]['settings']["last_mode"]
 
             with self.__mappings_mutex:
+                # stopping routemanager / worker
+                for routemanager in self._routemanagers.keys():
+                    area = routemanagers_tmp.get(routemanager, None)
+                    if area is None:
+                        continue
+                    area["routemanager"].stop_routemanager()
+
                 self._areas = areas_tmp
                 self._devicemappings = devicemappings_tmp
                 self._routemanagers = routemanagers_tmp
                 self._auths = auths_tmp
-
-            # stopping routemanager / worker
-            for routemanager in routemanagers_tmp.keys():
-
-                area = routemanagers_tmp.get(routemanager, None)
-                if area is None:
-                    continue
-                area["routemanager"].stop_worker()
-                area["routemanager"].stop_routemanager()
 
         else:
             with self.__mappings_mutex:

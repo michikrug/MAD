@@ -375,6 +375,10 @@ class DbWrapperBase(ABC):
         pass
 
     @abstractmethod
+    def get_stops_changed_since(self, timestamp):
+        pass
+
+    @abstractmethod
     def get_mon_changed_since(self, timestamp):
         pass
 
@@ -402,6 +406,11 @@ class DbWrapperBase(ABC):
         It also handles a diff/old area to reduce returned data. Also checks for updated
         elements withing the rectangle via the timestamp.
         """
+        pass
+
+    @abstractmethod
+    def get_mons_in_rectangle(self, neLat, neLon, swLat, swLon,
+                              oNeLat=None, oNeLon=None, oSwLat=None, oSwLon=None, timestamp=None):
         pass
 
     def statistics_get_pokemon_count(self, days):
@@ -734,10 +743,15 @@ class DbWrapperBase(ABC):
     def get_detected_spawns(self, geofence_helper) -> List[Location]:
         logger.debug("DbWrapperBase::get_detected_spawns called")
 
+        minLat, minLon, maxLat, maxLon = geofence_helper.get_polygon_from_fence()
+
         query = (
             "SELECT latitude, longitude "
-            "FROM trs_spawn"
-        )
+            "FROM trs_spawn "
+            "WHERE (latitude >= {} AND longitude >= {} "
+            "AND latitude <= {} AND longitude <= {}) "
+        ).format(minLat, minLon, maxLat, maxLon)
+
         list_of_coords: List[Location] = []
         logger.debug(
             "DbWrapperBase::get_detected_spawns executing select query")
@@ -1296,8 +1310,7 @@ class DbWrapperBase(ABC):
     def statistics_get_quests_count(self, days):
         logger.debug('Fetching quests count from db')
         query_where = ''
-        query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(quest_timestamp), '%y-%m-%d %k:00:00')) * 1000 " \
-            "as Timestamp"
+        query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(quest_timestamp), '%y-%m-%d %k:00:00'))"
 
         if days:
             days = datetime.utcnow() - timedelta(days=days)
@@ -1306,7 +1319,7 @@ class DbWrapperBase(ABC):
 
         query = (
             "SELECT %s, count(GUID) as Count  FROM trs_quest %s "
-            "group by day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp))"
+            "group by day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp)) "
             "order by quest_timestamp" %
                 (str(query_date), str(query_where))
         )

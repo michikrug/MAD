@@ -22,7 +22,6 @@ mode_mapping = {
         "range": 490,
         "range_init": 490,
         "max_count": 100000
-
     },
     "mon_mitm": {
         "s2_cell_level": 17,
@@ -54,7 +53,7 @@ class MappingManagerManager(SyncManager):
 
 
 class MappingManager:
-    def __init__(self, db_wrapper: DbWrapperBase, args, global_stop_mad_event: Event, configmode: bool = False):
+    def __init__(self, db_wrapper: DbWrapperBase, args, configmode: bool = False):
         self.__db_wrapper: DbWrapperBase = db_wrapper
         self.__args = args
         self.__configmode: bool = configmode
@@ -63,17 +62,23 @@ class MappingManager:
         self._areas: Optional[dict] = None
         self._routemanagers: Optional[Dict[str, dict]] = None
         self._auths: Optional[dict] = None
+        self.__stop_file_watcher_event: Event = Event()
 
         self.__raw_json: Optional[dict] = None
         self.__mappings_mutex: Lock = Lock()
-        self.__stop_mad_event: Event = global_stop_mad_event
 
-        self.__update(full_lock=True)
-        logger.info("Starting file watcher for mappings.json changes.")
-        self.__t_file_watcher = Thread(name='file_watcher', target=self.__file_watcher,
-                                       args=(None, None))
-        self.__t_file_watcher.daemon = False
-        self.__t_file_watcher.start()
+        self.update(full_lock=True)
+
+        if self.__args.auto_reload_config:
+            logger.info("Starting file watcher for mappings.json changes.")
+            self.__t_file_watcher = Thread(name='file_watcher', target=self.__file_watcher,)
+            self.__t_file_watcher.daemon = False
+            self.__t_file_watcher.start()
+
+    def shutdown(self):
+        logger.fatal("MappingManager exiting")
+        self.__stop_file_watcher_event.set()
+        self.__t_file_watcher.join()
 
     def get_auths(self) -> Optional[dict]:
         with self.__mappings_mutex:
@@ -224,6 +229,14 @@ class MappingManager:
             routemanager: dict = self._routemanagers.get(routemanager_name, None)
             if routemanager is not None:
                 return routemanager.get("routemanager").get_current_route()
+            else:
+                return None
+
+    def routemanager_get_current_prioroute(self, routemanager_name: str) -> Optional[List[Location]]:
+        with self.__mappings_mutex:
+            routemanager: dict = self._routemanagers.get(routemanager_name, None)
+            if routemanager is not None:
+                return routemanager.get("routemanager").get_current_prioroute()
             else:
                 return None
 
@@ -400,12 +413,10 @@ class MappingManager:
             elif mode == "mon_mitm":
                 if coords_spawns_known:
                     logger.debug("Reading known Spawnpoints from DB")
-                    coords = self.__db_wrapper.get_detected_spawns(
-                        geofence_helper)
+                    coords = self.__db_wrapper.get_detected_spawns(geofence_helper)
                 else:
                     logger.debug("Reading unknown Spawnpoints from DB")
-                    coords = self.__db_wrapper.get_undetected_spawns(
-                        geofence_helper)
+                    coords = self.__db_wrapper.get_undetected_spawns(geofence_helper)
             elif mode == "pokestops":
                 coords = self.__db_wrapper.stops_from_db(geofence_helper)
             else:
@@ -445,7 +456,7 @@ class MappingManager:
             areas[area['name']] = area_dict
         return areas
 
-    def __update(self, full_lock=False):
+    def update(self, full_lock=False):
         """
         Updates the internal mappings and routemanagers
         :return:
@@ -468,11 +479,11 @@ class MappingManager:
 
             with self.__mappings_mutex:
                 # stopping routemanager / worker
+                logger.info('Restarting Worker')
                 for routemanager in self._routemanagers.keys():
-                    area = routemanagers_tmp.get(routemanager, None)
+                    area = self._routemanagers.get(routemanager, None)
                     if area is None:
                         continue
-                    area["routemanager"].stop_routemanager()
 
                 self._areas = areas_tmp
                 self._devicemappings = devicemappings_tmp
@@ -488,12 +499,13 @@ class MappingManager:
 
         logger.info("Mappings have been updated")
 
-    def __file_watcher(self, ws_server, webhook_worker):
+    def __file_watcher(self):
         # We're on a 20-second timer.
-        refresh_time_sec = 20
+        refresh_time_sec = self.__args.auto_reload_delay
         filename = 'configs/mappings.json'
+        logger.info('Mappings.json reload delay: {} seconds', refresh_time_sec)
 
-        while not self.__stop_mad_event.is_set():
+        while not self.__stop_file_watcher_event.is_set():
             # Wait (x-1) seconds before refresh, min. 1s.
             try:
                 time.sleep(max(1, refresh_time_sec - 1))
@@ -510,7 +522,7 @@ class MappingManager:
                 if time_diff_sec < refresh_time_sec:
                     logger.info(
                         'Change found in {}. Updating device mappings.', filename)
-                    self.__update()
+                    self.update()
                 else:
                     logger.debug('No change found in {}.', filename)
             except KeyboardInterrupt as e:

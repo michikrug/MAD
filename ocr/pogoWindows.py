@@ -238,6 +238,31 @@ class PogoWindows:
             "readCircles: Determined screenshot to not contain raidcircles, but a raidcount!")
         return -1
 
+    def look_for_ggl_login(self, filename, communicator):
+        if not os.path.isfile(filename):
+            logger.error("look_for_button: {} does not exist", str(filename))
+            return False
+
+        return self.__thread_pool.apply_async(self.__internal_look_for_ggl_login,
+                                              (filename, communicator)).get()
+
+    def __internal_look_for_ggl_login(self, filename, communicator):
+        logger.debug("lookForButton: Look for ggl login")
+        try:
+            screenshot_read = cv2.imread(filename)
+            gray = cv2.cvtColor(screenshot_read, cv2.COLOR_BGR2GRAY)
+        except:
+            logger.error("Screenshot corrupted :(")
+            return False
+
+        if screenshot_read is None:
+            logger.error("Screenshot corrupted :(")
+            return False
+
+        text = pytesseract.image_to_string(Image.open(filename))
+
+        print(text)
+
     def look_for_button(self, filename, ratiomin, ratiomax, communicator):
         if not os.path.isfile(filename):
             logger.error("look_for_button: {} does not exist", str(filename))
@@ -292,20 +317,20 @@ class PogoWindows:
         if lines is None:
             return False
 
+        lines = self.check_lines(lines, height)
+
+        _last_y = 0
         for line in lines:
+            line = [line]
             for x1, y1, x2, y2 in line:
 
-                if y1 == y2 and x2 - x1 <= maxLineLength and x2 - x1 >= minLineLength and y1 > height / 2 \
-                        and (x2 - x1) / 2 + x1 < width / 2 + 100 and (x2 - x1) / 2 + x1 > width / 2 - 100:
-
+                if y1 == y2 and x2 - x1 <= maxLineLength and x2 - x1 >= minLineLength and y1 > (height / 2) \
+                        and (x2 - x1) / 2 + x1 < width / 2 + 50 and (x2 - x1) / 2 + x1 > width / 2 - 50:
                     lineCount += 1
-                    __y = y2
-                    __x1 = x1
-                    __x2 = x2
-                    if __y < _y:
-                        _y = __y
-                        _x1 = __x1
-                        _x2 = __x2
+                    click_y = _last_y + ((y1 - _last_y) / 2)
+                    _last_y = y1
+                    _x1 = x1
+                    _x2 = x2
 
                     logger.debug("lookForButton: Found Buttonline Nr. " + str(lineCount) + " - Line lenght: " + str(
                         x2 - x1) + "px Coords - X: " + str(x1) + " " + str(x2) + " Y: " + str(y1) + " " + str(y2))
@@ -314,7 +339,7 @@ class PogoWindows:
             # recalculate click area for real resolution
             click_x = int(((width - _x2) + ((_x2 - _x1) / 2)) /
                           round(factor, 2))
-            click_y = int(_y / round(factor, 2) + height * 0.03)
+            click_y = int(click_y)
             logger.debug('lookForButton: found Button - click on it')
             communicator.click(click_x, click_y)
             time.sleep(4)
@@ -330,6 +355,30 @@ class PogoWindows:
 
         logger.debug('lookForButton: did not found any Button')
         return False
+
+    def check_lines(self, lines, height):
+        temp_lines = []
+        sort_lines = []
+        old_y1 = 0
+        index = 0
+
+        for line in lines:
+            for x1, y1, x2, y2 in line:
+                temp_lines.append([y1, y2, x1, x2])
+
+        temp_lines = np.array(temp_lines)
+        sort_arr = (temp_lines[temp_lines[:, 0].argsort()])
+
+        button_value = height / 40
+
+        for line in sort_arr:
+            if int(old_y1 + int(button_value)) < int(line[0]):
+                if int(line[0]) == int(line[1]):
+                    sort_lines.append([line[2], line[0], line[3], line[1]])
+                    old_y1 = line[0]
+            index += 1
+
+        return np.asarray(sort_lines, dtype=np.int32)
 
     def __check_raid_line(self, filename, identifier, communicator, leftSide=False, clickinvers=False):
         logger.debug("__check_raid_line: Reading lines")

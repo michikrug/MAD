@@ -29,7 +29,8 @@ class WorkerMITM(MITMBase):
         self._wait_for_data(timestamp)
 
     def _move_to_location(self):
-        if not self._mapping_manager.routemanager_present(self._routemanager_name):
+        if not self._mapping_manager.routemanager_present(self._routemanager_name) \
+                or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
         routemanager_settings = self._mapping_manager.routemanager_get_settings(
             self._routemanager_name)
@@ -101,7 +102,9 @@ class WorkerMITM(MITMBase):
                                           self.current_location.lat, self.current_location.lng, speed)
             # the time we will take as a starting point to wait for data...
             cur_time = math.floor(time.time())
+            logger.debug2("Done walking, fetching time to sleep")
             delay_used = self.get_devicesettings_value('post_walk_delay', 7)
+        logger.debug2("Sleeping for {}s".format(str(delay_used)))
         time.sleep(float(delay_used))
         self.set_devicesettings_value("last_location", self.current_location)
         self.last_location = self.current_location
@@ -113,6 +116,8 @@ class WorkerMITM(MITMBase):
 
     def _pre_work_loop(self):
         logger.info("MITM worker starting")
+        if not self._wait_for_injection():
+            raise InternalStopWorkerException
 
     def _start_pogo(self):
         pogo_topmost = self._communicator.isPogoTopmost()

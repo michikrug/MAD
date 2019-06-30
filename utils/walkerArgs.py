@@ -141,6 +141,9 @@ def parseArgs():
     parser.add_argument('-npf', '--npFrom', type=float, default=0.2,
                         help='Matching zoom start value. (Based on resolution)')
 
+    parser.add_argument('-mspass', '--mitm_status_password', default='',
+                        help='Header Authorization password for MITM /status/ page')
+
     # Cleanup Hash Database
     parser.add_argument('-chd', '--clean_hash_database', action='store_true', default=False,
                         help='Cleanup the hashing database.')
@@ -162,6 +165,8 @@ def parseArgs():
                         help='Comma-separated list of area names to exclude elements from within to be sent to a webhook')
     parser.add_argument('-pwh', '--pokemon_webhook', action='store_true', default=False,
                         help='Activate pokemon webhook support')
+    parser.add_argument('-swh', '--pokestop_webhook', action='store_true', default=False,
+                        help='Activate pokestop webhook support')
     parser.add_argument('-wwh', '--weather_webhook', action='store_true', default=False,
                         help='Activate weather webhook support')
     parser.add_argument('-qwh', '--quest_webhook', action='store_true', default=False,
@@ -220,10 +225,29 @@ def parseArgs():
     parser.add_argument('-ugd', '--unknown_gym_distance', default='10',
                         help='Show matchable gyms for unknwon with this radius (in km!) (Default: 10)')
 
+    parser.add_argument('-qpub', '--quests_public', action='store_true', default=False,
+                        help='Enables MADmin /quests_pub endpoint for public quests overview')
+
     # etc
 
     parser.add_argument('-rdt', '--raid_time', default='45', type=int,
                         help='Raid Battle time in minutes. (Default: 45)')
+
+    # mappings.json auto reloader
+
+    parser.add_argument('-arc', '--auto_reload_config', action='store_true', default=False,
+                        help='Auto reload mappings configuration')
+
+    parser.add_argument('-ard', '--auto_reload_delay', default=60,
+                        help='Auto reload mappings configuration sleeptimer (Default: 60)')
+
+    # stats
+
+    parser.add_argument('-ggs', '--game_stats', action='store_true', default=False,
+                        help='Generate worker stats')
+
+    parser.add_argument('-ggrs', '--game_stats_raw', action='store_true', default=False,
+                        help='Generate worker raw stats (only with --game_stats)')
 
     # adb
     parser.add_argument('-adb', '--use_adb', action='store_true', default=False,

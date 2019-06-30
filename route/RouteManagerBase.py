@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from queue import Queue
 from threading import Event, Lock, RLock, Thread
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from db.dbWrapperBase import DbWrapperBase
@@ -51,6 +51,7 @@ class RouteManagerBase(ABC):
         self._level = level
         self._calctype = calctype
         self._overwrite_calculation: bool = False
+        self._stops_not_processed: Dict[Location, int] = {}
 
         # we want to store the workers using the routemanager
         self._workers_registered: List[str] = []
@@ -569,6 +570,9 @@ class RouteManagerBase(ABC):
 
     def get_current_route(self) -> List[Location]:
         return self._route
+
+    def get_current_prioroute(self) -> List[Location]:
+        return self._prio_queue
 
     def get_level_mode(self):
         return self._level

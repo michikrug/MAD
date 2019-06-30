@@ -69,14 +69,15 @@ class WorkerQuests(MITMBase):
             self._id), target=self._clear_thread)
         self.clear_thread.daemon = False
         self.clear_thread.start()
-        self._get_screen_size()
-        self._wait_for_injection()
 
         reached_main_menu = self._check_pogo_main_screen(10, True)
         if not reached_main_menu:
             if not self._restart_pogo(mitm_mapper=self._mitm_mapper):
                 # TODO: put in loop, count up for a reboot ;)
                 raise InternalStopWorkerException
+
+        if not self._wait_for_injection():
+            raise InternalStopWorkerException
 
     def _health_check(self):
         """
@@ -93,14 +94,6 @@ class WorkerQuests(MITMBase):
         if not self._mapping_manager.routemanager_present(self._routemanager_name) \
                 or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
-        if not self._level_mode:
-            # check if stop has a quest from today
-            if self._db_wrapper.check_stop_quest(self.current_location.lat, self.current_location.lng):
-                return False, False
-        else:
-            # checking again global stats (visited in the last 7 days)
-            if self._db_wrapper.check_stop_quest_level(self._id, self.current_location.lat, self.current_location.lng):
-                return False, False
 
         routemanager_settings = self._mapping_manager.routemanager_get_settings(
             self._routemanager_name)
@@ -293,6 +286,10 @@ class WorkerQuests(MITMBase):
                 if delay_used > 200 and cleanupbox:
                     self.clear_thread_task = 1
                     cleanupbox = False
+                if not self._mapping_manager.routemanager_present(self._routemanager_name) \
+                        or self._stop_worker_event.is_set():
+                    logger.error("Worker {} get killed while sleeping", str(self._id))
+                    raise InternalStopWorkerException
                 time.sleep(1)
 
         self.set_devicesettings_value("last_location", self.current_location)
@@ -607,7 +604,7 @@ class WorkerQuests(MITMBase):
                 timestamp=self._stop_process_time, proto_to_wait_for=104, timeout=35)
             if data_received == LatestReceivedType.GYM:
                 logger.info('Clicking GYM')
-                time.sleep(5)
+                time.sleep(10)
                 if not self._checkPogoButton():
                     self._checkPogoClose()
                 time.sleep(1)
@@ -618,6 +615,7 @@ class WorkerQuests(MITMBase):
                 time.sleep(.5)
                 self._turn_map(self._delay_add)
             elif data_received == LatestReceivedType.UNDEFINED:
+                logger.info('Getting timeout - or other unknown error. Try again')
                 if not self._checkPogoButton():
                     self._checkPogoClose()
 
@@ -649,6 +647,7 @@ class WorkerQuests(MITMBase):
                   == FortSearchResultTypes.OUT_OF_RANGE):
                 logger.error('Softban - waiting...')
                 time.sleep(10)
+                self._stop_process_time = math.floor(time.time())
                 if self._open_pokestop(timestamp) is None:
                     return
             else:
@@ -661,6 +660,7 @@ class WorkerQuests(MITMBase):
 
                 self._turn_map(self._delay_add)
                 time.sleep(1)
+                self._stop_process_time = math.floor(time.time())
                 if self._open_pokestop(timestamp) is None:
                     return
                 to += 1
@@ -675,9 +675,11 @@ class WorkerQuests(MITMBase):
             logger.debug(
                 "No data linked to the requested proto since MAD started.")
             time.sleep(0.5)
-        elif 156 in latest and latest[156].get('timestamp', 0) >= timestamp:
+        elif 156 in latest and latest[156].get('timestamp', 0) >= timestamp and \
+                not latest[104].get('timestamp', 0) >= timestamp:
             return LatestReceivedType.GYM
-        elif 102 in latest and latest[102].get('timestamp', 0) >= timestamp:
+        elif 102 in latest and latest[102].get('timestamp', 0) >= timestamp and \
+                not latest[104].get('timestamp', 0) >= timestamp:
             return LatestReceivedType.MON
         else:
             # proto has previously been received, let's check the timestamp...
@@ -687,6 +689,7 @@ class WorkerQuests(MITMBase):
             if latest_timestamp >= timestamp:
                 # TODO: consider reseting timestamp here since we clearly received SOMETHING
                 latest_data = latest_proto.get("values", None)
+                logger.debug4("Latest data received: {}".format(str(latest_data)))
                 if latest_data is None:
                     time.sleep(0.5)
                     return None

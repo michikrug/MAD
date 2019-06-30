@@ -1,16 +1,14 @@
 import json
-import os
 from pathlib import Path
 from typing import List, Optional
 
-from flask import Flask, jsonify, render_template, request
+from flask import jsonify, render_template, request
 
 from db.dbWrapperBase import DbWrapperBase
 from flask_caching import Cache
 from madmin.functions import auth_required, getBoundParameter, getCoordFloat
 from utils.collections import Location
 from utils.MappingManager import MappingManager
-from utils.mappingParser import MappingParser
 from utils.questGen import generate_quest
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
@@ -37,9 +35,11 @@ class map(object):
             ("/get_position", self.get_position),
             ("/get_geofence", self.get_geofence),
             ("/get_route", self.get_route),
+            ("/get_prioroute", self.get_prioroute),
             ("/get_spawns", self.get_spawns),
             ("/get_gymcoords", self.get_gymcoords),
-            ("/get_quests", self.get_quests)
+            ("/get_quests", self.get_quests),
+            ("/get_map_mons", self.get_map_mons)
         ]
         for route, view_func in routes:
             self._app.route(route)(view_func)
@@ -158,6 +158,35 @@ class map(object):
         return jsonify(routeexport)
 
     @auth_required
+    def get_prioroute(self):
+        routeexport = []
+
+        routemanager_names = self._mapping_manager.get_all_routemanager_names()
+
+        # areas = self._mapping_manager.get_areas()
+        for routemanager in routemanager_names:
+            mode = self._mapping_manager.routemanager_get_mode(routemanager)
+            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_prioroute(
+                routemanager)
+
+            if route is None:
+                continue
+            route_serialized = []
+
+            for location in route:
+                route_serialized.append([
+                    getCoordFloat(location[1].lat), getCoordFloat(location[1].lng)
+                ])
+
+            routeexport.append({
+                "name": routemanager,
+                "mode": mode,
+                "coordinates": route_serialized
+            })
+
+        return jsonify(routeexport)
+
+    @auth_required
     def get_spawns(self):
         neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
@@ -245,8 +274,27 @@ class map(object):
             timestamp=timestamp
         )
 
-        for pokestopid in data:
-            quest = data[str(pokestopid)]
+        for stopid in data:
+            quest = data[str(stopid)]
             coords.append(generate_quest(quest))
 
         return jsonify(coords)
+
+    @auth_required
+    def get_map_mons(self):
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+        timestamp = request.args.get("timestamp", None)
+
+        data = self._db.get_mons_in_rectangle(
+            neLat=neLat,
+            neLon=neLon,
+            swLat=swLat,
+            swLon=swLon,
+            oNeLat=oNeLat,
+            oNeLon=oNeLon,
+            oSwLat=oSwLat,
+            oSwLon=oSwLon,
+            timestamp=timestamp
+        )
+
+        return jsonify(data)

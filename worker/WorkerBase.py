@@ -85,6 +85,7 @@ class WorkerBase(ABC):
         self._mapping_manager.set_devicesetting_value_of(self._id, key, value)
 
     def get_devicesettings_value(self, key: str, default_value: object = None):
+        logger.debug2("Fetching devicemappings of {}".format(self._id))
         devicemappings: Optional[dict] = self._mapping_manager.get_devicemappings_of(self._id)
         if devicemappings is None:
             return default_value
@@ -202,25 +203,30 @@ class WorkerBase(ABC):
     def start_worker(self):
         # async_result = self.thread_pool.apply_async(self._main_work_thread, ())
         t_main_work = Thread(target=self._main_work_thread)
-        t_main_work.daemon = False
+        t_main_work.daemon = True
         t_main_work.start()
         # do some other stuff in the main process
         while not self._stop_worker_event.isSet():
             time.sleep(1)
         t_main_work.join()
-        logger.info("Worker {} stopping gracefully", str(self._id))
+        logger.info("Worker {} stopped gracefully", str(self._id))
         # async_result.get()
         return self._last_known_state
 
     def stop_worker(self):
-        self._stop_worker_event.set()
-        logger.warning("Worker {} stop called", str(self._id))
+        if self._stop_worker_event.set():
+            logger.info('Worker {} already stopped - waiting for it', str(self._id))
+        else:
+            self._stop_worker_event.set()
+            logger.warning("Worker {} stop called", str(self._id))
 
     def _internal_pre_work(self):
         current_thread().name = self._id
 
         self._work_mutex.acquire()
         try:
+            self._get_screen_size()
+            self._check_ggl_login()
             self._turn_screen_on_and_start_pogo()
         except WebsocketWorkerRemovedException:
             logger.error("Timeout during init of worker {}", str(self._id))
@@ -237,7 +243,7 @@ class WorkerBase(ABC):
 
         self._async_io_looper_thread = Thread(name=str(self._id) + '_asyncio_' + self._id,
                                               target=self._start_asyncio_loop)
-        self._async_io_looper_thread.daemon = False
+        self._async_io_looper_thread.daemon = True
         self._async_io_looper_thread.start()
 
         self.loop_started.wait()
@@ -531,6 +537,24 @@ class WorkerBase(ABC):
             logger.warning("Turning screen on")
             self._communicator.turnScreenOn()
             time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 2))
+
+    def _check_ggl_login(self):
+        if not "AccountPickerActivity" in self._communicator.topmostApp():
+            logger.info('No GGL Login Window found on {}', str(self._id))
+            return
+
+        logger.info('GGL Login Window found on {} - processing', str(self._id))
+
+        x, y = self._resocalc.get_ggl_account_coords(self)[0], \
+            self._resocalc.get_ggl_account_coords(self)[1]
+        self._communicator.click(int(x), int(y))
+
+        buttoncheck = self._checkPogoButton()
+        while not buttoncheck and not self._stop_worker_event.isSet():
+            time.sleep(5)
+            buttoncheck = self._checkPogoButton()
+
+        return
 
     def _stop_pogo(self):
         attempts = 0
@@ -897,6 +921,8 @@ class WorkerBase(ABC):
         return True
 
     def _get_screen_size(self):
+        if self._stop_worker_event.is_set():
+            return
         screen = self._communicator.getscreensize().split(' ')
         self._screen_x = screen[0]
         self._screen_y = screen[1]

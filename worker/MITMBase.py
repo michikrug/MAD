@@ -71,6 +71,12 @@ class MITMBase(WorkerBase):
             latest = self._mitm_mapper.request_latest(self._id)
             data_requested = self._wait_data_worker(
                 latest, proto_to_wait_for, timestamp)
+
+            if not self._mapping_manager.routemanager_present(self._routemanager_name) \
+                    or self._stop_worker_event.is_set():
+                logger.error("Worker {} get killed while sleeping", str(self._id))
+                raise InternalStopWorkerException
+
             time.sleep(1)
 
         position_type = self._mapping_manager.routemanager_get_position_type(
@@ -118,6 +124,7 @@ class MITMBase(WorkerBase):
 
                 # self._mitm_mapper.
                 self._restart_count = 0
+                logger.error("Restarting Pogo {}", str(self._id))
                 self._restart_pogo(True, self._mitm_mapper)
 
         self.worker_stats()
@@ -136,7 +143,13 @@ class MITMBase(WorkerBase):
                 logger.error("Worker {} get killed while waiting for injection", str(self._id))
                 return False
             self._not_injected_count += 1
-            time.sleep(20)
+            wait_time = 0
+            while wait_time < 20:
+                wait_time += 1
+                if self._stop_worker_event.isSet():
+                    logger.error("Worker {} get killed while waiting for injection", str(self._id))
+                    return False
+                time.sleep(1)
         return True
 
     @abstractmethod

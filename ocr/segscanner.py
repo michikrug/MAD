@@ -212,8 +212,7 @@ class Scanner:
         logger.info('[Crop: ' + str(raidNo) +
                     ' (' + str(self.uniqueHash) + ') ] ' + 'Scanning Level')
         height, width, channel = raidpic.shape
-        raidlevel = raidpic[int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.43))
-                                :int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.68)), 0:width]
+        raidlevel = raidpic[int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.43)):int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.68)), 0:width]
         raidlevel = cv2.resize(raidlevel, (0, 0), fx=0.5, fy=0.5)
 
         imgray = cv2.cvtColor(raidlevel, cv2.COLOR_BGR2GRAY)

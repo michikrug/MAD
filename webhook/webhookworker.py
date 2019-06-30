@@ -98,7 +98,8 @@ class WebhookWorker:
 
             current_pl_num = 1
             for payload_chunk in payload_list:
-                logger.debug("Payload: {}", str(json.dumps(payload_chunk)))
+                logger.debug4("Python data for payload: {}", str(payload_chunk))
+                logger.debug3("Payload: {}", str(json.dumps(payload_chunk)))
 
                 try:
                     response = requests.post(
@@ -344,6 +345,9 @@ class WebhookWorker:
             if raid["is_ex_raid_eligible"] is not None:
                 raid_payload["is_ex_raid_eligible"] = raid["is_ex_raid_eligible"]
 
+            if raid["gender"] is not None:
+                raid_payload["gender"] = raid["gender"]
+
             # create final message
             entire_payload = {"type": "raid", "message": raid_payload}
 
@@ -465,6 +469,32 @@ class WebhookWorker:
 
         return ret
 
+    def __prepare_stops_data(self, pokestop_data):
+        ret = []
+
+        for pokestop in pokestop_data:
+            if self.__is_in_excluded_area([pokestop["latitude"], pokestop["longitude"]]):
+                continue
+
+            pokestop_payload = {
+                "name": pokestop["name"],
+                "pokestop_id": pokestop["pokestop_id"],
+                "latitude": pokestop["latitude"],
+                "longitude": pokestop["longitude"],
+                "lure_expiration": pokestop["lure_expiration"],
+                "lure_id": pokestop["active_fort_modifier"],
+                "updated": pokestop["last_updated"],
+                "last_modified": pokestop["last_modified"]
+            }
+
+            if pokestop["image"]:
+                pokestop_payload["url"] = pokestop["image"]
+
+            entire_payload = {"type": "pokestop", "message": pokestop_payload}
+            ret.append(entire_payload)
+
+        return ret
+
     def __build_ivmon_list(self, mapping_manager: MappingManager):
         self.__IV_MON: List[int] = []
 
@@ -536,6 +566,13 @@ class WebhookWorker:
                     self.__db_wrapper.get_gyms_changed_since(self.__last_check)
                 )
                 full_payload += gyms
+
+            # stops
+            if self.__args.pokestop_webhook:
+                pokestops = self.__prepare_stops_data(
+                    self.__db_wrapper.get_stops_changed_since(self.__last_check)
+                )
+                full_payload += pokestops
 
             # mon
             if self.__args.pokemon_webhook:

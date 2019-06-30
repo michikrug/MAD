@@ -29,23 +29,34 @@ class EndpointAction(object):
         global application_args, mapping_manager
         origin = request.headers.get('Origin')
         abort = False
-        if not origin:
-            logger.warning("Missing Origin header in request")
-            self.response = Response(status=500, headers={})
-            abort = True
-        elif (mapping_manager.get_all_devicemappings().keys() is not None and
-              (origin is None or origin not in mapping_manager.get_all_devicemappings().keys())):
-            logger.warning(
-                "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
-            self.response = Response(status=403, headers={})
-            abort = True
-        elif mapping_manager.get_auths() is not None:  # TODO check auth properly...
-            auth = request.headers.get('Authorization', None)
-            if auth is None or not check_auth(auth, application_args, mapping_manager.get_auths()):
+        if str(request.url_rule) == '/status/':
+            auth = request.headers.get('Authorization', False)
+            if application_args.mitm_status_password != "" and \
+                    (not auth or auth != application_args.mitm_status_password):
+                self.response = Response(status=500, headers={})
+                abort = True
+            else:
+                abort = False
+        else:
+            logger.debug3("HTTP Request by {}".format(str(request.remote_addr)))
+            if not origin:
+                logger.warning("Missing Origin header in request")
+                self.response = Response(status=500, headers={})
+                abort = True
+            elif (mapping_manager.get_all_devicemappings().keys() is not None
+                  and (origin is None or origin not in mapping_manager.get_all_devicemappings().keys())):
                 logger.warning(
-                    "Unauthorized attempt to POST from {}", str(request.remote_addr))
+                    "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
                 self.response = Response(status=403, headers={})
                 abort = True
+            elif mapping_manager.get_auths() is not None:  # TODO check auth properly...
+                auth = request.headers.get('Authorization', None)
+                if auth is None or not check_auth(auth, application_args, mapping_manager.get_auths()):
+                    logger.warning(
+                        "Unauthorized attempt to POST from {}", str(request.remote_addr))
+                    self.response = Response(status=403, headers={})
+                    abort = True
+
         if not abort:
             try:
                 # TODO: use response data
@@ -82,6 +93,9 @@ class MITMReceiver(Process):
                           methods_passed=['GET'])
         self.add_endpoint(endpoint='/get_addresses/', endpoint_name='get_addresses/', handler=self.get_addresses,
                           methods_passed=['GET'])
+        self.add_endpoint(endpoint='/status/', endpoint_name='status/', handler=self.status,
+                          methods_passed=['GET'])
+
         self._data_queue: JoinableQueue = JoinableQueue()
         self._db_wrapper = db_wrapper
         self.worker_threads = []
@@ -94,12 +108,12 @@ class MITMReceiver(Process):
 
     def shutdown(self):
         logger.info("MITMReceiver stop called...")
-        self._data_queue.join()
         logger.info("Adding None to queue")
         for i in range(application_args.mitmreceiver_data_workers):
             self._data_queue.put(None)
         logger.info("Trying to join workers...")
         for t in self.worker_threads:
+            t.terminate()
             t.join()
         self._data_queue.close()
         logger.info("Workers stopped...")
@@ -121,6 +135,8 @@ class MITMReceiver(Process):
                               EndpointAction(handler), methods=methods_passed)
 
     def proto_endpoint(self, origin, data):
+        logger.debug2("Receiving proto from {}".format(origin))
+        logger.debug4("Proto data received from {}: {}".format(origin, str(data)))
         type = data.get("type", None)
         if type is None or type == 0:
             logger.warning(
@@ -134,6 +150,7 @@ class MITMReceiver(Process):
         self.__mitm_mapper.update_latest(
             origin, timestamp_received_raw=timestamp, timestamp_received_receiver=time.time(), key=type,
             values_dict=data)
+        logger.debug3("Placing data received by {} to data_queue".format(origin))
         self._data_queue.put(
             (timestamp, data, origin)
         )
@@ -159,3 +176,29 @@ class MITMReceiver(Process):
         with open('configs/addresses.json') as f:
             address_object = json.load(f)
         return json.dumps(address_object)
+
+    def status(self, origin, data):
+        global application_args, mapping_manager
+        origin_return: dict = {}
+        process_return: dict = {}
+        data_return: dict = {}
+        process_count: int = 0
+        for origin in mapping_manager.get_all_devicemappings().keys():
+            origin_return[origin] = {}
+            origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(
+                origin)
+            origin_return[origin]['latest_data'] = self.__mitm_mapper.request_latest(
+                origin, 'timestamp_last_data')
+            origin_return[origin]['mode_value'] = self.__mitm_mapper.request_latest(
+                origin, 'injected_settings')
+
+        for process in self.worker_threads:
+            process_return['MITMReceiver-' + str(process_count)] = {}
+            process_return['MITMReceiver-' + str(process_count)
+                           ]['queue_length'] = process.get_queue_items()
+            process_count += 1
+
+        data_return['origin_status'] = origin_return
+        data_return['process_status'] = process_return
+
+        return json.dumps(data_return)

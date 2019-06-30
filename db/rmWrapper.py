@@ -271,7 +271,7 @@ class RmWrapper(DbWrapperBase):
             self.execute(query, vals, commit=True)
 
         logger.debug("[Crop: {} ({})] submit_raid: Submit finished",
-                    str(raid_no), str(unique_hash))
+                     str(raid_no), str(unique_hash))
         self.refresh_times(gym, raid_no, capture_time)
 
         logger.debug("RmWrapper::submit_raid done")
@@ -377,7 +377,7 @@ class RmWrapper(DbWrapperBase):
                 return True
             else:
                 logger.debug("[Crop: {} ({})] raid_exist: Egg is new",
-                            str(raid_no), str(unique_hash))
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
         else:
@@ -407,7 +407,7 @@ class RmWrapper(DbWrapperBase):
                 return True
             else:
                 logger.debug("[Crop: {} ({})] raid_exist: Mon is new",
-                            str(raid_no), str(unique_hash))
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
 
@@ -688,10 +688,10 @@ class RmWrapper(DbWrapperBase):
         if getdetspawntime is None:
 
             logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (init)",
-                        str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+                         str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
         else:
             logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (non-init)",
-                        str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
+                         str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
 
         capture_probability = encounter_proto.get("capture_probability")
         capture_probability_list = capture_probability.get(
@@ -796,7 +796,7 @@ class RmWrapper(DbWrapperBase):
                         origin), mon_id, lat, lon, despawn_time, spawnid)
                 else:
                     logger.debug("{}: adding mon (#{}) at {}, {}. Despawns at {} (non-init) ({})",
-                                str(origin), mon_id, lat, lon, despawn_time, spawnid)
+                                 str(origin), mon_id, lat, lon, despawn_time, spawnid)
 
                 mon_args.append(
                     (
@@ -877,7 +877,7 @@ class RmWrapper(DbWrapperBase):
                     latitude = gym['latitude']
                     longitude = gym['longitude']
                     slots_available = gym['gym_details']['slots_available']
-                    last_modified_ts = gym['last_modified_timestamp_ms']/1000
+                    last_modified_ts = gym['last_modified_timestamp_ms'] / 1000
                     last_modified = datetime.utcfromtimestamp(
                         last_modified_ts).strftime("%Y-%m-%d %H:%M:%S")
                     is_ex_raid_eligible = gym['gym_details']['is_ex_raid_eligible']
@@ -1101,7 +1101,8 @@ class RmWrapper(DbWrapperBase):
         active_fort_modifier = None
         if len(stop_data['active_fort_modifier']) > 0:
             active_fort_modifier = stop_data['active_fort_modifier'][0]
-            lure = datetime.utcfromtimestamp(30 * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
+            lure = datetime.utcfromtimestamp(
+                30 * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
 
         return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now, active_fort_modifier
 

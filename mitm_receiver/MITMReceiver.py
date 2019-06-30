@@ -1,7 +1,6 @@
 import json
 import math
 import sys
-
 import time
 from multiprocessing import JoinableQueue, Process
 from typing import Optional
@@ -11,9 +10,9 @@ from gevent.pywsgi import WSGIServer
 
 from mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mitm_receiver.MitmMapper import MitmMapper
-from utils.MappingManager import MappingManager
 from utils.authHelper import check_auth
 from utils.logging import LogLevelChanger, logger
+from utils.MappingManager import MappingManager
 
 app = Flask(__name__)
 mapping_manager: Optional[MappingManager] = None
@@ -46,7 +45,8 @@ class EndpointAction(object):
                 abort = True
             elif (mapping_manager.get_all_devicemappings().keys() is not None
                   and (origin is None or origin not in mapping_manager.get_all_devicemappings().keys())):
-                logger.warning("MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
+                logger.warning(
+                    "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
                 self.response = Response(status=403, headers={})
                 abort = True
             elif mapping_manager.get_auths() is not None:  # TODO check auth properly...
@@ -185,17 +185,20 @@ class MITMReceiver(Process):
         process_count: int = 0
         for origin in mapping_manager.get_all_devicemappings().keys():
             origin_return[origin] = {}
-            origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(origin)
-            origin_return[origin]['latest_data'] = self.__mitm_mapper.request_latest(origin, 'timestamp_last_data')
-            origin_return[origin]['mode_value'] = self.__mitm_mapper.request_latest(origin, 'injected_settings')
+            origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(
+                origin)
+            origin_return[origin]['latest_data'] = self.__mitm_mapper.request_latest(
+                origin, 'timestamp_last_data')
+            origin_return[origin]['mode_value'] = self.__mitm_mapper.request_latest(
+                origin, 'injected_settings')
 
         for process in self.worker_threads:
             process_return['MITMReceiver-' + str(process_count)] = {}
-            process_return['MITMReceiver-' + str(process_count)]['queue_length'] = process.get_queue_items()
+            process_return['MITMReceiver-' + str(process_count)
+                           ]['queue_length'] = process.get_queue_items()
             process_count += 1
 
         data_return['origin_status'] = origin_return
         data_return['process_status'] = process_return
 
         return json.dumps(data_return)
-

@@ -1,9 +1,11 @@
-import json
 import datetime
+import json
 import os
-from flask import (make_response, request)
 from functools import update_wrapper, wraps
 from math import floor
+
+from flask import make_response, request
+
 from utils.walkerArgs import parseArgs
 
 mapping_args = parseArgs()
@@ -99,4 +101,3 @@ def generate_device_screenshot_path(phone_name: str, device_mappings: dict, args
         screenshot_ending = ".png"
     screenshot_filename = "screenshot_{}{}".format(phone_name, screenshot_ending)
     return os.path.join(args.temp_path, screenshot_filename)
-

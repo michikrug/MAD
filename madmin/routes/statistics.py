@@ -1,10 +1,13 @@
 import datetime
 import json
-from flask import (jsonify, render_template, request)
+
+from flask import jsonify, render_template, request
+
 from madmin.functions import auth_required
-from utils.language import i8ln
-from utils.gamemechanicutil import calculate_mon_level, calculate_iv, get_raid_boss_cp
+from utils.gamemechanicutil import (calculate_iv, calculate_mon_level,
+                                    get_raid_boss_cp)
 from utils.geo import get_distance_of_two_points_in_meters
+from utils.language import i8ln
 
 
 class statistics(object):
@@ -79,10 +82,8 @@ class statistics(object):
         quest: list = []
         quest_db = self._db.statistics_get_quests_count(1)
         for ts, count in quest_db:
-            quest_raw = (ts*1000, count)
+            quest_raw = (ts * 1000, count)
             quest.append(quest_raw)
-
-
 
         # Usage
         insta = {}
@@ -257,7 +258,8 @@ class statistics(object):
         data = self._db.statistics_get_location_raw(minutes=minutes, worker=worker)
         for dat in data:
             if last_lat != 0 and last_lng != 0:
-                distance = round(get_distance_of_two_points_in_meters(last_lat, last_lng, dat[1], dat[2]), 2)
+                distance = round(get_distance_of_two_points_in_meters(
+                    last_lat, last_lng, dat[1], dat[2]), 2)
                 last_lat = dat[1]
                 last_lng = dat[2]
             if last_lat == 0 and last_lng == 0:
@@ -295,4 +297,3 @@ class statistics(object):
     def get_status(self):
         data = json.loads(self._db.download_status())
         return jsonify(data)
-

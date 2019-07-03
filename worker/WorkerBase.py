@@ -86,7 +86,13 @@ class WorkerBase(ABC):
 
     def get_devicesettings_value(self, key: str, default_value: object = None):
         logger.debug2("Fetching devicemappings of {}".format(self._id))
-        devicemappings: Optional[dict] = self._mapping_manager.get_devicemappings_of(self._id)
+        try:
+            devicemappings: Optional[dict] = self._mapping_manager.get_devicemappings_of(self._id)
+        except (EOFError, FileNotFoundError) as e:
+            logger.warning("Failed fetching devicemappings in worker {} with description: {}. Stopping worker"
+                           .format(str(self._id), str(e)))
+            self._stop_worker_event.set()
+            return None
         if devicemappings is None:
             return default_value
         return devicemappings.get("settings", {}).get(key, default_value)
@@ -270,6 +276,8 @@ class WorkerBase(ABC):
                 pogo_started = self._start_pogo()
         else:
             pogo_started = self._start_pogo()
+
+        self._check_ggl_login()
         self._work_mutex.release()
         logger.debug("_internal_health_check: worker lock released")
         return pogo_started
@@ -282,15 +290,15 @@ class WorkerBase(ABC):
         logger.info(
             "Internal cleanup of {} signalling end to websocketserver", str(self._id))
         self._mapping_manager.unregister_worker_from_routemanager(self._routemanager_name, self._id)
+        self._communicator.cleanup_websocket()
 
-        logger.info("Stopping Route")
+        logger.info("Stopped Route")
         # self.stop_worker()
         if self._async_io_looper_thread is not None:
             logger.info("Stopping worker's asyncio loop")
             self.loop.call_soon_threadsafe(self.loop.stop)
             self._async_io_looper_thread.join()
 
-        self._communicator.cleanup_websocket()
         logger.info("Internal cleanup of {} finished", str(self._id))
 
     def _main_work_thread(self):
@@ -328,7 +336,9 @@ class WorkerBase(ABC):
                 self._health_check()
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.error(
-                    "Websocket connection to {} lost while running healthchecks, connection terminated exceptionally", str(self._id))
+                    "Websocket connection to {} lost while running healthchecks, connection terminated "
+                    "exceptionally",
+                    str(self._id))
                 break
 
             try:
@@ -337,7 +347,8 @@ class WorkerBase(ABC):
                     continue
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
-                    "Worker of {} does not support mode that's to be run, connection terminated exceptionally", str(self._id))
+                    "Worker of {} does not support mode that's to be run, connection terminated exceptionally",
+                    str(self._id))
                 break
 
             try:
@@ -354,7 +365,9 @@ class WorkerBase(ABC):
                 self._pre_location_update()
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
-                    "Worker of {} stopping because of stop signal in pre_location_update, connection terminated exceptionally", str(self._id))
+                    "Worker of {} stopping because of stop signal in pre_location_update, connection terminated "
+                    "exceptionally",
+                    str(self._id))
                 break
 
             try:
@@ -366,7 +379,8 @@ class WorkerBase(ABC):
                 time_snapshot, process_location = self._move_to_location()
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
-                    "Worker {} failed moving to new location, stopping worker, connection terminated exceptionally", str(self._id))
+                    "Worker {} failed moving to new location, stopping worker, connection terminated exceptionally",
+                    str(self._id))
                 break
 
             if process_location:
@@ -402,8 +416,8 @@ class WorkerBase(ABC):
         logger.debug("Updating .position file")
         if self.current_location is not None:
             with open(os.path.join(self._applicationArgs.file_path, self._id + '.position'), 'w') as outfile:
-                outfile.write(str(self.current_location.lat) +
-                              ", " + str(self.current_location.lng))
+                outfile.write(str(self.current_location.lat)
+                              + ", " + str(self.current_location.lng))
 
     async def update_scanned_location(self, latitude, longitude, timestamp, radius):
         try:
@@ -539,22 +553,36 @@ class WorkerBase(ABC):
             time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 2))
 
     def _check_ggl_login(self):
+        topmostapp = self._communicator.topmostApp()
+        if not topmostapp:
+            return False
+
         if not "AccountPickerActivity" in self._communicator.topmostApp():
-            logger.info('No GGL Login Window found on {}', str(self._id))
-            return
+            logger.debug('No GGL Login Window found on {}', str(self._id))
+            return False
+
+        if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
+                                    delayAfter=10):
+            logger.error("_check_ggl_login: Failed getting screenshot")
+            return False
 
         logger.info('GGL Login Window found on {} - processing', str(self._id))
+        if not self._pogoWindowManager.look_for_ggl_login(self.get_screenshot_path(), self._communicator):
+            logger.error("_check_ggl_login: Failed reading screenshot")
+            return False
 
-        x, y = self._resocalc.get_ggl_account_coords(self)[0], \
-            self._resocalc.get_ggl_account_coords(self)[1]
-        self._communicator.click(int(x), int(y))
+        buttontimeout = 0
+        logger.info('Waiting for News Popup ...')
 
         buttoncheck = self._checkPogoButton()
-        while not buttoncheck and not self._stop_worker_event.isSet():
+        while not buttoncheck and not self._stop_worker_event.isSet() and buttontimeout < 6:
             time.sleep(5)
             buttoncheck = self._checkPogoButton()
+            buttontimeout += 1
+            if buttontimeout == 5:
+                logger.info('Timeout while waiting for after-login Button')
 
-        return
+        return True
 
     def _stop_pogo(self):
         attempts = 0
@@ -709,8 +737,8 @@ class WorkerBase(ABC):
             logger.debug(
                 "checkPogoFreeze: New und old Screenshoot are the same - no processing")
             self._lastScreenHashCount += 1
-            logger.debug("checkPogoFreeze: Same Screen Count: " +
-                         str(self._lastScreenHashCount))
+            logger.debug("checkPogoFreeze: Same Screen Count: "
+                         + str(self._lastScreenHashCount))
             if self._lastScreenHashCount >= 100:
                 self._lastScreenHashCount = 0
                 self._restart_pogo()
@@ -922,8 +950,11 @@ class WorkerBase(ABC):
 
     def _get_screen_size(self):
         if self._stop_worker_event.is_set():
-            return
-        screen = self._communicator.getscreensize().split(' ')
+            raise WebsocketWorkerRemovedException
+        screen = self._communicator.getscreensize()
+        if screen is None:
+            raise WebsocketWorkerRemovedException
+        screen = screen.strip().split(' ')
         self._screen_x = screen[0]
         self._screen_y = screen[1]
         x_offset = self.get_devicesettings_value("screenshot_x_offset", 0)

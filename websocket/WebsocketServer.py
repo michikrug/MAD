@@ -1,10 +1,13 @@
 import asyncio
 import collections
+import functools
 import logging
 import math
 import sys
 import time
-from threading import Event, Thread
+from asyncio import Handle
+from threading import Event, Lock, Thread, current_thread
+from typing import Optional
 
 import websockets
 from utils.authHelper import check_auth
@@ -31,7 +34,6 @@ class WebsocketServer(object):
     def __init__(self, args, mitm_mapper, db_wrapper, mapping_manager, pogoWindowManager,
                  configmode=False):
         self.__current_users = {}
-        self.__users_mutex = asyncio.Lock()
         self.__users_connecting = []
 
         self.__stop_server = Event()
@@ -40,12 +42,14 @@ class WebsocketServer(object):
         self.__listen_address = args.ws_ip
         self.__listen_port = int(args.ws_port)
 
-        self.__send_queue: asyncio.Queue = asyncio.Queue()
-
         self.__received = {}
-        self.__received_mutex = asyncio.Lock()
         self.__requests = {}
-        self.__requests_mutex = asyncio.Lock()
+
+        self.__users_mutex: Optional[asyncio.Lock] = None
+        self.__id_mutex: Optional[asyncio.Lock] = None
+        self.__send_queue: Optional[asyncio.Queue] = None
+        self.__received_mutex: Optional[asyncio.Lock] = None
+        self.__requests_mutex: Optional[asyncio.Lock] = None
 
         self.__db_wrapper = db_wrapper
         self.__mapping_manager: MappingManager = mapping_manager
@@ -53,10 +57,29 @@ class WebsocketServer(object):
         self.__mitm_mapper = mitm_mapper
 
         self.__next_id = 0
-        self.__id_mutex = asyncio.Lock()
         self._configmode = configmode
 
         self.__loop = None
+        self.__loop_tid = None
+        self.__loop_mutex = Lock()
+
+    def _add_task_to_loop(self, coro):
+        f = functools.partial(self.__loop.create_task, coro)
+        if current_thread() == self.__loop_tid:
+            # We can call directly if we're not going between threads.
+            return f()
+        else:
+            # We're in a non-event loop thread so we use a Future
+            # to get the task from the event loop thread once
+            # it's ready.
+            return self.__loop.call_soon_threadsafe(f)
+
+    async def __setup_first_loop(self):
+        self.__users_mutex = asyncio.Lock()
+        self.__id_mutex = asyncio.Lock()
+        self.__send_queue: asyncio.Queue = asyncio.Queue()
+        self.__received_mutex = asyncio.Lock()
+        self.__requests_mutex = asyncio.Lock()
 
     def start_server(self):
         logger.info("Starting websocket server...")
@@ -70,9 +93,11 @@ class WebsocketServer(object):
         logger.debug("Allowed origins derived: {}", str(allowed_origins))
 
         asyncio.set_event_loop(self.__loop)
+        self._add_task_to_loop(self.__setup_first_loop())
         self.__loop.run_until_complete(
             websockets.serve(self.handler, self.__listen_address, self.__listen_port, max_size=2 ** 25,
                              ping_timeout=10, ping_interval=15))
+        self.__loop_tid = current_thread()
         self.__loop.run_forever()
         logger.info("Websocketserver stopping...")
 
@@ -87,7 +112,8 @@ class WebsocketServer(object):
             self.__loop.call_soon_threadsafe(self.__loop.stop)
 
     def stop_server(self):
-        future = asyncio.run_coroutine_threadsafe(self.__internal_stop_server(), self.__loop)
+        with self.__loop_mutex:
+            future = asyncio.run_coroutine_threadsafe(self.__internal_stop_server(), self.__loop)
         future.result()
 
     async def handler(self, websocket_client_connection, path):
@@ -191,12 +217,13 @@ class WebsocketServer(object):
             if client_mapping.get("walker", None) is not None:
                 if "walker_area_index" not in devicesettings:
                     self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'walker_area_index', 0)
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
+                        origin, 'walker_area_index', 0, False)
                     self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'last_action_time', None)
+                        origin, 'finished', False, False)
                     self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'last_cleanup_time', None)
+                        origin, 'last_action_time', None, False)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'last_cleanup_time', None, False)
 
                 walker_index = devicesettings.get('walker_area_index', 0)
 
@@ -207,7 +234,7 @@ class WebsocketServer(object):
                             'Something wrong with last round - get back to old area')
                         walker_index -= 1
                         self.__mapping_manager.set_devicesetting_value_of(
-                            origin, 'walker_area_index', walker_index)
+                            origin, 'walker_area_index', walker_index, False)
                         # devicesettings['walker_area_index'] = walker_index
 
                 walker_area_array = client_mapping["walker"]
@@ -224,12 +251,12 @@ class WebsocketServer(object):
                             str(origin))
                         walker_index = 0
                         self.__mapping_manager.set_devicesetting_value_of(
-                            origin, 'walker_area_index', walker_index)
+                            origin, 'walker_area_index', walker_index, False)
                         walker_settings = walker_area_array[walker_index]
                         return
                     walker_index += 1
                     self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'walker_area_index', walker_index)
+                        origin, 'walker_area_index', walker_index, False)
                     walker_settings = walker_area_array[walker_index]
 
                 devicesettings = self.__mapping_manager.get_devicesettings_of(origin)
@@ -237,8 +264,9 @@ class WebsocketServer(object):
                 if devicesettings['walker_area_index'] >= len(walker_area_array):
                     # check if array is smaller then expected - f.e. on the fly changes in mappings.json
                     self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'walker_area_index', 0)
-                    self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
+                        origin, 'walker_area_index', 0, False)
+                    self.__mapping_manager.set_devicesetting_value_of(
+                        origin, 'finished', False, False)
                     walker_index = 0
 
                 walker_area_name = walker_area_array[walker_index]['walkerarea']
@@ -252,11 +280,11 @@ class WebsocketServer(object):
                 walker_routemanager_mode = self.__mapping_manager.routemanager_get_mode(
                     walker_area_name)
                 self.__mapping_manager.set_devicesetting_value_of(
-                    origin, 'walker_area_index', walker_index + 1)
-                self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
+                    origin, 'walker_area_index', walker_index + 1, False)
+                self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False, False)
                 if walker_index >= len(walker_area_array) - 1:
                     self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'walker_area_index', 0)
+                        origin, 'walker_area_index', 0, False)
 
                 # set global mon_iv
                 client_mapping['mon_ids_iv'] = \
@@ -342,9 +370,16 @@ class WebsocketServer(object):
 
     async def __send_specific(self, websocket_client_connection, id, message):
         # await websocket_client_connection.send(message)
-        for key, value in self.__current_users.items():
-            if key == id and value[2].open:
-                await value[2].send(message)
+        try:
+            user = None
+            async with self.__users_mutex:
+                for key, value in self.__current_users.items():
+                    if key == id and value[2].open:
+                        user = value
+            if user is not None:
+                await user[2].send(message)
+        except Exception as e:
+            logger.error("Failed sending message in send_specific: {}".format(str(e)))
 
     async def __retrieve_next_send(self, websocket_client_connection):
         found = None
@@ -403,8 +438,10 @@ class WebsocketServer(object):
                 logger.info("Info of {} removed in websocket", str(worker_id))
 
     def clean_up_user(self, worker_id, worker_instance):
-        future = asyncio.run_coroutine_threadsafe(
-            self.__internal_clean_up_user(worker_id, worker_instance), self.__loop)
+        logger.debug2("Cleanup of {} called with ref {}".format(worker_id, str(worker_instance)))
+        with self.__loop_mutex:
+            future = asyncio.run_coroutine_threadsafe(
+                self.__internal_clean_up_user(worker_id, worker_instance), self.__loop)
         future.result()
 
     async def __on_message(self, message):
@@ -507,8 +544,12 @@ class WebsocketServer(object):
     def send_and_wait(self, id, worker_instance, message, timeout):
         logger.debug("{} sending command: {}", str(id), message.strip())
         try:
-            future = asyncio.run_coroutine_threadsafe(
-                self.__send_and_wait_internal(id, worker_instance, message, timeout), self.__loop)
+            # future: Handle = self._add_task_to_loop(self.__send_and_wait_internal(id, worker_instance, message,
+            #                                                                       timeout))
+            logger.debug("Appending send_and_wait to {}".format(str(self.__loop)))
+            with self.__loop_mutex:
+                future = asyncio.run_coroutine_threadsafe(
+                    self.__send_and_wait_internal(id, worker_instance, message, timeout), self.__loop)
             result = future.result()
         except WebsocketWorkerRemovedException:
             logger.error("Worker {} was removed, propagating exception".format(id))
@@ -516,8 +557,6 @@ class WebsocketServer(object):
         except WebsocketWorkerTimeoutException:
             logger.error("Sending message failed due to timeout ({})".format(id))
             raise WebsocketWorkerTimeoutException
-
-        logger.debug2("Returning {} to {}".format(str(result), id))
         return result
 
     async def __set_request(self, id, event):

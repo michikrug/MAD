@@ -67,7 +67,7 @@ class WorkerQuests(MITMBase):
             return
         self.clear_thread = Thread(name="clear_thread_%s" % str(
             self._id), target=self._clear_thread)
-        self.clear_thread.daemon = False
+        self.clear_thread.daemon = True
         self.clear_thread.start()
 
         reached_main_menu = self._check_pogo_main_screen(10, True)
@@ -414,7 +414,7 @@ class WorkerQuests(MITMBase):
         delete_allowed = False
         error_counter = 0
 
-        while int(delrounds) <= 8 and not stop_inventory_clear.is_set():
+        while int(delrounds) <= 10 and not stop_inventory_clear.is_set():
 
             trash = 0
             if not first_round and not delete_allowed:
@@ -422,10 +422,11 @@ class WorkerQuests(MITMBase):
                 if error_counter > 3:
                     stop_inventory_clear.set()
                 logger.warning('Find no item to delete - scrolling ({} times)', str(error_counter))
-                self._communicator.touchandhold(int(200), int(400), int(200), int(100))
+                self._communicator.touchandhold(int(200), int(600), int(200), int(100))
                 time.sleep(2)
 
             trashcancheck = self._get_trash_positions()
+
             if trashcancheck is None:
                 logger.error('Could not find any trashcan - abort')
                 return
@@ -605,6 +606,9 @@ class WorkerQuests(MITMBase):
             if data_received == LatestReceivedType.GYM:
                 logger.info('Clicking GYM')
                 time.sleep(10)
+                if not self._checkPogoButton():
+                    self._checkPogoClose()
+                time.sleep(1)
                 if not self._checkPogoButton():
                     self._checkPogoClose()
                 time.sleep(1)

@@ -10,8 +10,8 @@ from typing import Dict, List, Optional, Tuple
 
 from db.dbWrapperBase import DbWrapperBase
 from geofence.geofenceHelper import GeofenceHelper
+from route import RouteManagerBase, RouteManagerIV
 from route.RouteManagerFactory import RouteManagerFactory
-from route.RouteManagerIV import RouteManagerIV
 from utils.collections import Location
 from utils.logging import logger
 from utils.s2Helper import S2Helper
@@ -81,12 +81,10 @@ class MappingManager:
         self.__t_file_watcher.join()
 
     def get_auths(self) -> Optional[dict]:
-        with self.__mappings_mutex:
-            return self._auths
+        return self._auths
 
     def get_devicemappings_of(self, device_name: str) -> Optional[dict]:
-        with self.__mappings_mutex:
-            return self._devicemappings.get(device_name, None)
+        return self._devicemappings.get(device_name, None)
 
     def set_devicemapping_value_of(self, device_name: str, key: str, value):
         with self.__mappings_mutex:
@@ -94,167 +92,116 @@ class MappingManager:
                 self._devicemappings[device_name][key] = value
 
     def get_devicesettings_of(self, device_name: str) -> Optional[dict]:
-        with self.__mappings_mutex:
-            return self._devicemappings.get(device_name, None).get('settings', None)
+        return self._devicemappings.get(device_name, None).get('settings', None)
 
-    def set_devicesetting_value_of(self, device_name: str, key: str, value):
-        with self.__mappings_mutex:
+    def set_devicesetting_value_of(self, device_name: str, key: str, value, lock: bool = True):
+        if lock:
+            with self.__mappings_mutex:
+                if self._devicemappings.get(device_name, None) is not None:
+                    self._devicemappings[device_name]['settings'][key] = value
+        else:
+            # unsafe, should only be used in MITMReceiver and websocket where locking hurts us - and MADMIN...
+            # TODO: consider queue/consumer+producer
             if self._devicemappings.get(device_name, None) is not None:
                 self._devicemappings[device_name]['settings'][key] = value
 
     def get_all_devicemappings(self) -> Optional[dict]:
-        with self.__mappings_mutex:
-            return self._devicemappings
+        return self._devicemappings
 
     def get_areas(self) -> Optional[dict]:
-        with self.__mappings_mutex:
-            return self._areas
+        return self._areas
 
     def get_all_routemanager_names(self):
+        return self._routemanagers.keys()
+
+    def __fetch_routemanager(self, routemanager_name: str) -> Optional[RouteManagerBase.RouteManagerBase]:
         with self.__mappings_mutex:
-            return self._routemanagers.keys()
+            routemanager_dict: dict = self._routemanagers.get(routemanager_name, None)
+            if routemanager_dict is not None:
+                return routemanager_dict.get("routemanager")
+            else:
+                return None
 
     def routemanager_present(self, routemanager_name: str) -> bool:
         with self.__mappings_mutex:
             return routemanager_name in self._routemanagers.keys()
 
     def routemanager_get_next_location(self, routemanager_name: str, origin: str) -> Optional[Location]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_next_location(origin)
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_next_location(origin) if routemanager is not None else None
 
     def routemanager_stop(self, routemanager_name: str):
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                routemanager.get("routemanager").stop_routemanager()
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        if routemanager is not None:
+            routemanager.stop_routemanager()
 
     def register_worker_to_routemanager(self, routemanager_name: str, worker_name: str) -> bool:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").register_worker(worker_name)
-            else:
-                return False
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.register_worker(worker_name) if routemanager is not None else False
 
     def unregister_worker_from_routemanager(self, routemanager_name: str, worker_name: str):
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                routemanager.get("routemanager").unregister_worker(worker_name)
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.unregister_worker(worker_name) if routemanager is not None else None
 
     def routemanager_add_coords_to_be_removed(self, routemanager_name: str, lat: float, lon: float):
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                routemanager.get("routemanager").add_coord_to_be_removed(lat, lon)
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        if routemanager is not None:
+            routemanager.add_coord_to_be_removed(lat, lon)
 
     def routemanager_get_route_stats(self, routemanager_name: str) -> Optional[Tuple[int, int]]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_route_status()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_route_status() if routemanager is not None else None
 
     def routemanager_get_rounds(self, routemanager_name: str, worker_name: str) -> Optional[int]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_rounds(worker_name)
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_rounds(worker_name) if routemanager is not None else None
 
     def routemanager_get_registered_workers(self, routemanager_name: str) -> Optional[int]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_registered_workers()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_registered_workers() if routemanager is not None else None
 
     def routemanager_get_ids_iv(self, routemanager_name: str) -> Optional[List[int]]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_ids_iv()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_ids_iv() if routemanager is not None else None
 
     def routemanager_get_geofence_helper(self, routemanager_name: str) -> Optional[GeofenceHelper]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_geofence_helper()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_geofence_helper() if routemanager is not None else None
 
     def routemanager_get_init(self, routemanager_name: str) -> bool:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_init()
-            else:
-                return False
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_init() if routemanager is not None else False
 
     def routemanager_get_level(self, routemanager_name: str) -> bool:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_level_mode()
-            else:
-                return False
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_level_mode() if routemanager is not None else None
 
     def routemanager_get_mode(self, routemanager_name: str) -> Optional[str]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_mode()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_mode() if routemanager is not None else None
 
     def routemanager_get_encounter_ids_left(self, routemanager_name: str) -> Optional[List[int]]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None and isinstance(routemanager, RouteManagerIV):
-                return routemanager.get_encounter_ids_left()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        if routemanager is not None and isinstance(routemanager, RouteManagerIV.RouteManagerIV):
+            return routemanager.get_encounter_ids_left()
+        else:
+            return None
 
     def routemanager_get_current_route(self, routemanager_name: str) -> Optional[List[Location]]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_current_route()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_current_route() if routemanager is not None else None
 
     def routemanager_get_current_prioroute(self, routemanager_name: str) -> Optional[List[Location]]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_current_prioroute()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_current_prioroute() if routemanager is not None else None
 
     def routemanager_get_settings(self, routemanager_name: str) -> Optional[dict]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_settings()
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_settings() if routemanager is not None else None
 
     def routemanager_get_position_type(self, routemanager_name: str, worker_name: str) -> Optional[str]:
-        with self.__mappings_mutex:
-            routemanager: dict = self._routemanagers.get(routemanager_name, None)
-            if routemanager is not None:
-                return routemanager.get("routemanager").get_position_type(worker_name)
-            else:
-                return None
+        routemanager = self.__fetch_routemanager(routemanager_name)
+        return routemanager.get_position_type(worker_name) if routemanager is not None else None
 
     def __read_mappings_file(self):
         with open('configs/mappings.json') as f:
@@ -476,14 +423,15 @@ class MappingManager:
                 if "last_mode" in self._devicemappings[dev]['settings']:
                     devicemappings_tmp[dev]['settings']["last_mode"] = \
                         self._devicemappings[dev]['settings']["last_mode"]
-
+            logger.info("Acquiring lock to update mappings")
             with self.__mappings_mutex:
                 # stopping routemanager / worker
-                logger.info('Restarting Worker')
-                for routemanager in self._routemanagers.keys():
-                    area = self._routemanagers.get(routemanager, None)
-                    if area is None:
-                        continue
+                # logger.info('Restarting Worker')
+                # for routemanager in self._routemanagers.keys():
+                #     area: RouteManagerBase = self._routemanagers.get(routemanager, None)
+                #     if area is None:
+                #         continue
+                #     area.stop_routemanager()
 
                 self._areas = areas_tmp
                 self._devicemappings = devicemappings_tmp
@@ -491,6 +439,7 @@ class MappingManager:
                 self._auths = auths_tmp
 
         else:
+            logger.info("Acquiring lock to update mappings,full")
             with self.__mappings_mutex:
                 self._routemanagers = self.__get_latest_routemanagers()
                 self._areas = self.__get_latest_areas()

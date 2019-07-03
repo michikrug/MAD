@@ -623,11 +623,6 @@ class RmWrapper(DbWrapperBase):
                 list_of_coords)
             return geofenced_coords
         else:
-            # import numpy as np
-            # to_return = np.zeros(shape=(len(list_of_coords), 2))
-            # for i in range(len(to_return)):
-            #     to_return[i][0] = list_of_coords[i][0]
-            #     to_return[i][1] = list_of_coords[i][1]
             return list_of_coords
 
     def update_insert_weather(self, cell_id, gameplay_weather, capture_time, cloud_level=0, rain_level=0, wind_level=0,
@@ -657,10 +652,12 @@ class RmWrapper(DbWrapperBase):
         return True
 
     def submit_mon_iv(self, origin: str, timestamp: float, encounter_proto: dict, mitm_mapper):
-        logger.debug("Updating IV sent by {}", str(origin))
         wild_pokemon = encounter_proto.get("wild_pokemon", None)
         if wild_pokemon is None:
             return
+
+        logger.debug("Updating IV sent by {} for encounter at {}".format(
+            str(origin), str(timestamp)))
 
         now = datetime.utcfromtimestamp(
             time.time()).strftime('%Y-%m-%d %H:%M:%S')
@@ -683,7 +680,6 @@ class RmWrapper(DbWrapperBase):
         mitm_mapper.collect_mon_iv_stats(origin, encounter_id)
 
         if getdetspawntime is None:
-
             logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (init)",
                          str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
         else:
@@ -691,8 +687,7 @@ class RmWrapper(DbWrapperBase):
                          str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
 
         capture_probability = encounter_proto.get("capture_probability")
-        capture_probability_list = capture_probability.get(
-            "capture_probability_list")
+        capture_probability_list = capture_probability.get("capture_probability_list")
         if capture_probability_list is not None:
             capture_probability_list = capture_probability_list.replace(
                 "[", "").replace("]", "").split(",")
@@ -1452,22 +1447,16 @@ class RmWrapper(DbWrapperBase):
     def statistics_get_pokemon_count(self, minutes):
         logger.debug('Fetching pokemon spawns count from db')
         query_where = ''
-        query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00')) as timestamp"
+        query_date = "UNIX_TIMESTAMP(DATE_FORMAT(last_modified, '%y-%m-%d %k:00:00')) as timestamp"
         if minutes:
-            minutes = datetime.now().replace(
+            minutes = datetime.utcnow().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where FROM_UNIXTIME(timestamp_scan) > \'%s\' ' % str(minutes)
-
-        # SELECT unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00')) as timestamp,
-        # count(DISTINCT type_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon join trs_stats_detect_raw
-        # on pokemon.encounter_id=trs_stats_detect_raw.type_id where FROM_UNIXTIME(timestamp_scan)
-        # > '2019-05-04 10:47:47.259159' group by IV, day(FROM_UNIXTIME(timestamp_scan)),
-        # hour(FROM_UNIXTIME(timestamp_scan)) order by timestamp
+            query_where = ' where last_modified > \'%s\' ' % str(minutes)
 
         query = (
-            "SELECT  %s, count(DISTINCT type_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon join "
-            "trs_stats_detect_raw on pokemon.encounter_id=trs_stats_detect_raw.type_id %s "
-            "group by IV, day(FROM_UNIXTIME(timestamp_scan)), hour(FROM_UNIXTIME(timestamp_scan)) order by timestamp" %
+            "SELECT  %s, count(DISTINCT encounter_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon "
+            " %s "
+            "group by IV, day(TIMESTAMP(last_modified)), hour(TIMESTAMP(last_modified)) order by timestamp" %
                 (str(query_date), str(query_where))
         )
 

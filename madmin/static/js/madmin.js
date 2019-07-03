@@ -122,7 +122,8 @@ var leaflet_data = {
   geofences: {},
   workers: {},
   mons: {},
-  monicons: {}
+  monicons: {},
+  cellupdates: {}
 };
 
 new Vue({
@@ -133,13 +134,15 @@ new Vue({
     quests: {},
     spawns: {},
     mons: {},
+    cellupdates: {},
     layers: {
       stat: {
         spawns: false,
         gyms: false,
         quests: false,
         workers: false,
-        mons: false
+        mons: false,
+        cellupdates: false
       },
       dyn: {
         routes: {},
@@ -162,7 +165,7 @@ new Vue({
         url: "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png"
       },
       cartodbdarknolabel: {
-        name: "CartoDB Darkmatter",
+        name: "CartoDB Darkmatter nolabel",
         url: "https://{s}.basemaps.cartocdn.com/rastertiles/dark_nolabels/{z}/{x}/{y}.png"
       },
       cartodbvoyager: {
@@ -234,6 +237,13 @@ new Vue({
       }
 
       this.changeStaticLayer("mons", oldVal, newVal);
+    },
+    "layers.stat.cellupdates": function (newVal, oldVal) {
+      if (newVal && !init) {
+        this.map_fetch_cells(this.buildUrlFilter(true));
+      }
+
+      this.changeStaticLayer("cellupdates", oldVal, newVal);
     },
     "layers.dyn.geofences": {
       deep: true,
@@ -311,6 +321,7 @@ new Vue({
       this.map_fetch_quests(urlFilter);
       this.map_fetch_mons(urlFilter);
       this.map_fetch_prioroutes();
+      this.map_fetch_cells(urlFilter);
 
       this.updateBounds(true);
     },
@@ -532,18 +543,22 @@ new Vue({
             cradius = $this.settings.routes.coordinateRadius.raids;
           }
 
-          route.coordinates.forEach(function (coord, index) {
-            var maxcolored = 10;
-            var color = "#BBB";
+          var maxcolored = 10;
+          var color = "#BBB";
 
+          var linecoords = [];
+
+          // only display first 10 entries of the queue
+          route.coordinates.slice(0, 9).forEach(function (coord, index) {
             if (index < maxcolored) {
               color = $this.getPercentageColor((index + 1) * 100 / maxcolored);
             }
 
             var weight = index == 0 ? 5 : 1;
 
-            circle = L.circle(coord, {
-              pane: "routes",
+            circle = L.circle([coord.latitude, coord.longitude], {
+              ctimestamp: coord.timestamp,
+              //pane: "routes",
               radius: cradius,
               color: color,
               fillColor: color,
@@ -551,20 +566,21 @@ new Vue({
               weight: weight,
               opacity: 0.8,
               fillOpacity: 0.5
-            });
+            }).bindPopup($this.build_prioq_popup);
 
             circle.addTo(group);
             coords.push(circle);
+            linecoords.push([coord.latitude, coord.longitude]);
           });
 
           var geojson = {
             "type": "LineString",
-            "coordinates": $this.convertToLonLat(route.coordinates)
+            "coordinates": $this.convertToLonLat(linecoords)
           }
 
           // add route to layergroup
           L.geoJSON(geojson, {
-            pane: "routes",
+            //pane: "routes",
             style: {
               "color": "#000000",
               "weight": 2,
@@ -785,6 +801,38 @@ new Vue({
         });
       });
     },
+    map_fetch_cells(urlFilter) {
+      var $this = this;
+
+      if (!$this.layers.stat.cellupdates) {
+        return;
+      }
+
+      axios.get('get_cells' + urlFilter).then(function (res) {
+        const now = Math.round((new Date()).getTime() / 1000);
+
+        res.data.forEach(function (cell) {
+          var noskip = true;
+          if ($this.cellupdates[cell.id]) {
+            if ($this.cellupdates[cell.id].updated != cell.updated) {
+              map.removeLayer(leaflet_data.cellupdates[cell.id]);
+              delete leaflet_data.cellupdates[cell.id];
+            } else {
+              noskip = false;
+            }
+          }
+
+          if (noskip) {
+            $this.cellupdates[cell.id] = cell;
+
+            leaflet_data.cellupdates[cell.id] = L.polygon(cell.polygon, { id: cell.id })
+              .setStyle($this.getCellStyle(now, cell.updated))
+              .bindPopup($this.build_cell_popup, { className: "cellpopup" })
+              .addTo(map);
+          }
+        })
+      });
+    },
     changeDynamicLayers(type) {
       for (k in this.layers.dyn[type]) {
         tlayer = this.layers.dyn[type][k];
@@ -810,6 +858,27 @@ new Vue({
 
       this.updateStoredSetting("layer-stat-" + name, newState);
     },
+    getCellStyle(now, cell_updated) {
+      // credits to RDM for this
+
+      let ago = now - cell_updated;
+      let value;
+
+      if (ago <= 150) {
+        value = 0;
+      } else {
+        value = Math.min((ago - 150) / 750, 1);
+      }
+
+      const hue = ((1 - value) * 120).toString(10);
+      return {
+        fillColor: `hsl(${hue}, 100%, 50%)`,
+        color: "#333",
+        opacity: 0.65,
+        fillOpacity: 0.4,
+        weight: 1
+      };
+    },
     getRandomColor() {
       // generates only dark colors for better contrast
       var letters = '0123456789'.split('');
@@ -832,6 +901,19 @@ new Vue({
 
       var h = r * 0x10000 + g * 0x100 + b * 0x1;
       return "#" + ("000000" + h.toString(16)).slice(-6);
+    },
+    build_cell_popup(marker) {
+      var cell = this.cellupdates[marker.options.id];
+
+      return `
+        <div class="content">
+          <div class="id"><i class="fa fa-fingerprint"></i> <span>${cell["id"]}</span></div>
+          <div id="updated"><i class="fa fa-clock"></i> Updated: ${moment(cell['updated'] * 1000).format("YYYY-MM-DD HH:mm:ss")}</div>
+        </div>`;
+    },
+    build_prioq_popup(marker) {
+      var time = moment(marker.options.ctimestamp * 1000);
+      return `Due: ${time.format("YYYY-MM-DD HH:mm:ss")} (${marker.options.ctimestamp})`;
     },
     build_quest_small(quest_reward_type_raw, quest_item_id, quest_pokemon_id) {
       switch (quest_reward_type_raw) {

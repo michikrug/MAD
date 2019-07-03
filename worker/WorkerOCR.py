@@ -6,11 +6,11 @@ from threading import Event, Thread
 from db.dbWrapperBase import DbWrapperBase
 from ocr.checkWeather import checkWeather
 from ocr.pogoWindows import PogoWindows
-from utils.MappingManager import MappingManager
 from utils.geo import get_distance_of_two_points_in_meters
 from utils.logging import logger
 from utils.madGlobals import (InternalStopWorkerException,
                               WebsocketWorkerRemovedException)
+from utils.MappingManager import MappingManager
 from utils.s2Helper import S2Helper
 
 from .WorkerBase import WorkerBase
@@ -33,7 +33,8 @@ class WorkerOCR(WorkerBase):
         if not self._mapping_manager.routemanager_present(self._routemanager_name) \
                 or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
-        routemanager_settings = self._mapping_manager.routemanager_get_settings(self._routemanager_name)
+        routemanager_settings = self._mapping_manager.routemanager_get_settings(
+            self._routemanager_name)
 
         # get the distance from our current position (last) to the next gym (cur)
         distance = get_distance_of_two_points_in_meters(float(self.last_location.lat),
@@ -45,8 +46,8 @@ class WorkerOCR(WorkerBase):
         logger.debug('Moving {} meters to the next position', round(distance, 2))
         speed = routemanager_settings.get("speed", 0)
         max_distance = routemanager_settings.get("max_distance", None)
-        if (speed == 0 or
-                (max_distance and 0 < max_distance < distance)
+        if (speed == 0
+                or (max_distance and 0 < max_distance < distance)
                 or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
             logger.debug("main: Teleporting...")
             self._communicator.setLocation(

@@ -1,14 +1,14 @@
 import json
 import time
-from typing import Optional, List
+from typing import List, Optional
 
 import requests
 
 from geofence.geofenceHelper import GeofenceHelper
-from utils.MappingManager import MappingManager
 from utils.gamemechanicutil import calculate_mon_level, get_raid_boss_cp
 from utils.logging import logger
 from utils.madGlobals import terminate_mad
+from utils.MappingManager import MappingManager
 from utils.questGen import generate_quest
 from utils.s2Helper import S2Helper
 
@@ -46,7 +46,7 @@ class WebhookWorker:
         if size == 0:
             return [payload]
 
-        return [payload[x : x + size] for x in range(0, len(payload), size)]
+        return [payload[x: x + size] for x in range(0, len(payload), size)]
 
     def __is_in_excluded_area(self, coordinate):
         for gfh in self.__geofence_helpers:
@@ -341,7 +341,7 @@ class WebhookWorker:
 
             if raid["is_ex_raid_eligible"] is not None:
                 raid_payload["is_ex_raid_eligible"] = raid["is_ex_raid_eligible"]
-                
+
             if raid["gender"] is not None:
                 raid_payload["gender"] = raid["gender"]
 
@@ -361,9 +361,9 @@ class WebhookWorker:
                 continue
 
             if mon["pokemon_id"] in self.__IV_MON and (
-                mon["individual_attack"] is None
-                and mon["individual_defense"] is None
-                and mon["individual_stamina"] is None
+                mon["individual_attack"] is None and
+                mon["individual_defense"] is None and
+                mon["individual_stamina"] is None
             ):
                 # skipping this mon since IV has not been scanned yet
                 continue
@@ -424,8 +424,8 @@ class WebhookWorker:
                 mon_payload["rarity"] = pokemon_rarity
 
             if (
-                mon["weather_boosted_condition"] is not None
-                and mon["weather_boosted_condition"] > 0
+                mon["weather_boosted_condition"] is not None and
+                mon["weather_boosted_condition"] > 0
             ):
                 mon_payload["boosted_weather"] = mon["weather_boosted_condition"]
 
@@ -494,7 +494,8 @@ class WebhookWorker:
         self.__IV_MON: List[int] = []
 
         for routemanager_name in mapping_manager.get_all_routemanager_names():
-            ids_iv_list: Optional[List[int]] = mapping_manager.routemanager_get_ids_iv(routemanager_name)
+            ids_iv_list: Optional[List[int]] = mapping_manager.routemanager_get_ids_iv(
+                routemanager_name)
 
             if ids_iv_list is not None:
                 # TODO check if area/routemanager is actually active before adding the IDs
@@ -519,7 +520,8 @@ class WebhookWorker:
                     if geofence_helper_of_area is not None:
                         self.__geofence_helpers.append(geofence_helper_of_area)
             else:
-                geofence_helper_of_area = mapping_manager.routemanager_get_geofence_helper(area_name)
+                geofence_helper_of_area = mapping_manager.routemanager_get_geofence_helper(
+                    area_name)
 
                 if geofence_helper_of_area is None:
                     continue

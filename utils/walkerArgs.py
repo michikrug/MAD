@@ -279,7 +279,7 @@ def parseArgs():
     parser.add_argument("--log_file_retention", default="10",
                         help=("Amount of days to keep file logs. Set to 0 to"
                               " keep them forever (Default: 10)"))
-    parser.add_argument('--log_filename', default='%Y%m%d_%H%M_<SN>.log', 
+    parser.add_argument('--log_filename', default='%Y%m%d_%H%M_<SN>.log',
                         help=("Defines the log filename to be saved."
                               " Allows date formatting, and replaces <SN>"
                               " with the instance's status name. Read the"

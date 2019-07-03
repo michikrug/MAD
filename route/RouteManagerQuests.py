@@ -112,13 +112,15 @@ class RouteManagerQuests(RouteManagerBase):
 
             for stop, error_count in self._stops_not_processed.items():
                 if stop not in self._stoplist:
-                    logger.info("Location {} is no longer in our stoplist and will be ignored".format(str(stop)))
+                    logger.info(
+                        "Location {} is no longer in our stoplist and will be ignored".format(str(stop)))
                     self._coords_to_be_ignored.add(stop)
                 elif error_count < 4:
                     logger.warning("Found stop not processed yet: {}".format(str(stop)))
                     list_of_stops_to_return.append(stop)
                 else:
-                    logger.error("Stop {} has not been processed thrice in a row, please check your DB".format(str(stop)))
+                    logger.error(
+                        "Stop {} has not been processed thrice in a row, please check your DB".format(str(stop)))
                     self._coords_to_be_ignored.add(stop)
 
             if len(list_of_stops_to_return) > 0:
@@ -163,7 +165,7 @@ class RouteManagerQuests(RouteManagerBase):
                     self._route: List[Location] = []
 
                 if 0 < len(stops) < len(self._route) \
-                        and len(stops)/len(self._route) <= 0.3:
+                        and len(stops) / len(self._route) <= 0.3:
                     # Calculating new route because 70 percent of stops are processed
                     logger.info('There are less stops without quest than routepositions - recalc')
                     self._route = list(set(self._route) - (set(self._route) - set(stops)))

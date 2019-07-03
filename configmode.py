@@ -2,10 +2,10 @@ import os
 import sys
 from threading import Thread
 
-from db.dbWrapperBase import DbWrapperBase
 from db.DbFactory import DbFactory
-from utils.MappingManager import MappingManagerManager, MappingManager
+from db.dbWrapperBase import DbWrapperBase
 from utils.logging import initLogging, logger
+from utils.MappingManager import MappingManager, MappingManagerManager
 from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
 from websocket.WebsocketServer import WebsocketServer

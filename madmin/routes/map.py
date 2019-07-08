@@ -8,6 +8,8 @@ from db.dbWrapperBase import DbWrapperBase
 from flask_caching import Cache
 from madmin.functions import auth_required, getBoundParameter, getCoordFloat
 from utils.collections import Location
+from utils.gamemechanicutil import get_raid_boss_cp
+from utils.language import i8ln
 from utils.MappingManager import MappingManager
 from utils.questGen import generate_quest
 from utils.s2Helper import S2Helper
@@ -273,6 +275,7 @@ class map(object):
 
     @auth_required
     def get_map_mons(self):
+        import traceback
         neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
 
@@ -288,8 +291,21 @@ class map(object):
             timestamp=timestamp
         )
 
+        mons_raw = {}
+
         for i, mon in enumerate(data):
-            data[i]["encounter_id"] = str(data[i]["encounter_id"])
+            try:
+                id = data[i]["mon_id"]
+                if str(id) in mons_raw:
+                    mon_raw = mons_raw[str(id)]
+                else:
+                    mon_raw = get_raid_boss_cp(id)
+                    mons_raw[str(id)] = mon_raw
+
+                data[i]["encounter_id"] = str(data[i]["encounter_id"])
+                data[i]["name"] = mon_raw["name"]
+            except Exception:
+                traceback.print_exc()
 
         return jsonify(data)
 

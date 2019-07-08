@@ -181,6 +181,7 @@ class WebhookWorker:
                 "quest_reward_type_raw": quest["quest_reward_type_raw"],
                 "quest_target": quest["quest_target"],
                 "pokemon_id": int(quest["pokemon_id"]),
+                "pokemon_form": int(quest["pokemon_form"]),
                 "item_amount": quest["item_amount"],
                 "item_id": quest["item_id"],
                 "quest_task": quest["quest_task"],
@@ -210,6 +211,7 @@ class WebhookWorker:
         if a_quest_type == 7:
             a_quest_reward["info"]["pokemon_id"] = int(quest["pokemon_id"])
             a_quest_reward["info"]["shiny"] = 0
+            a_quest_reward["info"]["form"] = int(quest["pokemon_form"])
 
         for a_quest_condition in quest_conditions:
             # Quest condition for special type of pokemon.

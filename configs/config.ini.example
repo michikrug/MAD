@@ -54,10 +54,11 @@
 ######################
 
 #pogoasset:                  # Path to Pogo Assets: See: https://github.com/ZeChrales/PogoAssets/ (git clone)
-#temp_path:                  # Path for generated temporary files (Default: temp/)
-#raidscreen_path:            # [OCR only]Path for taken screenshots (Default: ocr/screenshots/)
-#unknown_path:               # [OCR only] Path for not automaticly detected gyms or mons (Default: unknown/)
-#file_path:                  # Defines directory to save worker stats, position files and calculated routes (Default: files/)
+#temp_path:                  # Path for generated files while detecting raids (Default: temp/)
+#raidscreen_path:            # Path for taken screenshots (Default: ocr/screenshots/)
+#unknown_path:               # Path for not automaticly detected gyms or mons (Default: unknown/)
+#file_path:                  # Defines directory to save worker stats- and position files and calculated routes (Default: files/)
+#mappings:                   # optional: defines the path of the mappings file (Default: configs/mappings.json)
 
 # other settings
 ######################
@@ -113,7 +114,7 @@
 #webhook                     # Activate support for webhook
 #webhook_url:                # webhook endpoint (multiple seperated by comma)
                              #  use [<type>] in front of the url, if you want to split data between multiple endpoints. Ex: [pokemon]http://foo.com,[raid]http://bar.com
-                             #  possible types are: pokemon, raid, gym, weather
+                             #  possible types are: pokemon, raid, gym, weather, pokestop
 #webhook_submit_exraids      # Send Ex-raids to the webhook if detected
 #webhook_excluded_areas      # Comma-separated list of area names to exclude elements from within an area to be sent to a webhook.
 #weather_webhook             # Activate support for weather webhook (remember to enable weather support in other settings section too!)

@@ -549,21 +549,27 @@ new Vue({
           var linecoords = [];
 
           // only display first 10 entries of the queue
-          route.coordinates.slice(0, 9).forEach(function (coord, index) {
-            if (index < maxcolored) {
-              color = $this.getPercentageColor((index + 1) * 100 / maxcolored);
+          const now = Math.round((new Date()).getTime() / 1000);
+          route.coordinates.slice(0, 14).forEach(function (coord, index) {
+            let until = coord.timestamp - now;
+
+            if (until < 0) {
+              var hue = 0;
+              var sat = 100;
+            } else {
+              var hue = 120;
+              var sat = (index * 100) / 15;
             }
 
-            var weight = index == 0 ? 5 : 1;
+            var color = `hsl(${hue}, ${sat}%, 50%)`;
 
             circle = L.circle([coord.latitude, coord.longitude], {
               ctimestamp: coord.timestamp,
-              //pane: "routes",
               radius: cradius,
               color: color,
               fillColor: color,
               fillOpacity: 1,
-              weight: weight,
+              weight: 1,
               opacity: 0.8,
               fillOpacity: 0.5
             }).bindPopup($this.build_prioq_popup);
@@ -721,20 +727,14 @@ new Vue({
             return;
           }
 
-          var geojson = {
-            "type": "MultiPolygon",
-            "coordinates": geofence.coordinates
-          }
-
           // add geofence to layergroup
-          L.geoJSON(geojson, {
-            pane: "geofences",
-            style: {
+          var group = L.polygon(geofence.coordinates, { pane: "geofences", })
+            .setStyle({
               "color": $this.getRandomColor(),
               "weight": 2,
-              "opacity": 0.25
-            }
-          }).addTo(group);
+              "opacity": 0.5
+            })
+            .addTo(map);
 
           // add layergroup to management object
           leaflet_data["geofences"][name] = group;
@@ -774,8 +774,7 @@ new Vue({
             if (leaflet_data["monicons"][mon["mon_id"]]) {
               var icon = leaflet_data["monicons"][mon["mon_id"]];
             } else {
-              var form = String.prototype.padStart.call(mon["form"], 2, 0)
-              //var image = `asset/pokemon_icons/pokemon_icon_${String.prototype.padStart.call(mon["mon_id"], 3, 0)}_${form}.png`;
+              var form = mon["form"] == 0 ? "00" : mon["form"];
               var image = `https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_${String.prototype.padStart.call(mon["mon_id"], 3, 0)}_${form}.png`;
               var icon = L.icon({
                 iconUrl: image,
@@ -1137,8 +1136,7 @@ new Vue({
     build_mon_popup(marker) {
       mon = this.mons[marker.options.id];
 
-      var form = String.prototype.padStart.call(mon["form"], 2, 0);
-      //var image = `asset/pokemon_icons/pokemon_icon_${monpad}_${formpad}.png`;
+      var form = mon["form"] == 0 ? "00" : mon["form"];
       var image = `https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_${String.prototype.padStart.call(mon["mon_id"], 3, 0)}_${form}.png`;
 
       var iv = (mon["individual_attack"] + mon["individual_defense"] + mon["individual_stamina"]) * 100 / 45;
@@ -1171,7 +1169,7 @@ new Vue({
 
       return `
         <div class="content">
-          <div class="name">#${mon["mon_id"]} ${mon["gender"] == 1 ? '<i class="fas fa-mars"></i>' : '<i class="fas fa-venus"></i>'}</div>
+          <div class="name"><strong>${mon["name"]}</strong> #${mon["mon_id"]} ${mon["gender"] == 1 ? '<i class="fas fa-mars"></i>' : '<i class="fas fa-venus"></i>'}</div>
           <div class="id"><i class="fa fa-fingerprint"></i> <span>${mon["encounter_id"]}</span></div>
           <div class="coords">
             <i class="fa fa-map-pin"></i>

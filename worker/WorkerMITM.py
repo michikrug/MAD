@@ -141,12 +141,14 @@ class WorkerMITM(MITMBase):
             pogo_topmost = self._communicator.isPogoTopmost()
 
         reached_raidtab = False
-        if start_result and self._wait_for_injection():
+        if start_result:
             logger.warning("startPogo: Starting pogo...")
             self._last_known_state["lastPogoRestart"] = cur_time
 
             # let's handle the login and stuff
             reached_raidtab = True
+
+        self._wait_pogo_start_delay()
 
         return reached_raidtab
 

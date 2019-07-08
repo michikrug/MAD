@@ -60,7 +60,8 @@ class WorkerQuests(MITMBase):
             logger.info("Starting Level Mode")
         else:
             # initial cleanup old quests
-            self.clear_thread_task = 2
+            if not self._init:
+                self.clear_thread_task = 2
 
     def _pre_work_loop(self):
         if self.clear_thread is not None:
@@ -69,6 +70,7 @@ class WorkerQuests(MITMBase):
             self._id), target=self._clear_thread)
         self.clear_thread.daemon = True
         self.clear_thread.start()
+        self._check_ggl_login()
 
         reached_main_menu = self._check_pogo_main_screen(10, True)
         if not reached_main_menu:
@@ -76,7 +78,7 @@ class WorkerQuests(MITMBase):
                 # TODO: put in loop, count up for a reboot ;)
                 raise InternalStopWorkerException
 
-        if not self._wait_for_injection():
+        if not self._wait_for_injection() or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
 
     def _health_check(self):
@@ -319,11 +321,13 @@ class WorkerQuests(MITMBase):
             if data_received is not None and data_received == LatestReceivedType.STOP:
                 self._handle_stop(timestamp)
         else:
-            logger.info('Currently in INIT Mode - no Stop processing')
+            logger.debug('Currently in INIT Mode - no Stop processing')
+            time.sleep(5)
         logger.debug("Releasing lock")
         self._work_mutex.release()
 
     def _start_pogo(self):
+        self._check_ggl_login()
         pogo_topmost = self._communicator.isPogoTopmost()
         if pogo_topmost:
             return True
@@ -344,12 +348,13 @@ class WorkerQuests(MITMBase):
                 "com.nianticlabs.pokemongo")
             time.sleep(1)
             pogo_topmost = self._communicator.isPogoTopmost()
-        reached_mainscreen = False
-        if start_result and self._wait_for_injection():
+
+        if start_result:
             logger.warning("startPogo: Started pogo successfully...")
             self._last_known_state["lastPogoRestart"] = cur_time
-            reached_mainscreen = self._check_pogo_main_screen(10, True)
-        return reached_mainscreen
+
+        self._wait_pogo_start_delay()
+        return start_result
 
     def _cleanup(self):
         if self.clear_thread is not None:
@@ -606,18 +611,19 @@ class WorkerQuests(MITMBase):
             if data_received == LatestReceivedType.GYM:
                 logger.info('Clicking GYM')
                 time.sleep(10)
-                if not self._checkPogoButton():
-                    self._checkPogoClose()
+                self._checkPogoClose()
                 time.sleep(1)
                 if not self._checkPogoButton():
                     self._checkPogoClose()
                 time.sleep(1)
                 self._turn_map(self._delay_add)
+                time.sleep(1)
             elif data_received == LatestReceivedType.MON:
                 time.sleep(1)
                 logger.info('Clicking MON')
                 time.sleep(.5)
                 self._turn_map(self._delay_add)
+                time.sleep(1)
             elif data_received == LatestReceivedType.UNDEFINED:
                 logger.info('Getting timeout - or other unknown error. Try again')
                 if not self._checkPogoButton():

@@ -7,10 +7,8 @@ from multiprocessing import Lock, Semaphore
 from typing import List, Optional
 
 import mysql
-from utils.s2Helper import S2Helper
 from bitstring import BitArray
 from mysql.connector.pooling import MySQLConnectionPool
-
 from utils.collections import Location
 from utils.logging import logger
 from utils.questGen import questtask
@@ -443,13 +441,13 @@ class DbWrapperBase(ABC):
         logger.debug('Creating hash db in database')
 
         query = (' Create table if not exists trshash ( ' +
-                 ' hashid MEDIUMINT NOT NULL AUTO_INCREMENT, ' +
-                 ' hash VARCHAR(255) NOT NULL, ' +
-                 ' type VARCHAR(10) NOT NULL, ' +
-                 ' id VARCHAR(255) NOT NULL, ' +
-                 ' count INT(10) NOT NULL DEFAULT 1, ' +
-                 ' modify DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, ' +
-                 ' PRIMARY KEY (hashid))')
+                 ' hashid MEDIUMINT NOT NULL AUTO_INCREMENT, '
+                 + ' hash VARCHAR(255) NOT NULL, '
+                 + ' type VARCHAR(10) NOT NULL, '
+                 + ' id VARCHAR(255) NOT NULL, '
+                 + ' count INT(10) NOT NULL DEFAULT 1, '
+                 + ' modify DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, '
+                 + ' PRIMARY KEY (hashid))')
         self.execute(query, commit=True)
 
         return True
@@ -463,18 +461,18 @@ class DbWrapperBase(ABC):
         logger.debug('Creating hash db in database')
 
         query = (' Create table if not exists trs_quest ( ' +
-                 ' GUID varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,' +
-                 ' quest_type tinyint(3) NOT NULL, ' +
-                 ' quest_timestamp int(11) NOT NULL,' +
-                 ' quest_stardust smallint(4) NOT NULL,' +
-                 ' quest_pokemon_id smallint(4) NOT NULL,' +
-                 ' quest_reward_type smallint(3) NOT NULL,' +
-                 ' quest_item_id smallint(3) NOT NULL,' +
-                 ' quest_item_amount tinyint(2) NOT NULL,' +
-                 ' quest_target tinyint(3) NOT NULL,' +
-                 ' quest_condition varchar(500), ' +
-                 ' PRIMARY KEY (GUID), ' +
-                 ' KEY quest_type (quest_type))')
+                 ' GUID varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,'
+                 + ' quest_type tinyint(3) NOT NULL, '
+                 + ' quest_timestamp int(11) NOT NULL,'
+                 + ' quest_stardust smallint(4) NOT NULL,'
+                 + ' quest_pokemon_id smallint(4) NOT NULL,'
+                 + ' quest_reward_type smallint(3) NOT NULL,'
+                 + ' quest_item_id smallint(3) NOT NULL,'
+                 + ' quest_item_amount tinyint(2) NOT NULL,'
+                 + ' quest_target tinyint(3) NOT NULL,'
+                 + ' quest_condition varchar(500), '
+                 + ' PRIMARY KEY (GUID), '
+                 + ' KEY quest_type (quest_type))')
         self.execute(query, commit=True)
 
         return True
@@ -598,9 +596,9 @@ class DbWrapperBase(ABC):
         _mon_list = ','.join(map(str, data))
         logger.debug('clearHashGyms: Read Raid Hashes with known Mons')
         if len(data) > 0:
-            query = ('DELETE FROM trshash ' +
-                     ' WHERE hashid NOT IN (' + _mon_list + ')' +
-                     ' AND type=\'raid\'')
+            query = ('DELETE FROM trshash '
+                     + ' WHERE hashid NOT IN (' + _mon_list + ')'
+                     + ' AND type=\'raid\'')
             self.execute(query, commit=True)
         logger.info('clearHashGyms: Deleted Raidhashes with unknown mons')
 
@@ -980,7 +978,7 @@ class DbWrapperBase(ABC):
             minutes = int(endminsec_split[0])
             seconds = int(endminsec_split[1])
             temp_date = current_time_of_day.replace(
-                    minute=minutes, second=seconds)
+                minute=minutes, second=seconds)
 
             spawn_duration_minutes = 60 if spawndef == 15 else 30
 
@@ -1249,7 +1247,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)
@@ -1267,7 +1265,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)

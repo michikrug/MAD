@@ -312,8 +312,8 @@ class MappingManager:
                             os.remove(routefile + '.calc')
                         with open(routefile + '.calc', 'a') as f:
                             for loc in coords:
-                                f.write(str(loc.lat) + ', '
-                                        + str(loc.lng) + '\n')
+                                f.write(str(loc.lat) + ', ' +
+                                        str(loc.lng) + '\n')
                     # gotta feed the route to routemanager... TODO: without recalc...
                     proc = thread_pool.apply_async(route_manager.recalc_route, args=(1, 99999999,
                                                                                      0, False))

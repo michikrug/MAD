@@ -909,8 +909,8 @@ class config(object):
 
         if this_area == None:
             return render_template('showmonsidpicker.html',
-                                   error_msg="No area (" + edit + " with mode: "
-                                   + type + ") found in mappings, add it first.",
+                                   error_msg="No area (" + edit + " with mode: " +
+                                   type + ") found in mappings, add it first.",
                                    header=header, title=title)
 
         title = "Mons ID Picker for " + edit
@@ -920,8 +920,8 @@ class config(object):
 
         if "settings" not in this_area:
             return render_template('showmonsidpicker.html',
-                                   error_msg="No settings key found for area "
-                                   + edit + "(" + type + "). Configure it first.",
+                                   error_msg="No settings key found for area " +
+                                   edit + "(" + type + "). Configure it first.",
                                    header=header, title=title)
 
         if request.method == 'POST':

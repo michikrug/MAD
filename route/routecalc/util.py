@@ -3,15 +3,15 @@ import numpy as np
 
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
 def sum_distmat(p, distmat):
     dist = 0
     num_location = p.shape[0]
-    for i in range(num_location-1):
-        dist += distmat[p[i]][p[i+1]]
-    dist += distmat[p[0]][p[num_location-1]]
+    for i in range(num_location - 1):
+        dist += distmat[p[i]][p[i + 1]]
+    dist += distmat[p[0]][p[num_location - 1]]
     return dist
 
 
@@ -59,8 +59,8 @@ def transpose(sol_new):
 
     # Insert data between [n1,n2) after n3
     tmplist = sol_new[n1:n2].copy()
-    sol_new[n1: n1+n3-n2+1] = sol_new[n2: n3+1].copy()
-    sol_new[n3-n2+1+n1: n3+1] = tmplist.copy()
+    sol_new[n1: n1 + n3 - n2 + 1] = sol_new[n2: n3 + 1].copy()
+    sol_new[n3 - n2 + 1 + n1: n3 + 1] = tmplist.copy()
     return sol_new
 
 

@@ -1,13 +1,13 @@
 import json
 import os
 import time
-from queue import Empty
-from multiprocessing import Lock, Event, Queue
+from multiprocessing import Event, Lock, Queue
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from queue import Empty
 from threading import Thread
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from db.dbWrapperBase import DbWrapperBase
 from geofence.geofenceHelper import GeofenceHelper
@@ -257,9 +257,9 @@ class MappingManager:
             geofence_included = Path(area["geofence_included"])
             if not geofence_included.is_file():
                 raise RuntimeError(
-                        "geofence_included for area '{}' is specified but file does not exist ('{}').".format(
-                                area["name"], geofence_included.resolve()
-                        )
+                    "geofence_included for area '{}' is specified but file does not exist ('{}').".format(
+                        area["name"], geofence_included.resolve()
+                    )
                 )
 
             geofence_excluded_raw_path = area.get("geofence_excluded", None)
@@ -267,42 +267,48 @@ class MappingManager:
                 geofence_excluded = Path(geofence_excluded_raw_path)
                 if not geofence_excluded.is_file():
                     raise RuntimeError(
-                            "geofence_excluded for area '{}' is specified but file does not exist ('{}').".format(
-                                    area["name"], geofence_excluded.resolve()
-                            )
+                        "geofence_excluded for area '{}' is specified but file does not exist ('{}').".format(
+                            area["name"], geofence_excluded.resolve()
+                        )
                     )
 
-            area_dict = {"mode":              area["mode"],
+            area_dict = {"mode": area["mode"],
                          "geofence_included": area["geofence_included"],
                          "geofence_excluded": area.get("geofence_excluded", None),
-                         "routecalc":         area["routecalc"]}
+                         "routecalc": area["routecalc"]}
             # also build a routemanager for each area...
 
             # grab coords
             # first check if init is false or raids_ocr is set as mode, if so, grab the coords from DB
             # coords = np.loadtxt(area["coords"], delimiter=',')
             geofence_helper = GeofenceHelper(
-                    area["geofence_included"], area.get("geofence_excluded", None))
+                area["geofence_included"], area.get("geofence_excluded", None))
             mode = area["mode"]
             # build routemanagers
             route_manager = RouteManagerFactory.get_routemanager(self.__db_wrapper, None,
-                                                                 mode_mapping.get(mode, {}).get("range", 0),
-                                                                 mode_mapping.get(mode, {}).get("max_count", 99999999),
+                                                                 mode_mapping.get(
+                                                                     mode, {}).get("range", 0),
+                                                                 mode_mapping.get(mode, {}).get(
+                                                                     "max_count", 99999999),
                                                                  area["geofence_included"],
-                                                                 area.get("geofence_excluded", None),
-                                                                 mode=mode, settings=area.get("settings", None),
+                                                                 area.get(
+                                                                     "geofence_excluded", None),
+                                                                 mode=mode, settings=area.get(
+                                                                     "settings", None),
                                                                  init=area.get("init", False),
                                                                  name=area.get("name", "unknown"),
                                                                  level=area.get("level", False),
                                                                  coords_spawns_known=area.get(
-                                                                         "coords_spawns_known", False),
+                                                                     "coords_spawns_known", False),
                                                                  routefile=area["routecalc"],
-                                                                 calctype=area.get("route_calc_algorithm", "optimized")
+                                                                 calctype=area.get(
+                                                                     "route_calc_algorithm", "optimized")
                                                                  )
 
             if mode not in ("iv_mitm", "idle"):
                 coords = self.__fetch_coords(mode, geofence_helper,
-                                             coords_spawns_known=area.get("coords_spawns_known", False),
+                                             coords_spawns_known=area.get(
+                                                 "coords_spawns_known", False),
                                              init=area.get("init", False),
                                              range_init=mode_mapping.get(area["mode"], {}).get("range_init", 630))
                 route_manager.add_coords_list(coords)
@@ -315,11 +321,11 @@ class MappingManager:
                     areas_procs[area["name"]] = proc
                 else:
                     logger.info(
-                            "Init mode enabled and more than 400 coords in init. Going row-based for {}", str(area.get("name", "unknown")))
+                        "Init mode enabled and more than 400 coords in init. Going row-based for {}", str(area.get("name", "unknown")))
                     # we are in init, let's write the init route to file to make it visible in madmin
                     if area["routecalc"] is not None:
                         routefile = os.path.join(
-                                self.__args.file_path, area["routecalc"])
+                            self.__args.file_path, area["routecalc"])
                         if os.path.isfile(routefile + '.calc'):
                             os.remove(routefile + '.calc')
                         with open(routefile + '.calc', 'a') as f:
@@ -374,7 +380,7 @@ class MappingManager:
                 while walker_settings < len(walker_arr):
                     if walker_arr[walker_settings]['walkername'] == walker:
                         device_dict["walker"] = walker_arr[walker_settings].get(
-                                'setup', [])
+                            'setup', [])
                         break
                     walker_settings += 1
             devices[device["origin"]] = device_dict
@@ -427,9 +433,9 @@ class MappingManager:
             area_dict['routecalc'] = area.get('routecalc', None)
             area_dict['mode'] = area['mode']
             area_dict['geofence_included'] = area.get(
-                    'geofence_included', None)
+                'geofence_included', None)
             area_dict['geofence_excluded'] = area.get(
-                    'geofence_excluded', None)
+                'geofence_excluded', None)
             area_dict['init'] = area.get('init', False)
             areas[area['name']] = area_dict
         return areas
@@ -501,7 +507,7 @@ class MappingManager:
                 # File has changed in the last refresh_time_sec seconds.
                 if time_diff_sec < refresh_time_sec:
                     logger.info(
-                            'Change found in {}. Updating device mappings.', filename)
+                        'Change found in {}. Updating device mappings.', filename)
                     self.update()
                 else:
                     logger.debug('No change found in {}.', filename)
@@ -510,4 +516,4 @@ class MappingManager:
                 break
             except Exception as e:
                 logger.exception(
-                        'Exception occurred while updating device mappings: {}.', e)
+                    'Exception occurred while updating device mappings: {}.', e)

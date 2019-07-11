@@ -6,11 +6,11 @@ from threading import Event, Thread
 from db.dbWrapperBase import DbWrapperBase
 from ocr.checkWeather import checkWeather
 from ocr.pogoWindows import PogoWindows
-from utils.MappingManager import MappingManager
 from utils.geo import get_distance_of_two_points_in_meters
 from utils.logging import logger
 from utils.madGlobals import (InternalStopWorkerException,
                               WebsocketWorkerRemovedException)
+from utils.MappingManager import MappingManager
 from utils.s2Helper import S2Helper
 
 from .WorkerBase import WorkerBase
@@ -33,7 +33,8 @@ class WorkerOCR(WorkerBase):
         if not self._mapping_manager.routemanager_present(self._routemanager_name) \
                 or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
-        routemanager_settings = self._mapping_manager.routemanager_get_settings(self._routemanager_name)
+        routemanager_settings = self._mapping_manager.routemanager_get_settings(
+            self._routemanager_name)
 
         # get the distance from our current position (last) to the next gym (cur)
         distance = get_distance_of_two_points_in_meters(float(self.last_location.lat),
@@ -46,8 +47,8 @@ class WorkerOCR(WorkerBase):
         speed = routemanager_settings.get("speed", 0)
         max_distance = routemanager_settings.get("max_distance", None)
         if (speed == 0 or
-                (max_distance and 0 < max_distance < distance)
-                or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
+                (max_distance and 0 < max_distance < distance) or
+                (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
             logger.debug("main: Teleporting...")
             self._communicator.setLocation(
                 self.current_location.lat, self.current_location.lng, 0)
@@ -119,7 +120,7 @@ class WorkerOCR(WorkerBase):
         logger.info(
             "main: Checking raidcount and copying raidscreen if raids present")
         count_of_raids = self._pogoWindowManager.read_amount_raid_circles(self.get_screenshot_path(), self._id,
-                                                                 self._communicator)
+                                                                          self._communicator)
         if count_of_raids == -1:
             logger.debug("Worker: Count present but no raid shown")
             logger.warning(
@@ -132,7 +133,7 @@ class WorkerOCR(WorkerBase):
                     "Worker: couldn't take screenshot after opening raidtab, lock released")
                 return
             count_of_raids = self._pogoWindowManager.read_amount_raid_circles(self.get_screenshot_path(), self._id,
-                                                                     self._communicator)
+                                                                              self._communicator)
         #    elif countOfRaids == 0:
         #        emptycount += 1
         #        if emptycount > 30:

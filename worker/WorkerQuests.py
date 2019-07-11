@@ -562,8 +562,8 @@ class WorkerQuests(MITMBase):
                 longitude: float = fort.get("longitude", 0.0)
                 if latitude == 0.0 or longitude == 0.0:
                     continue
-                elif (abs(self.current_location.lat - latitude) > 0.00003
-                      or abs(self.current_location.lng - longitude) > 0.00003):
+                elif (abs(self.current_location.lat - latitude) > 0.00003 or
+                      abs(self.current_location.lng - longitude) > 0.00003):
                     continue
 
                 fort_type: int = fort.get("type", 0)
@@ -653,8 +653,8 @@ class WorkerQuests(MITMBase):
                     self.clear_thread_task = 2
                     self._clear_quest_counter = 0
                 break
-            elif (data_received == FortSearchResultTypes.TIME or data_received
-                  == FortSearchResultTypes.OUT_OF_RANGE):
+            elif (data_received == FortSearchResultTypes.TIME or data_received ==
+                  FortSearchResultTypes.OUT_OF_RANGE):
                 logger.error('Softban - waiting...')
                 time.sleep(10)
                 self._stop_process_time = math.floor(time.time())

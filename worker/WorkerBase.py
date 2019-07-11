@@ -417,8 +417,8 @@ class WorkerBase(ABC):
         logger.debug("Updating .position file")
         if self.current_location is not None:
             with open(os.path.join(self._applicationArgs.file_path, self._id + '.position'), 'w') as outfile:
-                outfile.write(str(self.current_location.lat)
-                              + ", " + str(self.current_location.lng))
+                outfile.write(str(self.current_location.lat) +
+                              ", " + str(self.current_location.lng))
 
     async def update_scanned_location(self, latitude, longitude, timestamp, radius):
         try:
@@ -739,8 +739,8 @@ class WorkerBase(ABC):
             logger.debug(
                 "checkPogoFreeze: New und old Screenshoot are the same - no processing")
             self._lastScreenHashCount += 1
-            logger.debug("checkPogoFreeze: Same Screen Count: "
-                         + str(self._lastScreenHashCount))
+            logger.debug("checkPogoFreeze: Same Screen Count: " +
+                         str(self._lastScreenHashCount))
             if self._lastScreenHashCount >= 100:
                 self._lastScreenHashCount = 0
                 self._restart_pogo()

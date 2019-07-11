@@ -206,8 +206,7 @@ class WorkerConfigmode(object):
         logger.info('Waiting for pogo start: {} seconds', str(pogo_start_delay))
 
         while delay_count <= pogo_start_delay:
-            if not self._mapping_manager.routemanager_present(self._routemanager_name) \
-                    or self._stop_worker_event.is_set():
+            if self._stop_worker_event.is_set():
                 logger.error("Worker {} get killed while waiting for pogo start", str(self._id))
                 raise InternalStopWorkerException
             time.sleep(1)

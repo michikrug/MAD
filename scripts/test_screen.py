@@ -210,8 +210,8 @@ class testimage(object):
                 if x < width_ - width_ / 3:
                     cv2.circle(original, (x, y), r, (0, 255, 0), 4)
                     mainscreen += 1
-                    raidhash = original[y - r - 1:y
-                                        + r + 1, x - r - 1:x + r + 1]
+                    raidhash = original[y - r - 1:y +
+                                        r + 1, x - r - 1:x + r + 1]
                     cv2.imshow("output", np.hstack([raidhash]))
                     cv2.waitKey(0)
 
@@ -226,8 +226,8 @@ class testimage(object):
         gray = cv2.cvtColor(filename, cv2.COLOR_BGR2GRAY)
         height, width, _ = filename.shape
         _widthold = float(width)
-        print("lookForButton: Determined screenshot scale: "
-              + str(height) + " x " + str(width))
+        print("lookForButton: Determined screenshot scale: " +
+              str(height) + " x " + str(width))
 
         # resize for better line quality
         # gray = cv2.resize(gray, (0,0), fx=width*0.001, fy=width*0.001)
@@ -277,8 +277,8 @@ class testimage(object):
                     cv2.line(filename, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 5)
 
         if 1 < lineCount <= 6:
-            click_x = int(((width - _x2) + ((_x2 - _x1) / 2))
-                          / round(factor, 2))
+            click_x = int(((width - _x2) + ((_x2 - _x1) / 2)) /
+                          round(factor, 2))
             click_y = int(click_y)
             print('lookForButton: found Button - click on it')
             return cv2.circle(filename, (int(click_x), int(click_y)), 20, (0, 0, 255), -1)

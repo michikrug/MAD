@@ -598,9 +598,9 @@ class PogoWindows:
         if not close_raid:
             logger.debug(
                 "__internal_check_close_except_nearby_button: Raid is not to be closed...")
-            if (not os.path.isfile(filename)
-                    or self.__check_raid_line(filename, identifier, communicator)
-                    or self.__check_raid_line(filename, identifier, communicator, True)):
+            if (not os.path.isfile(filename) or
+                    self.__check_raid_line(filename, identifier, communicator) or
+                    self.__check_raid_line(filename, identifier, communicator, True)):
                 # file not found or raid tab present
                 logger.debug(
                     "__internal_check_close_except_nearby_button: Not checking for close button (X). Input wrong "

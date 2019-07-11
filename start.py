@@ -221,8 +221,8 @@ if __name__ == "__main__":
 
             logger.error(
                 "No mappings.json found - starting setup mode with madmin.")
-            logger.error("Open Madmin (ServerIP with Port "
-                         + str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
+            logger.error("Open Madmin (ServerIP with Port " +
+                         str(args.madmin_port) + ") - 'Mapping Editor' and restart.")
             generate_mappingjson()
         else:
             if args.only_routes:

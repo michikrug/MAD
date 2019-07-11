@@ -427,10 +427,10 @@ class RouteManagerBase(ABC):
         # if that is not the case, simply increase the index in route and return the location on route
 
         # determine whether we move to the next location or the prio queue top's item
-        if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False)
-                                                              or self.starve_route) and
-                                                             self._prio_queue and len(self._prio_queue) > 0
-                                                             and self._prio_queue[0][0] < time.time())):
+        if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False) or
+                                                              self.starve_route) and
+                                                             self._prio_queue and len(self._prio_queue) > 0 and
+                                                             self._prio_queue[0][0] < time.time())):
             logger.debug("{}: Priority event", str(self.name))
             next_stop = heapq.heappop(self._prio_queue)[1]
             next_lat = next_stop.lat

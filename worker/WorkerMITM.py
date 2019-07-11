@@ -44,9 +44,9 @@ class WorkerMITM(MITMBase):
         logger.debug('Moving {} meters to the next position', round(distance, 2))
         speed = routemanager_settings.get("speed", 0)
         max_distance = routemanager_settings.get("max_distance", None)
-        if (speed == 0
-                or (max_distance and 0 < max_distance < distance)
-                or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
+        if (speed == 0 or
+                (max_distance and 0 < max_distance < distance) or
+                (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
             logger.debug("main: Teleporting...")
             self._transporttype = 0
             self._communicator.setLocation(

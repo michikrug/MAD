@@ -278,8 +278,8 @@ class WebsocketServer(object):
 
                 devicesettings = self.__mapping_manager.get_devicesettings_of(origin)
                 logger.debug("Checking walker_area_index length")
-                if (devicesettings.get("walker_area_index", None) is None
-                        or devicesettings['walker_area_index'] >= len(walker_area_array)):
+                if (devicesettings.get("walker_area_index", None) is None or
+                        devicesettings['walker_area_index'] >= len(walker_area_array)):
                     # check if array is smaller than expected - f.e. on the fly changes in mappings.json
                     self.__mapping_manager.set_devicesetting_value_of(
                         origin, 'walker_area_index', 0)
@@ -454,8 +454,8 @@ class WebsocketServer(object):
         :return:
         """
         async with self.__users_mutex:
-            if worker_id in self.__current_users.keys() and (worker_instance is None
-                                                             or self.__current_users[worker_id][1] == worker_instance):
+            if worker_id in self.__current_users.keys() and (worker_instance is None or
+                                                             self.__current_users[worker_id][1] == worker_instance):
                 if self.__current_users[worker_id][2].open:
                     logger.info("Calling close for {}...", str(worker_id))
                     await self.__current_users[worker_id][2].close()

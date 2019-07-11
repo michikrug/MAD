@@ -46,9 +46,9 @@ class WorkerOCR(WorkerBase):
         logger.debug('Moving {} meters to the next position', round(distance, 2))
         speed = routemanager_settings.get("speed", 0)
         max_distance = routemanager_settings.get("max_distance", None)
-        if (speed == 0
-                or (max_distance and 0 < max_distance < distance)
-                or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
+        if (speed == 0 or
+                (max_distance and 0 < max_distance < distance) or
+                (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
             logger.debug("main: Teleporting...")
             self._communicator.setLocation(
                 self.current_location.lat, self.current_location.lng, 0)
@@ -119,8 +119,8 @@ class WorkerOCR(WorkerBase):
         # curTime = time.time()
         logger.info(
             "main: Checking raidcount and copying raidscreen if raids present")
-        count_of_raids = self._pogoWindowManager.readRaidCircles(self.get_screenshot_path(), self._id,
-                                                                 self._communicator)
+        count_of_raids = self._pogoWindowManager.read_amount_raid_circles(self.get_screenshot_path(), self._id,
+                                                                          self._communicator)
         if count_of_raids == -1:
             logger.debug("Worker: Count present but no raid shown")
             logger.warning(
@@ -132,8 +132,8 @@ class WorkerOCR(WorkerBase):
                 logger.debug(
                     "Worker: couldn't take screenshot after opening raidtab, lock released")
                 return
-            count_of_raids = self._pogoWindowManager.readRaidCircles(self.get_screenshot_path(), self._id,
-                                                                     self._communicator)
+            count_of_raids = self._pogoWindowManager.read_amount_raid_circles(self.get_screenshot_path(), self._id,
+                                                                              self._communicator)
         #    elif countOfRaids == 0:
         #        emptycount += 1
         #        if emptycount > 30:

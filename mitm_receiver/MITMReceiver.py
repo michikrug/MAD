@@ -1,5 +1,4 @@
 import json
-import math
 import sys
 import time
 from multiprocessing import JoinableQueue, Process
@@ -41,8 +40,8 @@ class EndpointAction(object):
                 logger.warning("Missing Origin header in request")
                 self.response = Response(status=500, headers={})
                 abort = True
-            elif (self.mapping_manager.get_all_devicemappings().keys() is not None
-                  and (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
+            elif (self.mapping_manager.get_all_devicemappings().keys() is not None and
+                  (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
                 logger.warning(
                     "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
                 self.response = Response(status=403, headers={})
@@ -65,7 +64,7 @@ class EndpointAction(object):
                 response_payload = self.action(origin, request_data)
                 if response_payload is None:
                     response_payload = ""
-                self.response = Response(status=200, headers={})
+                self.response = Response(status=200, headers={"Content-Type": "application/json"})
                 self.response.data = response_payload
             except Exception as e:  # TODO: catch exact exception
                 logger.warning(
@@ -120,7 +119,7 @@ class MITMReceiver(Process):
             self.__listen_port)), self.app.wsgi_app, log=LogLevelChanger)
         try:
             httpsrv.serve_forever()
-        except KeyboardInterrupt as e:
+        except KeyboardInterrupt:
             httpsrv.close()
             logger.info("Received STOP signal in MITMReceiver")
 
@@ -145,7 +144,7 @@ class MITMReceiver(Process):
             logger.info("Worker {} is injected now", str(origin))
             self.__mitm_mapper.set_injection_status(origin)
         # extract timestamp from data
-        timestamp: float = data.get("timestamp", int(math.floor(time.time())))
+        timestamp: float = data.get("timestamp", int(time.time()))
         self.__mitm_mapper.update_latest(
             origin, timestamp_received_raw=timestamp, timestamp_received_receiver=time.time(), key=type,
             values_dict=data)

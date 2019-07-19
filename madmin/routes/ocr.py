@@ -1,13 +1,15 @@
-import os
+import datetime
 import glob
 import json
+import os
 import re
-import datetime
-from flask import (jsonify, request, redirect, render_template)
-from utils.functions import (creation_date)
-from utils.language import i8ln, open_json_file
-from madmin.functions import auth_required, getBasePath, decodeHashJson, encodeHashJson, getAllHash
 from shutil import copyfile
+
+from flask import jsonify, redirect, render_template, request
+from madmin.functions import (auth_required, decodeHashJson, encodeHashJson,
+                              getAllHash, getBasePath)
+from utils.functions import creation_date
+from utils.language import i8ln, open_json_file
 
 
 class ocr(object):
@@ -67,7 +69,7 @@ class ocr(object):
         newJsonString = encodeHashJson(id, lvl, mon)
         self._db.delete_hash_table(str(hash), 'raid', 'in', 'hash')
         self._db.insert_hash(hash, 'raid', newJsonString,
-                               '999', unique_hash="madmin")
+                             '999', unique_hash="madmin")
 
         return redirect(getBasePath(request) + "/raids", code=302)
 
@@ -81,7 +83,7 @@ class ocr(object):
         newJsonString = encodeHashJson(id, lvl, mon)
         self._db.delete_hash_table(str(hash), 'raid', 'in', 'hash')
         self._db.insert_hash(hash, 'raid', newJsonString,
-                               '999', unique_hash="madmin")
+                             '999', unique_hash="madmin")
 
         return redirect(getBasePath(request) + "/raids", code=302)
 
@@ -211,7 +213,8 @@ class ocr(object):
                 gyms.append(gymJson)
 
             else:
-                self.logger.debug("File: " + str(file) + " not found in Database")
+                self.logger.debug("File: " + str(file) +
+                                  " not found in Database")
                 os.remove(str(file))
                 continue
 
@@ -290,7 +293,8 @@ class ocr(object):
                              'mon': mon, 'type': type, 'eggPic': eggPic, 'monPic': monPic, 'monname': monName})
                 raids.append(raidJson)
             else:
-                self._logger.debug("File: " + str(file) + " not found in Database")
+                self._logger.debug("File: " + str(file) +
+                                   " not found in Database")
                 os.remove(str(file))
                 continue
 

@@ -7,10 +7,8 @@ from multiprocessing import Lock, Semaphore
 from typing import List, Optional
 
 import mysql
-from utils.s2Helper import S2Helper
 from bitstring import BitArray
 from mysql.connector.pooling import MySQLConnectionPool
-
 from utils.collections import Location
 from utils.logging import logger
 from utils.questGen import questtask
@@ -941,7 +939,8 @@ class DbWrapperBase(ABC):
 
             query_where = query_where + oquery_where
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
 
             oquery_where = (
                 " AND last_scanned >= '{}' "
@@ -1232,7 +1231,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)
@@ -1250,7 +1249,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)
@@ -1386,13 +1385,15 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query = (
             "SELECT  %s, worker, sum(mon) as Mon, sum(mon_iv) as MonIV, sum(raid) as Raids, sum(quest) as Quests FROM "
             "trs_stats_detect %s %s group by worker %s"
             " order by timestamp_scan" %
-                (str(query_date), str(query_where), str(worker_where), str(grouped_query))
+                (str(query_date), str(query_where), str(
+                    worker_where), str(grouped_query))
         )
         res = self.execute(query)
 
@@ -1410,7 +1411,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' and (period) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' and (period) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
@@ -1440,7 +1442,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
 
@@ -1467,7 +1470,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
@@ -1505,7 +1509,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
 
@@ -1528,7 +1533,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
@@ -1593,7 +1599,8 @@ class DbWrapperBase(ABC):
 
             lat, lng, alt = S2Helper.get_position_from_cell(cell_id)
 
-            cells.append((cell_id, 15, lat, lng, cell["current_timestamp"] / 1000))
+            cells.append(
+                (cell_id, 15, lat, lng, cell["current_timestamp"] / 1000))
 
         self.executemany(query, cells, commit=True)
 
@@ -1618,7 +1625,8 @@ class DbWrapperBase(ABC):
             query_where = query_where + oquery_where
 
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
             oquery_where = " AND updated >= '{}' ".format(tsdt)
 
             query_where = query_where + oquery_where
@@ -1647,5 +1655,3 @@ class DbWrapperBase(ABC):
         res = self.execute(query)
 
         return res
-
-

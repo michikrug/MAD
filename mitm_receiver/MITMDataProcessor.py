@@ -1,5 +1,5 @@
-from multiprocessing import Queue, Process
 from datetime import datetime
+from multiprocessing import Process, Queue
 
 from db.dbWrapperBase import DbWrapperBase
 from mitm_receiver.MitmMapper import MitmMapper
@@ -38,7 +38,8 @@ class MitmDataProcessor(Process):
                 self.process_data(item[0], item[1], item[2])
                 self.__queue.task_done()
             except KeyboardInterrupt as e:
-                logger.info("MITMDataProcessor received keyboard interrupt, stopping")
+                logger.info(
+                    "MITMDataProcessor received keyboard interrupt, stopping")
                 break
 
     def get_queue_items(self):
@@ -73,7 +74,8 @@ class MitmDataProcessor(Process):
 
                 self.__db_wrapper.submit_pokestops_map_proto(
                     origin, data["payload"])
-                self.__db_wrapper.submit_gyms_map_proto(origin, data["payload"])
+                self.__db_wrapper.submit_gyms_map_proto(
+                    origin, data["payload"])
                 self.__db_wrapper.submit_raids_map_proto(
                     origin, data["payload"], self.__mitm_mapper)
 
@@ -91,13 +93,15 @@ class MitmDataProcessor(Process):
                         origin), str(received_timestamp))
                     self.__db_wrapper.submit_mon_iv(
                         origin, received_timestamp, data["payload"], self.__mitm_mapper)
-                    logger.debug2("Done processing encounter of {}".format(origin))
+                    logger.debug2(
+                        "Done processing encounter of {}".format(origin))
                 else:
                     logger.debug(
                         'Playerlevel lower than 30 - not processing encounter Data')
             elif type == 101:
                 logger.debug2("Processing proto 101 of {}".format(origin))
-                self.__db_wrapper.submit_quest_proto(origin, data["payload"], self.__mitm_mapper)
+                self.__db_wrapper.submit_quest_proto(
+                    origin, data["payload"], self.__mitm_mapper)
                 logger.debug2("Done processing proto 101 of {}".format(origin))
             elif type == 104:
                 logger.debug2("Processing proto 104 of {}".format(origin))
@@ -106,5 +110,6 @@ class MitmDataProcessor(Process):
                 logger.debug2("Done processing proto 104 of {}".format(origin))
             elif type == 4:
                 logger.debug2("Processing proto 4 of {}".format(origin))
-                self.__mitm_mapper.generate_player_stats(origin, data["payload"])
+                self.__mitm_mapper.generate_player_stats(
+                    origin, data["payload"])
                 logger.debug2("Done processing proto 4 of {}".format(origin))

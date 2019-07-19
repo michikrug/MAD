@@ -7,7 +7,6 @@ from multiprocessing.managers import SyncManager
 from typing import List, Optional
 
 import requests
-
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.gamemechanicutil import gen_despawn_timestamp
@@ -271,7 +270,7 @@ class RmWrapper(DbWrapperBase):
             self.execute(query, vals, commit=True)
 
         logger.debug("[Crop: {} ({})] submit_raid: Submit finished",
-                    str(raid_no), str(unique_hash))
+                     str(raid_no), str(unique_hash))
         self.refresh_times(gym, raid_no, capture_time)
 
         logger.debug("RmWrapper::submit_raid done")
@@ -377,7 +376,7 @@ class RmWrapper(DbWrapperBase):
                 return True
             else:
                 logger.debug("[Crop: {} ({})] raid_exist: Egg is new",
-                            str(raid_no), str(unique_hash))
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
         else:
@@ -407,7 +406,7 @@ class RmWrapper(DbWrapperBase):
                 return True
             else:
                 logger.debug("[Crop: {} ({})] raid_exist: Mon is new",
-                            str(raid_no), str(unique_hash))
+                             str(raid_no), str(unique_hash))
                 logger.debug("RmWrapper::raid_exist done")
                 return False
 
@@ -659,7 +658,8 @@ class RmWrapper(DbWrapperBase):
         if wild_pokemon is None:
             return
 
-        logger.debug("Updating IV sent by {} for encounter at {}".format(str(origin), str(timestamp)))
+        logger.debug("Updating IV sent by {} for encounter at {}".format(
+            str(origin), str(timestamp)))
 
         now = datetime.utcfromtimestamp(
             time.time()).strftime('%Y-%m-%d %H:%M:%S')
@@ -690,7 +690,8 @@ class RmWrapper(DbWrapperBase):
                          str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
 
         capture_probability = encounter_proto.get("capture_probability")
-        capture_probability_list = capture_probability.get("capture_probability_list")
+        capture_probability_list = capture_probability.get(
+            "capture_probability_list")
         if capture_probability_list is not None:
             capture_probability_list = capture_probability_list.replace(
                 "[", "").replace("]", "").split(",")
@@ -1043,7 +1044,8 @@ class RmWrapper(DbWrapperBase):
                     latitude), str(longitude))
                 continue
 
-            next_to_encounter.append((pokemon_id, Location(latitude, longitude), encounter_id))
+            next_to_encounter.append(
+                (pokemon_id, Location(latitude, longitude), encounter_id))
 
         # now filter by the order of eligible_mon_ids
         to_be_encountered = []
@@ -1096,7 +1098,8 @@ class RmWrapper(DbWrapperBase):
         active_fort_modifier = None
         if len(stop_data['active_fort_modifier']) > 0:
             active_fort_modifier = stop_data['active_fort_modifier'][0]
-            lure = datetime.utcfromtimestamp(30 * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
+            lure = datetime.utcfromtimestamp(
+                30 * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
 
         return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now, active_fort_modifier
 
@@ -1210,7 +1213,8 @@ class RmWrapper(DbWrapperBase):
 
             query_where = query_where + oquery_where
         elif timestamp is not None:
-            oquery_where = " AND trs_quest.quest_timestamp >= {}".format(timestamp)
+            oquery_where = " AND trs_quest.quest_timestamp >= {}".format(
+                timestamp)
             query_where = query_where + oquery_where
 
         res = self.execute(query + query_where)
@@ -1239,7 +1243,8 @@ class RmWrapper(DbWrapperBase):
             "WHERE DATEDIFF(lure_expiration, '1970-01-01 00:00:00') > 0 AND last_updated >= %s"
         )
 
-        tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        tsdt = datetime.utcfromtimestamp(
+            timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self.execute(query, (tsdt, ))
 
         ret = []
@@ -1578,7 +1583,8 @@ class RmWrapper(DbWrapperBase):
 
         # there's no old rectangle so check for a timestamp to send only updated stuff
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
 
             # TODO ish: until we don't show any other information like raids
             #          we can use last_modified, since that will give us actual
@@ -1642,7 +1648,8 @@ class RmWrapper(DbWrapperBase):
     def get_mons_in_rectangle(self, neLat, neLon, swLat, swLon, oNeLat=None, oNeLon=None, oSwLat=None, oSwLon=None, timestamp=None):
         mons = []
 
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, "
@@ -1669,7 +1676,8 @@ class RmWrapper(DbWrapperBase):
 
         # there's no old rectangle so check for a timestamp to send only updated stuff
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
 
             oquery_where = " AND last_modified >= '{}' ".format(tsdt)
 
@@ -1721,4 +1729,3 @@ class RmWrapper(DbWrapperBase):
         res = self.execute(query)
 
         return res
-

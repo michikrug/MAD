@@ -1,15 +1,15 @@
 import time
-from queue import Empty
 from multiprocessing import Lock, Queue
 from multiprocessing.managers import SyncManager
-from threading import Thread, Event
+from queue import Empty
+from threading import Event, Thread
 from typing import Dict
 
 from db.dbWrapperBase import DbWrapperBase
-from utils.MappingManager import MappingManager
+from mitm_receiver.PlayerStats import PlayerStats
 from utils.collections import Location
 from utils.logging import logger
-from mitm_receiver.PlayerStats import PlayerStats
+from utils.MappingManager import MappingManager
 from utils.walkerArgs import parseArgs
 
 args = parseArgs()
@@ -36,7 +36,8 @@ class MitmMapper(object):
         if self.__mapping_manager is not None:
             for origin in self.__mapping_manager.get_all_devicemappings().keys():
                 self.__mapping[origin] = {}
-                self.__playerstats[origin] = PlayerStats(origin, self.__application_args, self.__db_wrapper, self)
+                self.__playerstats[origin] = PlayerStats(
+                    origin, self.__application_args, self.__db_wrapper, self)
                 self.__playerstats[origin].open_player_stats()
         self.__playerstats_db_update_consumer.daemon = True
         self.__playerstats_db_update_consumer.start()
@@ -44,7 +45,8 @@ class MitmMapper(object):
     def add_stats_to_process(self, client_id, stats, last_processed_timestamp):
         if self.__application_args.game_stats:
             with self.__playerstats_db_update_mutex:
-                self.__playerstats_db_update_queue.put((client_id, stats, last_processed_timestamp))
+                self.__playerstats_db_update_queue.put(
+                    (client_id, stats, last_processed_timestamp))
 
     def __internal_playerstats_db_update_consumer(self):
         try:
@@ -57,10 +59,13 @@ class MitmMapper(object):
                     continue
                 if next_item is not None:
                     client_id, stats, last_processed_timestamp = next_item
-                    logger.info("Running stats processing on {}".format(str(client_id)))
-                    self.__process_stats(stats, client_id, last_processed_timestamp)
+                    logger.info(
+                        "Running stats processing on {}".format(str(client_id)))
+                    self.__process_stats(
+                        stats, client_id, last_processed_timestamp)
         except Exception as e:
-            logger.error("Playerstats consumer stopping because of {}".format(str(e)))
+            logger.error(
+                "Playerstats consumer stopping because of {}".format(str(e)))
         logger.info("Shutting down Playerstats update consumer")
 
     def __process_stats(self, stats, client_id: int, last_processed_timestamp: float):
@@ -68,16 +73,22 @@ class MitmMapper(object):
         data_send_stats = []
         data_send_location = []
 
-        data_send_stats.append(PlayerStats.stats_complete_parser(client_id, stats, last_processed_timestamp))
-        data_send_location.append(PlayerStats.stats_location_parser(client_id, stats, last_processed_timestamp))
+        data_send_stats.append(PlayerStats.stats_complete_parser(
+            client_id, stats, last_processed_timestamp))
+        data_send_location.append(PlayerStats.stats_location_parser(
+            client_id, stats, last_processed_timestamp))
 
         self.__db_wrapper.submit_stats_complete(data_send_stats)
         self.__db_wrapper.submit_stats_locations(data_send_location)
         if self.__application_args.game_stats_raw:
-            data_send_location_raw = PlayerStats.stats_location_raw_parser(client_id, stats, last_processed_timestamp)
-            data_send_detection_raw = PlayerStats.stats_detection_raw_parser(client_id, stats, last_processed_timestamp)
-            self.__db_wrapper.submit_stats_locations_raw(data_send_location_raw)
-            self.__db_wrapper.submit_stats_detections_raw(data_send_detection_raw)
+            data_send_location_raw = PlayerStats.stats_location_raw_parser(
+                client_id, stats, last_processed_timestamp)
+            data_send_detection_raw = PlayerStats.stats_detection_raw_parser(
+                client_id, stats, last_processed_timestamp)
+            self.__db_wrapper.submit_stats_locations_raw(
+                data_send_location_raw)
+            self.__db_wrapper.submit_stats_detections_raw(
+                data_send_detection_raw)
         self.__db_wrapper.cleanup_statistics()
 
     def shutdown(self):
@@ -87,14 +98,16 @@ class MitmMapper(object):
         # self.__playerstats_db_update_queue.join()
 
     def get_mon_ids_iv(self, origin):
-        devicemapping_of_origin = self.__mapping_manager.get_devicemappings_of(origin)
+        devicemapping_of_origin = self.__mapping_manager.get_devicemappings_of(
+            origin)
         if devicemapping_of_origin is None:
             return []
         else:
             return devicemapping_of_origin.get("mon_ids_iv", [])
 
     def request_latest(self, origin, key=None):
-        logger.debug("Request latest called with origin {}".format(str(origin)))
+        logger.debug(
+            "Request latest called with origin {}".format(str(origin)))
         with self.__mapping_mutex:
             result = None
             retrieved = self.__mapping.get(origin, None)
@@ -119,7 +132,8 @@ class MitmMapper(object):
             timestamp_received_receiver = time.time()
 
         updated = False
-        logger.debug3("Trying to acquire lock and update proto {} received by {}".format(origin, key))
+        logger.debug3(
+            "Trying to acquire lock and update proto {} received by {}".format(origin, key))
         with self.__mapping_mutex:
             if origin in self.__mapping.keys():
                 logger.debug("Updating timestamp of {} with method {} to {}", str(
@@ -170,7 +184,8 @@ class MitmMapper(object):
 
     def collect_mon_iv_stats(self, origin: str, encounter_id: str, shiny: int):
         if self.__playerstats.get(origin, None) is not None:
-            self.__playerstats.get(origin).stats_collect_mon_iv(encounter_id, shiny)
+            self.__playerstats.get(origin).stats_collect_mon_iv(
+                encounter_id, shiny)
 
     def collect_quest_stats(self, origin: str, stop_id: str):
         if self.__playerstats.get(origin, None) is not None:

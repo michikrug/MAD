@@ -1,6 +1,6 @@
+import logging
 import os
 import sys
-import logging
 
 from loguru import logger
 
@@ -108,7 +108,8 @@ class LogLevelChanger:
 # this is being used to intercept standard python logging to loguru
 class InterceptHandler(logging.Handler):
     def emit(self, record):
-        logger.opt(depth=6, exception=record.exc_info).log("DEBUG5", record.getMessage())
+        logger.opt(depth=6, exception=record.exc_info).log(
+            "DEBUG5", record.getMessage())
 
 
 def debug2(message, *args, **kwargs):

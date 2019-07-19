@@ -2,10 +2,10 @@ import os
 import sys
 from threading import Thread
 
-from db.dbWrapperBase import DbWrapperBase
 from db.DbFactory import DbFactory
-from utils.MappingManager import MappingManagerManager, MappingManager
+from db.dbWrapperBase import DbWrapperBase
 from utils.logging import initLogging, logger
+from utils.MappingManager import MappingManager, MappingManagerManager
 from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
 from websocket.WebsocketServer import WebsocketServer
@@ -59,9 +59,11 @@ if __name__ == "__main__":
     mapping_manager_manager = MappingManagerManager()
     mapping_manager_manager.start()
     mapping_manager_stop_event = mapping_manager_manager.Event()
-    mapping_manager: MappingManager = mapping_manager_manager.MappingManager(db_wrapper, args, True)
+    mapping_manager: MappingManager = mapping_manager_manager.MappingManager(
+        db_wrapper, args, True)
 
-    ws_server = WebsocketServer(args, None, db_wrapper, mapping_manager, None, True)
+    ws_server = WebsocketServer(
+        args, None, db_wrapper, mapping_manager, None, True)
     t_ws = Thread(name='scanner', target=ws_server.start_server)
     t_ws.daemon = False
     t_ws.start()

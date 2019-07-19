@@ -2,8 +2,9 @@ import os
 import sys
 import time
 
-from utils.logging import logger
 from utils.functions import pngtojpg
+from utils.logging import logger
+
 log = logger
 
 
@@ -73,7 +74,8 @@ class ADBConnect(object):
                 with open(os.path.join(self._args.temp_path, 'screenshot_%s.png' % str(origin)), "wb") as fp:
                     fp.write(result)
                 if extenstion == "jpg":
-                    pngtojpg(os.path.join(self._args.temp_path, 'screenshot_%s.png' % str(origin)))
+                    pngtojpg(os.path.join(self._args.temp_path,
+                                          'screenshot_%s.png' % str(origin)))
                 return True
         except Exception as e:
             logger.exception(

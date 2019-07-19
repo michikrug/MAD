@@ -1,12 +1,15 @@
 import datetime
 import json
 import time
-from flask import (jsonify, render_template, request)
+
+from flask import jsonify, render_template, request
 from madmin.functions import auth_required
-from utils.language import i8ln
-from utils.gamemechanicutil import calculate_mon_level, calculate_iv, get_raid_boss_cp, form_mapper
+from utils.gamemechanicutil import (calculate_iv, calculate_mon_level,
+                                    form_mapper, get_raid_boss_cp)
 from utils.geo import get_distance_of_two_points_in_meters
+from utils.language import i8ln
 from utils.logging import logger
+
 
 class statistics(object):
     def __init__(self, db, args, app):
@@ -25,7 +28,8 @@ class statistics(object):
             ("/statistics_mon", self.statistics_mon),
             ("/get_game_stats", self.game_stats),
             ("/get_game_stats_mon", self.game_stats_mon),
-            ("/statistics_detection_worker_data", self.statistics_detection_worker_data),
+            ("/statistics_detection_worker_data",
+             self.statistics_detection_worker_data),
             ("/statistics_detection_worker", self.statistics_detection_worker),
             ("/status", self.status),
             ("/get_status", self.get_status)
@@ -140,7 +144,7 @@ class statistics(object):
                 text = 'Instinct'
             gym.append({'label': text, 'data': dat[1], 'color': color})
 
-        stats = {'gym': gym,  'detection_empty': detection_empty, 'quest': quest, 'stop': stop, 'usage': usage,
+        stats = {'gym': gym, 'detection_empty': detection_empty, 'quest': quest, 'stop': stop, 'usage': usage,
                  'location_info': location_info, 'detection': detection}
         return jsonify(stats)
 
@@ -171,7 +175,7 @@ class statistics(object):
 
         spawn = {'iv': iv, 'noniv': noniv, 'sum': sumg}
 
-        #shiny hour
+        # shiny hour
 
         shiny_hour_temp = {}
         shiny_hour_calc = {}
@@ -182,13 +186,13 @@ class statistics(object):
                 shiny_hour_temp[dat[1]] = dat[0]
 
         for dat in shiny_hour_temp:
-            if shiny_hour_temp[dat] not in shiny_hour_calc: shiny_hour_calc[shiny_hour_temp[dat]] = 0
+            if shiny_hour_temp[dat] not in shiny_hour_calc:
+                shiny_hour_calc[shiny_hour_temp[dat]] = 0
             shiny_hour_calc[shiny_hour_temp[dat]] += 1
 
         for dat in sorted(shiny_hour_calc):
             sht = ([self.utc2local(dat * 60 * 60) * 1000, shiny_hour_calc[dat]])
             shiny_hour.append(sht)
-
 
         # good_spawns avg
         good_spawns = []
@@ -215,14 +219,17 @@ class statistics(object):
         for dat in data:
             form_suffix = "%02d" % form_mapper(dat[2], dat[5])
             mon = "%03d" % dat[2]
-            monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
+            monPic = 'asset/pokemon_icons/pokemon_icon_' + \
+                mon + '_' + form_suffix + '_shiny.png'
             monName_raw = (get_raid_boss_cp(dat[2]))
             monName = i8ln(monName_raw['name'])
             ratio = round(dat[1] * 100 / dat[0], 5)
-            if dat[3] not in shiny_worker: shiny_worker[dat[3]] = 0
+            if dat[3] not in shiny_worker:
+                shiny_worker[dat[3]] = 0
             shiny_worker[dat[3]] += dat[1]
 
-            if dat[2] not in shiny_avg: shiny_avg[dat[2]] = {}
+            if dat[2] not in shiny_avg:
+                shiny_avg[dat[2]] = {}
             if dat[5] not in shiny_avg[dat[2]]:
                 shiny_avg[dat[2]][dat[5]] = {}
                 shiny_avg[dat[2]][dat[5]]['total_shiny'] = []
@@ -240,13 +247,14 @@ class statistics(object):
 
                 form_suffix = "%02d" % form_mapper(dat, form_dat)
                 mon = "%03d" % dat
-                monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
+                monPic = 'asset/pokemon_icons/pokemon_icon_' + \
+                    mon + '_' + form_suffix + '_shiny.png'
                 monName_raw = (get_raid_boss_cp(dat))
                 monName = i8ln(monName_raw['name'])
 
                 shiny_amount = sum(shiny_avg[dat][form_dat]['total_shiny'])
-                shiny_amount_avg = round(sum(shiny_avg[dat][form_dat]['total_nonshiny']) / \
-                                   len(shiny_avg[dat][form_dat]['total_nonshiny']), 0)
+                shiny_amount_avg = round(sum(shiny_avg[dat][form_dat]['total_nonshiny']) /
+                                         len(shiny_avg[dat][form_dat]['total_nonshiny']), 0)
                 shiny_avg_click = round(shiny_amount_avg / shiny_amount, 0)
 
                 shiny_stats_avg.append({'name': monName, 'img': monPic, 'amount': shiny_amount,
@@ -254,7 +262,8 @@ class statistics(object):
 
         shiny_stats_worker = []
         for dat in shiny_worker:
-            shiny_stats_worker.append({'sum': shiny_worker[dat], 'worker': dat})
+            shiny_stats_worker.append(
+                {'sum': shiny_worker[dat], 'worker': dat})
 
         stats = {'spawn': spawn, 'good_spawns': good_spawns, 'shiny': shiny_stats, 'shiny_worker': shiny_stats_worker,
                  'shiny_hour': shiny_hour, 'shiny_stats_avg': shiny_stats_avg}
@@ -278,7 +287,8 @@ class statistics(object):
         quest = []
         usage = []
 
-        data = self._db.statistics_get_detection_count(minutes=minutes, worker=worker)
+        data = self._db.statistics_get_detection_count(
+            minutes=minutes, worker=worker)
         for dat in data:
             mon.append([dat[0] * 1000, int(dat[2])])
             mon_iv.append([dat[0] * 1000, int(dat[3])])
@@ -293,9 +303,11 @@ class statistics(object):
         # locations avg
         locations_avg = []
 
-        data = self._db.statistics_get_avg_data_time(minutes=minutes, worker=worker)
+        data = self._db.statistics_get_avg_data_time(
+            minutes=minutes, worker=worker)
         for dat in data:
-            dtime = datetime.datetime.fromtimestamp(dat[0]).strftime(self._datetimeformat)
+            dtime = datetime.datetime.fromtimestamp(
+                dat[0]).strftime(self._datetimeformat)
             locations_avg.append({'dtime': dtime, 'ok_locations': dat[3], 'avg_datareceive': float(dat[4]),
                                   'transporttype': dat[1], 'type': dat[5]})
 
@@ -304,7 +316,8 @@ class statistics(object):
         nok = []
         sumloc = []
         locations = []
-        data = self._db.statistics_get_locations(minutes=minutes, worker=worker)
+        data = self._db.statistics_get_locations(
+            minutes=minutes, worker=worker)
         for dat in data:
             ok.append([dat[0] * 1000, int(dat[3])])
             nok.append([dat[0] * 1000, int(dat[4])])
@@ -316,7 +329,8 @@ class statistics(object):
 
         # dataratio
         loctionratio = []
-        data = self._db.statistics_get_locations_dataratio(minutes=minutes, worker=worker)
+        data = self._db.statistics_get_locations_dataratio(
+            minutes=minutes, worker=worker)
         if len(data) > 0:
             for dat in data:
                 loctionratio.append({'label': dat[3], 'data': dat[2]})
@@ -325,7 +339,8 @@ class statistics(object):
 
         # all spaws
         all_spawns = []
-        data = self._db.statistics_get_detection_count(grouped=False, worker=worker)
+        data = self._db.statistics_get_detection_count(
+            grouped=False, worker=worker)
         all_spawns.append({'type': 'Mon', 'amount': int(data[0][2])})
         all_spawns.append({'type': 'Mon_IV', 'amount': int(data[0][3])})
         all_spawns.append({'type': 'Raid', 'amount': int(data[0][4])})
@@ -333,19 +348,23 @@ class statistics(object):
 
         # raw detection data
         detections_raw = []
-        data = self._db.statistics_get_detection_raw(minutes=minutes, worker=worker)
+        data = self._db.statistics_get_detection_raw(
+            minutes=minutes, worker=worker)
         for dat in data:
-            detections_raw.append({'type': dat[1], 'id': dat[2], 'count': dat[3]})
+            detections_raw.append(
+                {'type': dat[1], 'id': dat[2], 'count': dat[3]})
 
         # location raw
         location_raw = []
         last_lat = 0
         last_lng = 0
         distance = 0
-        data = self._db.statistics_get_location_raw(minutes=minutes, worker=worker)
+        data = self._db.statistics_get_location_raw(
+            minutes=minutes, worker=worker)
         for dat in data:
             if last_lat != 0 and last_lng != 0:
-                distance = round(get_distance_of_two_points_in_meters(last_lat, last_lng, dat[1], dat[2]), 2)
+                distance = round(get_distance_of_two_points_in_meters(
+                    last_lat, last_lng, dat[1], dat[2]), 2)
                 last_lat = dat[1]
                 last_lng = dat[2]
             if last_lat == 0 and last_lng == 0:
@@ -383,4 +402,3 @@ class statistics(object):
     def get_status(self):
         data = json.loads(self._db.download_status())
         return jsonify(data)
-

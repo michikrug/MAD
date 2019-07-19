@@ -3,7 +3,6 @@ import time
 from typing import List, Optional
 
 import requests
-
 from geofence.geofenceHelper import GeofenceHelper
 from utils.gamemechanicutil import calculate_mon_level, get_raid_boss_cp
 from utils.logging import logger
@@ -98,7 +97,8 @@ class WebhookWorker:
 
             current_pl_num = 1
             for payload_chunk in payload_list:
-                logger.debug4("Python data for payload: {}", str(payload_chunk))
+                logger.debug4("Python data for payload: {}",
+                              str(payload_chunk))
                 logger.debug3("Payload: {}", str(json.dumps(payload_chunk)))
 
                 try:
@@ -160,7 +160,8 @@ class WebhookWorker:
                 ret.append(entire_payload)
             except Exception as e:
                 logger.warning(
-                    "Exception occured while generating quest webhook: {}", str(e)
+                    "Exception occured while generating quest webhook: {}", str(
+                        e)
                 )
 
         return ret
@@ -194,7 +195,8 @@ class WebhookWorker:
 
         # For some reason we aren't saving JSON in our databse, so we gotta replace ' with ".
         # Pray that we never save strings that contain ' inside them.
-        quest_conditions = json.loads(quest["quest_condition"].replace("'", '"'))
+        quest_conditions = json.loads(
+            quest["quest_condition"].replace("'", '"'))
         quest_condition = []
         quest_rewards = []
         a_quest_type = quest["quest_reward_type_raw"]
@@ -216,19 +218,22 @@ class WebhookWorker:
         for a_quest_condition in quest_conditions:
             # Quest condition for special type of pokemon.
             if "with_pokemon_type" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop("with_pokemon_type")
+                a_quest_condition["info"] = a_quest_condition.pop(
+                    "with_pokemon_type")
                 a_quest_condition["info"]["pokemon_type_ids"] = a_quest_condition[
                     "info"
                 ].pop("pokemon_type")
             # Quest condition for raid level(s).
             if "with_raid_level" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop("with_raid_level")
+                a_quest_condition["info"] = a_quest_condition.pop(
+                    "with_raid_level")
                 a_quest_condition["info"]["raid_levels"] = a_quest_condition[
                     "info"
                 ].pop("raid_level")
             # Quest condition for throw type.
             if "with_throw_type" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop("with_throw_type")
+                a_quest_condition["info"] = a_quest_condition.pop(
+                    "with_throw_type")
                 a_quest_condition["info"]["throw_type_id"] = a_quest_condition[
                     "info"
                 ].pop("throw_type")
@@ -240,7 +245,8 @@ class WebhookWorker:
                 )
             # Quest condition for catching specific mons.
             if "with_pokemon_category" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop("with_pokemon_category")
+                a_quest_condition["info"] = a_quest_condition.pop(
+                    "with_pokemon_category")
 
             quest_condition.append(a_quest_condition)
 
@@ -506,7 +512,8 @@ class WebhookWorker:
 
             if ids_iv_list is not None:
                 # TODO check if area/routemanager is actually active before adding the IDs
-                self.__IV_MON = self.__IV_MON + list(set(ids_iv_list) - set(self.__IV_MON))
+                self.__IV_MON = self.__IV_MON + \
+                    list(set(ids_iv_list) - set(self.__IV_MON))
 
     def __build_geofence_helpers(self, mapping_manager: MappingManager):
         self.__geofence_helpers: List[GeofenceHelper] = []
@@ -536,6 +543,8 @@ class WebhookWorker:
                 self.__geofence_helpers.append(geofence_helper_of_area)
 
     def __create_payload(self):
+        logger.debug("Fetching data changed since {}", self.__last_check)
+
         # the payload that is about to be sent
         full_payload = []
 
@@ -572,7 +581,8 @@ class WebhookWorker:
             # stops
             if self.__args.pokestop_webhook:
                 pokestops = self.__prepare_stops_data(
-                    self.__db_wrapper.get_stops_changed_since(self.__last_check)
+                    self.__db_wrapper.get_stops_changed_since(
+                        self.__last_check)
                 )
                 full_payload += pokestops
 
@@ -584,6 +594,8 @@ class WebhookWorker:
                 full_payload += mon
         except Exception:
             logger.exception("Error while creating webhook payload")
+
+        logger.debug2("Done fetching data + building payload")
 
         return full_payload
 

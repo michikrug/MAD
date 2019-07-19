@@ -2,9 +2,8 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from flask import jsonify, render_template, request
-
 from db.dbWrapperBase import DbWrapperBase
+from flask import jsonify, render_template, request
 from flask_caching import Cache
 from madmin.functions import auth_required, getBoundParameter, getCoordFloat
 from utils.collections import Location
@@ -60,8 +59,10 @@ class map(object):
         positions = []
         devicemappings = self._mapping_manager.get_all_devicemappings()
         for name, values in devicemappings.items():
-            lat = values.get("settings").get("last_location", Location(0.0, 0.0)).lat
-            lon = values.get("settings").get("last_location", Location(0.0, 0.0)).lng
+            lat = values.get("settings").get(
+                "last_location", Location(0.0, 0.0)).lat
+            lon = values.get("settings").get(
+                "last_location", Location(0.0, 0.0)).lng
 
             worker = {
                 "name": str(name),
@@ -117,7 +118,8 @@ class map(object):
         for name, fences in geofences.items():
             coordinates = []
             for fname, coords in fences.get('include').items():
-                coordinates.append([coords, fences.get('exclude').get(fname, [])])
+                coordinates.append(
+                    [coords, fences.get('exclude').get(fname, [])])
             geofencexport.append({'name': name, 'coordinates': coordinates})
 
         return jsonify(geofencexport)
@@ -130,8 +132,8 @@ class map(object):
 
         for routemanager in routemanager_names:
             mode = self._mapping_manager.routemanager_get_mode(routemanager)
-            route: Optional[List[Location]
-                            ] = self._mapping_manager.routemanager_get_current_route(routemanager)
+            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_route(
+                routemanager)
 
             if route is None:
                 continue
@@ -181,7 +183,8 @@ class map(object):
 
     @auth_required
     def get_spawns(self):
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
+            request)
         timestamp = request.args.get("timestamp", None)
 
         coords = []
@@ -215,7 +218,8 @@ class map(object):
 
     @auth_required
     def get_gymcoords(self):
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
+            request)
         timestamp = request.args.get("timestamp", None)
 
         coords = []
@@ -253,7 +257,8 @@ class map(object):
     def get_quests(self):
         coords = []
 
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
+            request)
         timestamp = request.args.get("timestamp", None)
 
         data = self._db.quests_from_db(
@@ -277,7 +282,8 @@ class map(object):
     @auth_required
     def get_map_mons(self):
         import traceback
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
+            request)
         timestamp = request.args.get("timestamp", None)
 
         data = self._db.get_mons_in_rectangle(
@@ -312,7 +318,8 @@ class map(object):
 
     @auth_required
     def get_cells(self):
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
+            request)
         timestamp = request.args.get("timestamp", None)
 
         data = self._db.get_cells_in_rectangle(

@@ -1,5 +1,4 @@
 from flask import render_template, send_from_directory
-
 from madmin.functions import auth_required, nocache
 from utils.functions import generate_path
 
@@ -71,13 +70,15 @@ class path(object):
     @auth_required
     def raids(self):
         return render_template('raids.html', sort=str(self._args.madmin_sort),
-                               responsive=str(self._args.madmin_noresponsive).lower(),
+                               responsive=str(
+                                   self._args.madmin_noresponsive).lower(),
                                title="show Raid Matching", running_ocr=(self._args.only_ocr))
 
     @auth_required
     def gyms(self):
         return render_template('gyms.html', sort=self._args.madmin_sort,
-                               responsive=str(self._args.madmin_noresponsive).lower(),
+                               responsive=str(
+                                   self._args.madmin_noresponsive).lower(),
                                title="show Gym Matching", running_ocr=(self._args.only_ocr))
 
     @auth_required
@@ -88,11 +89,13 @@ class path(object):
     @auth_required
     def quest(self):
         return render_template('quests.html', pub=False,
-                               responsive=str(self._args.madmin_noresponsive).lower(),
+                               responsive=str(
+                                   self._args.madmin_noresponsive).lower(),
                                title="show daily Quests", running_ocr=(self._args.only_ocr))
 
     @auth_required
     def quest_pub(self):
         return render_template('quests.html', pub=True,
-                               responsive=str(self._args.madmin_noresponsive).lower(),
+                               responsive=str(
+                                   self._args.madmin_noresponsive).lower(),
                                title="show daily Quests", running_ocr=(self._args.only_ocr))

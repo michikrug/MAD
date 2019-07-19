@@ -2,10 +2,9 @@ import datetime
 import os
 import time
 
-from flask import redirect, render_template, request
-
 import cv2
 from db.dbWrapperBase import DbWrapperBase
+from flask import redirect, render_template, request
 from madmin.functions import (auth_required, generate_device_screenshot_path,
                               getBasePath, nocache)
 from utils.adb import ADBConnect
@@ -73,12 +72,14 @@ class control(object):
             else:
                 self._ws_connected_phones.append(adb)
 
-            filename = generate_device_screenshot_path(phonename, devicemappings, self._args)
+            filename = generate_device_screenshot_path(
+                phonename, devicemappings, self._args)
             if os.path.isfile(filename):
                 screenshot_ending: str = ".jpg"
                 image_resize(filename, os.path.join(
                     self._args.temp_path, "madmin"), width=250)
-                screen = "screenshot/madmin/screenshot_" + str(phonename) + screenshot_ending
+                screen = "screenshot/madmin/screenshot_" + \
+                    str(phonename) + screenshot_ending
                 screens_phone.append(
                     generate_phones(phonename, add_text, adb_option,
                                     screen, filename, self._datetimeformat, dummy=False)
@@ -96,12 +97,14 @@ class control(object):
                         adb_option = True
                         add_text = '<b>ADB - no WS<img src="/static/warning.png" width="20px" ' \
                                    'alt="NO websocket connection!"></b>'
-                        filename = generate_device_screenshot_path(pho, devicemappings, self._args)
+                        filename = generate_device_screenshot_path(
+                            pho, devicemappings, self._args)
                         if os.path.isfile(filename):
                             image_resize(filename, os.path.join(
                                 self._args.temp_path, "madmin"), width=250)
                             screenshot_ending: str = ".jpg"
-                            screen = "screenshot/madmin/screenshot_" + str(pho) + screenshot_ending
+                            screen = "screenshot/madmin/screenshot_" + \
+                                str(pho) + screenshot_ending
                             screens_phone.append(generate_phones(
                                 pho, add_text, adb_option, screen, filename, self._datetimeformat, dummy=False)
                             )
@@ -125,21 +128,25 @@ class control(object):
         adb = devicemappings.get(origin, {}).get('adb', False)
 
         if useadb == 'True' and self._adb_connect.make_screenshot(adb, origin, "jpg"):
-            self._logger.info('MADMin: ADB screenshot successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB screenshot successfully ({})', str(origin))
         else:
 
             screenshot_type: ScreenshotType = ScreenshotType.JPEG
             if devicemappings.get(origin, {}).get("screenshot_type", "jpeg") == "png":
                 screenshot_type = ScreenshotType.PNG
 
-            screenshot_quality: int = devicemappings.get(origin, {}).get("screenshot_quality", 80)
+            screenshot_quality: int = devicemappings.get(
+                origin, {}).get("screenshot_quality", 80)
 
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.get_screenshot(generate_device_screenshot_path(origin, devicemappings, self._args),
                                      screenshot_quality, screenshot_type)
 
-        filename = generate_device_screenshot_path(origin, devicemappings, self._args)
-        image_resize(filename, os.path.join(self._args.temp_path, "madmin"), width=250)
+        filename = generate_device_screenshot_path(
+            origin, devicemappings, self._args)
+        image_resize(filename, os.path.join(
+            self._args.temp_path, "madmin"), width=250)
 
         creationdate = datetime.datetime.fromtimestamp(
             creation_date(filename)).strftime(self._datetimeformat)
@@ -154,7 +161,8 @@ class control(object):
         useadb = request.args.get('adb')
         devicemappings = self._mapping_manager.get_all_devicemappings()
 
-        filename = generate_device_screenshot_path(origin, devicemappings, self._args)
+        filename = generate_device_screenshot_path(
+            origin, devicemappings, self._args)
         img = cv2.imread(filename, 0)
         height, width = img.shape[:2]
 
@@ -163,7 +171,8 @@ class control(object):
         adb = devicemappings.get(origin, {}).get('adb', False)
 
         if useadb == 'True' and self._adb_connect.make_screenclick(adb, origin, real_click_x, real_click_y):
-            self._logger.info('MADMin: ADB screenclick successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB screenclick successfully ({})', str(origin))
         else:
             self._logger.info('MADMin WS Click x:{} y:{} ({})', str(
                 real_click_x), str(real_click_y), str(origin))
@@ -184,7 +193,8 @@ class control(object):
 
         devicemappings = self._mapping_manager.get_all_devicemappings()
 
-        filename = generate_device_screenshot_path(origin, devicemappings, self._args)
+        filename = generate_device_screenshot_path(
+            origin, devicemappings, self._args)
         img = cv2.imread(filename, 0)
         height, width = img.shape[:2]
 
@@ -196,7 +206,8 @@ class control(object):
 
         if useadb == 'True' and self._adb_connect.make_screenswipe(adb, origin, real_click_x,
                                                                    real_click_y, real_click_xe, real_click_ye):
-            self._logger.info('MADMin: ADB screenswipe successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB screenswipe successfully ({})', str(origin))
         else:
             self._logger.info('MADMin WS Swipe x:{} y:{} xe:{} ye:{} ({})', str(real_click_x), str(real_click_y),
                               str(real_click_xe), str(real_click_ye), str(origin))
@@ -216,11 +227,13 @@ class control(object):
         adb = devicemappings.get(origin, {}).get('adb', False)
         self._logger.info('MADmin: Restart Pogo ({})', str(origin))
         if useadb == 'True' and self._adb_connect.send_shell_command(adb, origin, "am force-stop com.nianticlabs.pokemongo"):
-            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.stopApp("com.nianticlabs.pokemongo")
-            self._logger.info('MADMin: WS command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: WS command successfully ({})', str(origin))
 
         time.sleep(2)
         return self.take_screenshot(origin, useadb)
@@ -236,7 +249,8 @@ class control(object):
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
                     adb, origin, "am broadcast -a android.intent.action.BOOT_COMPLETED")):
-            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.reboot()
@@ -283,7 +297,8 @@ class control(object):
             return 'Empty text'
         self._logger.info('MADmin: Send text ({})', str(origin))
         if useadb == 'True' and self._adb_connect.send_shell_command(adb, origin, 'input text "' + text + '"'):
-            self._logger.info('MADMin: Send text successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: Send text successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.sendText(text)
@@ -305,7 +320,8 @@ class control(object):
         elif command == 'back':
             cmd = "input keyevent 4"
         if useadb == 'True' and self._adb_connect.send_shell_command(adb, origin, cmd):
-            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             if command == 'home':

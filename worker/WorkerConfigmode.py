@@ -31,7 +31,8 @@ class WorkerConfigmode(object):
         self._mapping_manager.set_devicesetting_value_of(self._id, key, value)
 
     def get_devicesettings_value(self, key: str, default_value: object = None):
-        devicemappings: Optional[dict] = self._mapping_manager.get_devicemappings_of(self._id)
+        devicemappings: Optional[dict] = self._mapping_manager.get_devicemappings_of(
+            self._id)
         if devicemappings is None:
             return default_value
         return devicemappings.get("settings", {}).get(key, default_value)
@@ -52,7 +53,8 @@ class WorkerConfigmode(object):
 
     def stop_worker(self):
         if self._stop_worker_event.set():
-            logger.info('Worker {} already stopped - waiting for it', str(self._id))
+            logger.info(
+                'Worker {} already stopped - waiting for it', str(self._id))
         else:
             self._stop_worker_event.set()
             logger.warning("Worker {} stop called", str(self._id))
@@ -118,7 +120,8 @@ class WorkerConfigmode(object):
                 try:
                     self._start_pogo()
                 except (WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
-                    logger.error("Timeout during init of worker {}", str(self._id))
+                    logger.error(
+                        "Timeout during init of worker {}", str(self._id))
             return False
         else:
             logger.error("Unknown walker mode! Killing worker")
@@ -147,7 +150,8 @@ class WorkerConfigmode(object):
             self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
             logger.warning("Turning screen on")
             self._communicator.turnScreenOn()
-            time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 7))
+            time.sleep(self.get_devicesettings_value(
+                "post_turn_screen_on_delay", 7))
 
         start_result = False
         while not pogo_topmost:
@@ -166,20 +170,23 @@ class WorkerConfigmode(object):
         self._not_injected_count = 0
         while not self._mitm_mapper.get_injection_status(self._id):
             if self._not_injected_count >= 20:
-                logger.error("Worker {} not get injected in time - reboot", str(self._id))
+                logger.error(
+                    "Worker {} not get injected in time - reboot", str(self._id))
                 self._reboot()
                 return False
-            logger.info("Worker {} is not injected till now (Count: {})",
-                        str(self._id), str(self._not_injected_count))
+            logger.info("Worker {} is not injected till now (Count: {})", str(
+                self._id), str(self._not_injected_count))
             if self._stop_worker_event.isSet():
-                logger.error("Worker {} get killed while waiting for injection", str(self._id))
+                logger.error(
+                    "Worker {} get killed while waiting for injection", str(self._id))
                 return False
             self._not_injected_count += 1
             wait_time = 0
             while wait_time < 20:
                 wait_time += 1
                 if self._stop_worker_event.isSet():
-                    logger.error("Worker {} get killed while waiting for injection", str(self._id))
+                    logger.error(
+                        "Worker {} get killed while waiting for injection", str(self._id))
                     return False
                 time.sleep(1)
         return True
@@ -202,12 +209,15 @@ class WorkerConfigmode(object):
 
     def _wait_pogo_start_delay(self):
         delay_count: int = 0
-        pogo_start_delay: int = self.get_devicesettings_value("post_pogo_start_delay", 60)
-        logger.info('Waiting for pogo start: {} seconds', str(pogo_start_delay))
+        pogo_start_delay: int = self.get_devicesettings_value(
+            "post_pogo_start_delay", 60)
+        logger.info('Waiting for pogo start: {} seconds',
+                    str(pogo_start_delay))
 
         while delay_count <= pogo_start_delay:
             if self._stop_worker_event.is_set():
-                logger.error("Worker {} get killed while waiting for pogo start", str(self._id))
+                logger.error(
+                    "Worker {} get killed while waiting for pogo start", str(self._id))
                 raise InternalStopWorkerException
             time.sleep(1)
             delay_count += 1

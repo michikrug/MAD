@@ -43,7 +43,8 @@ class WorkerOCR(WorkerBase):
                                                         float(
                                                             self.current_location.lat),
                                                         float(self.current_location.lng))
-        logger.debug('Moving {} meters to the next position', round(distance, 2))
+        logger.debug('Moving {} meters to the next position',
+                     round(distance, 2))
         speed = routemanager_settings.get("speed", 0)
         max_distance = routemanager_settings.get("max_distance", None)
         if (speed == 0 or
@@ -54,7 +55,8 @@ class WorkerOCR(WorkerBase):
                 self.current_location.lat, self.current_location.lng, 0)
             # cur_time = math.floor(time.time())  # the time we will take as a starting point to wait for data...
 
-            delay_used = self.get_devicesettings_value('post_teleport_delay', 7)
+            delay_used = self.get_devicesettings_value(
+                'post_teleport_delay', 7)
             # Test for cooldown / teleported distance TODO: check this block...
             if self.get_devicesettings_value('cool_down_sleep', False):
                 if distance > 2500:
@@ -182,7 +184,8 @@ class WorkerOCR(WorkerBase):
             self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
             logger.warning("Turning screen on")
             self._communicator.turnScreenOn()
-            time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 7))
+            time.sleep(self.get_devicesettings_value(
+                "post_turn_screen_on_delay", 7))
 
         curTime = time.time()
         startResult = False
@@ -194,7 +197,8 @@ class WorkerOCR(WorkerBase):
         reachedRaidtab = False
         if startResult:
             logger.warning("startPogo: Starting pogo...")
-            time.sleep(self.get_devicesettings_value("post_pogo_start_delay", 60))
+            time.sleep(self.get_devicesettings_value(
+                "post_pogo_start_delay", 60))
             self._last_known_state["lastPogoRestart"] = curTime
 
             # let's handle the login and stuff

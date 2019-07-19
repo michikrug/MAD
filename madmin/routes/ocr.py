@@ -6,7 +6,6 @@ import re
 from shutil import copyfile
 
 from flask import jsonify, redirect, render_template, request
-
 from madmin.functions import (auth_required, decodeHashJson, encodeHashJson,
                               getAllHash, getBasePath)
 from utils.functions import creation_date
@@ -214,7 +213,8 @@ class ocr(object):
                 gyms.append(gymJson)
 
             else:
-                self.logger.debug("File: " + str(file) + " not found in Database")
+                self.logger.debug("File: " + str(file) +
+                                  " not found in Database")
                 os.remove(str(file))
                 continue
 
@@ -293,7 +293,8 @@ class ocr(object):
                              'mon': mon, 'type': type, 'eggPic': eggPic, 'monPic': monPic, 'monname': monName})
                 raids.append(raidJson)
             else:
-                self._logger.debug("File: " + str(file) + " not found in Database")
+                self._logger.debug("File: " + str(file) +
+                                   " not found in Database")
                 os.remove(str(file))
                 continue
 

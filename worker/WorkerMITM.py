@@ -41,7 +41,8 @@ class WorkerMITM(MITMBase):
                                                         float(
                                                             self.current_location.lat),
                                                         float(self.current_location.lng))
-        logger.debug('Moving {} meters to the next position', round(distance, 2))
+        logger.debug('Moving {} meters to the next position',
+                     round(distance, 2))
         speed = routemanager_settings.get("speed", 0)
         max_distance = routemanager_settings.get("max_distance", None)
         if (speed == 0 or
@@ -54,7 +55,8 @@ class WorkerMITM(MITMBase):
             # the time we will take as a starting point to wait for data...
             cur_time = math.floor(time.time())
 
-            delay_used = self.get_devicesettings_value('post_teleport_delay', 7)
+            delay_used = self.get_devicesettings_value(
+                'post_teleport_delay', 7)
             # Test for cooldown / teleported distance TODO: check this block...
             if self.get_devicesettings_value('cool_down_sleep', False):
                 if distance > 2500:
@@ -116,7 +118,6 @@ class WorkerMITM(MITMBase):
 
     def _pre_work_loop(self):
         logger.info("MITM worker starting")
-        self._check_ggl_login()
         if not self._wait_for_injection() or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
 
@@ -129,7 +130,8 @@ class WorkerMITM(MITMBase):
             self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
             logger.warning("Turning screen on")
             self._communicator.turnScreenOn()
-            time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 7))
+            time.sleep(self.get_devicesettings_value(
+                "post_turn_screen_on_delay", 7))
 
         cur_time = time.time()
         start_result = False
@@ -149,7 +151,7 @@ class WorkerMITM(MITMBase):
             reached_raidtab = True
 
         self._wait_pogo_start_delay()
-
+        self._check_windows()
         return reached_raidtab
 
     def __init__(self, args, id, last_known_state, websocket_handler, mapping_manager: MappingManager,
@@ -168,7 +170,8 @@ class WorkerMITM(MITMBase):
         injected_settings = {}
 
         # don't try catch here, the injection settings update is called in the main loop anyway...
-        routemanager_mode = self._mapping_manager.routemanager_get_mode(self._routemanager_name)
+        routemanager_mode = self._mapping_manager.routemanager_get_mode(
+            self._routemanager_name)
 
         ids_iv = []
         if routemanager_mode is None:
@@ -200,7 +203,8 @@ class WorkerMITM(MITMBase):
         # if iv ids are specified we will sync the workers encountered ids to newest time.
         if ids_iv:
             (self._latest_encounter_update, encounter_ids) = self._db_wrapper.update_encounters_from_db(
-                self._mapping_manager.routemanager_get_geofence_helper(self._routemanager_name),
+                self._mapping_manager.routemanager_get_geofence_helper(
+                    self._routemanager_name),
                 self._latest_encounter_update)
             if encounter_ids:
                 logger.debug("Found {} new encounter_ids", len(encounter_ids))
@@ -223,7 +227,8 @@ class WorkerMITM(MITMBase):
             # encounter_ids only contains the newest update.
         self._mitm_mapper.update_latest(
             origin=self._id, key="ids_encountered", values_dict=self._encounter_ids)
-        self._mitm_mapper.update_latest(origin=self._id, key="ids_iv", values_dict=ids_iv)
+        self._mitm_mapper.update_latest(
+            origin=self._id, key="ids_iv", values_dict=ids_iv)
         self._mitm_mapper.update_latest(
             origin=self._id, key="injected_settings", values_dict=injected_settings)
 
@@ -242,7 +247,8 @@ class WorkerMITM(MITMBase):
             # TODO: int vs str-key?
             latest_proto = latest.get(proto_to_wait_for, None)
 
-            mode = self._mapping_manager.routemanager_get_mode(self._routemanager_name)
+            mode = self._mapping_manager.routemanager_get_mode(
+                self._routemanager_name)
             latest_timestamp = latest_proto.get("timestamp", 0)
             if latest_timestamp >= timestamp:
                 # TODO: consider reseting timestamp here since we clearly received SOMETHING

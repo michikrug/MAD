@@ -5,7 +5,6 @@ from multiprocessing import JoinableQueue, Process
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
-
 from mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mitm_receiver.MitmMapper import MitmMapper
 from utils.authHelper import check_auth
@@ -64,7 +63,8 @@ class EndpointAction(object):
                 response_payload = self.action(origin, request_data)
                 if response_payload is None:
                     response_payload = ""
-                self.response = Response(status=200, headers={"Content-Type": "application/json"})
+                self.response = Response(status=200, headers={
+                                         "Content-Type": "application/json"})
                 self.response.data = response_payload
             except Exception as e:  # TODO: catch exact exception
                 logger.warning(
@@ -128,13 +128,14 @@ class MITMReceiver(Process):
             logger.error("Invalid REST method specified")
             sys.exit(1)
         self.app.add_url_rule(endpoint, endpoint_name,
-                              EndpointAction(handler, self.__application_args,
-                                             self.__mapping_manager),
+                              EndpointAction(
+                                  handler, self.__application_args, self.__mapping_manager),
                               methods=methods_passed)
 
     def proto_endpoint(self, origin, data):
         logger.debug2("Receiving proto from {}".format(origin))
-        logger.debug4("Proto data received from {}: {}".format(origin, str(data)))
+        logger.debug4(
+            "Proto data received from {}: {}".format(origin, str(data)))
         type = data.get("type", None)
         if type is None or type == 0:
             logger.warning(
@@ -148,7 +149,8 @@ class MITMReceiver(Process):
         self.__mitm_mapper.update_latest(
             origin, timestamp_received_raw=timestamp, timestamp_received_receiver=time.time(), key=type,
             values_dict=data)
-        logger.debug3("Placing data received by {} to data_queue".format(origin))
+        logger.debug3(
+            "Placing data received by {} to data_queue".format(origin))
         self._data_queue.put(
             (timestamp, data, origin)
         )
@@ -191,8 +193,8 @@ class MITMReceiver(Process):
 
         for process in self.worker_threads:
             process_return['MITMReceiver-' + str(process_count)] = {}
-            process_return['MITMReceiver-' + str(process_count)
-                           ]['queue_length'] = process.get_queue_items()
+            process_return['MITMReceiver-' +
+                           str(process_count)]['queue_length'] = process.get_queue_items()
             process_count += 1
 
         data_return['origin_status'] = origin_return

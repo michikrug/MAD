@@ -74,7 +74,8 @@ class RouteManagerQuests(RouteManagerBase):
                 return False
             coords: List[Location] = self._check_unprocessed_stops()
             # remove coords to be ignored from coords
-            coords = [coord for coord in coords if coord not in self._coords_to_be_ignored]
+            coords = [
+                coord for coord in coords if coord not in self._coords_to_be_ignored]
             if len(coords) > 0:
                 self._clear_coords()
                 self.add_coords_list(coords)
@@ -119,7 +120,8 @@ class RouteManagerQuests(RouteManagerBase):
                         "Location {} is no longer in our stoplist and will be ignored".format(str(stop)))
                     self._coords_to_be_ignored.add(stop)
                 elif error_count < 4:
-                    logger.warning("Found stop not processed yet: {}".format(str(stop)))
+                    logger.warning(
+                        "Found stop not processed yet: {}".format(str(stop)))
                     list_of_stops_to_return.append(stop)
                 else:
                     logger.error(
@@ -127,7 +129,8 @@ class RouteManagerQuests(RouteManagerBase):
                     self._coords_to_be_ignored.add(stop)
 
             if len(list_of_stops_to_return) > 0:
-                logger.info("Found stops not yet processed, retrying those in the next round")
+                logger.info(
+                    "Found stops not yet processed, retrying those in the next round")
             return list_of_stops_to_return
         finally:
             self._manager_mutex.release()
@@ -164,7 +167,8 @@ class RouteManagerQuests(RouteManagerBase):
                 new_stops = list(set(stops) - set(self._route))
                 if len(new_stops) > 0:
                     for stop in new_stops:
-                        logger.warning("Stop with coords {} seems new and not in route.", str(stop))
+                        logger.warning(
+                            "Stop with coords {} seems new and not in route.", str(stop))
 
                 if len(stops) == 0:
                     logger.info('No unprocessed  Stops detected - quit worker')
@@ -174,7 +178,8 @@ class RouteManagerQuests(RouteManagerBase):
                 if 0 < len(stops) < len(self._route) \
                         and len(stops) / len(self._route) <= 0.3:
                     # Calculating new route because 70 percent of stops are processed
-                    logger.info('There are less stops without quest than routepositions - recalc')
+                    logger.info(
+                        'There are less stops without quest than routepositions - recalc')
                     self._clear_coords()
                     self.add_coords_list(stops)
                     self._overwrite_calculation = True

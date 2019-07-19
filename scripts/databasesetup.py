@@ -1,9 +1,8 @@
 import re
 import sys
 
-import requests
-
 import mysql.connector
+import requests
 
 monocle_sql = open('../SQL/monocle.sql')
 rm_sql = open('../SQL/rocketmap.sql')
@@ -20,8 +19,8 @@ def get_value_for(regex_string, force_exit=True):
                 sys.exit("Check your config.ini for %s - this field is required!" %
                          re.search('\\\s\+(.*):', regex_string).group(1))
             else:
-                sys.exit("Found more than one value for %s in config.ini, fix that." %
-                         re.search('\\\s\+(.*):', regex_string).group(1))
+                sys.exit("Found more than one value for %s in config.ini, fix that." % re.search(
+                    '\\\s\+(.*):', regex_string).group(1))
         return None
     else:
         return res[0]

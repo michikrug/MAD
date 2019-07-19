@@ -7,7 +7,6 @@ from multiprocessing.managers import SyncManager
 from typing import List, Optional
 
 import requests
-
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.gamemechanicutil import gen_despawn_timestamp
@@ -673,11 +672,12 @@ class RmWrapper(DbWrapperBase):
         longitude = wild_pokemon.get("longitude")
         pokemon_data = wild_pokemon.get("pokemon_data")
         encounter_id = wild_pokemon['encounter_id']
+        shiny = wild_pokemon['pokemon_data']['display'].get('is_shiny', 0)
 
         if encounter_id < 0:
             encounter_id = encounter_id + 2**64
 
-        mitm_mapper.collect_mon_iv_stats(origin, encounter_id)
+        mitm_mapper.collect_mon_iv_stats(origin, encounter_id, int(shiny))
 
         if getdetspawntime is None:
             logger.debug("{}: updating IV mon #{} at {}, {}. Despawning at {} (init)",
@@ -687,7 +687,8 @@ class RmWrapper(DbWrapperBase):
                          str(origin), pokemon_data["id"], latitude, longitude, despawn_time)
 
         capture_probability = encounter_proto.get("capture_probability")
-        capture_probability_list = capture_probability.get("capture_probability_list")
+        capture_probability_list = capture_probability.get(
+            "capture_probability_list")
         if capture_probability_list is not None:
             capture_probability_list = capture_probability_list.replace(
                 "[", "").replace("]", "").split(",")
@@ -1033,7 +1034,8 @@ class RmWrapper(DbWrapperBase):
                     latitude), str(longitude))
                 continue
 
-            next_to_encounter.append((pokemon_id, Location(latitude, longitude), encounter_id))
+            next_to_encounter.append(
+                (pokemon_id, Location(latitude, longitude), encounter_id))
 
         # now filter by the order of eligible_mon_ids
         to_be_encountered = []
@@ -1201,7 +1203,8 @@ class RmWrapper(DbWrapperBase):
 
             query_where = query_where + oquery_where
         elif timestamp is not None:
-            oquery_where = " AND trs_quest.quest_timestamp >= {}".format(timestamp)
+            oquery_where = " AND trs_quest.quest_timestamp >= {}".format(
+                timestamp)
             query_where = query_where + oquery_where
 
         res = self.execute(query + query_where)
@@ -1229,7 +1232,8 @@ class RmWrapper(DbWrapperBase):
             "WHERE DATEDIFF(lure_expiration, '1970-01-01 00:00:00') > 0 AND last_updated >= %s"
         )
 
-        tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        tsdt = datetime.utcfromtimestamp(
+            timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self.execute(query, (tsdt, ))
 
         ret = []
@@ -1564,7 +1568,8 @@ class RmWrapper(DbWrapperBase):
 
         # there's no old rectangle so check for a timestamp to send only updated stuff
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
 
             # TODO ish: until we don't show any other information like raids
             #          we can use last_modified, since that will give us actual
@@ -1628,7 +1633,8 @@ class RmWrapper(DbWrapperBase):
     def get_mons_in_rectangle(self, neLat, neLon, swLat, swLon, oNeLat=None, oNeLon=None, oSwLat=None, oSwLon=None, timestamp=None):
         mons = []
 
-        now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
         query = (
             "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, "
@@ -1655,7 +1661,8 @@ class RmWrapper(DbWrapperBase):
 
         # there's no old rectangle so check for a timestamp to send only updated stuff
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
 
             oquery_where = " AND last_modified >= '{}' ".format(tsdt)
 
@@ -1692,3 +1699,18 @@ class RmWrapper(DbWrapperBase):
             })
 
         return mons
+
+    def statistics_get_shiny_stats(self):
+        logger.debug('Fetching shiny pokemon stats from db')
+        query = (
+            "SELECT (select count(encounter_id) from pokemon inner join trs_stats_detect_raw on "
+            "trs_stats_detect_raw.type_id=pokemon.encounter_id where pokemon.pokemon_id=a.pokemon_id and "
+            "trs_stats_detect_raw.worker=b.worker and pokemon.form=a.form), count(DISTINCT encounter_id), a.pokemon_id,"
+            "b.worker, GROUP_CONCAT(DISTINCT encounter_id ORDER BY encounter_id DESC SEPARATOR '<br>'), a.form "
+            "FROM pokemon a left join trs_stats_detect_raw b on a.encounter_id=b.type_id where b.is_shiny=1 group by "
+            "b.is_shiny, a.pokemon_id, a.form, b.worker order by a.pokemon_id"
+        )
+
+        res = self.execute(query)
+
+        return res

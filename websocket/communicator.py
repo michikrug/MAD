@@ -22,7 +22,8 @@ class Communicator:
             "Communicator of {} acquiring lock to cleanup worker in websocket", str(self.worker_id))
         self.__sendMutex.acquire()
         try:
-            logger.info("Communicator of {} calling cleanup", str(self.worker_id))
+            logger.info("Communicator of {} calling cleanup",
+                        str(self.worker_id))
             self.websocket_handler.clean_up_user(
                 self.worker_id, self.worker_instance_ref)
         finally:
@@ -82,6 +83,11 @@ class Communicator:
                                                         self.__command_timeout)
         return response
 
+    def uiautomator(self) -> str:
+        response = self.websocket_handler.send_and_wait(self.worker_id, self.worker_instance_ref, "more uiautomator",
+                                                        self.__command_timeout)
+        return response
+
     def get_screenshot(self, path, quality: int = 70, screenshot_type: ScreenshotType = ScreenshotType.JPEG) -> bool:
         if quality < 10 or quality > 100:
             logger.error("Invalid quality value passed for screenshots")
@@ -95,7 +101,8 @@ class Communicator:
         try:
             encoded = self.websocket_handler.send_and_wait(
                 self.worker_id, self.worker_instance_ref,
-                "screen capture {} {}\r\n".format(screenshot_type_str, quality),
+                "screen capture {} {}\r\n".format(
+                    screenshot_type_str, quality),
                 self.__command_timeout
             )
         finally:

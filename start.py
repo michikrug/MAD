@@ -150,7 +150,8 @@ def get_system_infos(db_wrapper):
         collected = None
         if args.stat_gc:
             collected = gc.collect()
-            logger.debug("Garbage collector: collected %d objects." % collected)
+            logger.debug(
+                "Garbage collector: collected %d objects." % collected)
         zero = datetime.datetime.utcnow()
         unixnow = calendar.timegm(zero.utctimetuple())
         db_wrapper.insert_usage(args.status_name, cpuUse,
@@ -234,12 +235,14 @@ if __name__ == "__main__":
             MitmMapperManager.register('MitmMapper', MitmMapper)
             mitm_mapper_manager = MitmMapperManager()
             mitm_mapper_manager.start()
-            mitm_mapper: MitmMapper = mitm_mapper_manager.MitmMapper(mapping_manager, db_wrapper)
+            mitm_mapper: MitmMapper = mitm_mapper_manager.MitmMapper(
+                mapping_manager, db_wrapper)
             ocr_enabled = False
 
             if not args.no_ocr:
                 from ocr.pogoWindows import PogoWindows
-                pogoWindowManager = PogoWindows(args.temp_path, args.ocr_thread_count)
+                pogoWindowManager = PogoWindows(
+                    args.temp_path, args.ocr_thread_count)
 
             if ocr_enabled:
                 from ocr.copyMons import MonRaidImages
@@ -250,8 +253,8 @@ if __name__ == "__main__":
             mitm_receiver_process.start()
 
             logger.info('Starting scanner')
-            ws_server = WebsocketServer(args, mitm_mapper, db_wrapper,
-                                        mapping_manager, pogoWindowManager)
+            ws_server = WebsocketServer(
+                args, mitm_mapper, db_wrapper, mapping_manager, pogoWindowManager)
             t_ws = Thread(name='scanner', target=ws_server.start_server)
             t_ws.daemon = False
             t_ws.start()

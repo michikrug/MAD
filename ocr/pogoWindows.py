@@ -70,7 +70,8 @@ class PogoWindows:
 
         gpsError = col[0:int(math.floor(height / 7)), 0:width]
 
-        tempPathColoured = self.temp_dir_path + "/" + str(identifier) + "_gpsError.png"
+        tempPathColoured = self.temp_dir_path + \
+            "/" + str(identifier) + "_gpsError.png"
         cv2.imwrite(tempPathColoured, gpsError)
 
         col = Image.open(tempPathColoured)
@@ -206,14 +207,16 @@ class PogoWindows:
 
     def get_trash_click_positions(self, filename):
         if not os.path.isfile(filename):
-            logger.error("get_trash_click_positions: {} does not exist", str(filename))
+            logger.error(
+                "get_trash_click_positions: {} does not exist", str(filename))
             return None
 
         return self.__thread_pool.apply_async(trash_image_matching, (filename,)).get()
 
     def read_amount_raid_circles(self, filename, identifier, communicator):
         if not os.path.isfile(filename):
-            logger.error("read_amount_raid_circles: {} does not exist", str(filename))
+            logger.error(
+                "read_amount_raid_circles: {} does not exist", str(filename))
             return 0
 
         return self.__thread_pool.apply_async(self.__internal_read_amount_raid_circles,
@@ -225,7 +228,8 @@ class PogoWindows:
             # no raidcount (orange circle) present...
             return 0
 
-        circle = self.__read_circle_count(filename, identifier, 4.7, commuicator)
+        circle = self.__read_circle_count(
+            filename, identifier, 4.7, commuicator)
 
         if circle > 6:
             circle = 6
@@ -239,52 +243,15 @@ class PogoWindows:
             "readCircles: Determined screenshot to not contain raidcircles, but a raidcount!")
         return -1
 
-    def look_for_ggl_login(self, filename, communicator):
-        if not os.path.isfile(filename):
-            logger.error("look_for_ggl_login: {} does not exist", str(filename))
-            return False
-
-        return self.__thread_pool.apply_async(self.__internal_look_for_ggl_login,
-                                              (filename, communicator)).get()
-
-    def __internal_look_for_ggl_login(self, filename, communicator):
-        logger.debug("lookForButton: Look for ggl login")
-        try:
-            screenshot_read = cv2.imread(filename)
-        except:
-            logger.error("Screenshot corrupted :(")
-            return False
-
-        if screenshot_read is None:
-            logger.error("Screenshot corrupted :(")
-            return False
-
-        img = cv2.imread(filename)
-
-        d = pytesseract.image_to_data(img, output_type=Output.DICT)
-
-        n_boxes = len(d['level'])
-        for i in range(n_boxes):
-            if '@gmail.com' in (d['text'][i]):
-                (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
-                click_x, click_y = x + w / 2, y + h / 2
-                logger.info('Found GGL Mail - click on it (' +
-                            str(click_x) + ', ' + str(click_y) + ')')
-                communicator.click(click_x, click_y)
-                time.sleep(5)
-                return True
-
-        return False
-
-    def look_for_button(self, filename, ratiomin, ratiomax, communicator):
+    def look_for_button(self, filename, ratiomin, ratiomax, communicator, upper: bool = False):
         if not os.path.isfile(filename):
             logger.error("look_for_button: {} does not exist", str(filename))
             return False
 
         return self.__thread_pool.apply_async(self.__internal_look_for_button,
-                                              (filename, ratiomin, ratiomax, communicator)).get()
+                                              (filename, ratiomin, ratiomax, communicator, upper)).get()
 
-    def __internal_look_for_button(self, filename, ratiomin, ratiomax, communicator):
+    def __internal_look_for_button(self, filename, ratiomin, ratiomax, communicator, upper):
         logger.debug("lookForButton: Reading lines")
         disToMiddleMin = None
         try:
@@ -341,10 +308,26 @@ class PogoWindows:
                         and (x2 - x1) / 2 + x1 < width / 2 + 50 and (x2 - x1) / 2 + x1 > width / 2 - 50:
 
                     lineCount += 1
-                    click_y = _last_y + ((y1 - _last_y) / 2)
-                    _last_y = y1
-                    _x1 = x1
-                    _x2 = x2
+                    disToMiddleMin_temp = y1 - (height / 2)
+                    if upper:
+                        if disToMiddleMin is None:
+                            disToMiddleMin = disToMiddleMin_temp
+                            click_y = y1 + 50
+                            _last_y = y1
+                            _x1 = x1
+                            _x2 = x2
+                        else:
+                            if disToMiddleMin_temp < disToMiddleMin:
+                                click_y = _last_y + ((y1 - _last_y) / 2)
+                                _last_y = y1
+                                _x1 = x1
+                                _x2 = x2
+
+                    else:
+                        click_y = _last_y + ((y1 - _last_y) / 2)
+                        _last_y = y1
+                        _x1 = x1
+                        _x2 = x2
 
                     logger.debug("lookForButton: Found Buttonline Nr. " + str(lineCount) + " - Line lenght: " + str(
                         x2 - x1) + "px Coords - X: " + str(x1) + " " + str(x2) + " Y: " + str(y1) + " " + str(y2))
@@ -572,7 +555,8 @@ class PogoWindows:
 
     def check_close_except_nearby_button(self, filename, identifier, communicator, close_raid=False):
         if not os.path.isfile(filename):
-            logger.error("check_close_except_nearby_button: {} does not exist", str(filename))
+            logger.error(
+                "check_close_except_nearby_button: {} does not exist", str(filename))
             return False
 
         return self.__thread_pool.apply_async(self.__internal_check_close_except_nearby_button,
@@ -636,7 +620,8 @@ class PogoWindows:
 
     def get_inventory_text(self, filename, identifier, x1, x2, y1, y2):
         if not os.path.isfile(filename):
-            logger.error("get_inventory_text: {} does not exist", str(filename))
+            logger.error(
+                "get_inventory_text: {} does not exist", str(filename))
             return ""
 
         return self.__thread_pool.apply_async(self.__internal_get_inventory_text,
@@ -644,7 +629,8 @@ class PogoWindows:
 
     def __internal_get_inventory_text(self, filename, identifier, x1, x2, y1, y2):
         screenshot_read = cv2.imread(filename)
-        temp_path_item = self.temp_dir_path + "/" + str(identifier) + "_inventory.png"
+        temp_path_item = self.temp_dir_path + \
+            "/" + str(identifier) + "_inventory.png"
         h = x1 - x2
         w = y1 - y2
         gray = cv2.cvtColor(screenshot_read, cv2.COLOR_BGR2GRAY)
@@ -662,7 +648,8 @@ class PogoWindows:
 
     def check_pogo_mainscreen(self, filename, identifier):
         if not os.path.isfile(filename):
-            logger.error("check_pogo_mainscreen: {} does not exist", str(filename))
+            logger.error(
+                "check_pogo_mainscreen: {} does not exist", str(filename))
             return False
 
         return self.__thread_pool.apply_async(self.__internal_check_pogo_mainscreen,

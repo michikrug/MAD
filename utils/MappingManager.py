@@ -72,7 +72,8 @@ class MappingManager:
 
         if self.__args.auto_reload_config:
             logger.info("Starting file watcher for mappings.json changes.")
-            self.__t_file_watcher = Thread(name='file_watcher', target=self.__file_watcher,)
+            self.__t_file_watcher = Thread(
+                name='file_watcher', target=self.__file_watcher,)
             self.__t_file_watcher.daemon = False
             self.__t_file_watcher.start()
         self.__devicesettings_setter_queue: Queue = Queue()
@@ -135,7 +136,8 @@ class MappingManager:
 
     def __fetch_routemanager(self, routemanager_name: str) -> Optional[RouteManagerBase.RouteManagerBase]:
         with self.__mappings_mutex:
-            routemanager_dict: dict = self._routemanagers.get(routemanager_name, None)
+            routemanager_dict: dict = self._routemanagers.get(
+                routemanager_name, None)
             if routemanager_dict is not None:
                 return routemanager_dict.get("routemanager")
             else:
@@ -277,9 +279,12 @@ class MappingManager:
                                                                      "geofence_excluded", None),
                                                                  mode=mode, settings=area.get(
                                                                      "settings", None),
-                                                                 init=area.get("init", False),
-                                                                 name=area.get("name", "unknown"),
-                                                                 level=area.get("level", False),
+                                                                 init=area.get(
+                                                                     "init", False),
+                                                                 name=area.get(
+                                                                     "name", "unknown"),
+                                                                 level=area.get(
+                                                                     "level", False),
                                                                  coords_spawns_known=area.get(
                                                                      "coords_spawns_known", False),
                                                                  routefile=area["routecalc"],
@@ -379,10 +384,12 @@ class MappingManager:
             elif mode == "mon_mitm":
                 if coords_spawns_known:
                     logger.debug("Reading known Spawnpoints from DB")
-                    coords = self.__db_wrapper.get_detected_spawns(geofence_helper)
+                    coords = self.__db_wrapper.get_detected_spawns(
+                        geofence_helper)
                 else:
                     logger.debug("Reading unknown Spawnpoints from DB")
-                    coords = self.__db_wrapper.get_undetected_spawns(geofence_helper)
+                    coords = self.__db_wrapper.get_undetected_spawns(
+                        geofence_helper)
             elif mode == "pokestops":
                 coords = self.__db_wrapper.stops_from_db(geofence_helper)
             else:
@@ -494,7 +501,8 @@ class MappingManager:
                 else:
                     logger.debug('No change found in {}.', filename)
             except KeyboardInterrupt as e:
-                logger.info("Got interrupt signal, stopping watching mappings.json")
+                logger.info(
+                    "Got interrupt signal, stopping watching mappings.json")
                 break
             except Exception as e:
                 logger.exception(

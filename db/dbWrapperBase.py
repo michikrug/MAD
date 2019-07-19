@@ -429,6 +429,10 @@ class DbWrapperBase(ABC):
         pass
 
     @abstractmethod
+    def statistics_get_shiny_stats(self):
+        pass
+
+    @abstractmethod
     def delete_stop(self, lat: float, lng: float):
         pass
 
@@ -935,7 +939,8 @@ class DbWrapperBase(ABC):
 
             query_where = query_where + oquery_where
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
 
             oquery_where = (
                 " AND last_scanned >= '{}' "
@@ -959,55 +964,27 @@ class DbWrapperBase(ABC):
 
         return str(json.dumps(spawn))
 
-    def get_spawntimes_of_spawn(self, spawn_ids: List[str]):
-        """
-        Retrieve a list of spawnpoints' spawntime for the given spawn_id
-        :param spawn_ids:
-        :return:
-        """
-        # TODO: this may not work...
-        query = (
-            "SELECT spawnpoint, spawndef, calc_endminsec "
-            "FROM trs_spawn "
-            "WHERE calc_endminsec IS NOT NULL and "
-            "spawnpoint = %s"
-            "DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') between DATE_FORMAT(DATE_ADD(NOW(), "
-            "INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') and DATE_FORMAT(DATE_ADD(NOW(), "
-            "INTERVAL if(spawndef=15,70,40) MINUTE),'%i:%s') "
-        )
-        vals = (spawn_ids, )
-
-        results = self.executemany(query, vals)
-        spawntimes = {}
-        current_time_of_day = datetime.now().replace(microsecond=0)
-        for spawnpoint, spawndef, calc_endminsec in results:
-            endminsec_split = calc_endminsec.split(":")
-            minutes = int(endminsec_split[0])
-            seconds = int(endminsec_split[1])
-            temp_date = current_time_of_day.replace(
-                minute=minutes, second=seconds)
-
-            spawn_duration_minutes = 60 if spawndef == 15 else 30
-
-            timestamp = time.mktime(temp_date.timetuple()) - spawn_duration_minutes * 60
-
-            spawntimes[spawnpoint] = timestamp
-        return spawntimes
-
     def retrieve_next_spawns(self, geofence_helper):
         """
         Retrieve the spawnpoints with their respective unixtimestamp that are due in the next 300 seconds
         :return:
         """
-        current_time_of_day = datetime.now().replace(microsecond=0)
 
         logger.debug("DbWrapperBase::retrieve_next_spawns called")
+
+        current_time_of_day = datetime.now().replace(microsecond=0)
+        minLat, minLon, maxLat, maxLon = geofence_helper.get_polygon_from_fence()
+
         query = (
-            "SELECT latitude, longitude, spawndef, calc_endminsec FROM trs_spawn WHERE calc_endminsec IS NOT NULL and "
-            "DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') between DATE_FORMAT(DATE_ADD(NOW(), "
-            "INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') and DATE_FORMAT(DATE_ADD(NOW(), "
-            "INTERVAL if(spawndef=15,70,40) MINUTE),'%i:%s')"
-        )
+            "SELECT latitude, longitude, spawndef, calc_endminsec "
+            "FROM trs_spawn "
+            "WHERE calc_endminsec IS NOT NULL "
+            "AND (latitude >= {} AND longitude >= {} AND latitude <= {} AND longitude <= {}) "
+            "AND DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') BETWEEN DATE_FORMAT(DATE_ADD(NOW(), "
+            " INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') "
+            "AND DATE_FORMAT(DATE_ADD(NOW(), INTERVAL if(spawndef=15,70,40) MINUTE),'%i:%s')"
+        ).format(minLat, minLon, maxLat, maxLon)
+
         res = self.execute(query)
         next_up = []
         current_time = time.time()
@@ -1385,8 +1362,8 @@ class DbWrapperBase(ABC):
 
     def submit_stats_detections_raw(self, data):
         query_status = (
-            "INSERT IGNORE INTO trs_stats_detect_raw (worker, type_id, type, count, timestamp_scan) "
-            "VALUES (%s, %s, %s, %s, %s) "
+            "INSERT IGNORE INTO trs_stats_detect_raw (worker, type_id, type, count, is_shiny, timestamp_scan) "
+            "VALUES (%s, %s, %s, %s, %s, %s) "
         )
         self.executemany(query_status, data, commit=True)
         return True
@@ -1406,13 +1383,15 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query = (
             "SELECT  %s, worker, sum(mon) as Mon, sum(mon_iv) as MonIV, sum(raid) as Raids, sum(quest) as Quests FROM "
             "trs_stats_detect %s %s group by worker %s"
             " order by timestamp_scan" %
-                (str(query_date), str(query_where), str(worker_where), str(grouped_query))
+                (str(query_date), str(query_where), str(
+                    worker_where), str(grouped_query))
         )
         res = self.execute(query)
 
@@ -1430,7 +1409,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' and (period) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' and (period) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
@@ -1460,7 +1440,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
 
@@ -1487,7 +1468,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
@@ -1525,7 +1507,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
 
@@ -1548,7 +1531,8 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(minutes)
+            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(
+                minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
@@ -1613,7 +1597,8 @@ class DbWrapperBase(ABC):
 
             lat, lng, alt = S2Helper.get_position_from_cell(cell_id)
 
-            cells.append((cell_id, 15, lat, lng, cell["current_timestamp"] / 1000))
+            cells.append(
+                (cell_id, 15, lat, lng, cell["current_timestamp"] / 1000))
 
         self.executemany(query, cells, commit=True)
 
@@ -1638,7 +1623,8 @@ class DbWrapperBase(ABC):
             query_where = query_where + oquery_where
 
         elif timestamp is not None:
-            tsdt = datetime.utcfromtimestamp(int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
+            tsdt = datetime.utcfromtimestamp(
+                int(timestamp)).strftime("%Y-%m-%d %H:%M:%S")
             oquery_where = " AND updated >= '{}' ".format(tsdt)
 
             query_where = query_where + oquery_where
@@ -1656,3 +1642,14 @@ class DbWrapperBase(ABC):
             })
 
         return cells
+
+    def statistics_get_shiny_stats_hour(self):
+        logger.debug('Fetching shiny pokemon stats from db')
+        query = (
+            "SELECT hour(FROM_UNIXTIME(timestamp_scan)) as hour, type_id FROM trs_stats_detect_raw where "
+            "is_shiny=1 group by type_id, hour ORDER BY hour ASC"
+        )
+
+        res = self.execute(query)
+
+        return res

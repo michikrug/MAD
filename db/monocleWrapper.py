@@ -8,7 +8,6 @@ from multiprocessing.managers import SyncManager
 from typing import List, Optional
 
 import requests
-
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.logging import logger
@@ -418,7 +417,8 @@ class MonocleWrapper(DbWrapperBase):
         res = self.execute(query, vals)
 
         for (id, distance, latitude, longitude, name, description, url) in res:
-            data.append([id, distance, latitude, longitude, name, description, url])
+            data.append([id, distance, latitude,
+                         longitude, name, description, url])
         logger.debug("{MonocleWrapper::get_near_gyms} done")
         return data
 
@@ -472,7 +472,8 @@ class MonocleWrapper(DbWrapperBase):
                                                        team,
                                                        float(lat),
                                                        float(lon),
-                                                       str(name).replace('"', '\\"')
+                                                       str(name).replace(
+                                                           '"', '\\"')
                                                        .replace('\n', '\\n'), str(url), park, sponsor)
         return gyminfo
 
@@ -606,11 +607,12 @@ class MonocleWrapper(DbWrapperBase):
         if encounter_id < 0:
             encounter_id = encounter_id + 2 ** 64
 
-        mitm_mapper.collect_mon_iv_stats(origin, str(encounter_id))
-
         latitude = wild_pokemon.get("latitude")
         longitude = wild_pokemon.get("longitude")
         pokemon_data = wild_pokemon.get("pokemon_data")
+        shiny = wild_pokemon['pokemon_data']['display']['is_shiny']
+
+        mitm_mapper.collect_mon_iv_stats(origin, str(encounter_id), shiny)
 
         if pokemon_data.get("cp_multiplier") < 0.734:
             pokemon_level = (58.35178527 * pokemon_data.get("cp_multiplier") * pokemon_data.get("cp_multiplier") -
@@ -1138,7 +1140,8 @@ class MonocleWrapper(DbWrapperBase):
 
             query_where = query_where + oquery_where
         elif timestamp is not None:
-            oquery_where = " AND trs_quest.quest_timestamp >= {}".format(timestamp)
+            oquery_where = " AND trs_quest.quest_timestamp >= {}".format(
+                timestamp)
             query_where = query_where + oquery_where
 
         res = self.execute(query + query_where)
@@ -1574,3 +1577,20 @@ class MonocleWrapper(DbWrapperBase):
             })
 
         return mons
+
+    def statistics_get_shiny_stats(self):
+        logger.debug('Fetching shiny pokemon stats from db')
+
+        query = (
+            "SELECT (select count(encounter_id) from sightings inner join trs_stats_detect_raw on "
+            "trs_stats_detect_raw.type_id=sightings.encounter_id where sightings.pokemon_id=a.pokemon_id and "
+            "trs_stats_detect_raw.worker=b.worker and sightings.form=a.form), count(DISTINCT encounter_id), "
+            "a.pokemon_id, b.worker, GROUP_CONCAT(DISTINCT encounter_id ORDER BY encounter_id DESC SEPARATOR '<br>'),"
+            " a.form "
+            "FROM sightings a left join trs_stats_detect_raw b on a.encounter_id=b.type_id where b.is_shiny=1 group by "
+            "b.is_shiny, a.pokemon_id, a.form, b.worker order by a.pokemon_id"
+        )
+
+        res = self.execute(query)
+
+        return res

@@ -3,7 +3,6 @@ import json
 import os
 
 from flask import redirect, render_template, request
-
 from madmin.functions import auth_required, getBasePath
 from utils.adb import ADBConnect
 from utils.language import i8ln, open_json_file
@@ -270,7 +269,8 @@ class config(object):
         block = request.args.get('block')
         area = request.args.get('area')
         tabarea = area
-        fieldwebsite.append('<form action="addedit" id="settings" method="post">')
+        fieldwebsite.append(
+            '<form action="addedit" id="settings" method="post">')
         fieldwebsite.append(
             '<input type="hidden" name="block" value="' + block + '" />')
         fieldwebsite.append(
@@ -432,7 +432,8 @@ class config(object):
                                 if str(oldvalues[field['name']]).lower() in str(option).lower():
                                     sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                        str(option) + '" ' + sel + '>' + str(option) + '</option>'
+                        str(option) + '" ' + sel + '>' + \
+                        str(option) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -695,7 +696,8 @@ class config(object):
                                 continue
                             else:
                                 if str(key) not in ('block', 'area', 'type', 'edit', 'mode'):
-                                    entry['settings'][key] = self.match_type(value)
+                                    entry['settings'][key] = self.match_type(
+                                        value)
 
                     else:
                         for key, value in datavalue.items():
@@ -741,7 +743,8 @@ class config(object):
                     tempvalue.append(str(k))
                 value = tempvalue
             else:
-                value = list(value.replace('[', '').replace(']', '').split(','))
+                value = list(value.replace(
+                    '[', '').replace(']', '').split(','))
                 value = [int(i) for i in value]
         elif value in 'true':
             value = bool(True)
@@ -813,7 +816,8 @@ class config(object):
 
                 if _quick == 'setup':
                     quickadd = 'Assigned areas: ' + \
-                               str(len(output.get('setup', []))) + '<br />Areas: '
+                               str(len(output.get('setup', []))) + \
+                        '<br />Areas: '
                     for area in output.get('setup', []):
                         quickadd = quickadd + area.get('walkerarea') + ' | '
 
@@ -841,7 +845,8 @@ class config(object):
                                 str(output['settings'].get(
                                     quickfield, '')) + '<br>'
                     quickline = quickline + '<td colspan="2" class="quick">' + \
-                        str(quickadd) + '</td><td style="display: none;"></td></tr>'
+                        str(quickadd) + \
+                        '</td><td style="display: none;"></td></tr>'
 
                 line = line + quickline
 
@@ -851,7 +856,8 @@ class config(object):
                 _active = ""
 
             _tab_starter = '<div class="tab-pane fade ' + str(_active) + '"  id="nav-' + str(var) \
-                           + '" role="tabpanel" aria-labelledby="nav-' + str(var) + '-tab">'
+                           + '" role="tabpanel" aria-labelledby="nav-' + \
+                str(var) + '-tab">'
 
             table = str(_tab_starter) + '<table>' + str(globalheader) + '<tbody>' + str(header) + str(subheader) + str(line) \
                 + '</tbody></table></div>'
@@ -921,7 +927,8 @@ class config(object):
         if "settings" not in this_area:
             return render_template('showmonsidpicker.html',
                                    error_msg="No settings key found for area " +
-                                   edit + "(" + type + "). Configure it first.",
+                                   edit + "(" + type +
+                                   "). Configure it first.",
                                    header=header, title=title)
 
         if request.method == 'POST':
@@ -950,7 +957,8 @@ class config(object):
                 mon_name = i8ln(mondata[str(mon_id)]["name"])
             except KeyError:
                 mon_name = "No-name-in-file-please-fix"
-            current_mons_list.append({"mon_name": mon_name, "mon_id": str(mon_id)})
+            current_mons_list.append(
+                {"mon_name": mon_name, "mon_id": str(mon_id)})
 
         # Why o.O
         stripped_mondata = {}

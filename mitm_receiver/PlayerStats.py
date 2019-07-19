@@ -111,7 +111,7 @@ class PlayerStats(object):
             else:
                 self.__stats_collected[106]['mon'][encounter_id] += 1
 
-    def stats_collect_mon_iv(self, encounter_id: str):
+    def stats_collect_mon_iv(self, encounter_id: str, shiny: int):
         with self.__mapping_mutex:
             if 102 not in self.__stats_collected:
                 self.__stats_collected[102] = {}
@@ -123,10 +123,12 @@ class PlayerStats(object):
                 self.__stats_collected[102]['mon_iv_count'] = 0
 
             if encounter_id not in self.__stats_collected[102]['mon_iv']:
-                self.__stats_collected[102]['mon_iv'][encounter_id] = 1
+                self.__stats_collected[102]['mon_iv'][encounter_id] = {}
+                self.__stats_collected[102]['mon_iv'][encounter_id]['count'] = 1
+                self.__stats_collected[102]['mon_iv'][encounter_id]['shiny'] = shiny
                 self.__stats_collected[102]['mon_iv_count'] += 1
             else:
-                self.__stats_collected[102]['mon_iv'][encounter_id] += 1
+                self.__stats_collected[102]['mon_iv'][encounter_id]['count'] += 1
 
     def stats_collect_raid(self, gym_id: str):
         with self.__mapping_mutex:
@@ -271,6 +273,7 @@ class PlayerStats(object):
                                               str(type_id),
                                               'mon',
                                               str(type_count),
+                                              0,
                                               str(int(period))
                                               ))
 
@@ -283,6 +286,7 @@ class PlayerStats(object):
                                               str(type_id),
                                               'raid',
                                               str(type_count),
+                                              0,
                                               str(int(period))
                                               ))
 
@@ -295,6 +299,7 @@ class PlayerStats(object):
                                               str(type_id),
                                               'quest',
                                               str(type_count),
+                                              0,
                                               str(int(period))
                                               ))
 
@@ -302,12 +307,14 @@ class PlayerStats(object):
             if 'mon_iv' in data[102]:
                 for mon_id in data[102]['mon_iv']:
                     type_id = str(mon_id)
-                    type_count = int(data[102]['mon_iv'][mon_id])
+                    type_count = int(data[102]['mon_iv'][mon_id]['count'])
+                    shiny = int(data[102]['mon_iv'][mon_id]["shiny"])
 
                     data_location_raw.append((str(client_id),
                                               str(type_id),
                                               'mon_iv',
                                               str(type_count),
+                                              shiny,
                                               str(int(period))
                                               ))
 

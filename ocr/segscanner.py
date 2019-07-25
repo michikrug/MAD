@@ -51,8 +51,8 @@ class Scanner:
                      ') ] ' + 'detectRaidTime: Reading Raidtimer')
 
         height, width, channel = raidpic.shape
-        raidtimer = raidpic[int(round(radius*2*0.03)+(2*radius)+(radius*2*0.265)):int(
-            round(radius*2*0.03)+(2*radius)+(radius*2*0.43)), 0:width]
+        raidtimer = raidpic[int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.265)):int(
+            round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.43)), 0:width]
         raidtimer = cv2.resize(raidtimer, (0, 0), fx=2,
                                fy=2, interpolation=cv2.INTER_CUBIC)
         emptyRaidTempPath = os.path.join(
@@ -108,7 +108,7 @@ class Scanner:
         logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                      ') ] ' + 'detectRaidEndtimer: Reading Raidtimer')
         height, width, channel = raidpic.shape
-        raidtimer = raidpic[int(round(radius*2*0.03)+(2*radius)+(radius*2*0.10)):int(round(radius*2*0.03)+(2*radius)+(radius*2*0.23)), 0:width]
+        raidtimer = raidpic[int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.10)):int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.23)), 0:width]
         raidtimer = cv2.resize(raidtimer, (0, 0), fx=3,
                                fy=3, interpolation=cv2.INTER_CUBIC)
         emptyRaidTempPath = os.path.join(
@@ -215,7 +215,7 @@ class Scanner:
         logger.info('[Crop: ' + str(raidNo) +
                     ' (' + str(self.uniqueHash) + ') ] ' + 'Scanning Level')
         height, width, channel = raidpic.shape
-        raidlevel = raidpic[int(round(radius*2*0.03)+(2*radius)+(radius*2*0.43)):int(round(radius*2*0.03)+(2*radius)+(radius*2*0.68)), 0:width]
+        raidlevel = raidpic[int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.43)):int(round(radius * 2 * 0.03) + (2 * radius) + (radius * 2 * 0.68)), 0:width]
         raidlevel = cv2.resize(raidlevel, (0, 0), fx=0.5, fy=0.5)
 
         imgray = cv2.cvtColor(raidlevel, cv2.COLOR_BGR2GRAY)
@@ -226,7 +226,7 @@ class Scanner:
         (_, contours, _) = cv2.findContours(
             thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        lvl = len(contours)-1
+        lvl = len(contours) - 1
 
         if lvl >= 1 and lvl <= 5:
 
@@ -414,7 +414,7 @@ class Scanner:
         gray = cv2.GaussianBlur(gray, (7, 7), 2)
         output = image.copy()
         height, width, channel = output.shape
-        output = output[0:round(height*2/3), 0:width]
+        output = output[0:round(height * 2 / 3), 0:width]
         image_cols, image_rows, _ = image.shape
         circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 20,
                                    param1=50, param2=30, minRadius=radius, maxRadius=radius)
@@ -423,7 +423,7 @@ class Scanner:
             for (x, y, r) in circles:
                 logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                              'cropImage: Detect crop coordinates x: ' + str(x) + ' y: ' + str(y) + ' with radius: ' + str(r))
-                new_crop = output[y-r:y+r, x-r:x+r]
+                new_crop = output[y - r:y + r, x - r:x + r]
                 return new_crop
 
         return False
@@ -621,7 +621,7 @@ class Scanner:
             logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                          'start_detect: Found egg level {} starting at {} and ending at {}. GymID: {}', raidlevel, raidstart, raidend, gymId)
             self.db_wrapper.submit_raid(str(gymId), None, raidlevel, raidstart, raidend, 'EGG', raidNo,
-                                                       captureTime, unique_hash=self.uniqueHash)
+                                        captureTime, unique_hash=self.uniqueHash)
             raidHashJson = self.encodeHashJson(gymId, raidlevel, False, raidNo)
             logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                          'start_detect: Adding Raidhash to Database: ' + str(raidHashJson))
@@ -638,18 +638,18 @@ class Scanner:
                     logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                                  'start_detect: Submitting mon without egg. ID: {}, gymId: {}', str(monFound[0]), str(gymId))
                     self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, raidend[2],
-                                                               'MON', raidNo, captureTime, unique_hash=self.uniqueHash,
-                                                               MonWithNoEgg=True)
+                                                'MON', raidNo, captureTime, unique_hash=self.uniqueHash,
+                                                MonWithNoEgg=True)
                 else:
                     logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                                  'start_detect: Submitting mon without raidend. ID: {}, gymId: {}', str(monFound[0]), str(gymId))
                     self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, None, 'MON',
-                                                               raidNo, captureTime, unique_hash=self.uniqueHash)
+                                                raidNo, captureTime, unique_hash=self.uniqueHash)
             else:
                 logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
                              'start_detect: Submitting mon with previously reported endtime. ID: {}, gymId: {}', str(monFound[0]), str(gymId))
                 self.db_wrapper.submit_raid(str(gymId), monFound[0], raidlevel, None, None, 'MON',
-                                                           raidNo, captureTime, unique_hash=self.uniqueHash)
+                                            raidNo, captureTime, unique_hash=self.uniqueHash)
 
             raidHashJson = self.encodeHashJson(gymId, raidlevel, monFound[0], raidNo)
             logger.debug('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) + ') ] ' +
@@ -703,10 +703,10 @@ class Scanner:
         image2 = cv2.imread(image, 3)
         image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
         if zoom:
-            x1 = int(round(radius*2*0.03)+(radius*x1))
-            x2 = int(round(radius*2*0.03)+(radius*x2))
-            y1 = int(round(radius*2*0.03)+(radius*y1))
-            y2 = int(round(radius*2*0.03)+(radius*y2))
+            x1 = int(round(radius * 2 * 0.03) + (radius * x1))
+            x2 = int(round(radius * 2 * 0.03) + (radius * x2))
+            y1 = int(round(radius * 2 * 0.03) + (radius * y1))
+            y2 = int(round(radius * 2 * 0.03) + (radius * y2))
             crop = image2[int(y1):int(y2), int(x1):int(x2)]
         else:
             crop = image2
@@ -735,10 +735,10 @@ class Scanner:
         image2 = cv2.imread(image, 3)
         image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
         if zoom:
-            x1 = int(round(radius*2*0.03)+(radius*x1))
-            x2 = int(round(radius*2*0.03)+(radius*x2))
-            y1 = int(round(radius*2*0.03)+(radius*y1))
-            y2 = int(round(radius*2*0.03)+(radius*y2))
+            x1 = int(round(radius * 2 * 0.03) + (radius * x1))
+            x2 = int(round(radius * 2 * 0.03) + (radius * x2))
+            y1 = int(round(radius * 2 * 0.03) + (radius * y1))
+            y2 = int(round(radius * 2 * 0.03) + (radius * y2))
             crop = image2[int(y1):int(y2), int(x1):int(x2)]
         else:
             crop = image2
@@ -778,10 +778,10 @@ class Scanner:
         image2 = cv2.imread(image, 3)
         image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
         if zoom:
-            x1 = int(round(radius*2*0.03)+(radius*x1))
-            x2 = int(round(radius*2*0.03)+(radius*x2))
-            y1 = int(round(radius*2*0.03)+(radius*y1))
-            y2 = int(round(radius*2*0.03)+(radius*y2))
+            x1 = int(round(radius * 2 * 0.03) + (radius * x1))
+            x2 = int(round(radius * 2 * 0.03) + (radius * x2))
+            y1 = int(round(radius * 2 * 0.03) + (radius * y1))
+            y2 = int(round(radius * 2 * 0.03) + (radius * y2))
             crop = image2[int(y1):int(y2), int(x1):int(x2)]
         else:
             crop = image2
@@ -851,7 +851,6 @@ class Scanner:
         pm_found = re.search(r"[p|P]\w+", data)
         hour_min = re.search(r"([\d]{1,2}:[\d]{1,2})", data)
 
-
         if hour_min is None:
             logger.error('[Crop: ' + str(raidNo) + ' (' + str(self.uniqueHash) +
                          ') ]' + 'getHatchTime: Could not locate a HH:MM')
@@ -867,18 +866,18 @@ class Scanner:
             logger.debug('[Crop: ' + str(raidNo) + ' (' +
                          str(self.uniqueHash) + ') ] ' + 'getHatchTime: Found AM')
 
-            return int(unix_zero)+int(hour_min[0])*3600+int(hour_min[1])*60
+            return int(unix_zero) + int(hour_min[0]) * 3600 + int(hour_min[1]) * 60
         elif pm_found:
             logger.debug('[Crop: ' + str(raidNo) + ' (' +
                          str(self.uniqueHash) + ') ] ' + 'getHatchTime: Found PM')
             if hour_min[0] == '12':
-                return int(unix_zero)+int(hour_min[0])*3600+int(hour_min[1])*60
+                return int(unix_zero) + int(hour_min[0]) * 3600 + int(hour_min[1]) * 60
             else:
-                return int(unix_zero)+(int(hour_min[0])+12)*3600+int(hour_min[1])*60
+                return int(unix_zero) + (int(hour_min[0]) + 12) * 3600 + int(hour_min[1]) * 60
         else:
             logger.debug('[Crop: ' + str(raidNo) + ' (' +
                          str(self.uniqueHash) + ') ] ' + 'getHatchTime: Found EU Time')
-            return int(unix_zero)+int(hour_min[0])*3600+int(hour_min[1])*60
+            return int(unix_zero) + int(hour_min[0]) * 3600 + int(hour_min[1]) * 60
 
     def getEndTime(self, data, raidNo):
         unix_zero = time.time()
@@ -894,7 +893,7 @@ class Scanner:
             hour_min = data.split(':')
             ret, hour_min = self.checkHourMinSec(hour_min)
             if ret:
-                return int(unix_zero)+int(hour_min[0])*3600+int(hour_min[1])*60+int(hour_min[2])
+                return int(unix_zero) + int(hour_min[0]) * 3600 + int(hour_min[1]) * 60 + int(hour_min[2])
             else:
                 return False
         else:

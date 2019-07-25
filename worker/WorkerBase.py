@@ -84,7 +84,7 @@ class WorkerBase(ABC):
         self.last_processed_location = Location(0.0, 0.0)
         self.workerstart = None
         self._WordToScreenMatching = WordToScreenMatching(self._communicator, self._pogoWindowManager, self._id,
-                                                          self._resocalc)
+                                                          self._resocalc, mapping_manager, self)
 
     def set_devicesettings_value(self, key: str, value):
         self._mapping_manager.set_devicesetting_value_of(self._id, key, value)
@@ -255,7 +255,6 @@ class WorkerBase(ABC):
         self._work_mutex.acquire()
         try:
             self._turn_screen_on_and_start_pogo()
-            self._check_windows()
             self._get_screen_size()
         except WebsocketWorkerRemovedException:
             logger.error("Timeout during init of worker {}", str(self._id))
@@ -266,8 +265,7 @@ class WorkerBase(ABC):
         # register worker  in routemanager
         logger.info("Try to register {} in Routemanager {}", str(
             self._id), str(self._routemanager_name))
-        self._mapping_manager.register_worker_to_routemanager(
-            self._routemanager_name, self._id)
+        self._mapping_manager.register_worker_to_routemanager(self._routemanager_name, self._id)
 
         self._work_mutex.release()
 
@@ -313,8 +311,7 @@ class WorkerBase(ABC):
         self._cleanup()
         logger.info(
             "Internal cleanup of {} signalling end to websocketserver", str(self._id))
-        self._mapping_manager.unregister_worker_from_routemanager(
-            self._routemanager_name, self._id)
+        self._mapping_manager.unregister_worker_from_routemanager(self._routemanager_name, self._id)
         self._communicator.cleanup_websocket()
 
         logger.info("Stopped Route")
@@ -399,8 +396,7 @@ class WorkerBase(ABC):
                 logger.debug('main worker {}: LastLat: {}, LastLng: {}, CurLat: {}, CurLng: {}',
                              str(
                                  self._id), self.get_devicesettings_value("last_location", Location(0, 0)).lat,
-                             self.get_devicesettings_value(
-                                 "last_location", Location(0, 0)).lng,
+                             self.get_devicesettings_value("last_location", Location(0, 0)).lng,
                              self.current_location.lat, self.current_location.lng)
                 time_snapshot, process_location = self._move_to_location()
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
@@ -581,32 +577,70 @@ class WorkerBase(ABC):
                 "post_turn_screen_on_delay", 2))
 
     def _check_windows(self):
+        logger.info('Checking pogo screen...')
+        restartcounter: bool = False
+        loginerrorcounter: int = 0
         returncode: ScreenType = ScreenType.UNDEFINED
-        if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
-                                    delayAfter=2):
-            logger.error("_check_windows: Failed getting screenshot")
-            return False
+        # if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
+        #                            delayAfter=2):
+        #    logger.error("_check_windows: Failed getting screenshot")
+        #    return False
 
         while not returncode == ScreenType.POGO:
-            returncode = self._WordToScreenMatching.matchScreen(
-                self.get_screenshot_path())
+            returncode = self._WordToScreenMatching.matchScreen()
 
             if returncode != ScreenType.POGO:
-                self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
-                                     delayAfter=0.1)
-        return
+
+                if returncode == ScreenType.ERROR:
+                    logger.warning('Something wrong with screendetection')
+                    loginerrorcounter += 1
+
+                if restartcounter:
+                    logger.error('Cannot login again - clear pogo game data and restart phone')
+                    self._stop_pogo()
+                    time.sleep(5)
+                    self._communicator.resetAppdata("com.nianticlabs.pokemongo")
+                    self._reboot()
+                    break
+
+                if loginerrorcounter == 2:
+                    logger.error('Cannot login two times in row - restart pogo')
+                    self._stop_pogo()
+                    time.sleep(5)
+                    self._turn_screen_on_and_start_pogo()
+                    loginerrorcounter = 0
+                    restartcounter = True
+                    break
+
+                if returncode != ScreenType.POGO:
+                    self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
+                                         delayAfter=0.1)
+
+        logger.info('Checking pogo screen is finished')
+        return True
+
+    def _switch_user(self):
+        logger.info('Switching User - please wait ...')
+        self._stop_pogo()
+        time.sleep(5)
+        self._communicator.resetAppdata("com.nianticlabs.pokemongo")
+        self._turn_screen_on_and_start_pogo()
+        if not self._check_windows():
+            logger.error('Kill Worker...')
+            self._stop_worker_event.set()
+            return False
+        logger.info('Switching finished ...')
+        return True
 
     def _check_quest(self):
         logger.info('Precheck Quest Menu')
         questcounter: int = 0
         questloop: int = 0
         firstround: bool = True
-        if not self._checkPogoButton():
-            self._checkPogoClose()
         x, y = self._resocalc.get_coords_quest_menu(self)[0], \
             self._resocalc.get_coords_quest_menu(self)[1]
         self._communicator.click(int(x), int(y))
-        time.sleep(1)
+        time.sleep(10)
         returncode: ScreenType = ScreenType.UNDEFINED
         if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
                                     delayAfter=2):
@@ -625,17 +659,14 @@ class WorkerBase(ABC):
                         self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
-                    returncode = ScreenType.POGO
+                    return ScreenType.POGO
                 elif questcounter >= 2:
                     logger.info('Getting research menu two times in row')
                     x, y = self._resocalc.get_close_main_button_coords(self)[0], \
                         self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
-                    returncode = ScreenType.POGO
-
-                if returncode == ScreenType.POGO:
-                    return returncode
+                    return ScreenType.POGO
 
             x, y = self._resocalc.get_close_main_button_coords(self)[0], \
                 self._resocalc.get_close_main_button_coords(self)[1]
@@ -862,7 +893,7 @@ class WorkerBase(ABC):
 
             # not using continue since we need to get a screen before the next round...
             found = self._pogoWindowManager.look_for_button(
-                screenshot_path, 2.20, 3.01, self._communicator)
+                screenshot_path, 2.40, 3.01, self._communicator)
             if found:
                 logger.debug("_check_pogo_main_screen: Found button (small)")
 
@@ -875,6 +906,7 @@ class WorkerBase(ABC):
 
             if not found and self._pogoWindowManager.look_for_button(screenshot_path, 1.05, 2.20, self._communicator):
                 logger.debug("_check_pogo_main_screen: Found button (big)")
+                time.sleep(5)
                 found = True
 
             logger.debug(

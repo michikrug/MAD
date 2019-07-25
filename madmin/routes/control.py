@@ -2,9 +2,10 @@ import datetime
 import os
 import time
 
+from flask import redirect, render_template, request
+
 import cv2
 from db.dbWrapperBase import DbWrapperBase
-from flask import redirect, render_template, request
 from madmin.functions import (auth_required, generate_device_screenshot_path,
                               getBasePath, nocache)
 from utils.adb import ADBConnect

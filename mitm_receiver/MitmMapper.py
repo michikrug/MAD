@@ -85,10 +85,8 @@ class MitmMapper(object):
                 client_id, stats, last_processed_timestamp)
             data_send_detection_raw = PlayerStats.stats_detection_raw_parser(
                 client_id, stats, last_processed_timestamp)
-            self.__db_wrapper.submit_stats_locations_raw(
-                data_send_location_raw)
-            self.__db_wrapper.submit_stats_detections_raw(
-                data_send_detection_raw)
+            self.__db_wrapper.submit_stats_locations_raw(data_send_location_raw)
+            self.__db_wrapper.submit_stats_detections_raw(data_send_detection_raw)
         self.__db_wrapper.cleanup_statistics()
 
     def shutdown(self):

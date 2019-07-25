@@ -57,8 +57,7 @@ class testimage(object):
             self._image_check = self.get_gym_click_coords(self._image)
 
         if self._mode == "check_button_big":
-            self._image_check = self.look_for_button(
-                self._image, 1.05, 2.20, upper=True)
+            self._image_check = self.look_for_button(self._image, 1.05, 2.20, upper=False)
             # 2.20, 3.01)
 
         if self._mode == "check_button_small":
@@ -143,6 +142,7 @@ class testimage(object):
         print('Opening gym')
         x, y = self._resocalc.get_gym_click_coords(
             self)[0], self._resocalc.get_gym_click_coords(self)[1]
+        print(x, y)
         return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
 
     def find_pokeball(self, image):

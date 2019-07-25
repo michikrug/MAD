@@ -151,7 +151,9 @@ class WorkerMITM(MITMBase):
             reached_raidtab = True
 
         self._wait_pogo_start_delay()
-        self._check_windows()
+        if not self._wait_for_injection() or self._stop_worker_event.is_set():
+            raise InternalStopWorkerException
+
         return reached_raidtab
 
     def __init__(self, args, id, last_known_state, websocket_handler, mapping_manager: MappingManager,
@@ -203,8 +205,7 @@ class WorkerMITM(MITMBase):
         # if iv ids are specified we will sync the workers encountered ids to newest time.
         if ids_iv:
             (self._latest_encounter_update, encounter_ids) = self._db_wrapper.update_encounters_from_db(
-                self._mapping_manager.routemanager_get_geofence_helper(
-                    self._routemanager_name),
+                self._mapping_manager.routemanager_get_geofence_helper(self._routemanager_name),
                 self._latest_encounter_update)
             if encounter_ids:
                 logger.debug("Found {} new encounter_ids", len(encounter_ids))
@@ -227,8 +228,7 @@ class WorkerMITM(MITMBase):
             # encounter_ids only contains the newest update.
         self._mitm_mapper.update_latest(
             origin=self._id, key="ids_encountered", values_dict=self._encounter_ids)
-        self._mitm_mapper.update_latest(
-            origin=self._id, key="ids_iv", values_dict=ids_iv)
+        self._mitm_mapper.update_latest(origin=self._id, key="ids_iv", values_dict=ids_iv)
         self._mitm_mapper.update_latest(
             origin=self._id, key="injected_settings", values_dict=injected_settings)
 

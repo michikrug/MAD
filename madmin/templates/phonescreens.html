@@ -93,8 +93,11 @@
 
 {% block scripts %}
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script type="text/javascript" src="static/js/jquery.Aplus.min.js"></script>
 <script>
     $(document).ready(function () {
+
+        $('body').Aplus();
 
         $("a#screenshot").bind("click", function (event) {
             event.preventDefault();
@@ -114,18 +117,22 @@
 
         $("a#quit").bind("click", function (event) {
             event.preventDefault();
-            var origin = $(this).attr("origin");
-            var url = $(this).attr("href");
-            $('div#' + origin).block({ message: '<img src="static/loading.gif" width="100px"><br><h2>Load...</h2>' });
-            $.ajax({
-                type: "GET",
-                url: url,
-                success: function (data) {
-                    $('#date' + origin).text(data);
-                    $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-                    $('div#' + origin).unblock();
-                }
-            });
+            var confirm1 = confirm('Do you really want quit pogo?');
+            if (confirm1) {
+                var origin = $(this).attr("origin");
+                var url = $(this).attr("href");
+                $('div#' + origin).block({ message: '<img src="static/loading.gif" width="100px"><br><h2>Load...</h2>' });
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    success: function (data) {
+                        $('#date' + origin).text(data);
+                        $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+                        $('div#' + origin).unblock();
+                    }
+
+                });
+            }
         });
 
 
@@ -216,11 +223,13 @@
 
         $(".screenshot").mousedown(function (e) {
             e.preventDefault();
+
             $(this).data("tracking", true);
             $(this).data("start", {
                 x: e.offsetX, y: e.offsetY,
                 xe: e.offsetX, ye: e.offsetY
             });
+
         }).mousemove(function (e) {
             if ($(this).data("tracking")) {
                 var start = $(this).data("start");
@@ -230,6 +239,7 @@
                     x: start.x, y: start.y,
                     xe: w, ye: h
                 });
+
             }
         }).mouseup(function (e) {
             $(this).data("tracking", false);

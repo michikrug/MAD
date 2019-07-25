@@ -8,6 +8,7 @@ from multiprocessing.managers import SyncManager
 from typing import List, Optional
 
 import requests
+
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.logging import logger
@@ -50,7 +51,18 @@ class MonocleWrapper(DbWrapperBase):
                 "table": "sightings",
                 "column": "height",
                 "ctype": "float NULL"
-            }
+            },
+            {
+                "table": "pokestops",
+                "column": "incident_start",
+                "ctype": "int(11) NULL"
+            },
+            {
+                "table": "pokestops",
+                "column": "incident_expiration",
+                "ctype": "int(11) NULL"
+            },
+
         ]
 
         for field in fields:
@@ -600,7 +612,9 @@ class MonocleWrapper(DbWrapperBase):
             "VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             "ON DUPLICATE KEY UPDATE updated=VALUES(updated), atk_iv=VALUES(atk_iv), def_iv=VALUES(def_iv), "
             "sta_iv=VALUES(sta_iv), move_1=VALUES(move_1), move_2=VALUES(move_2), cp=VALUES(cp), "
-            "level=VALUES(level), weight=VALUES(weight), costume=VALUES(costume), height=VALUES(height)"
+            "level=VALUES(level), weight=VALUES(weight), costume=VALUES(costume), height=VALUES(height), "
+            "weather_boosted_condition=VALUES(weather_boosted_condition), form=VALUES(form), "
+            "gender=VALUES(gender), pokemon_id=VALUES(pokemon_id)"
         )
 
         encounter_id = wild_pokemon['encounter_id']
@@ -749,10 +763,12 @@ class MonocleWrapper(DbWrapperBase):
             return False
 
         query_pokestops = (
-            "INSERT INTO pokestops (external_id, lat, lon, name, url, updated, expires) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            "INSERT INTO pokestops (external_id, lat, lon, name, url, updated, expires, "
+            "incident_start, incident_expiration) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
             "ON DUPLICATE KEY UPDATE updated=VALUES(updated), expires=VALUES(expires), "
-            "lat=VALUES(lat), lon=VALUES(lon)"
+            "lat=VALUES(lat), lon=VALUES(lon), incident_start=VALUES(incident_start), "
+            "incident_expiration=VALUES(incident_expiration)"
         )
 
         list_of_pokestops = []
@@ -769,7 +785,8 @@ class MonocleWrapper(DbWrapperBase):
                     list_of_pokestops.append((external_id, list_of_stops_vals[1],
                                               list_of_stops_vals[2], list_of_stops_vals[3],
                                               list_of_stops_vals[4], list_of_stops_vals[5],
-                                              list_of_stops_vals[6]))
+                                              list_of_stops_vals[6], list_of_stops_vals[7],
+                                              list_of_stops_vals[8]))
 
         self.executemany(query_pokestops, list_of_pokestops, commit=True)
 
@@ -1029,14 +1046,25 @@ class MonocleWrapper(DbWrapperBase):
             logger.warning("{} is not a pokestop", str(stop_data))
             return None
 
-        now = int(time.time())
-        # lure = int(float(stop_data['lure_expires']))
+        now = time.time()
         lure = 0
-        if lure > 0:
-            lure = lure / 1000
+
+        if "pokestop_display" in stop_data:
+            incident_start = None
+            incident_expiration = None
+
+            start_ms = stop_data["pokestop_display"]["incident_start_ms"]
+            expiration_ms = stop_data["pokestop_display"]["incident_expiration_ms"]
+
+            if start_ms > 0:
+                incident_start = start_ms / 1000
+
+            if expiration_ms > 0:
+                incident_expiration = expiration_ms / 1000
+
         return (
             stop_data['id'], stop_data['latitude'], stop_data['longitude'], "unknown",
-            stop_data['image_url'], now, lure
+            stop_data['image_url'], now, lure, incident_start, incident_expiration
         )
 
     def __extract_args_single_weather(self, client_weather_data, time_of_day, received_timestamp):

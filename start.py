@@ -253,8 +253,8 @@ if __name__ == "__main__":
             mitm_receiver_process.start()
 
             logger.info('Starting scanner')
-            ws_server = WebsocketServer(
-                args, mitm_mapper, db_wrapper, mapping_manager, pogoWindowManager)
+            ws_server = WebsocketServer(args, mitm_mapper, db_wrapper,
+                                        mapping_manager, pogoWindowManager)
             t_ws = Thread(name='scanner', target=ws_server.start_server)
             t_ws.daemon = False
             t_ws.start()

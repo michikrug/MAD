@@ -7,6 +7,7 @@ from multiprocessing.managers import SyncManager
 from typing import List, Optional
 
 import requests
+
 from db.dbWrapperBase import DbWrapperBase
 from utils.collections import Location
 from utils.gamemechanicutil import gen_despawn_timestamp
@@ -41,6 +42,16 @@ class RmWrapper(DbWrapperBase):
                 "table": "gym",
                 "column": "park",
                 "ctype": "tinyint(1) NOT NULL DEFAULT '0'"
+            },
+            {
+                "table": "pokestop",
+                "column": "incident_start",
+                "ctype": "datetime NULL"
+            },
+            {
+                "table": "pokestop",
+                "column": "incident_expiration",
+                "ctype": "datetime NULL"
             }
         ]
 
@@ -709,7 +720,7 @@ class RmWrapper(DbWrapperBase):
             "individual_stamina=VALUES(individual_stamina), move_1=VALUES(move_1), move_2=VALUES(move_2), "
             "cp=VALUES(cp), cp_multiplier=VALUES(cp_multiplier), weight=VALUES(weight), height=VALUES(height), "
             "gender=VALUES(gender), boosted_weather=VALUES(boosted_weather), "
-            "costume=VALUES(costume), form=VALUES(form)"
+            "costume=VALUES(costume), form=VALUES(form), pokemon_id=VALUES(pokemon_id)"
         )
 
         vals = (
@@ -811,11 +822,12 @@ class RmWrapper(DbWrapperBase):
 
         query_pokestops = (
             "INSERT INTO pokestop (pokestop_id, enabled, latitude, longitude, last_modified, lure_expiration, "
-            "last_updated, active_fort_modifier) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) "
+            "last_updated, active_fort_modifier, incident_start, incident_expiration) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
             "ON DUPLICATE KEY UPDATE last_updated=VALUES(last_updated), lure_expiration=VALUES(lure_expiration), "
             "last_modified=VALUES(last_modified), latitude=VALUES(latitude), longitude=VALUES(longitude), "
-            "active_fort_modifier=VALUES(active_fort_modifier) "
+            "active_fort_modifier=VALUES(active_fort_modifier), incident_start=VALUES(incident_start), "
+            "incident_expiration=VALUES(incident_expiration)"
         )
 
         for cell in cells:
@@ -851,7 +863,8 @@ class RmWrapper(DbWrapperBase):
         query_gym_details = (
             "INSERT INTO gymdetails (gym_id, name, url, last_scanned) "
             "VALUES (%s, %s, %s, %s) "
-            "ON DUPLICATE KEY UPDATE last_scanned=VALUES(last_scanned)"
+            "ON DUPLICATE KEY UPDATE last_scanned=VALUES(last_scanned), "
+            "url=IF(VALUES(url) IS NOT NULL AND VALUES(url) <> '', VALUES(url), url)"
         )
 
         for cell in cells:
@@ -1079,19 +1092,34 @@ class RmWrapper(DbWrapperBase):
         if stop_data['type'] != 1:
             logger.warning("{} is not a pokestop", str(stop_data))
             return None
+
         now = datetime.utcfromtimestamp(
             time.time()).strftime("%Y-%m-%d %H:%M:%S")
         last_modified = datetime.utcfromtimestamp(
             stop_data['last_modified_timestamp_ms'] / 1000).strftime("%Y-%m-%d %H:%M:%S")
-        # lure isn't present anymore...
         lure = '1970-01-01 00:00:00'
         active_fort_modifier = None
+        incident_start = None
+        incident_expiration = None
+
         if len(stop_data['active_fort_modifier']) > 0:
             active_fort_modifier = stop_data['active_fort_modifier'][0]
             lure = datetime.utcfromtimestamp(
                 30 * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
 
-        return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now, active_fort_modifier
+        if "pokestop_display" in stop_data:
+            start_ms = stop_data["pokestop_display"]["incident_start_ms"]
+            expiration_ms = stop_data["pokestop_display"]["incident_expiration_ms"]
+
+            if start_ms > 0:
+                incident_start = datetime.utcfromtimestamp(
+                    start_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+            if expiration_ms > 0:
+                incident_expiration = datetime.utcfromtimestamp(
+                    expiration_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+
+        return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now, active_fort_modifier, incident_start, incident_expiration
 
     def __extract_args_single_weather(self, client_weather_data, time_of_day, received_timestamp):
         now = datetime.utcfromtimestamp(
@@ -1227,9 +1255,10 @@ class RmWrapper(DbWrapperBase):
     def get_stops_changed_since(self, timestamp):
         query = (
             "SELECT pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier, "
-            "last_modified, last_updated "
+            "last_modified, last_updated, incident_start, incident_expiration "
             "FROM pokestop "
-            "WHERE DATEDIFF(lure_expiration, '1970-01-01 00:00:00') > 0 AND last_updated >= %s"
+            "WHERE last_updated >= %s AND (DATEDIFF(lure_expiration, '1970-01-01 00:00:00') > 0 OR "
+            "incident_start IS NOT NULL)"
         )
 
         tsdt = datetime.utcfromtimestamp(
@@ -1238,7 +1267,8 @@ class RmWrapper(DbWrapperBase):
 
         ret = []
         for (pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier,
-                last_modified, last_updated) in res:
+                last_modified, last_updated, incident_start, incident_expiration) in res:
+
             ret.append({
                 'pokestop_id': pokestop_id,
                 'latitude': latitude,
@@ -1248,7 +1278,9 @@ class RmWrapper(DbWrapperBase):
                 'image': image,
                 'active_fort_modifier': active_fort_modifier,
                 "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
-                "last_updated": int(last_updated.replace(tzinfo=timezone.utc).timestamp())
+                "last_updated": int(last_updated.replace(tzinfo=timezone.utc).timestamp()),
+                "incident_start": int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else None,
+                "incident_expiration": int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else None
             })
 
         return ret
@@ -1703,11 +1735,11 @@ class RmWrapper(DbWrapperBase):
     def statistics_get_shiny_stats(self):
         logger.debug('Fetching shiny pokemon stats from db')
         query = (
-            "SELECT (select count(encounter_id) from pokemon inner join trs_stats_detect_raw on "
+            "SELECT (select count(DISTINCT encounter_id) from pokemon inner join trs_stats_detect_raw on "
             "trs_stats_detect_raw.type_id=pokemon.encounter_id where pokemon.pokemon_id=a.pokemon_id and "
             "trs_stats_detect_raw.worker=b.worker and pokemon.form=a.form), count(DISTINCT encounter_id), a.pokemon_id,"
             "b.worker, GROUP_CONCAT(DISTINCT encounter_id ORDER BY encounter_id DESC SEPARATOR '<br>'), a.form "
-            "FROM pokemon a left join trs_stats_detect_raw b on a.encounter_id=b.type_id where b.is_shiny=1 group by "
+            "FROM pokemon a left join trs_stats_detect_raw b on a.encounter_id=CAST(b.type_id as unsigned int) where b.is_shiny=1 group by "
             "b.is_shiny, a.pokemon_id, a.form, b.worker order by a.pokemon_id"
         )
 

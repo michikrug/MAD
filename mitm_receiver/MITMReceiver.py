@@ -5,6 +5,7 @@ from multiprocessing import JoinableQueue, Process
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
+
 from mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mitm_receiver.MitmMapper import MitmMapper
 from utils.authHelper import check_auth
@@ -128,8 +129,8 @@ class MITMReceiver(Process):
             logger.error("Invalid REST method specified")
             sys.exit(1)
         self.app.add_url_rule(endpoint, endpoint_name,
-                              EndpointAction(
-                                  handler, self.__application_args, self.__mapping_manager),
+                              EndpointAction(handler, self.__application_args,
+                                             self.__mapping_manager),
                               methods=methods_passed)
 
     def proto_endpoint(self, origin, data):
@@ -193,8 +194,8 @@ class MITMReceiver(Process):
 
         for process in self.worker_threads:
             process_return['MITMReceiver-' + str(process_count)] = {}
-            process_return['MITMReceiver-' +
-                           str(process_count)]['queue_length'] = process.get_queue_items()
+            process_return['MITMReceiver-' + str(process_count)
+                           ]['queue_length'] = process.get_queue_items()
             process_count += 1
 
         data_return['origin_status'] = origin_return

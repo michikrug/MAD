@@ -240,8 +240,7 @@ class WebsocketServer(object):
                     logger.debug("Initializing devicesettings")
                     self.__mapping_manager.set_devicesetting_value_of(
                         origin, 'walker_area_index', 0)
-                    self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'finished', False)
+                    self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
                     self.__mapping_manager.set_devicesetting_value_of(
                         origin, 'last_action_time', None)
                     self.__mapping_manager.set_devicesetting_value_of(
@@ -291,8 +290,7 @@ class WebsocketServer(object):
                     # check if array is smaller than expected - f.e. on the fly changes in mappings.json
                     self.__mapping_manager.set_devicesetting_value_of(
                         origin, 'walker_area_index', 0)
-                    self.__mapping_manager.set_devicesetting_value_of(
-                        origin, 'finished', False)
+                    self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
                     walker_index = 0
 
                 walker_area_name = walker_area_array[walker_index]['walkerarea']
@@ -309,8 +307,7 @@ class WebsocketServer(object):
                     walker_area_name)
                 self.__mapping_manager.set_devicesetting_value_of(
                     origin, 'walker_area_index', walker_index + 1)
-                self.__mapping_manager.set_devicesetting_value_of(
-                    origin, 'finished', False)
+                self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
                 if walker_index >= len(walker_area_array) - 1:
                     self.__mapping_manager.set_devicesetting_value_of(
                         origin, 'walker_area_index', 0)

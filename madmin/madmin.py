@@ -1,9 +1,10 @@
 import logging
 import sys
 
-from db.dbWrapperBase import DbWrapperBase
 from flask import Flask
 from flask.logging import default_handler
+
+from db.dbWrapperBase import DbWrapperBase
 from madmin.routes.config import config
 from madmin.routes.control import control
 from madmin.routes.map import map

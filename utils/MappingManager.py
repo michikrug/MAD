@@ -279,12 +279,9 @@ class MappingManager:
                                                                      "geofence_excluded", None),
                                                                  mode=mode, settings=area.get(
                                                                      "settings", None),
-                                                                 init=area.get(
-                                                                     "init", False),
-                                                                 name=area.get(
-                                                                     "name", "unknown"),
-                                                                 level=area.get(
-                                                                     "level", False),
+                                                                 init=area.get("init", False),
+                                                                 name=area.get("name", "unknown"),
+                                                                 level=area.get("level", False),
                                                                  coords_spawns_known=area.get(
                                                                      "coords_spawns_known", False),
                                                                  routefile=area["routecalc"],
@@ -449,6 +446,13 @@ class MappingManager:
                 if "last_mode" in self._devicemappings[dev]['settings']:
                     devicemappings_tmp[dev]['settings']["last_mode"] = \
                         self._devicemappings[dev]['settings']["last_mode"]
+                if "accountindex" in self._devicemappings[dev]['settings']:
+                    devicemappings_tmp[dev]['settings']["accountindex"] = \
+                        self._devicemappings[dev]['settings']["accountindex"]
+                if "account_rotation_started" in self._devicemappings[dev]['settings']:
+                    devicemappings_tmp[dev]['settings']["account_rotation_started"] = \
+                        self._devicemappings[dev]['settings']["account_rotation_started"]
+
             logger.info("Acquiring lock to update mappings")
             with self.__mappings_mutex:
                 # stopping routemanager / worker

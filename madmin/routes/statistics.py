@@ -3,6 +3,7 @@ import json
 import time
 
 from flask import jsonify, render_template, request
+
 from madmin.functions import auth_required
 from utils.gamemechanicutil import (calculate_iv, calculate_mon_level,
                                     form_mapper, get_raid_boss_cp)
@@ -223,7 +224,13 @@ class statistics(object):
                 mon + '_' + form_suffix + '_shiny.png'
             monName_raw = (get_raid_boss_cp(dat[2]))
             monName = i8ln(monName_raw['name'])
-            ratio = round(dat[1] * 100 / dat[0], 5)
+            diff: int = dat[0]
+            if diff == 0:
+                logger.warning('No deeper mon stats are possible - not enought data '
+                               '(check config.ini // game_stats_raw)')
+                diff = 1
+
+            ratio = round(dat[1] * 100 / diff, 5)
             if dat[3] not in shiny_worker:
                 shiny_worker[dat[3]] = 0
             shiny_worker[dat[3]] += dat[1]
@@ -236,7 +243,7 @@ class statistics(object):
                 shiny_avg[dat[2]][dat[5]]['total_nonshiny'] = []
 
             shiny_avg[dat[2]][dat[5]]['total_shiny'].append(dat[1])
-            shiny_avg[dat[2]][dat[5]]['total_nonshiny'].append(dat[0])
+            shiny_avg[dat[2]][dat[5]]['total_nonshiny'].append(diff)
 
             shiny_stats.append({'sum': dat[0], 'shiny': dat[1], 'img': monPic, 'name': monName, 'ratio': ratio,
                                 'worker': dat[3], 'encounterid': dat[4]})
@@ -252,7 +259,8 @@ class statistics(object):
                 monName_raw = (get_raid_boss_cp(dat))
                 monName = i8ln(monName_raw['name'])
 
-                shiny_amount = sum(shiny_avg[dat][form_dat]['total_shiny'])
+                shiny_amount = sum(shiny_avg[dat][form_dat]['total_shiny']) / \
+                    len(shiny_avg[dat][form_dat]['total_nonshiny'])
                 shiny_amount_avg = round(sum(shiny_avg[dat][form_dat]['total_nonshiny']) /
                                          len(shiny_avg[dat][form_dat]['total_nonshiny']), 0)
                 shiny_avg_click = round(shiny_amount_avg / shiny_amount, 0)

@@ -3,12 +3,15 @@ import re
 import time
 import xml.etree.ElementTree as ET
 from enum import Enum
+from typing import List, Optional
 
 import cv2
 import numpy as np
 import pytesseract
 from pytesseract import Output
+from utils.collections import Login_GGL, Login_PTC
 from utils.logging import logger
+from utils.MappingManager import MappingManager
 
 
 class ScreenType(Enum):
@@ -16,6 +19,7 @@ class ScreenType(Enum):
     RETURNING = 2
     LOGINSELECT = 3
     PTC = 4
+    WRONG = 7
     BIRTHDATE = 1
     FAILURE = 5
     RETRY = 6
@@ -24,21 +28,30 @@ class ScreenType(Enum):
     PERMISSION = 11
     MARKETING = 12
     QUEST = 20
+    ERROR = 100
+
+
+class LoginType(Enum):
+    UNKNOWN = -1
+    google = 1
+    ptc = 2
 
 
 class WordToScreenMatching(object):
-    def __init__(self, communicator, pogoWindowManager, id, resocalc):
+    def __init__(self, communicator, pogoWindowManager, id, resocalc, mapping_mananger: MappingManager, worker):
         self._ScreenType: dict = {}
         self._id = id
+        self._parent = worker
+        self._mapping_manager = mapping_mananger
         detect_ReturningScreen: list = (
             'ZURUCKKEHRENDER', 'ZURÜCKKEHRENDER', 'GAME', 'FREAK', 'SPIELER')
-        detect_LoginScreen: list = (
-            'TRAINER', 'CLUB', 'KIDS', 'Google', 'Facebook')
-        detect_PTC: list = ('TRAINER-CLUB', 'Benutzername', 'Passwort')
+        detect_LoginScreen: list = ('KIDS', 'Google', 'Facebook')
+        detect_PTC: list = ('Benutzername', 'Passwort', 'Username', 'Password', 'DRESSEURS')
         detect_FailureRetryScreen: list = ('TRY', 'DIFFERENT', 'ACCOUNT', 'Anmeldung', 'Konto', 'anderes',
                                            'connexion.', 'connexion')
         detect_FailureLoginScreen: list = ('Authentifizierung', 'fehlgeschlagen', 'Unable', 'authenticate',
                                            'Authentification', 'Essaye')
+        detect_WrongPassword: list = ('incorrect.', 'attempts', 'falsch.', 'gesperrt')
         detect_Birthday: list = ('Geburtdatum', 'birth.', 'naissance.', 'date')
         detect_Marketing: list = ('Events,', 'Benachrichtigungen', 'Einstellungen', 'events,', 'offers,',
                                   'notifications', 'évenements,', 'evenements,', 'offres')
@@ -49,11 +62,79 @@ class WordToScreenMatching(object):
         self._ScreenType[6] = detect_FailureRetryScreen
         self._ScreenType[1] = detect_Birthday
         self._ScreenType[12] = detect_Marketing
+        self._ScreenType[7] = detect_WrongPassword
         self._globaldict: dict = []
+
+        self._logintype: LoginType = -1
+        self._PTC_accounts: List[Login_PTC] = []
+        self._GGL_accounts: List[Login_GGL] = []
+        self._accountcount: int = 0
+        self._accountindex: int = self.get_devicesettings_value('accountindex', 0)
+        self._nextscreen: ScreenType = ScreenType.UNDEFINED
+
         self._pogoWindowManager = pogoWindowManager
         self._communicator = communicator
         self._resocalc = resocalc
         logger.info("Starting Screendetector")
+        self._width: int = 0
+        self._height: int = 0
+        self.get_login_accounts()
+
+    def get_login_accounts(self):
+        self._logintype = LoginType[self.get_devicesettings_value('logintype', 'google')]
+        logger.info("Set logintype: {}".format(self._logintype))
+        if self._logintype == LoginType.ptc:
+            temp_accounts = self.get_devicesettings_value('ptc_login', False)
+            if not temp_accounts:
+                logger.warning('No PTC Accounts are set - hope we are login and never logout!')
+            temp_accounts = temp_accounts.replace(' ', '').split('|')
+
+            for account in temp_accounts:
+                ptc_temp = account.split(',')
+                if 2 < len(ptc_temp) > 2:
+                    logger.warning(
+                        'Cannot use this account (Wrong format!): {}'.format(str(account)))
+                username = ptc_temp[0]
+                password = ptc_temp[1]
+                self._PTC_accounts.append(Login_PTC(username, password))
+            self._accountcount = len(self._PTC_accounts)
+        else:
+            temp_accounts = self.get_devicesettings_value('ggl_login_mail', '@gmail.com')
+            if not temp_accounts:
+                logger.warning('No GGL Accounts are set - using first @gmail.com Account')
+            temp_accounts = temp_accounts.replace(' ', '').split('|')
+
+            for account in temp_accounts:
+                self._GGL_accounts.append(Login_GGL(account))
+            self._accountcount = len(self._GGL_accounts)
+
+        logger.info('Added {} account(s) to memory'.format(str(self._accountcount)))
+        return
+
+    def get_next_account(self):
+        if self._accountcount == 0:
+            logger.info('Cannot return new account - no one is set')
+            return None
+        if self._accountindex <= self._accountcount - 1:
+            logger.info('Request next Account - Using Nr. {}'.format(self._accountindex + 1))
+            self._accountindex += 1
+        elif self._accountindex > self._accountcount - 1:
+            logger.info('Request next Account - Restarting with Nr. 1')
+            self._accountindex = 0
+
+        self.set_devicesettings_value('accountindex', self._accountindex)
+
+        if self._logintype == LoginType.ptc:
+            logger.info('Using PTC Account: {}'.format(
+                self._PTC_accounts[self._accountindex - 1].username))
+            return self._PTC_accounts[self._accountindex - 1]
+        else:
+            logger.info('Using GGL Account: {}'.format(
+                self._GGL_accounts[self._accountindex - 1].username))
+            return self._GGL_accounts[self._accountindex - 1]
+
+    def return_memory_account_count(self):
+        return self._accountcount
 
     def check_lines(self, lines, height):
         temp_lines = []
@@ -79,53 +160,59 @@ class WordToScreenMatching(object):
 
         return np.asarray(sort_lines, dtype=np.int32)
 
-    def matchScreen(self, screenpath):
+    def matchScreen(self):
+        screenpath = self._parent.get_screenshot_path()
         topmostapp = self._communicator.topmostApp()
-        frame = cv2.imread(screenpath)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        self.returntype: ScreenType = -1
-        self._globaldict = pytesseract.image_to_data(
-            frame, output_type=Output.DICT)
+        if not topmostapp:
+            return ScreenType.ERROR
+
+        returntype: ScreenType = -1
+
         if "AccountPickerActivity" in topmostapp or 'SignInActivity' in topmostapp:
-            self.returntype = 10
+            returntype = 10
         elif "GrantPermissionsActivity" in topmostapp:
-            self.returntype = 11
+            returntype = 11
+        elif self._nextscreen != ScreenType.UNDEFINED:
+            returntype = ScreenType(self._nextscreen)
         else:
+            if not self._parent._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
+                                                delayAfter=2):
+                logger.error("_check_windows: Failed getting screenshot")
+                return ScreenType.ERROR
+            frame = cv2.imread(screenpath)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            self._height, self._width = frame.shape
+            self._globaldict = pytesseract.image_to_data(frame, output_type=Output.DICT)
             n_boxes = len(self._globaldict['level'])
             for i in range(n_boxes):
-                if self.returntype != -1:
+                if returntype != -1:
                     break
                 if len(self._globaldict['text'][i]) > 3:
                     for z in self._ScreenType:
                         if self._globaldict['text'][i] in self._ScreenType[z]:
-                            self.returntype = z
+                            returntype = z
 
-        if ScreenType(self.returntype) != ScreenType.UNDEFINED:
-            logger.info("Processing Screen: {}", str(
-                ScreenType(self.returntype)))
+        if ScreenType(returntype) != ScreenType.UNDEFINED:
+            logger.info("Processing Screen: {}", str(ScreenType(returntype)))
 
-        if ScreenType(self.returntype) == ScreenType.GGL:
-            n_boxes = len(self._globaldict['level'])
-            for i in range(n_boxes):
-                if '@gmail.com' in (self._globaldict['text'][i]):
-                    (x, y, w, h) = (self._globaldict['left'][i], self._globaldict['top'][i],
-                                    self._globaldict['width'][i], self._globaldict['height'][i])
-                    click_x, click_y = x + w / 2, y + h / 2
-                    logger.debug('Click ' + str(click_x) +
-                                 ' / ' + str(click_y))
-                    self._communicator.click(click_x, click_y)
-                    time.sleep(25)
+        if ScreenType(returntype) == ScreenType.GGL:
+            self._nextscreen = ScreenType.UNDEFINED
+            ggl_login = self.get_next_account()
+            if self.parse_ggl(self._communicator.uiautomator(), ggl_login.username):
+                time.sleep(25)
+                return ScreenType.GGL
+            logger.warning('Dont find any saved ggl address')
+            return ScreenType.ERROR
 
-                    return ScreenType.GGL
-
-        elif ScreenType(self.returntype) == ScreenType.PERMISSION:
-            (click_x, click_y) = self.parseXML(
-                self._communicator.uiautomator())
+        elif ScreenType(returntype) == ScreenType.PERMISSION:
+            self._nextscreen = ScreenType.UNDEFINED
+            (click_x, click_y) = self.parse_permission(self._communicator.uiautomator())
             self._communicator.click(click_x, click_y)
             time.sleep(2)
             return ScreenType.PERMISSION
 
-        elif ScreenType(self.returntype) == ScreenType.MARKETING:
+        elif ScreenType(returntype) == ScreenType.MARKETING:
+            self._nextscreen = ScreenType.POGO
             click_text = 'ERLAUBEN,ALLOW,AUTORISER'
             n_boxes = len(self._globaldict['level'])
             for i in range(n_boxes):
@@ -140,18 +227,18 @@ class WordToScreenMatching(object):
 
             return ScreenType.MARKETING
 
-        elif ScreenType(self.returntype) == ScreenType.BIRTHDATE:
-            height, width = frame.shape
+        elif ScreenType(returntype) == ScreenType.BIRTHDATE:
+            self._nextscreen = ScreenType.UNDEFINED
             old_y = None
             frame = cv2.GaussianBlur(frame, (3, 3), 0)
             frame = cv2.Canny(frame, 50, 200, apertureSize=3)
             kernel = np.ones((2, 2), np.uint8)
             edges = cv2.morphologyEx(frame, cv2.MORPH_GRADIENT, kernel)
-            minLineLength = (width / 3.927272727272727) - (width * 0.02)
+            minLineLength = (self._width / 3.927272727272727) - (self._width * 0.02)
             lines = cv2.HoughLinesP(edges, rho=1, theta=math.pi / 180, threshold=70, minLineLength=minLineLength,
                                     maxLineGap=2)
 
-            lines = self.check_lines(lines, height)
+            lines = self.check_lines(lines, self._height)
             for line in lines:
                 line = [line]
                 for x1, y1, x2, y2 in line:
@@ -160,91 +247,136 @@ class WordToScreenMatching(object):
                     else:
                         click_y = old_y + ((y1 - old_y) / 2)
                         click_x = x1 + ((x2 - x1) / 2)
-                        logger.debug('Click ' + str(click_x) +
-                                     ' / ' + str(click_y))
+                        logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                         self._communicator.click(click_x, click_y)
                         self._communicator.touchandhold(
-                            click_x, click_y, click_x, click_y - (height / 2))
-                        self._communicator.touchandhold(
-                            click_x, click_y, click_x, click_y - (height / 2))
+                            click_x, click_y, click_x, click_y - (height / 2), 200)
                         time.sleep(1)
                         self._communicator.click(click_x, click_y)
                         time.sleep(1)
-                        click_x = width / 2
-                        click_y = click_y + (height / 8.53)
+                        click_x = self._width / 2
+                        click_y = click_y + (self._height / 8.53)
                         self._communicator.click(click_x, click_y)
                         time.sleep(1)
                         return ScreenType.BIRTHDATE
 
-        elif ScreenType(self.returntype) == ScreenType.RETURNING:
+        elif ScreenType(returntype) == ScreenType.RETURNING:
+            self._nextscreen = ScreenType.UNDEFINED
             self._pogoWindowManager.look_for_button(
                 screenpath, 2.20, 3.01, self._communicator, upper=True)
             time.sleep(2)
             return ScreenType.RETURNING
 
-        elif ScreenType(self.returntype) == ScreenType.LOGINSELECT:
+        elif ScreenType(returntype) == ScreenType.WRONG:
+            self._nextscreen = ScreenType.UNDEFINED
+            self._pogoWindowManager.look_for_button(
+                screenpath, 2.20, 3.01, self._communicator, upper=True)
+            time.sleep(2)
+            return ScreenType.ERROR
+
+        elif ScreenType(returntype) == ScreenType.LOGINSELECT:
             temp_dict: dict = {}
             n_boxes = len(self._globaldict['level'])
             for i in range(n_boxes):
                 if 'Facebook' in (self._globaldict['text'][i]):
                     temp_dict['Facebook'] = self._globaldict['top'][i]
-                if 'TRAINER' in (self._globaldict['text'][i]):
-                    temp_dict['TRAINER'] = self._globaldict['top'][i]
+                if 'CLUB' in (self._globaldict['text'][i]):
+                    temp_dict['CLUB'] = self._globaldict['top'][i]
                 # french ...
                 if 'DRESSEURS' in (self._globaldict['text'][i]):
                     temp_dict['TRAINER'] = self._globaldict['top'][i]
 
-                if 'Google' in (self._globaldict['text'][i]):
-                    (x, y, w, h) = (self._globaldict['left'][i], self._globaldict['top'][i],
-                                    self._globaldict['width'][i], self._globaldict['height'][i])
-                    click_x, click_y = x + w / 2, y + h / 2
-                    logger.debug('Click ' + str(click_x) +
-                                 ' / ' + str(click_y))
-                    self._communicator.click(click_x, click_y)
-                    time.sleep(1)
-                    return ScreenType.LOGINSELECT
+                if self.get_devicesettings_value('logintype', 'google') == 'ptc':
+                    self._nextscreen = ScreenType.PTC
+                    if 'CLUB' in (self._globaldict['text'][i]):
+                        (x, y, w, h) = (self._globaldict['left'][i], self._globaldict['top'][i],
+                                        self._globaldict['width'][i], self._globaldict['height'][i])
+                        click_x, click_y = x + w / 2, y + h / 2
+                        logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                        self._communicator.click(click_x, click_y)
+                        time.sleep(1)
+                        return ScreenType.LOGINSELECT
 
-                # alternative select
-                if 'Facebook' in temp_dict and 'TRAINER' in temp_dict:
-                    height, width = frame.shape
-                    click_x = width / 2
-                    click_y = temp_dict['Facebook'] + \
-                        ((temp_dict['TRAINER'] - temp_dict['Facebook']) / 2)
-                    logger.debug('Click ' + str(click_x) +
-                                 ' / ' + str(click_y))
-                    self._communicator.click(click_x, click_y)
-                    time.sleep(2)
-                    return ScreenType.LOGINSELECT
+                else:
+                    self._nextscreen = ScreenType.UNDEFINED
+                    if 'Google' in (self._globaldict['text'][i]):
+                        (x, y, w, h) = (self._globaldict['left'][i], self._globaldict['top'][i],
+                                        self._globaldict['width'][i], self._globaldict['height'][i])
+                        click_x, click_y = x + w / 2, y + h / 2
+                        logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                        self._communicator.click(click_x, click_y)
+                        time.sleep(1)
+                        return ScreenType.LOGINSELECT
 
-                # alternative select
-                if 'Facebook' in temp_dict:
-                    height, width = frame.shape
-                    click_x = width / 2
-                    click_y = temp_dict['Facebook'] + (height / 10.11)
-                    logger.debug('Click ' + str(click_x) +
-                                 ' / ' + str(click_y))
-                    self._communicator.click(click_x, click_y)
-                    time.sleep(2)
-                    return ScreenType.LOGINSELECT
+                    # alternative select
+                    if 'Facebook' in temp_dict and 'TRAINER' in temp_dict:
+                        height, width = frame.shape
+                        click_x = width / 2
+                        click_y = temp_dict['Facebook'] + \
+                            ((temp_dict['TRAINER'] - temp_dict['Facebook']) / 2)
+                        logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                        self._communicator.click(click_x, click_y)
+                        time.sleep(2)
+                        return ScreenType.LOGINSELECT
 
-                # alternative select
-                if 'TRAINER' in temp_dict:
-                    height, width = frame.shape
-                    click_x = width / 2
-                    click_y = temp_dict['TRAINER'] - (height / 10.11)
-                    logger.debug('Click ' + str(click_x) +
-                                 ' / ' + str(click_y))
-                    self._communicator.click(click_x, click_y)
-                    time.sleep(2)
-                    return ScreenType.LOGINSELECT
+                    # alternative select
+                    if 'Facebook' in temp_dict:
+                        height, width = frame.shape
+                        click_x = width / 2
+                        click_y = temp_dict['Facebook'] + (height / 10.11)
+                        logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                        self._communicator.click(click_x, click_y)
+                        time.sleep(2)
+                        return ScreenType.LOGINSELECT
 
-        elif ScreenType(self.returntype) == ScreenType.FAILURE:
-            self._pogoWindowManager.look_for_button(
-                screenpath, 2.20, 3.01, self._communicator)
+                    # alternative select
+                    if 'CLUB' in temp_dict:
+                        height, width = frame.shape
+                        click_x = width / 2
+                        click_y = temp_dict['TRAINER'] - (height / 10.11)
+                        logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                        self._communicator.click(click_x, click_y)
+                        time.sleep(2)
+                        return ScreenType.LOGINSELECT
+
+        elif ScreenType(returntype) == ScreenType.PTC:
+            self._nextscreen = ScreenType.UNDEFINED
+            ptc = self.get_next_account()
+            if not ptc:
+                logger.error('No PTC Username and Password is set')
+                return ScreenType.ERROR
+
+            username_y = self._height / 2.224797219003476
+            password_y = self._height / 1.875
+            button_y = self._height / 1.58285243198681
+
+            # username
+            self._communicator.click(self._width / 2, username_y)
+            time.sleep(.5)
+            self._communicator.sendText(ptc.username)
+            self._communicator.click(100, 100)
             time.sleep(2)
-            return ScreenType.FAILURE
 
-        elif ScreenType(self.returntype) == ScreenType.RETRY:
+            # password
+            self._communicator.click(self._width / 2, password_y)
+            time.sleep(.5)
+            self._communicator.sendText(ptc.password)
+            self._communicator.click(100, 100)
+            time.sleep(2)
+
+            # button
+            self._communicator.click(self._width / 2, button_y)
+            time.sleep(25)
+            return ScreenType.PTC
+
+        elif ScreenType(returntype) == ScreenType.FAILURE:
+            self._nextscreen = ScreenType.UNDEFINED
+            self._pogoWindowManager.look_for_button(screenpath, 2.20, 3.01, self._communicator)
+            time.sleep(2)
+            return ScreenType.ERROR
+
+        elif ScreenType(returntype) == ScreenType.RETRY:
+            self._nextscreen = ScreenType.UNDEFINED
             click_text = 'DIFFERENT,AUTRE,AUTORISER,ANDERES,KONTO,ACCOUNT'
             n_boxes = len(self._globaldict['level'])
             for i in range(n_boxes):
@@ -264,9 +396,7 @@ class WordToScreenMatching(object):
     def checkQuest(self, screenpath):
         frame = cv2.imread(screenpath)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        self.returntype: ScreenType = -1
-        self._globaldict = pytesseract.image_to_data(
-            frame, output_type=Output.DICT)
+        self._globaldict = pytesseract.image_to_data(frame, output_type=Output.DICT)
         click_text = 'FIELD,SPECIAL,FELD,SPEZIAL,SPECIALES,TERRAIN'
         n_boxes = len(self._globaldict['level'])
         for i in range(n_boxes):
@@ -278,13 +408,11 @@ class WordToScreenMatching(object):
         logger.info('Listening to Dr. blabla - please wait')
 
         self._communicator.backButton()
-        time.sleep(1)
-        self._communicator.click(100, 100)
-        time.sleep(1)
+        time.sleep(3)
 
         return ScreenType.UNDEFINED
 
-    def parseXML(self, xml):
+    def parse_permission(self, xml):
         click_text = ('ZULASSEN', 'ALLOW', 'AUTORISER')
         parser = ET.XMLParser(encoding="utf-8")
         xmlroot = ET.fromstring(xml, parser=parser)
@@ -298,13 +426,45 @@ class WordToScreenMatching(object):
 
         match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
 
-        click_x = int(match.group(1)) + \
-            ((int(match.group(3)) - int(match.group(1))) / 2)
-        click_y = int(match.group(2)) + \
-            ((int(match.group(4)) - int(match.group(2))) / 2)
+        click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
+        click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
         logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
 
         return click_x, click_y
+
+    def parse_ggl(self, xml, mail: str):
+        parser = ET.XMLParser(encoding="utf-8")
+        xmlroot = ET.fromstring(xml, parser=parser)
+        for item in xmlroot.iter('node'):
+            if mail in str(item.attrib['text']):
+                logger.info("Found mail {}", str(item.attrib['text']))
+                bounds = item.attrib['bounds']
+                logger.debug("Bounds {}", str(item.attrib['bounds']))
+                match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
+                click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
+                click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
+                logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                self._communicator.click(click_x, click_y)
+                time.sleep(2)
+                return True
+        time.sleep(2)
+        logger.warning('Dont find any mailaddress...')
+        return False
+
+    def set_devicesettings_value(self, key: str, value):
+        self._mapping_manager.set_devicesetting_value_of(self._id, key, value)
+
+    def get_devicesettings_value(self, key: str, default_value: object = None):
+        logger.debug2("Fetching devicemappings of {}".format(self._id))
+        try:
+            devicemappings: Optional[dict] = self._mapping_manager.get_devicemappings_of(self._id)
+        except (EOFError, FileNotFoundError) as e:
+            logger.warning("Failed fetching devicemappings in worker {} with description: {}. Stopping worker"
+                           .format(str(self._id), str(e)))
+            return None
+        if devicemappings is None:
+            return default_value
+        return devicemappings.get("settings", {}).get(key, default_value)
 
 
 if __name__ == '__main__':

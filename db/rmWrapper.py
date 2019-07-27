@@ -1331,8 +1331,7 @@ class RmWrapper(DbWrapperBase):
             "SELECT pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier, "
             "last_modified, last_updated, incident_start, incident_expiration "
             "FROM pokestop "
-            "WHERE incident_expiration >= %s "
-            "ORDER BY last_updated DESC"
+            "WHERE incident_expiration > %s"
         )
 
         now = datetime.utcfromtimestamp(

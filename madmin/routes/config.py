@@ -270,8 +270,7 @@ class config(object):
         block = request.args.get('block')
         area = request.args.get('area')
         tabarea = area
-        fieldwebsite.append(
-            '<form action="addedit" id="settings" method="post">')
+        fieldwebsite.append('<form action="addedit" id="settings" method="post">')
         fieldwebsite.append(
             '<input type="hidden" name="block" value="' + block + '" />')
         fieldwebsite.append(
@@ -433,8 +432,7 @@ class config(object):
                                 if str(oldvalues[field['name']]).lower() in str(option).lower():
                                     sel = 'selected'
                     _temp = _temp + '<option value="' + \
-                        str(option) + '" ' + sel + '>' + \
-                        str(option) + '</option>'
+                        str(option) + '" ' + sel + '>' + str(option) + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))
@@ -846,8 +844,7 @@ class config(object):
                                 str(output['settings'].get(
                                     quickfield, '')) + '<br>'
                     quickline = quickline + '<td colspan="2" class="quick">' + \
-                        str(quickadd) + \
-                        '</td><td style="display: none;"></td></tr>'
+                        str(quickadd) + '</td><td style="display: none;"></td></tr>'
 
                 line = line + quickline
 
@@ -928,8 +925,7 @@ class config(object):
         if "settings" not in this_area:
             return render_template('showmonsidpicker.html',
                                    error_msg="No settings key found for area " +
-                                   edit + "(" + type +
-                                   "). Configure it first.",
+                                   edit + "(" + type + "). Configure it first.",
                                    header=header, title=title)
 
         if request.method == 'POST':

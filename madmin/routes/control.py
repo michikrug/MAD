@@ -250,8 +250,7 @@ class control(object):
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
                     adb, origin, "am broadcast -a android.intent.action.BOOT_COMPLETED")):
-            self._logger.info(
-                'MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.reboot()

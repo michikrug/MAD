@@ -1,5 +1,6 @@
 import math
 import re
+import sys
 import time
 import xml.etree.ElementTree as ET
 from enum import Enum
@@ -13,6 +14,8 @@ from utils.collections import Login_GGL, Login_PTC
 from utils.logging import logger
 from utils.MappingManager import MappingManager
 
+sys.path.append("..")
+
 
 class ScreenType(Enum):
     UNDEFINED = -1
@@ -23,12 +26,14 @@ class ScreenType(Enum):
     BIRTHDATE = 1
     FAILURE = 5
     RETRY = 6
+    GAMEDATA = 8
     POGO = 99
     GGL = 10
     PERMISSION = 11
     MARKETING = 12
     QUEST = 20
     ERROR = 100
+    CLOSE = 500
 
 
 class LoginType(Enum):
@@ -55,15 +60,18 @@ class WordToScreenMatching(object):
         detect_Birthday: list = ('Geburtdatum', 'birth.', 'naissance.', 'date')
         detect_Marketing: list = ('Events,', 'Benachrichtigungen', 'Einstellungen', 'events,', 'offers,',
                                   'notifications', 'évenements,', 'evenements,', 'offres')
+        detect_Gamedata: list = ('Spieldaten', 'abgerufen', 'lecture', 'depuis', 'game', 'data')
         self._ScreenType[2] = detect_ReturningScreen
         self._ScreenType[3] = detect_LoginScreen
         self._ScreenType[4] = detect_PTC
         self._ScreenType[5] = detect_FailureLoginScreen
         self._ScreenType[6] = detect_FailureRetryScreen
+        self._ScreenType[8] = detect_Gamedata
         self._ScreenType[1] = detect_Birthday
         self._ScreenType[12] = detect_Marketing
         self._ScreenType[7] = detect_WrongPassword
         self._globaldict: dict = []
+        self._ratio: float = 0.0
 
         self._logintype: LoginType = -1
         self._PTC_accounts: List[Login_PTC] = []
@@ -161,6 +169,9 @@ class WordToScreenMatching(object):
         return np.asarray(sort_lines, dtype=np.int32)
 
     def matchScreen(self):
+        pogoTopmost = self._communicator.isPogoTopmost()
+        if not pogoTopmost:
+            return ScreenType.CLOSE
         screenpath = self._parent.get_screenshot_path()
         topmostapp = self._communicator.topmostApp()
         if not topmostapp:
@@ -179,9 +190,11 @@ class WordToScreenMatching(object):
                                                 delayAfter=2):
                 logger.error("_check_windows: Failed getting screenshot")
                 return ScreenType.ERROR
-            frame = cv2.imread(screenpath)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            self._height, self._width = frame.shape
+            frame_color = cv2.imread(screenpath)
+            self._height, self._width, _ = frame_color.shape
+            frame_color = cv2.resize(frame_color, None, fx=2, fy=2)
+            frame = cv2.cvtColor(frame_color, cv2.COLOR_BGR2GRAY)
+            self._ratio = self._height / self._width
             self._globaldict = pytesseract.image_to_data(frame, output_type=Output.DICT)
             n_boxes = len(self._globaldict['level'])
             for i in range(n_boxes):
@@ -201,15 +214,19 @@ class WordToScreenMatching(object):
             if self.parse_ggl(self._communicator.uiautomator(), ggl_login.username):
                 time.sleep(25)
                 return ScreenType.GGL
-            logger.warning('Dont find any saved ggl address')
             return ScreenType.ERROR
 
         elif ScreenType(returntype) == ScreenType.PERMISSION:
             self._nextscreen = ScreenType.UNDEFINED
-            (click_x, click_y) = self.parse_permission(self._communicator.uiautomator())
-            self._communicator.click(click_x, click_y)
+            if self.parse_permission(self._communicator.uiautomator()):
+                time.sleep(2)
+                return ScreenType.PERMISSION
             time.sleep(2)
-            return ScreenType.PERMISSION
+            return ScreenType.ERROR
+
+        elif ScreenType(returntype) == ScreenType.GAMEDATA:
+            self._nextscreen = ScreenType.UNDEFINED
+            return ScreenType.GAMEDATA
 
         elif ScreenType(returntype) == ScreenType.MARKETING:
             self._nextscreen = ScreenType.POGO
@@ -250,7 +267,7 @@ class WordToScreenMatching(object):
                         logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                         self._communicator.click(click_x, click_y)
                         self._communicator.touchandhold(
-                            click_x, click_y, click_x, click_y - (height / 2), 200)
+                            click_x, click_y, click_x, click_y - (self._height / 2), 200)
                         time.sleep(1)
                         self._communicator.click(click_x, click_y)
                         time.sleep(1)
@@ -310,8 +327,7 @@ class WordToScreenMatching(object):
 
                     # alternative select
                     if 'Facebook' in temp_dict and 'TRAINER' in temp_dict:
-                        height, width = frame.shape
-                        click_x = width / 2
+                        click_x = self._width / 2
                         click_y = temp_dict['Facebook'] + \
                             ((temp_dict['TRAINER'] - temp_dict['Facebook']) / 2)
                         logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
@@ -321,9 +337,8 @@ class WordToScreenMatching(object):
 
                     # alternative select
                     if 'Facebook' in temp_dict:
-                        height, width = frame.shape
-                        click_x = width / 2
-                        click_y = temp_dict['Facebook'] + (height / 10.11)
+                        click_x = self._width / 2
+                        click_y = temp_dict['Facebook'] + (self._height / 10.11)
                         logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                         self._communicator.click(click_x, click_y)
                         time.sleep(2)
@@ -331,9 +346,8 @@ class WordToScreenMatching(object):
 
                     # alternative select
                     if 'CLUB' in temp_dict:
-                        height, width = frame.shape
-                        click_x = width / 2
-                        click_y = temp_dict['TRAINER'] - (height / 10.11)
+                        click_x = self._width / 2
+                        click_y = temp_dict['TRAINER'] - (self._height / 10.11)
                         logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                         self._communicator.click(click_x, click_y)
                         time.sleep(2)
@@ -413,6 +427,9 @@ class WordToScreenMatching(object):
         return ScreenType.UNDEFINED
 
     def parse_permission(self, xml):
+        if xml is None:
+            logger.warning('Something wrong with processing - getting None Type from Websocket...')
+            return False
         click_text = ('ZULASSEN', 'ALLOW', 'AUTORISER')
         parser = ET.XMLParser(encoding="utf-8")
         xmlroot = ET.fromstring(xml, parser=parser)
@@ -422,17 +439,23 @@ class WordToScreenMatching(object):
                 logger.debug("Found text {}", str(item.attrib['text']))
                 bounds = item.attrib['bounds']
                 logger.debug("Bounds {}", str(item.attrib['bounds']))
-                continue
 
-        match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
+                match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
 
-        click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
-        click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
-        logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
-
-        return click_x, click_y
+                click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
+                click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
+                logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                self._communicator.click(click_x, click_y)
+                time.sleep(2)
+                return True
+        time.sleep(2)
+        logger.warning('Dont find any button...')
+        return False
 
     def parse_ggl(self, xml, mail: str):
+        if xml is None:
+            logger.warning('Something wrong with processing - getting None Type from Websocket...')
+            return False
         parser = ET.XMLParser(encoding="utf-8")
         xmlroot = ET.fromstring(xml, parser=parser)
         for item in xmlroot.iter('node'):
@@ -470,3 +493,9 @@ class WordToScreenMatching(object):
 if __name__ == '__main__':
     screen = WordToScreenMatching(None, None, "test")
     screen.matchScreen("screenshot_tv_grant.jpg")
+    #frame = cv2.imread('screenshot.jpg')
+    #h, w, _ = frame.shape
+    #frame = cv2.resize(frame, None, fx=2, fy=2)
+    #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #self._height, self._width, _ = frame.shape
+    #print(pytesseract.image_to_data(frame, output_type=Output.DICT))

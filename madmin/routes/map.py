@@ -42,6 +42,7 @@ class map(object):
             ("/get_spawns", self.get_spawns),
             ("/get_gymcoords", self.get_gymcoords),
             ("/get_quests", self.get_quests),
+            ("/get_stops", self.get_stops),
             ("/get_map_mons", self.get_map_mons),
             ("/get_cells", self.get_cells)
         ]
@@ -256,7 +257,7 @@ class map(object):
 
     @auth_required
     def get_quests(self):
-        coords = []
+        quests = []
 
         neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
             request)
@@ -276,9 +277,17 @@ class map(object):
 
         for stopid in data:
             quest = data[str(stopid)]
-            coords.append(generate_quest(quest))
+            quests.append(generate_quest(quest))
 
-        return jsonify(coords)
+        return jsonify(quests)
+
+    @auth_required
+    def get_stops(self):
+        timestamp = request.args.get("timestamp", None)
+
+        data = self._db.get_stops_changed_since(timestamp)
+
+        return jsonify(data)
 
     @auth_required
     def get_map_mons(self):

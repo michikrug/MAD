@@ -1314,14 +1314,14 @@ class RmWrapper(DbWrapperBase):
                 'pokestop_id': pokestop_id,
                 'latitude': latitude,
                 'longitude': longitude,
-                'lure_expiration': int(lure_expiration.replace(tzinfo=timezone.utc).timestamp()),
+                'lure_expiration': int(lure_expiration.replace(tzinfo=timezone.utc).timestamp()) if lure_expiration is not None else None,
                 'name': name,
                 'image': image,
                 'active_fort_modifier': active_fort_modifier,
-                "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
-                "last_updated": int(last_updated.replace(tzinfo=timezone.utc).timestamp()),
-                "incident_start": int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else None,
-                "incident_expiration": int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else None
+                'last_modified': int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
+                'last_updated': int(last_updated.replace(tzinfo=timezone.utc).timestamp()),
+                'incident_start': int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else None,
+                'incident_expiration': int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else None
             })
 
         return ret
@@ -1346,14 +1346,14 @@ class RmWrapper(DbWrapperBase):
                 'pokestop_id': pokestop_id,
                 'latitude': latitude,
                 'longitude': longitude,
-                'lure_expiration': int(lure_expiration.replace(tzinfo=timezone.utc).timestamp()),
+                'lure_expiration': int(lure_expiration.replace(tzinfo=timezone.utc).timestamp()) if lure_expiration is not None else None,
                 'name': name,
                 'image': image,
                 'active_fort_modifier': active_fort_modifier,
-                "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
-                "last_updated": int(last_updated.replace(tzinfo=timezone.utc).timestamp()),
-                "incident_start": int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else 0,
-                "incident_expiration": int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else 0
+                'last_modified': int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
+                'last_updated': int(last_updated.replace(tzinfo=timezone.utc).timestamp()),
+                'incident_start': int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else None,
+                'incident_expiration': int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else None
             })
 
         return ret

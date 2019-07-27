@@ -282,6 +282,14 @@ class DbWrapperBase(ABC):
         pass
 
     @abstractmethod
+    def get_stops_with_incident(self):
+        """
+        Retrieve all the pokestops where an incident is ongoing
+        :return: array
+        """
+        pass
+
+    @abstractmethod
     def quests_from_db(self, GUID=None, timestamp=None):
         """
         Retrieve all the pokestops valid within the area set by geofence_helper

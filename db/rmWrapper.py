@@ -1273,7 +1273,9 @@ class RmWrapper(DbWrapperBase):
                 timestamp)
             query_where = query_where + oquery_where
 
-        res = self.execute(query + query_where)
+        query_order = " ORDER BY trs_quest.quest_timestamp DESC"
+
+        res = self.execute(query + query_where + query_order)
 
         for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id, quest_reward_type,
              quest_item_id, quest_item_amount, name, image, quest_target, quest_condition,
@@ -1296,7 +1298,8 @@ class RmWrapper(DbWrapperBase):
             "last_modified, last_updated, incident_start, incident_expiration "
             "FROM pokestop "
             "WHERE last_updated >= %s AND (DATEDIFF(lure_expiration, '1970-01-01 00:00:00') > 0 OR "
-            "incident_start IS NOT NULL)"
+            "incident_start IS NOT NULL) "
+            "ORDER BY last_updated DESC"
         )
 
         tsdt = datetime.utcfromtimestamp(

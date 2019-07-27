@@ -3,7 +3,9 @@ import multiprocessing
 import secrets
 
 from utils.logging import logger
+
 from .util import *
+
 
 def route_calc_impl(lessCoordinates, num_processes):
     init_temp = 100
@@ -66,7 +68,8 @@ def route_calc_impl(lessCoordinates, num_processes):
                 else:
                     calculation = thread_pool.apply_async(__generate_new_solution,
                                                           args=(
-                                                              -1, int(round(markov_step / round(num_cores / 2))),
+                                                              -1, int(round(markov_step /
+                                                                            round(num_cores / 2))),
                                                               distmat,
                                                               T,
                                                               cost_best, sol_best))

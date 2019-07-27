@@ -1,5 +1,5 @@
-from multiprocessing import Queue, Process
 from datetime import datetime
+from multiprocessing import Process, Queue
 
 from db.dbWrapperBase import DbWrapperBase
 from mitm_receiver.MitmMapper import MitmMapper

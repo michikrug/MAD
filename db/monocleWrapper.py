@@ -61,7 +61,7 @@ class MonocleWrapper(DbWrapperBase):
                 "table": "pokestops",
                 "column": "incident_expiration",
                 "ctype": "int(11) NULL"
-            },            {
+            }, {
                 "table": "pokestops",
                 "column": "last_modified",
                 "ctype": "int(11) NULL"
@@ -643,7 +643,6 @@ class MonocleWrapper(DbWrapperBase):
         if encounter_id < 0:
             encounter_id = encounter_id + 2 ** 64
 
-
         latitude = wild_pokemon.get("latitude")
         longitude = wild_pokemon.get("longitude")
         pokemon_data = wild_pokemon.get("pokemon_data")
@@ -854,7 +853,7 @@ class MonocleWrapper(DbWrapperBase):
                     slots = gym['gym_details']['slots_available']
                     is_in_battle = gym['gym_details'].get(
                         'is_in_battle', False)
-                    last_modified = gym['last_modified_timestamp_ms']/1000
+                    last_modified = gym['last_modified_timestamp_ms'] / 1000
                     is_ex_raid_eligible = gym['gym_details']['is_ex_raid_eligible']
 
                     if is_in_battle:
@@ -964,7 +963,7 @@ class MonocleWrapper(DbWrapperBase):
                     now = time.time()
 
                     logger.debug("{}: adding/Updating gym {} with level {} ending at {}",
-                                str(origin), str(gymid), str(level), str(raidendSec))
+                                 str(origin), str(gymid), str(level), str(raidendSec))
 
                     raid_vals.append(
                         (
@@ -1051,7 +1050,7 @@ class MonocleWrapper(DbWrapperBase):
                 continue
 
             next_to_encounter.append(
-                    (pokemon_id, Location(lat, lon), encounter_id)
+                (pokemon_id, Location(lat, lon), encounter_id)
             )
 
         # now filter by the order of eligible_mon_ids
@@ -1061,7 +1060,7 @@ class MonocleWrapper(DbWrapperBase):
             for mon in next_to_encounter:
                 if mon_prio == mon[0]:
                     to_be_encountered.append(
-                            (i, mon[1], mon[2])
+                        (i, mon[1], mon[2])
                     )
             i += 1
         return to_be_encountered
@@ -1106,7 +1105,7 @@ class MonocleWrapper(DbWrapperBase):
         now = time.time()
         lure = 0
 
-        last_modified = int(stop_data['last_modified_timestamp_ms']/1000)
+        last_modified = int(stop_data['last_modified_timestamp_ms'] / 1000)
 
         if "pokestop_display" in stop_data:
             incident_start = None
@@ -1483,7 +1482,7 @@ class MonocleWrapper(DbWrapperBase):
         query_where = ''
         if hours:
             zero = datetime.now()
-            hours = calendar.timegm(zero.timetuple()) - hours*60*60
+            hours = calendar.timegm(zero.timetuple()) - hours * 60 * 60
             query_where = ' where expire_timestamp > %s ' % str(hours)
 
         query = (
@@ -1529,10 +1528,10 @@ class MonocleWrapper(DbWrapperBase):
         logger.debug('Fetching best pokemon spawns from db')
 
         query = (
-                "SELECT encounter_id, pokemon_id, updated, "
-                "atk_iv, def_iv, sta_iv, level, cp FROM sightings "
-                "WHERE atk_iv>14 and def_iv>14 and sta_iv>14 "
-                "group by encounter_id order by updated desc limit 30"
+            "SELECT encounter_id, pokemon_id, updated, "
+            "atk_iv, def_iv, sta_iv, level, cp FROM sightings "
+            "WHERE atk_iv>14 and def_iv>14 and sta_iv>14 "
+            "group by encounter_id order by updated desc limit 30"
         )
 
         res = self.execute(query)
@@ -1713,5 +1712,3 @@ class MonocleWrapper(DbWrapperBase):
         res = self.execute(query)
 
         return res
-
-

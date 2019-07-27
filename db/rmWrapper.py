@@ -1326,6 +1326,39 @@ class RmWrapper(DbWrapperBase):
 
         return ret
 
+    def get_stops_with_incident(self):
+        query = (
+            "SELECT pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier, "
+            "last_modified, last_updated, incident_start, incident_expiration "
+            "FROM pokestop "
+            "WHERE incident_expiration >= %s "
+            "ORDER BY last_updated DESC"
+        )
+
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        res = self.execute(query, (now, ))
+
+        ret = []
+        for (pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier,
+                last_modified, last_updated, incident_start, incident_expiration) in res:
+
+            ret.append({
+                'pokestop_id': pokestop_id,
+                'latitude': latitude,
+                'longitude': longitude,
+                'lure_expiration': int(lure_expiration.replace(tzinfo=timezone.utc).timestamp()),
+                'name': name,
+                'image': image,
+                'active_fort_modifier': active_fort_modifier,
+                "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
+                "last_updated": int(last_updated.replace(tzinfo=timezone.utc).timestamp()),
+                "incident_start": int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else None,
+                "incident_expiration": int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else None
+            })
+
+        return ret
+
     def submit_pokestops_details_map_proto(self, map_proto):
         logger.debug("RmWrapper::submit_pokestops_details_map_proto called")
         pokestop_args = []

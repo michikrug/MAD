@@ -42,7 +42,7 @@ class map(object):
             ("/get_spawns", self.get_spawns),
             ("/get_gymcoords", self.get_gymcoords),
             ("/get_quests", self.get_quests),
-            ("/get_stops", self.get_stops),
+            ("/get_rstops", self.get_rstops),
             ("/get_map_mons", self.get_map_mons),
             ("/get_cells", self.get_cells)
         ]
@@ -282,12 +282,8 @@ class map(object):
         return jsonify(quests)
 
     @auth_required
-    def get_stops(self):
-        timestamp = request.args.get("timestamp", None)
-
-        data = self._db.get_stops_changed_since(timestamp)
-
-        return jsonify(data)
+    def get_rstops(self):
+        return jsonify(self._db.get_stops_with_incident())
 
     @auth_required
     def get_map_mons(self):

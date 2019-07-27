@@ -1352,8 +1352,8 @@ class RmWrapper(DbWrapperBase):
                 'active_fort_modifier': active_fort_modifier,
                 "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
                 "last_updated": int(last_updated.replace(tzinfo=timezone.utc).timestamp()),
-                "incident_start": int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else None,
-                "incident_expiration": int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else None
+                "incident_start": int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else 0,
+                "incident_expiration": int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else 0
             })
 
         return ret

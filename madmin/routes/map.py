@@ -10,7 +10,6 @@ from madmin.functions import auth_required, getBoundParameter, getCoordFloat
 from utils.collections import Location
 from utils.gamemechanicutil import get_raid_boss_cp
 from utils.language import i8ln
-from utils.logging import logger
 from utils.MappingManager import MappingManager
 from utils.questGen import generate_quest
 from utils.s2Helper import S2Helper
@@ -284,10 +283,7 @@ class map(object):
 
     @auth_required
     def get_rstops(self):
-        logger.warning('Request to rstops')
-        rstops = self._db.get_stops_with_incident()
-        logger.warning(rstops)
-        return jsonify(rstops)
+        return jsonify(self._db.get_stops_with_incident())
 
     @auth_required
     def get_map_mons(self):

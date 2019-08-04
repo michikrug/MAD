@@ -23,7 +23,7 @@ def generate_quest(quest):
     item_amount = 1
     pokemon_id = 0
     pokemon_name = ''
-    pokemon_form = extractForm(quest["quest_reward"])
+    pokemon_form = extractForm(quest['quest_reward'])
     quest_reward = ''
 
     if quest_reward_type == _('Item'):
@@ -79,9 +79,9 @@ def extractForm(quest_reward_json):
     if len(quest_reward) == 0:
         return 0
 
-    if "pokemon_encounter" in quest_reward[0]:
-        encounter = quest_reward[0]["pokemon_encounter"]
-        return encounter["pokemon_display"]["form_value"]
+    if 'pokemon_encounter' in quest_reward[0]:
+        encounter = quest_reward[0]['pokemon_encounter']
+        return encounter['pokemon_display']['form_value']
 
 
 def questreward(quest_reward_type):
@@ -157,7 +157,7 @@ def questtask(typeid, condition, target):
     elif typeid == 5:
         text = _('Spin {0} Pokestops or Gyms')
         if re.search(r'"type": 12', condition) is not None:
-            text = _('Spin {0} never visited Pokestops or Gyms')
+            text = _('Spin {0} Pokestops you haven\'t visited before')
     elif typeid == 6:
         text = _('Hatch {0} Eggs')
     elif typeid == 7:

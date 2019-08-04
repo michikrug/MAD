@@ -185,13 +185,15 @@ class WorkerMITM(MITMBase):
             routemanager_settings = self._mapping_manager.routemanager_get_settings(
                 self._routemanager_name)
             if routemanager_settings is not None:
-                ids_iv = routemanager_settings.get("mon_ids_iv", None)
+                ids_iv = self._mapping_manager.get_monlist(routemanager_settings.get("mon_ids_iv", None),
+                                                           self._routemanager_name)
         elif routemanager_mode == "raids_mitm":
             scanmode = "raids"
             routemanager_settings = self._mapping_manager.routemanager_get_settings(
                 self._routemanager_name)
             if routemanager_settings is not None:
-                ids_iv = routemanager_settings.get("mon_ids_iv", None)
+                ids_iv = self._mapping_manager.get_monlist(routemanager_settings.get("mon_ids_iv", None),
+                                                           self._routemanager_name)
         elif routemanager_mode == "iv_mitm":
             scanmode = "ivs"
             ids_iv = self._mapping_manager.routemanager_get_encounter_ids_left(

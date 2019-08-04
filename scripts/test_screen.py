@@ -194,8 +194,8 @@ class testimage(object):
         mainscreen = 0
 
         height, width, _ = image.shape
-        gray = image[int(height) - int(round(height / 5)):int(height),
-                     0: int(int(width) / 4)]
+        gray = image[int(height) - int(round(height / 6)):int(height),
+                     0: int(int(width) / 3)]
         original = gray
         height_, width_, _ = gray.shape
         radMin = int((width / float(6.8) - 3) / 2)
@@ -254,7 +254,7 @@ class testimage(object):
         _x = 0
         _y = height
         lines = cv2.HoughLinesP(edges, rho=1, theta=math.pi / 180, threshold=70, minLineLength=minLineLength,
-                                maxLineGap=2)
+                                maxLineGap=5)
         if lines is None:
             return False
 

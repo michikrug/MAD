@@ -85,7 +85,8 @@ class WorkerQuests(MITMBase):
                     if not self._restart_pogo(mitm_mapper=self._mitm_mapper):
                         # TODO: put in loop, count up for a reboot ;)
                         raise InternalStopWorkerException
-                self._check_quest()
+                if self.get_devicesettings_value('screendetection', False):
+                    self._check_quest()
                 self.set_devicesettings_value('account_rotation_started', True)
             time.sleep(10)
         else:
@@ -297,8 +298,9 @@ class WorkerQuests(MITMBase):
             logger.debug("No last action time found - no calculation")
             delay_used = -1
 
-        if self._WordToScreenMatching.return_memory_account_count() > 1 and delay_used >= self._rotation_waittime and \
-                self.get_devicesettings_value('account_rotation', False) and not self._level_mode:
+        if self.get_devicesettings_value('screendetection', False) and \
+                self._WordToScreenMatching.return_memory_account_count() > 1 and delay_used >= self._rotation_waittime \
+                and self.get_devicesettings_value('account_rotation', False) and not self._level_mode:
             # Waiting time to long and more then one account - switch! (not level mode!!)
             logger.info('Could use more then 1 account - switch & no cooldown')
             self.switch_account()
@@ -567,7 +569,8 @@ class WorkerQuests(MITMBase):
             self._routemanager_name)
         ids_iv: List[int] = []
         if routemanager_settings is not None:
-            ids_iv = routemanager_settings.get("mon_ids_iv", None)
+            ids_iv = self._mapping_manager.get_monlist(routemanager_settings.get("mon_ids_iv", None),
+                                                       self._routemanager_name)
         # if iv ids are specified we will sync the workers encountered ids to newest time.
         if ids_iv is not None:
             (self._latest_encounter_update, encounter_ids) = self._db_wrapper.update_encounters_from_db(
@@ -639,7 +642,6 @@ class WorkerQuests(MITMBase):
                     logger.info("Stop {}, {} is rocketized - processing dialog after getting data"
                                 .format(str(latitude), str(longitude)))
                     self._rocket = True
-                    return True
 
                 if self._level_mode and self._ignore_spinned_stops:
                     visited: bool = fort.get("visited", False)
@@ -699,7 +701,7 @@ class WorkerQuests(MITMBase):
                 logger.info(
                     'Getting timeout - or other unknown error. Try again')
                 if not self._checkPogoButton():
-                    self._checkPogoClose()
+                    self._checkPogoClose(takescreen=False)
 
             to += 1
         return data_received
@@ -713,6 +715,8 @@ class WorkerQuests(MITMBase):
             logger.info('Spin Stop')
             data_received = self._wait_for_data(
                 timestamp=self._stop_process_time, proto_to_wait_for=101, timeout=35)
+            if self._rocket:
+                self.process_rocket()
             if data_received == FortSearchResultTypes.INVENTORY:
                 logger.error('Box is full ... Next round!')
                 self.clear_thread_task = 1
@@ -722,18 +726,25 @@ class WorkerQuests(MITMBase):
                     logger.info('NOT received new Quest - previously spun the stop/cooldown')
                 elif data_received == FortSearchResultTypes.QUEST:
                     logger.info('Received new Quest')
-                    if self._rocket:
-                        self.process_rocket()
+                if not self.get_devicesettings_value('cleanup_every_spin', False):
                     self._clear_quest_counter += 1
-                if self._clear_quest_counter == 3:
-                    logger.info('Getting 3 quests - clean them')
+                    if self._clear_quest_counter == 3:
+                        logger.info('Getting 3 quests - clean them')
+                        reached_main_menu = self._check_pogo_main_screen(10, True)
+                        if not reached_main_menu:
+                            if not self._restart_pogo(mitm_mapper=self._mitm_mapper):
+                                # TODO: put in loop, count up for a reboot ;)
+                                raise InternalStopWorkerException
+                        self.clear_thread_task = 2
+                        self._clear_quest_counter = 0
+                else:
+                    logger.info('Getting new quest - clean it')
                     reached_main_menu = self._check_pogo_main_screen(10, True)
                     if not reached_main_menu:
                         if not self._restart_pogo(mitm_mapper=self._mitm_mapper):
                             # TODO: put in loop, count up for a reboot ;)
                             raise InternalStopWorkerException
                     self.clear_thread_task = 2
-                    self._clear_quest_counter = 0
                 break
             elif (data_received == FortSearchResultTypes.TIME or data_received ==
                   FortSearchResultTypes.OUT_OF_RANGE):
@@ -750,6 +761,7 @@ class WorkerQuests(MITMBase):
                         'Quest is done without us noticing. Getting new Quest...')
                     self.clear_thread_task = 2
                     break
+
                 # self._close_gym(self._delay_add)
 
                 self._turn_map(self._delay_add)
@@ -821,11 +833,10 @@ class WorkerQuests(MITMBase):
         return LatestReceivedType.UNDEFINED
 
     def process_rocket(self):
-        if self._rocket:
-            logger.info('Closing Rocket Dialog')
-            time.sleep(5)
-            self._communicator.click(100, 100)
-            time.sleep(1)
-            self._communicator.click(100, 100)
-            time.sleep(2)
-            self._checkPogoClose()
+        logger.info('Closing Rocket Dialog')
+        time.sleep(5)
+        self._communicator.click(100, 100)
+        time.sleep(4)
+        self._communicator.click(100, 100)
+        time.sleep(4)
+        self._checkPogoClose()

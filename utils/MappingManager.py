@@ -63,6 +63,7 @@ class MappingManager:
         self._areas: Optional[dict] = None
         self._routemanagers: Optional[Dict[str, dict]] = None
         self._auths: Optional[dict] = None
+        self._monlists: Optional[dict] = None
         self.__stop_file_watcher_event: Event = Event()
 
         self.__raw_json: Optional[dict] = None
@@ -130,6 +131,15 @@ class MappingManager:
 
     def get_areas(self) -> Optional[dict]:
         return self._areas
+
+    def get_monlist(self, listname, areaname):
+        if type(listname) is list:
+            logger.error('Area {} is using old list format instead of global mon list. Please check your mappings.json'
+                         ' - Using a empty list now!!'.format(str(areaname)))
+            return []
+        if listname is not None:
+            return self._monlists[listname]
+        return []
 
     def get_all_routemanager_names(self):
         return self._routemanagers.keys()
@@ -231,6 +241,8 @@ class MappingManager:
                 self.__raw_json['walker'] = []
             if 'devicesettings' not in self.__raw_json:
                 self.__raw_json['devicesettings'] = []
+            if 'monivlist' not in self.__raw_json:
+                self.__raw_json['monivlist'] = []
 
     def __inherit_device_settings(self, devicesettings, poolsettings):
         inheritsettings = {}
@@ -269,6 +281,14 @@ class MappingManager:
                 area["geofence_included"], area.get("geofence_excluded", None))
             mode = area["mode"]
             # build routemanagers
+
+            # map iv list to ids
+            if area.get('settings', None) is not None and 'mon_ids_iv' in area['settings']:
+                # replace list name
+                area['settings']['mon_ids_iv_raw'] = \
+                    self.get_monlist(area['settings'].get('mon_ids_iv', None),
+                                     area.get("name", "unknown"))
+
             route_manager = RouteManagerFactory.get_routemanager(self.__db_wrapper, None,
                                                                  mode_mapping.get(
                                                                      mode, {}).get("range", 0),
@@ -426,6 +446,14 @@ class MappingManager:
             areas[area['name']] = area_dict
         return areas
 
+    def __get_latest_monlists(self) -> dict:
+        # {'mon_ids_iv': [787, 1], 'monlist': 'test'}
+        monlist = {}
+        monlists_arr = self.__raw_json["monivlist"]
+        for list in monlists_arr:
+            monlist[list['monlist']] = list.get('mon_ids_iv', None)
+        return monlist
+
     def update(self, full_lock=False):
         """
         Updates the internal mappings and routemanagers
@@ -433,6 +461,7 @@ class MappingManager:
         """
         self.__read_mappings_file()
         if not full_lock:
+            self._monlists = self.__get_latest_monlists()
             areas_tmp = self.__get_latest_areas()
             devicemappings_tmp = self.__get_latest_devicemappings()
             routemanagers_tmp = self.__get_latest_routemanagers()
@@ -455,14 +484,6 @@ class MappingManager:
 
             logger.info("Acquiring lock to update mappings")
             with self.__mappings_mutex:
-                # stopping routemanager / worker
-                # logger.info('Restarting Worker')
-                # for routemanager in self._routemanagers.keys():
-                #     area: RouteManagerBase = self._routemanagers.get(routemanager, None)
-                #     if area is None:
-                #         continue
-                #     area.stop_routemanager()
-
                 self._areas = areas_tmp
                 self._devicemappings = devicemappings_tmp
                 self._routemanagers = routemanagers_tmp
@@ -471,6 +492,7 @@ class MappingManager:
         else:
             logger.info("Acquiring lock to update mappings,full")
             with self.__mappings_mutex:
+                self._monlists = self.__get_latest_monlists()
                 self._routemanagers = self.__get_latest_routemanagers()
                 self._areas = self.__get_latest_areas()
                 self._devicemappings = self.__get_latest_devicemappings()

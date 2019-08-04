@@ -293,7 +293,7 @@ class PogoWindows:
         _x = 0
         _y = height
         lines = cv2.HoughLinesP(edges, rho=1, theta=math.pi / 180, threshold=70, minLineLength=minLineLength,
-                                maxLineGap=2)
+                                maxLineGap=5)
         if lines is None:
             return False
 
@@ -735,3 +735,23 @@ class PogoWindows:
         else:
             logger.debug("Could not find close button (X).")
             return False
+
+    def get_screen_text(self, screenshot, identifier):
+        if screenshot is None:
+            logger.error("get_screen_text: image does not exist")
+            return False
+
+        return self.__thread_pool.apply_async(self.__internal_get_screen_text,
+                                              (screenshot, identifier)).get()
+
+    def __internal_get_screen_text(self, screenshot, identifier):
+        returning_dict: dict = []
+        logger.debug(
+            "get_screen_text: Reading screen text - identifier {}", identifier)
+
+        try:
+            returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT)
+        except Exception as e:
+            logger.error("get_screen_text: {}", e)
+
+        return returning_dict

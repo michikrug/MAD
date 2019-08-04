@@ -578,11 +578,10 @@ class WorkerBase(ABC):
 
     def _check_windows(self):
         logger.info('Checking pogo screen...')
-        restartcounter: bool = False
         loginerrorcounter: int = 0
         returncode: ScreenType = ScreenType.UNDEFINED
 
-        while not returncode == ScreenType.POGO:
+        while not returncode == ScreenType.POGO and not self._stop_worker_event.is_set():
             returncode = self._WordToScreenMatching.matchScreen()
 
             if returncode != ScreenType.POGO:
@@ -592,35 +591,36 @@ class WorkerBase(ABC):
                     self._stop_pogo()
                     time.sleep(5)
                     self._turn_screen_on_and_start_pogo()
-                    loginerrorcounter = 0
-                    restartcounter = True
-                    break
 
-                if returncode == ScreenType.CLOSE:
+                elif returncode == ScreenType.CLOSE:
                     logger.warning('Pogo not in foreground...')
                     self._start_pogo()
+
+                elif returncode == ScreenType.DISABLED:
+                    # Screendetection is disabled
+                    returncode == ScreenType.POGO
                     break
 
-                if returncode == ScreenType.ERROR:
+                elif returncode == ScreenType.ERROR:
                     logger.warning('Something wrong with screendetection')
                     loginerrorcounter += 1
 
-                if restartcounter:
-                    logger.error('Cannot login again - clear pogo game data and restart phone')
+                if loginerrorcounter == 4 or returncode == ScreenType.SN:
+                    logger.error(
+                        'Cannot login again - (clear pogo game data and) restart phone / SN Error')
+                    self._stop_worker_event.set()
                     self._stop_pogo()
                     time.sleep(5)
-                    self._communicator.resetAppdata("com.nianticlabs.pokemongo")
+                    if self.get_devicesettings_value('clear_game_data', True):
+                        logger.info('Clearing game data')
+                        self._communicator.resetAppdata("com.nianticlabs.pokemongo")
                     self._reboot()
-                    break
 
                 if loginerrorcounter == 2:
                     logger.error('Cannot login two times in row - restart pogo')
                     self._stop_pogo()
                     time.sleep(5)
                     self._turn_screen_on_and_start_pogo()
-                    loginerrorcounter = 0
-                    restartcounter = True
-                    break
 
         logger.info('Checking pogo screen is finished')
         return True
@@ -883,12 +883,6 @@ class WorkerBase(ABC):
             return False
 
         logger.debug("_check_pogo_main_screen: checking mainscreen")
-        buttoncheck = self._pogoWindowManager.look_for_button(
-            screenshot_path, 2.20, 3.01, self._communicator)
-        if buttoncheck:
-            logger.debug('Found button on screen')
-            self._takeScreenshot(delayBefore=self.get_devicesettings_value(
-                "post_screenshot_delay", 1))
         while not self._pogoWindowManager.check_pogo_mainscreen(screenshot_path, self._id):
             logger.error("_check_pogo_main_screen: not on Mainscreen...")
             if attempts == maxAttempts:
@@ -899,7 +893,7 @@ class WorkerBase(ABC):
 
             # not using continue since we need to get a screen before the next round...
             found = self._pogoWindowManager.look_for_button(
-                screenshot_path, 2.40, 3.01, self._communicator)
+                screenshot_path, 2.20, 3.01, self._communicator)
             if found:
                 logger.debug("_check_pogo_main_screen: Found button (small)")
 
@@ -951,10 +945,14 @@ class WorkerBase(ABC):
         if found:
             time.sleep(1)
             logger.debug("checkPogoButton: Found button (small)")
-            logger.debug("checkPogoButton: done")
-            return True
+
+        if not found and self._pogoWindowManager.look_for_button(self.get_screenshot_path(), 1.05, 2.20,
+                                                                 self._communicator):
+            logger.debug("checkPogoButton: Found button (big)")
+            found = True
+
         logger.debug("checkPogoButton: done")
-        return False
+        return found
 
     def _wait_pogo_start_delay(self):
         delay_count: int = 0
@@ -972,20 +970,16 @@ class WorkerBase(ABC):
             time.sleep(1)
             delay_count += 1
 
-    def _checkPogoClose(self):
+    def _checkPogoClose(self, takescreen=True):
         logger.debug("checkPogoClose: Trying to find closeX")
         pogoTopmost = self._communicator.isPogoTopmost()
         if not pogoTopmost:
             return False
 
-        if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1)):
-            # TODO: go again?
-            # if again:
-            #     logger.error("checkPogoClose: failed getting a screenshot again")
-            #     return False
-            # TODO: consider throwing?
-            logger.debug("checkPogoClose: Could not get screenshot")
-            return False
+        if takescreen:
+            if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1)):
+                logger.debug("checkPogoClose: Could not get screenshot")
+                return False
 
         if os.path.isdir(self.get_screenshot_path()):
             logger.error(

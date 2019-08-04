@@ -1,7 +1,7 @@
+import calendar
 import datetime
 import os
 import platform
-import calendar
 import time
 
 import cv2
@@ -105,5 +105,3 @@ def get_now_timestamp():
 def ConvertDateTimeToLocal(timestampValue):
     offset = datetime.datetime.now() - datetime.datetime.utcnow()
     return datetime.datetime.fromtimestamp(timestampValue) + offset + datetime.timedelta(seconds=1)
-
-

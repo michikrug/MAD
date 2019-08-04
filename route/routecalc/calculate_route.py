@@ -97,5 +97,3 @@ def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=
 
     # return json.dumps(export_data)
     return export_data
-
-

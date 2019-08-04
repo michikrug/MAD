@@ -1,16 +1,19 @@
-import cv2
 import math
-import time
 import re
 import sys
-sys.path.append("..")
+import time
 import xml.etree.ElementTree as ET
+from enum import Enum
+from typing import List, Optional
+
+import cv2
+import numpy as np
+from utils.collections import Login_GGL, Login_PTC
 from utils.logging import logger
 from utils.MappingManager import MappingManager
-from typing import Optional, List
-from utils.collections import Login_PTC, Login_GGL
-from enum import Enum
-import numpy as np
+
+sys.path.append("..")
+
 
 class ScreenType(Enum):
     UNDEFINED = -1
@@ -33,6 +36,7 @@ class ScreenType(Enum):
     CLOSE = 500
     DISABLED = 999
 
+
 class LoginType(Enum):
     UNKNOWN = -1
     google = 1
@@ -45,7 +49,8 @@ class WordToScreenMatching(object):
         self._id = id
         self._parent = worker
         self._mapping_manager = mapping_mananger
-        detect_ReturningScreen: list = ('ZURUCKKEHRENDER', 'ZURÜCKKEHRENDER', 'GAME', 'FREAK', 'SPIELER')
+        detect_ReturningScreen: list = (
+            'ZURUCKKEHRENDER', 'ZURÜCKKEHRENDER', 'GAME', 'FREAK', 'SPIELER')
         detect_LoginScreen: list = ('KIDS', 'Google', 'Facebook')
         detect_PTC: list = ('Benutzername', 'Passwort', 'Username', 'Password', 'DRESSEURS')
         detect_FailureRetryScreen: list = ('TRY', 'DIFFERENT', 'ACCOUNT', 'Anmeldung', 'Konto', 'anderes',
@@ -103,7 +108,8 @@ class WordToScreenMatching(object):
             for account in temp_accounts:
                 ptc_temp = account.split(',')
                 if 2 < len(ptc_temp) > 2:
-                    logger.warning('Cannot use this account (Wrong format!): {}'.format(str(account)))
+                    logger.warning(
+                        'Cannot use this account (Wrong format!): {}'.format(str(account)))
                 username = ptc_temp[0]
                 password = ptc_temp[1]
                 self._PTC_accounts.append(Login_PTC(username, password))
@@ -126,7 +132,7 @@ class WordToScreenMatching(object):
             logger.info('Cannot return new account - no one is set')
             return None
         if self._accountindex <= self._accountcount - 1:
-            logger.info('Request next Account - Using Nr. {}'.format(self._accountindex+1))
+            logger.info('Request next Account - Using Nr. {}'.format(self._accountindex + 1))
             self._accountindex += 1
         elif self._accountindex > self._accountcount - 1:
             logger.info('Request next Account - Restarting with Nr. 1')
@@ -135,11 +141,13 @@ class WordToScreenMatching(object):
         self.set_devicesettings_value('accountindex', self._accountindex)
 
         if self._logintype == LoginType.ptc:
-            logger.info('Using PTC Account: {}'.format(self.censor_account(self._PTC_accounts[self._accountindex-1].username, isPTC=True)))
-            return self._PTC_accounts[self._accountindex-1]
+            logger.info('Using PTC Account: {}'.format(self.censor_account(
+                self._PTC_accounts[self._accountindex - 1].username, isPTC=True)))
+            return self._PTC_accounts[self._accountindex - 1]
         else:
-            logger.info('Using GGL Account: {}'.format(self.censor_account(self._GGL_accounts[self._accountindex-1].username)))
-            return self._GGL_accounts[self._accountindex-1]
+            logger.info('Using GGL Account: {}'.format(self.censor_account(
+                self._GGL_accounts[self._accountindex - 1].username)))
+            return self._GGL_accounts[self._accountindex - 1]
 
     def return_memory_account_count(self):
         return self._accountcount
@@ -215,7 +223,8 @@ class WordToScreenMatching(object):
                 return ScreenType.ERROR
             n_boxes = len(self._globaldict['level'])
             for i in range(n_boxes):
-                if returntype != -1: break
+                if returntype != -1:
+                    break
                 if len(self._globaldict['text'][i]) > 3:
                     for z in self._ScreenType:
                         if self._globaldict['text'][i] in self._ScreenType[z]:
@@ -228,7 +237,8 @@ class WordToScreenMatching(object):
             self._nextscreen = ScreenType.UNDEFINED
 
             if self._logintype == LoginType.ptc:
-                logger.warning('Really dont know how i get there ... using first @ggl address ... :)')
+                logger.warning(
+                    'Really dont know how i get there ... using first @ggl address ... :)')
                 username = self.get_devicesettings_value('ggl_login_mail', '@gmail.com')
             else:
                 ggl_login = self.get_next_account()
@@ -280,7 +290,8 @@ class WordToScreenMatching(object):
             click_y = (self._height / 1.69) + self._screenshot_y_offset
             logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
             self._communicator.click(click_x, click_y)
-            self._communicator.touchandhold(click_x, click_y, click_x, click_y - (self._height / 2), 200)
+            self._communicator.touchandhold(
+                click_x, click_y, click_x, click_y - (self._height / 2), 200)
             time.sleep(1)
             self._communicator.click(click_x, click_y)
             time.sleep(1)
@@ -292,13 +303,15 @@ class WordToScreenMatching(object):
 
         elif ScreenType(returntype) == ScreenType.RETURNING:
             self._nextscreen = ScreenType.UNDEFINED
-            self._pogoWindowManager.look_for_button(screenpath, 2.20, 3.01, self._communicator, upper=True)
+            self._pogoWindowManager.look_for_button(
+                screenpath, 2.20, 3.01, self._communicator, upper=True)
             time.sleep(2)
             return ScreenType.RETURNING
 
         elif ScreenType(returntype) == ScreenType.WRONG:
             self._nextscreen = ScreenType.UNDEFINED
-            self._pogoWindowManager.look_for_button(screenpath, 2.20, 3.01, self._communicator, upper=True)
+            self._pogoWindowManager.look_for_button(
+                screenpath, 2.20, 3.01, self._communicator, upper=True)
             time.sleep(2)
             return ScreenType.ERROR
 
@@ -306,10 +319,13 @@ class WordToScreenMatching(object):
             temp_dict: dict = {}
             n_boxes = len(self._globaldict['level'])
             for i in range(n_boxes):
-                if 'Facebook' in (self._globaldict['text'][i]): temp_dict['Facebook'] = self._globaldict['top'][i] / 2
-                if 'CLUB' in (self._globaldict['text'][i]): temp_dict['CLUB'] = self._globaldict['top'][i] / 2
+                if 'Facebook' in (self._globaldict['text'][i]):
+                    temp_dict['Facebook'] = self._globaldict['top'][i] / 2
+                if 'CLUB' in (self._globaldict['text'][i]):
+                    temp_dict['CLUB'] = self._globaldict['top'][i] / 2
                 # french ...
-                if 'DRESSEURS' in (self._globaldict['text'][i]): temp_dict['CLUB'] = self._globaldict['top'][i] / 2
+                if 'DRESSEURS' in (self._globaldict['text'][i]):
+                    temp_dict['CLUB'] = self._globaldict['top'][i] / 2
 
                 if self.get_devicesettings_value('logintype', 'google') == 'ptc':
                     self._nextscreen = ScreenType.PTC
@@ -336,7 +352,8 @@ class WordToScreenMatching(object):
                     # alternative select
                     if 'Facebook' in temp_dict and 'TRAINER' in temp_dict:
                         click_x = self._width / 2
-                        click_y = (temp_dict['Facebook'] + ((temp_dict['TRAINER'] - temp_dict['Facebook']) / 2))
+                        click_y = (temp_dict['Facebook'] +
+                                   ((temp_dict['TRAINER'] - temp_dict['Facebook']) / 2))
                         logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                         self._communicator.click(click_x, click_y)
                         time.sleep(5)
@@ -430,7 +447,7 @@ class WordToScreenMatching(object):
             return ScreenType.ERROR
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         self._globaldict = self._pogoWindowManager.get_screen_text(frame, self._id)
-            #pytesseract.image_to_data(frame, output_type=Output.DICT)
+        #pytesseract.image_to_data(frame, output_type=Output.DICT)
         click_text = 'FIELD,SPECIAL,FELD,SPEZIAL,SPECIALES,TERRAIN'
         n_boxes = len(self._globaldict['level'])
         for i in range(n_boxes):
@@ -463,8 +480,10 @@ class WordToScreenMatching(object):
 
                     match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
 
-                    click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1)))/2)
-                    click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2)))/2)
+                    click_x = int(match.group(1)) + \
+                        ((int(match.group(3)) - int(match.group(1))) / 2)
+                    click_y = int(match.group(2)) + \
+                        ((int(match.group(4)) - int(match.group(2))) / 2)
                     logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                     self._communicator.click(click_x, click_y)
                     time.sleep(2)
@@ -490,8 +509,10 @@ class WordToScreenMatching(object):
                     bounds = item.attrib['bounds']
                     logger.debug("Bounds {}", str(item.attrib['bounds']))
                     match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
-                    click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
-                    click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
+                    click_x = int(match.group(1)) + \
+                        ((int(match.group(3)) - int(match.group(1))) / 2)
+                    click_y = int(match.group(2)) + \
+                        ((int(match.group(4)) - int(match.group(2))) / 2)
                     logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                     self._communicator.click(click_x, click_y)
                     time.sleep(2)
@@ -518,24 +539,24 @@ class WordToScreenMatching(object):
         if devicemappings is None:
             return default_value
         return devicemappings.get("settings", {}).get(key, default_value)
-    
+
     def censor_account(self, emailaddress, isPTC=False):
         # PTC account
         if isPTC:
-            return (emailaddress[0:2]+"***"+emailaddress[-2:])
+            return (emailaddress[0:2] + "***" + emailaddress[-2:])
         # GGL - make sure we have @ there.
         # If not it could be wrong match, so returning original
         if '@' in emailaddress:
             d = emailaddress.split("@", 1)
             # long local-part, censor middle part only
             if len(d[0]) > 6:
-                return (d[0][0:2]+"***"+d[0][-2:]+"@"+d[1])
+                return (d[0][0:2] + "***" + d[0][-2:] + "@" + d[1])
             # domain only, just return
             elif len(d[0]) == 0:
                 return (emailaddress)
             # local-part is short, asterix for each char
             else:
-                return ("*"*len(d[0])+"@"+d[1])
+                return ("*" * len(d[0]) + "@" + d[1])
         return emailaddress
 
 
@@ -548,4 +569,3 @@ if __name__ == '__main__':
     #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     #self._height, self._width, _ = frame.shape
     #print(pytesseract.image_to_data(frame, output_type=Output.DICT))
-

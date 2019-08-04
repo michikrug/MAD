@@ -1,15 +1,15 @@
 import time
-from queue import Empty
 from multiprocessing import Lock, Queue
 from multiprocessing.managers import SyncManager
-from threading import Thread, Event
+from queue import Empty
+from threading import Event, Thread
 from typing import Dict
 
 from db.dbWrapperBase import DbWrapperBase
-from utils.MappingManager import MappingManager
+from mitm_receiver.PlayerStats import PlayerStats
 from utils.collections import Location
 from utils.logging import logger
-from mitm_receiver.PlayerStats import PlayerStats
+from utils.MappingManager import MappingManager
 from utils.walkerArgs import parseArgs
 
 args = parseArgs()
@@ -36,7 +36,8 @@ class MitmMapper(object):
         if self.__mapping_manager is not None:
             for origin in self.__mapping_manager.get_all_devicemappings().keys():
                 self.__mapping[origin] = {}
-                self.__playerstats[origin] = PlayerStats(origin, self.__application_args, self.__db_wrapper, self)
+                self.__playerstats[origin] = PlayerStats(
+                    origin, self.__application_args, self.__db_wrapper, self)
                 self.__playerstats[origin].open_player_stats()
         self.__playerstats_db_update_consumer.daemon = True
         self.__playerstats_db_update_consumer.start()
@@ -68,14 +69,18 @@ class MitmMapper(object):
         data_send_stats = []
         data_send_location = []
 
-        data_send_stats.append(PlayerStats.stats_complete_parser(client_id, stats, last_processed_timestamp))
-        data_send_location.append(PlayerStats.stats_location_parser(client_id, stats, last_processed_timestamp))
+        data_send_stats.append(PlayerStats.stats_complete_parser(
+            client_id, stats, last_processed_timestamp))
+        data_send_location.append(PlayerStats.stats_location_parser(
+            client_id, stats, last_processed_timestamp))
 
         self.__db_wrapper.submit_stats_complete(data_send_stats)
         self.__db_wrapper.submit_stats_locations(data_send_location)
         if self.__application_args.game_stats_raw:
-            data_send_location_raw = PlayerStats.stats_location_raw_parser(client_id, stats, last_processed_timestamp)
-            data_send_detection_raw = PlayerStats.stats_detection_raw_parser(client_id, stats, last_processed_timestamp)
+            data_send_location_raw = PlayerStats.stats_location_raw_parser(
+                client_id, stats, last_processed_timestamp)
+            data_send_detection_raw = PlayerStats.stats_detection_raw_parser(
+                client_id, stats, last_processed_timestamp)
             self.__db_wrapper.submit_stats_locations_raw(data_send_location_raw)
             self.__db_wrapper.submit_stats_detections_raw(data_send_detection_raw)
         self.__db_wrapper.cleanup_statistics()
@@ -179,4 +184,3 @@ class MitmMapper(object):
     def generate_player_stats(self, origin: str, inventory_proto: dict):
         if self.__playerstats.get(origin, None) is not None:
             self.__playerstats.get(origin).gen_player_stats(inventory_proto)
-

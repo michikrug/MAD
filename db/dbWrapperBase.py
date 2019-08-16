@@ -7,10 +7,8 @@ from multiprocessing import Lock, Semaphore
 from typing import List, Optional
 
 import mysql
-from utils.s2Helper import S2Helper
 from bitstring import BitArray
 from mysql.connector.pooling import MySQLConnectionPool
-
 from utils.collections import Location
 from utils.logging import logger
 from utils.questGen import questtask
@@ -42,7 +40,7 @@ class DbWrapperBase(ABC):
                                         pool_size=self.application_args.db_poolsize,
                                         **self.dbconfig)
         self.pool_mutex.release()
-        
+
     def check_index_exists(self, table, index):
         query = (
             "SELECT count(*) "
@@ -1255,7 +1253,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)
@@ -1273,7 +1271,7 @@ class DbWrapperBase(ABC):
         )
 
         vals = (
-            origin,  now, 1
+            origin, now, 1
         )
 
         self.execute(query, vals, commit=True)
@@ -1670,5 +1668,3 @@ class DbWrapperBase(ABC):
         res = self.execute(query)
 
         return res
-
-

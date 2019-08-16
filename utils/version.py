@@ -241,7 +241,7 @@ class MADVersion(object):
                 "AFTER quest_reward"
             )
             column_exist = self.dbwrapper.check_column_exists(
-                    'trs_quest', 'quest_template')
+                'trs_quest', 'quest_template')
             if column_exist == 0:
                 try:
                     self.dbwrapper.execute(alter_query, commit=True)
@@ -281,7 +281,7 @@ class MADVersion(object):
                 "AFTER count"
             )
             column_exist = self.dbwrapper.check_column_exists(
-                    'trs_stats_detect_raw', 'is_shiny')
+                'trs_stats_detect_raw', 'is_shiny')
             if column_exist == 0:
                 try:
                     self.dbwrapper.execute(query, commit=True)
@@ -290,16 +290,16 @@ class MADVersion(object):
 
         if self._version < 12:
             query = (
-                    "ALTER TABLE trs_stats_detect_raw "
-                    "ADD INDEX typeworker (worker, type_id)"
-                )
+                "ALTER TABLE trs_stats_detect_raw "
+                "ADD INDEX typeworker (worker, type_id)"
+            )
             index_exist = self.dbwrapper.check_index_exists(
-                    'trs_stats_detect_raw', 'typeworker')
-            
+                'trs_stats_detect_raw', 'typeworker')
+
             if index_exist >= 1:
                 query = (
                     "ALTER TABLE trs_stats_detect_raw DROP INDEX typeworker, ADD INDEX typeworker (worker, type_id)"
-                )     
+                )
             try:
                 self.dbwrapper.execute(query, commit=True)
             except Exception as e:
@@ -310,12 +310,12 @@ class MADVersion(object):
                 "ADD INDEX shiny (is_shiny)"
             )
             index_exist = self.dbwrapper.check_index_exists(
-                    'trs_stats_detect_raw', 'shiny')
+                'trs_stats_detect_raw', 'shiny')
 
             if index_exist >= 1:
                 query = (
                     "ALTER TABLE trs_stats_detect_raw DROP INDEX shiny, ADD INDEX shiny (is_shiny)"
-                )      
+                )
             try:
                 self.dbwrapper.execute(query, commit=True)
             except Exception as e:

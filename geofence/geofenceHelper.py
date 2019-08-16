@@ -93,9 +93,10 @@ class GeofenceHelper:
         geofences = []
         # Read coordinates of areas.
         if geofence:
+            first_line = True
             for line in geofence.splitlines():
                 line = line.strip()
-                if not line:  # Empty line.
+                if len(line) == 0:  # Empty line.
                     continue
                 elif line.startswith("["):  # Name line.
                     name = line.replace("[", "").replace("]", "")
@@ -105,7 +106,17 @@ class GeofenceHelper:
                         'polygon': []
                     })
                     logger.debug('Found geofence: {}', name)
+                    first_line = False
                 else:  # Coordinate line.
+                    if first_line:
+                        # Geofence file with no name
+                        geofences.append({
+                            'excluded': excluded,
+                            'name': 'unnamed',
+                            'polygon': []
+                        })
+                        logger.debug('Found geofence with no name')
+
                     lat, lon = line.split(",")
                     latLon = {'lat': float(lat), 'lon': float(lon)}
                     geofences[-1]['polygon'].append(latLon)

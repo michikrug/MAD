@@ -97,11 +97,6 @@ class MITMBase(WorkerBase):
             # TODO: timeout also happens if there is no useful data such as mons nearby in mon_mitm mode, we need to
             # TODO: be more precise (timeout vs empty data)
             logger.warning("Timeout waiting for data")
-            if self._mapping_manager.routemanager_get_mode(self._routemanager_name) == 'pokestops':
-                # not getting any data ... something seems wrong. We sleep now - taking screen for later debugging
-                self._takeScreenshot(errorscreen=True)
-                if self._rocket:
-                    self.process_rocket()
 
             self._mitm_mapper.collect_location_stats(self._id, self.current_location, 0, self._waittime_without_delays,
                                                      position_type, 0,
@@ -113,7 +108,7 @@ class MITMBase(WorkerBase):
 
             restart_thresh = self.get_devicesettings_value("restart_thresh", 5)
             reboot_thresh = self.get_devicesettings_value("reboot_thresh", 3)
-            if self._mapping_manager.routemanager_get_route_stats(self._routemanager_name) is not None:
+            if self._mapping_manager.routemanager_get_route_stats(self._routemanager_name, self._id) is not None:
                 if self._init:
                     restart_thresh = self.get_devicesettings_value(
                         "restart_thresh", 5) * 2
@@ -124,13 +119,13 @@ class MITMBase(WorkerBase):
                 self._reboot_count += 1
                 if self._reboot_count > reboot_thresh \
                         and self.get_devicesettings_value("reboot", False):
-                    logger.error("Rebooting {}", str(self._id))
+                    logger.error("To much timeouts - Rebooting {}", str(self._id))
                     self._reboot(mitm_mapper=self._mitm_mapper)
                     raise InternalStopWorkerException
 
                 # self._mitm_mapper.
                 self._restart_count = 0
-                logger.error("Restarting Pogo {}", str(self._id))
+                logger.error("To much timeouts - Restarting Pogo  {}", str(self._id))
                 self._restart_pogo(True, self._mitm_mapper)
 
         self.worker_stats()
@@ -144,8 +139,8 @@ class MITMBase(WorkerBase):
                     "Worker {} not get injected in time - reboot", str(self._id))
                 self._reboot(self._mitm_mapper)
                 return False
-            logger.info("Worker {} is not injected till now (Count: {})",
-                        str(self._id), str(self._not_injected_count))
+            logger.info("PogoDroid on worker {} didn't connect yet. Probably not injected? (Count: {})", str(
+                self._id), str(self._not_injected_count))
             if self._not_injected_count in [3, 6, 9, 15]:
                 logger.info("Worker {} will retry check_windows while waiting for injection at count {}",
                             str(self._id), str(self._not_injected_count))
@@ -178,7 +173,7 @@ class MITMBase(WorkerBase):
         x, y = self._resocalc.get_coords_quest_menu(self)[0], \
             self._resocalc.get_coords_quest_menu(self)[1]
         self._communicator.click(int(x), int(y))
-        time.sleep(2 + int(delayadd))
+        time.sleep(6 + int(delayadd))
 
         trashcancheck = self._get_trash_positions()
         if trashcancheck is None:
@@ -255,7 +250,7 @@ class MITMBase(WorkerBase):
         logger.debug('Last Pos: {} {}', str(
             self.last_location.lat), str(self.last_location.lng))
         routemanager_status = self._mapping_manager.routemanager_get_route_stats(
-            self._routemanager_name)
+            self._routemanager_name, self._id)
         if routemanager_status is None:
             logger.warning("Routemanager not available")
             routemanager_status = [None, None]

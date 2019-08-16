@@ -1,4 +1,5 @@
 import ast
+import glob
 import json
 import os
 from functools import cmp_to_key
@@ -564,6 +565,36 @@ class config(object):
                     _temp = _temp + '<option value="' + \
                         str(option['monlist']) + '" ' + sel + '>' + \
                         str(option['monlist']) + '</option>'
+                    sel = ''
+                _temp = _temp + '</select></div>'
+                fieldwebsite.append(str(_temp))
+
+            if field['settings']['type'] == 'fenceselect':
+                _temp = '<div class="form-group"><label>' + str(
+                    field['name']) + '</label><br /><small class="form-text text-muted">' + str(
+                    field['settings']['description']) + '</small><select class="form-control" name="' + str(
+                    field['name']) + '" ' + lockvalue + ' ' + req + '>'
+                temp_mapping = {}
+                temp_mapping['fence'] = []
+                geofence_file_path = self._args.geofence_file_path
+                existing_fences = glob.glob(os.path.join(geofence_file_path, '*.txt'))
+                temp_mapping['fence'].append({'fence': None, 'realpath': None})
+                for geofence_temp in existing_fences:
+                    temp_mapping['fence'].append({'fence': os.path.basename(geofence_temp),
+                                                  'realpath': geofence_temp})
+
+                for option in temp_mapping['fence']:
+                    if edit:
+                        if field['name'] in oldvalues:
+                            if os.path.basename(str(oldvalues[field['name']])).lower() == \
+                                    os.path.basename(str(option['fence'])).lower():
+                                sel = 'selected'
+                        else:
+                            if not option['fence']:
+                                sel = 'selected'
+                    _temp = _temp + '<option value="' + \
+                        str(option['realpath']) + '" ' + sel + '>' + \
+                        os.path.splitext(str(option['fence']))[0] + '</option>'
                     sel = ''
                 _temp = _temp + '</select></div>'
                 fieldwebsite.append(str(_temp))

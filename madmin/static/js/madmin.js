@@ -22,11 +22,11 @@ var locInjectBtn = L.easyButton({
 });
 
 function loopCoords(coordarray) {
-    var returning = "";
-    coordarray[0].forEach((element, index, array) => {
-        returning += (element.lat + ',' + element.lng + '|');
-    });
-    return returning;
+  var returning = "";
+  coordarray[0].forEach((element, index, array) => {
+    returning += (element.lat + ',' + element.lng + '|');
+  });
+  return returning;
 };
 
 function copyClipboard(text) {
@@ -1259,7 +1259,8 @@ new Vue({
     },
     l_event_click(e) {
       if (clickToScanActive) {
-        $('#injectionModal').data('coords', e.latlng.lat + ',' + e.latlng.lng).modal();
+        $("#injectLocation").val(`${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`);
+        $("#injectionModal").modal();
       }
     },
     addMouseEventPopup(marker) {
@@ -1310,7 +1311,7 @@ new Vue({
       $.ajax({
         type: "GET",
         url: 'send_gps?origin=' + $('#injectionWorker').val() +
-          '&coords=' + $('#injectionModal').data('coords') +
+          '&coords=' + $('#injectLocation').val() +
           '&sleeptime=' + $('#injectionSleep').val()
       });
     },
@@ -1455,42 +1456,45 @@ new Vue({
         sidebar.close();
       });
 
-    var editableLayers = new L.FeatureGroup();
-    map.addLayer(editableLayers);
+      var editableLayers = new L.FeatureGroup();
+      map.addLayer(editableLayers);
 
-
-    var options = {
+      var options = {
         position: 'topright',
         draw: {
-            polyline: false,
-            polygon: {
-                allowIntersection: false,
-                drawError: {
-                    color: '#e1e100',
-                    message: '<strong>Oh snap!<strong> you can\'t draw that!'
-                },
-                shapeOptions: {
-                    color: '#ac00e6'
-                }
+          polyline: false,
+          polygon: {
+            allowIntersection: false,
+            drawError: {
+              color: '#e1e100',
+              message: '<strong>Oh snap!<strong> you can\'t draw that!'
             },
-            circle: false,
-            circlemarker: false,
-            rectangle: false,
-            line: false,
-            marker: false,
+            shapeOptions: {
+              color: '#ac00e6'
+            }
+          },
+          circle: false,
+          circlemarker: false,
+          rectangle: false,
+          line: false,
+          marker: false,
         },
         edit: {
-            featureGroup: editableLayers,
-            remove: false
+          featureGroup: editableLayers,
+          remove: false
         }
-    };
+      };
 
-    var drawControl = new L.Control.Draw(options);
-    map.addControl(drawControl);
+      var drawControl = new L.Control.Draw(options);
+      map.addControl(drawControl);
 
-    map.on(L.Draw.Event.CREATED, function (e) {
+      map.on(L.Draw.Event.CREATED, function (e) {
         var type = e.layerType,
-            layer = e.layer;
+          layer = e.layer;
+
+        if (type != "polygon") {
+          return;
+        }
 
         var fencename = prompt("Please enter name of fence", "");
         coords = loopCoords(layer.getLatLngs())
@@ -1498,16 +1502,16 @@ new Vue({
         layer.bindPopup('<b>' + fencename + '</b><br><a href=savefence?name=' + fencename + '&coords=' + coords + '>Save to MAD</a>');
         editableLayers.addLayer(layer);
         layer.openPopup();
-    });
+      });
 
-    map.on('draw:edited', function (e) {
+      map.on('draw:edited', function (e) {
         var layers = e.layers;
         layers.eachLayer(function (layer) {
-            coords = loopCoords(layer.getLatLngs())
-            layer._popup.setContent('<b>' + newfences[layer] + '</b><br><a href=savefence?name=' + newfences[layer] + '&coords=' + coords + '>Save to MAD</a>')
-            layer.openPopup();
+          coords = loopCoords(layer.getLatLngs())
+          layer._popup.setContent('<b>' + newfences[layer] + '</b><br><a href=savefence?name=' + newfences[layer] + '&coords=' + coords + '>Save to MAD</a>')
+          layer.openPopup();
         });
-    });
+      });
 
       // initial load
       this.map_fetch_everything();

@@ -294,6 +294,9 @@ class WorkerQuests(MITMBase):
             logger.info(
                 "Timediff between now and last action time: {}", str(float(timediff)))
             delay_used = delay_used - timediff
+        elif self.get_devicesettings_value('last_action_time', None) is None and not self._level_mode:
+            logger.info('Starting first time - we wait because of some default pogo delays ...')
+            delay_used = 20
         else:
             logger.debug("No last action time found - no calculation")
             delay_used = -1
@@ -375,6 +378,7 @@ class WorkerQuests(MITMBase):
             data_received = self._open_pokestop(math.floor(time.time()))
             if data_received is not None and data_received == LatestReceivedType.STOP:
                 self._handle_stop(math.floor(time.time()))
+
         else:
             logger.debug('Currently in INIT Mode - no Stop processing')
             time.sleep(5)
@@ -607,7 +611,6 @@ class WorkerQuests(MITMBase):
             origin=self._id, key="injected_settings", values_dict=injected_settings)
 
     def _current_position_has_spinnable_stop(self, timestamp: float):
-        self._rocket = False
         latest: dict = self._mitm_mapper.request_latest(self._id)
         if latest is None or 106 not in latest.keys():
             return False
@@ -642,6 +645,8 @@ class WorkerQuests(MITMBase):
                     logger.info("Stop {}, {} is rocketized - processing dialog after getting data"
                                 .format(str(latitude), str(longitude)))
                     self._rocket = True
+                else:
+                    self._rocket = False
 
                 if self._level_mode and self._ignore_spinned_stops:
                     visited: bool = fort.get("visited", False)
@@ -715,7 +720,9 @@ class WorkerQuests(MITMBase):
             logger.info('Spin Stop')
             data_received = self._wait_for_data(
                 timestamp=self._stop_process_time, proto_to_wait_for=101, timeout=35)
-            if self._rocket:
+            time.sleep(1)
+            if self._rocket or not self._check_pogo_main_screen_tr():
+                logger.info('Check for Team Rocket Dialog or other open window')
                 self.process_rocket()
             if data_received == FortSearchResultTypes.INVENTORY:
                 logger.error('Box is full ... Next round!')
@@ -833,10 +840,13 @@ class WorkerQuests(MITMBase):
         return LatestReceivedType.UNDEFINED
 
     def process_rocket(self):
-        logger.info('Closing Rocket Dialog')
-        time.sleep(5)
+        logger.debug('Closing Rocket Dialog')
         self._communicator.click(100, 100)
-        time.sleep(4)
+        time.sleep(1)
+        self._communicator.click(100, 100)
+        time.sleep(1)
+        self._communicator.click(100, 100)
+        time.sleep(1)
         self._communicator.click(100, 100)
         time.sleep(4)
         self._checkPogoClose()

@@ -8,6 +8,7 @@ class RouteManagerMon(RouteManagerBase):
 
     def _get_coords_after_finish_route(self):
         self._init_route_queue()
+        self.get_worker_workerpool()
         return True
 
     def _recalc_route_workertype(self):
@@ -38,6 +39,7 @@ class RouteManagerMon(RouteManagerBase):
             logger.info("Reading unknown Spawnpoints from DB")
             coords = self.db_wrapper.get_undetected_spawns(
                 self.geofence_helper)
+        self._start_priority_queue()
         return coords
 
     def _cluster_priority_queue_criteria(self):
@@ -51,7 +53,8 @@ class RouteManagerMon(RouteManagerBase):
         try:
             if not self._is_started:
                 logger.info("Starting routemanager {}", str(self.name))
-                self._start_priority_queue()
+                if not self.init:
+                    self._start_priority_queue()
                 self._is_started = True
                 self._init_route_queue()
                 self._first_round_finished = False

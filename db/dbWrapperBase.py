@@ -41,6 +41,22 @@ class DbWrapperBase(ABC):
                                         **self.dbconfig)
         self.pool_mutex.release()
 
+    def check_index_exists(self, table, index):
+        query = (
+            "SELECT count(*) "
+            "FROM information_schema.statistics "
+            "WHERE table_name = %s "
+            "AND index_name = %s "
+            "AND table_schema = %s"
+        )
+        vals = (
+            table,
+            index,
+            self.database,
+        )
+
+        return int(self.execute(query, vals)[0][0])
+
     def check_column_exists(self, table, column):
         query = (
             "SELECT count(*) "

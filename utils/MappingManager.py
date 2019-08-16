@@ -27,7 +27,7 @@ mode_mapping = {
     "mon_mitm": {
         "s2_cell_level": 17,
         "range": 67,
-        "range_init": 67,
+        "range_init": 145,
         "max_count": 100000
     },
     "raids_ocr": {
@@ -179,9 +179,9 @@ class MappingManager:
         if routemanager is not None:
             routemanager.add_coord_to_be_removed(lat, lon)
 
-    def routemanager_get_route_stats(self, routemanager_name: str) -> Optional[Tuple[int, int]]:
+    def routemanager_get_route_stats(self, routemanager_name: str, origin: str) -> Optional[Tuple[int, int]]:
         routemanager = self.__fetch_routemanager(routemanager_name)
-        return routemanager.get_route_status() if routemanager is not None else None
+        return routemanager.get_route_status(origin) if routemanager is not None else None
 
     def routemanager_get_rounds(self, routemanager_name: str, worker_name: str) -> Optional[int]:
         routemanager = self.__fetch_routemanager(routemanager_name)
@@ -314,7 +314,9 @@ class MappingManager:
                                              coords_spawns_known=area.get(
                                                  "coords_spawns_known", False),
                                              init=area.get("init", False),
-                                             range_init=mode_mapping.get(area["mode"], {}).get("range_init", 630))
+                                             range_init=mode_mapping.get(
+                                                 area["mode"], {}).get("range_init", 630),
+                                             including_stops=area.get("including_stops", False))
                 route_manager.add_coords_list(coords)
                 max_radius = mode_mapping[area["mode"]]["range"]
                 max_count_in_radius = mode_mapping[area["mode"]]["max_count"]
@@ -325,7 +327,7 @@ class MappingManager:
                     areas_procs[area["name"]] = proc
                 else:
                     logger.info(
-                        "Init mode enabled and more than 400 coords in init. Going row-based for {}", str(area.get("name", "unknown")))
+                        "Init mode enabled. Going row-based for {}", str(area.get("name", "unknown")))
                     # we are in init, let's write the init route to file to make it visible in madmin
                     if area["routecalc"] is not None:
                         routefile = os.path.join(
@@ -391,13 +393,15 @@ class MappingManager:
         return devices
 
     def __fetch_coords(self, mode: str, geofence_helper: GeofenceHelper, coords_spawns_known: bool = False,
-                       init: bool = False, range_init: int = 630) -> List[Location]:
+                       init: bool = False, range_init: int = 630, including_stops: bool = False) -> List[Location]:
         coords: List[Location] = []
         if mode == "raids_ocr" or not init:
             # grab data from DB depending on mode
             # TODO: move routemanagers to factory
             if mode == "raids_ocr" or mode == "raids_mitm":
                 coords = self.__db_wrapper.gyms_from_db(geofence_helper)
+                if including_stops:
+                    coords.extend(self.__db_wrapper.stops_from_db(geofence_helper))
             elif mode == "mon_mitm":
                 if coords_spawns_known:
                     logger.debug("Reading known Spawnpoints from DB")

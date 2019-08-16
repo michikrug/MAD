@@ -28,6 +28,7 @@ class PogoWindows:
             logger.info('PogoWindows: Temp directory created')
         self.temp_dir_path = temp_dir_path
         self.__thread_pool = ThreadPool(processes=thread_count)
+        self.__thread_pool_tesseract = ThreadPool(processes=1)
 
     def __most_present_colour(self, filename, max_colours):
         img = Image.open(filename)
@@ -304,7 +305,8 @@ class PogoWindows:
             line = [line]
             for x1, y1, x2, y2 in line:
 
-                if y1 == y2 and x2 - x1 <= maxLineLength and x2 - x1 >= minLineLength and y1 > (height / 2) \
+                if y1 == y2 and x2 - x1 <= maxLineLength and x2 - x1 >= minLineLength \
+                        and y1 > height / 3 \
                         and (x2 - x1) / 2 + x1 < width / 2 + 50 and (x2 - x1) / 2 + x1 > width / 2 - 50:
 
                     lineCount += 1
@@ -741,8 +743,8 @@ class PogoWindows:
             logger.error("get_screen_text: image does not exist")
             return False
 
-        return self.__thread_pool.apply_async(self.__internal_get_screen_text,
-                                              (screenshot, identifier)).get()
+        return self.__thread_pool_tesseract.apply_async(self.__internal_get_screen_text,
+                                                        (screenshot, identifier)).get()
 
     def __internal_get_screen_text(self, screenshot, identifier):
         returning_dict: dict = []

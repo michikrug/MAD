@@ -1,4 +1,4 @@
-import math
+import os
 import re
 import sys
 import time
@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 from utils.collections import Login_GGL, Login_PTC
 from utils.logging import logger
+from utils.madGlobals import ScreenshotType
 from utils.MappingManager import MappingManager
 
 sys.path.append("..")
@@ -44,10 +45,10 @@ class LoginType(Enum):
 
 
 class WordToScreenMatching(object):
-    def __init__(self, communicator, pogoWindowManager, id, resocalc, mapping_mananger: MappingManager, worker):
+    def __init__(self, communicator, pogoWindowManager, id, resocalc, mapping_mananger: MappingManager, args):
         self._ScreenType: dict = {}
         self._id = id
-        self._parent = worker
+        self._applicationArgs = args
         self._mapping_manager = mapping_mananger
         detect_ReturningScreen: list = (
             'ZURUCKKEHRENDER', 'ZURÜCKKEHRENDER', 'GAME', 'FREAK', 'SPIELER')
@@ -141,12 +142,12 @@ class WordToScreenMatching(object):
         self.set_devicesettings_value('accountindex', self._accountindex)
 
         if self._logintype == LoginType.ptc:
-            logger.info('Using PTC Account: {}'.format(self.censor_account(
-                self._PTC_accounts[self._accountindex - 1].username, isPTC=True)))
+            logger.info('Using PTC Account: {}'.format
+                        (self.censor_account(self._PTC_accounts[self._accountindex - 1].username, isPTC=True)))
             return self._PTC_accounts[self._accountindex - 1]
         else:
-            logger.info('Using GGL Account: {}'.format(self.censor_account(
-                self._GGL_accounts[self._accountindex - 1].username)))
+            logger.info('Using GGL Account: {}'.format
+                        (self.censor_account(self._GGL_accounts[self._accountindex - 1].username)))
             return self._GGL_accounts[self._accountindex - 1]
 
     def return_memory_account_count(self):
@@ -178,7 +179,7 @@ class WordToScreenMatching(object):
 
     def matchScreen(self):
         pogoTopmost = self._communicator.isPogoTopmost()
-        screenpath = self._parent.get_screenshot_path()
+        screenpath = self.get_screenshot_path()
         topmostapp = self._communicator.topmostApp()
         if not topmostapp:
             return ScreenType.ERROR
@@ -199,8 +200,8 @@ class WordToScreenMatching(object):
             logger.info('No more screen detection - disabled...')
             return ScreenType.DISABLED
         else:
-            if not self._parent._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
-                                                delayAfter=2):
+            if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
+                                        delayAfter=2):
                 logger.error("_check_windows: Failed getting screenshot")
                 return ScreenType.ERROR
             try:
@@ -227,7 +228,8 @@ class WordToScreenMatching(object):
                     break
                 if len(self._globaldict['text'][i]) > 3:
                     for z in self._ScreenType:
-                        if self._globaldict['text'][i] in self._ScreenType[z]:
+                        if self._globaldict['top'][i] > self._height / 4 and \
+                                self._globaldict['text'][i] in self._ScreenType[z]:
                             returntype = z
 
         if ScreenType(returntype) != ScreenType.UNDEFINED:
@@ -245,7 +247,7 @@ class WordToScreenMatching(object):
                 username = ggl_login.username
 
             if self.parse_ggl(self._communicator.uiautomator(), username):
-                time.sleep(25)
+                time.sleep(40)
                 return ScreenType.GGL
             return ScreenType.ERROR
 
@@ -286,7 +288,7 @@ class WordToScreenMatching(object):
 
         elif ScreenType(returntype) == ScreenType.BIRTHDATE:
             self._nextscreen = ScreenType.UNDEFINED
-            click_x = (self._width / 2) + (self._width / 3)
+            click_x = (self._width / 2) + (self._width / 4)
             click_y = (self._height / 1.69) + self._screenshot_y_offset
             logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
             self._communicator.click(click_x, click_y)
@@ -392,6 +394,10 @@ class WordToScreenMatching(object):
                 username_y = self._height / 2.224797219003476 + self._screenshot_y_offset
                 password_y = self._height / 1.875 + self._screenshot_y_offset
                 button_y = self._height / 1.58285243198681 + self._screenshot_y_offset
+            elif float(self._ratio) < 1.7:
+                username_y = self._height / 2.224797219003476 + self._screenshot_y_offset
+                password_y = self._height / 1.875 + self._screenshot_y_offset
+                button_y = self._height / 1.58285243198681 + self._screenshot_y_offset
 
             # username
             self._communicator.click(self._width / 2, username_y)
@@ -409,7 +415,7 @@ class WordToScreenMatching(object):
 
             # button
             self._communicator.click(self._width / 2, button_y)
-            time.sleep(25)
+            time.sleep(40)
             return ScreenType.PTC
 
         elif ScreenType(returntype) == ScreenType.FAILURE:
@@ -504,7 +510,7 @@ class WordToScreenMatching(object):
             parser = ET.XMLParser(encoding="utf-8")
             xmlroot = ET.fromstring(xml, parser=parser)
             for item in xmlroot.iter('node'):
-                if mail in str(item.attrib['text']):
+                if mail.lower() in str(item.attrib['text']).lower():
                     logger.info("Found mail {}", self.censor_account(str(item.attrib['text'])))
                     bounds = item.attrib['bounds']
                     logger.debug("Bounds {}", str(item.attrib['bounds']))
@@ -558,6 +564,48 @@ class WordToScreenMatching(object):
             else:
                 return ("*" * len(d[0]) + "@" + d[1])
         return emailaddress
+
+    def get_screenshot_path(self, fileaddon: bool = False) -> str:
+        screenshot_ending: str = ".jpg"
+        addon: str = ""
+        if self.get_devicesettings_value("screenshot_type", "jpeg") == "png":
+            screenshot_ending = ".png"
+
+        if fileaddon:
+            addon: str = "_" + str(time.time())
+
+        screenshot_filename = "screenshot_{}{}{}".format(
+            str(self._id), str(addon), screenshot_ending)
+
+        if fileaddon:
+            logger.info("Creating debugscreen: {}".format(screenshot_filename))
+
+        return os.path.join(
+            self._applicationArgs.temp_path, screenshot_filename)
+
+    def _takeScreenshot(self, delayAfter=0.0, delayBefore=0.0, errorscreen: bool = False):
+        logger.debug("Taking screenshot...")
+        time.sleep(delayBefore)
+
+        # TODO: area settings for jpg/png and quality?
+        screenshot_type: ScreenshotType = ScreenshotType.JPEG
+        if self.get_devicesettings_value("screenshot_type", "jpeg") == "png":
+            screenshot_type = ScreenshotType.PNG
+
+        screenshot_quality: int = 80
+
+        take_screenshot = self._communicator.get_screenshot(self.get_screenshot_path(fileaddon=errorscreen),
+                                                            screenshot_quality, screenshot_type)
+
+        if not take_screenshot:
+            logger.error("takeScreenshot: Failed retrieving screenshot")
+            logger.debug("Failed retrieving screenshot")
+            return False
+        else:
+            logger.debug("Success retrieving screenshot")
+            self._lastScreenshotTaken = time.time()
+            time.sleep(delayAfter)
+            return True
 
 
 if __name__ == '__main__':

@@ -740,12 +740,16 @@ new Vue({
             return;
           }
 
+          var geojson = {
+            "type": "MultiPolygon",
+            "coordinates": geofence.coordinates
+          }
           // add geofence to layergroup
-          var group = L.polygon(geofence.coordinates, { pane: "geofences", })
+          var group = L.geoJSON(geojson, { pane: "geofences", })
             .setStyle({
               "color": $this.getRandomColor(),
               "weight": 2,
-              "opacity": 0.5
+              "opacity": 0.25
             })
             .addTo(map);
 

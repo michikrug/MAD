@@ -1,6 +1,5 @@
 import asyncio
 import collections
-import datetime
 import functools
 import math
 import os
@@ -73,7 +72,7 @@ class WorkerBase(ABC):
             self.last_location = Location(0.0, 0.0)
 
         if self.get_devicesettings_value('last_mode', None) is not None and \
-                self.get_devicesettings_value('last_mode') in ("raids_mitm", "mon_mitm", "iv_mitm", "raids_ocr"):
+                self.get_devicesettings_value('last_mode') in ("raids_mitm", "mon_mitm", "iv_mitm"):
             # Reset last_location - no useless waiting delays (otherwise stop mode)
             logger.info(
                 '{}: last Mode not pokestop - reset saved location', str(self._id))
@@ -285,14 +284,13 @@ class WorkerBase(ABC):
         logger.debug("_internal_health_check: worker lock acquired")
         logger.debug("Checking if we need to restart pogo")
         # Restart pogo every now and then...
-        restart_pogo_setting = self.get_devicesettings_value(
-            "restart_pogo", 80)
+        restart_pogo_setting = self.get_devicesettings_value("restart_pogo", 0)
         if restart_pogo_setting > 0:
             # logger.debug("main: Current time - lastPogoRestart: {}", str(curTime - lastPogoRestart))
             # if curTime - lastPogoRestart >= (args.restart_pogo * 60):
             if self._location_count > restart_pogo_setting:
-                logger.error(
-                    "scanned " + str(restart_pogo_setting) + " locations, restarting pogo")
+                logger.info(
+                    "scanned {} locations, restarting game on {}", str(restart_pogo_setting), str(self._id))
                 pogo_started = self._restart_pogo()
                 self._location_count = 0
             else:
@@ -712,14 +710,13 @@ class WorkerBase(ABC):
 
     def _reboot(self, mitm_mapper: Optional[MitmMapper] = None):
         if not self.get_devicesettings_value("reboot", True):
-            logger.warning(
-                "Reboot command to be issued to device but reboot is disabled. Skipping reboot")
+            logger.warning("Skipping reboot, disabled in device settings.")
             return True
         try:
             start_result = self._communicator.reboot()
         except WebsocketWorkerRemovedException:
             logger.error(
-                "Could not reboot due to client already having disconnected")
+                "Could not reboot due to client already disconnected")
             start_result = False
         time.sleep(5)
         if mitm_mapper is not None:
@@ -743,7 +740,7 @@ class WorkerBase(ABC):
     def _restart_pogo(self, clear_cache=True, mitm_mapper: Optional[MitmMapper] = None):
         successful_stop = self._stop_pogo()
         self._db_wrapper.save_last_restart(self._id)
-        logger.debug("restartPogo: stop pogo resulted in {}",
+        logger.debug("restartPogo: stop game resulted in {}",
                      str(successful_stop))
         if successful_stop:
             if clear_cache:
@@ -762,7 +759,7 @@ class WorkerBase(ABC):
         successfulStop = self._stopPogoDroid()
         time.sleep(1)
         logger.debug(
-            "restartPogoDroid: stop pogodriud resulted in {}", str(successfulStop))
+            "restartPogoDroid: stop PogoDroid resulted in {}", str(successfulStop))
         if successfulStop:
             return self._start_pogodroid()
         else:
@@ -822,7 +819,7 @@ class WorkerBase(ABC):
                                                             screenshot_quality, screenshot_type)
 
         if self._lastScreenshotTaken and compareToTime < 0.5:
-            logger.debug(
+            logger.error(
                 "takeScreenshot: screenshot taken recently, returning immediately")
             logger.debug("Screenshot taken recently, skipping")
             return True
@@ -849,7 +846,7 @@ class WorkerBase(ABC):
         logger.debug("checkPogoFreeze: New Hash: {}", str(screenHash))
         if hamming_dist(str(self._lastScreenHash), str(screenHash)) < 4 and str(self._lastScreenHash) != '0':
             logger.debug(
-                "checkPogoFreeze: New und old Screenshoot are the same - no processing")
+                "checkPogoFreeze: New and old Screenshoot are the same - no processing")
             self._lastScreenHashCount += 1
             logger.debug("checkPogoFreeze: Same Screen Count: " +
                          str(self._lastScreenHashCount))
@@ -884,7 +881,7 @@ class WorkerBase(ABC):
 
         logger.debug("_check_pogo_main_screen: checking mainscreen")
         while not self._pogoWindowManager.check_pogo_mainscreen(screenshot_path, self._id):
-            logger.error("_check_pogo_main_screen: not on Mainscreen...")
+            logger.warning("_check_pogo_main_screen: not on Mainscreen...")
             if attempts == maxAttempts:
                 # could not reach raidtab in given maxAttempts
                 logger.error(

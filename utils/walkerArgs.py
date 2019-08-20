@@ -36,8 +36,8 @@ def parseArgs():
                         help='Set mappings file')
 
     # MySQL
-    parser.add_argument('-dbm', '--db_method', required=False,
-                        help='DB scheme to be used. Either "monocle" or "rm".')
+    parser.add_argument('-dbm', '--db_method', required=False, default="rm",
+                        help='LEGACY: DB scheme to be used')
     parser.add_argument('-dbip', '--dbip', required=False,
                         help='IP of MySql Server.')
     parser.add_argument('-dbuser', '--dbusername', required=False,
@@ -81,10 +81,10 @@ def parseArgs():
                             'gym. Default: 3.5'))
 
     # Runtypes
-    parser.add_argument('-os', '--only_scan', action='store_true', default=False,
+    parser.add_argument('-os', '--only_scan', action='store_true', default=True,
                         help='Use this instance only for scanning.')
     parser.add_argument('-oo', '--only_ocr', action='store_true', default=False,
-                        help='Use this instance only for OCR.')
+                        help='LEGACY: Use this instance only for OCR.')
     parser.add_argument('-om', '--ocr_multitask', action='store_true', default=False,
                         help='Running OCR in sub-processes (module multiprocessing) to speed up analysis of raids.')
     parser.add_argument('-otc', '--ocr_thread_count', type=int, default=2,
@@ -93,8 +93,6 @@ def parseArgs():
                         help='Start madmin as instance.')
     parser.add_argument('-or', '--only_routes', action='store_true', default=False,
                         help='Only calculate routes, then exit the program. No scanning.')
-    parser.add_argument('-nocr', '--no_ocr', action='store_true', default=False,
-                        help='Activate if you not using OCR for Quest or Raidscanning.')
 
     # folder
     parser.add_argument('-tmp', '--temp_path', default='temp',
@@ -106,9 +104,6 @@ def parseArgs():
 
     parser.add_argument('-rscrpath', '--raidscreen_path', default='ocr/screenshots',  # TODO: check if user appended / or not and deal accordingly (rmeove it?)
                         help='Folder for processed Raidscreens. Default: ocr/screenshots')
-
-    parser.add_argument('-unkpath', '--unknown_path', default='ocr/unknown',
-                        help='Folder for unknows Gyms or Mons. Default: ocr/unknown')
 
     # div. settings
 
@@ -169,6 +164,8 @@ def parseArgs():
                         help='Comma-separated list of area names to exclude elements from within to be sent to a webhook')
     parser.add_argument('-pwh', '--pokemon_webhook', action='store_true', default=False,
                         help='Activate pokemon webhook support')
+    parser.add_argument('-pwhn', '--pokemon_webhook_nonivs', action='store_true', default=False,
+                        help='Send non-IVd pokemon even if they are on Global Mon List')
     parser.add_argument('-swh', '--pokestop_webhook', action='store_true', default=False,
                         help='Activate pokestop webhook support')
     parser.add_argument('-wwh', '--weather_webhook', action='store_true', default=False,
@@ -240,6 +237,9 @@ def parseArgs():
 
     parser.add_argument('-rdt', '--raid_time', default='45', type=int,
                         help='Raid Battle time in minutes. (Default: 45)')
+
+    parser.add_argument('-ld', '--lure_duration', default='30', type=int,
+                        help='Lure duration in minutes. (Default: 30)')
 
     # mappings.json auto reloader
 

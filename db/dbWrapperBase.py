@@ -137,7 +137,7 @@ class DbWrapperBase(ABC):
                 res = cursor.fetchall()
                 return res
         except mysql.connector.Error as err:
-            logger.error("Failed executing query: {}", str(err))
+            logger.error("Failed executing query: {}, error: {}", str(sql), str(err))
             return None
         except Exception as e:
             logger.error("Unspecified exception in dbWrapper: {}", str(e))
@@ -953,7 +953,7 @@ class DbWrapperBase(ABC):
 
         query = (
             "SELECT spawnpoint, latitude, longitude, calc_endminsec, "
-            "spawndef, last_scanned, first_detection "
+            "spawndef, last_scanned, first_detection, last_non_scanned "
             "FROM `trs_spawn`"
         )
 
@@ -982,7 +982,7 @@ class DbWrapperBase(ABC):
         query = query + query_where
         res = self.execute(query)
 
-        for (spawnid, lat, lon, endtime, spawndef, last_scanned, first_detection) in res:
+        for (spawnid, lat, lon, endtime, spawndef, last_scanned, first_detection, last_non_scanned) in res:
             spawn[spawnid] = {
                 'id': spawnid,
                 'lat': lat,
@@ -990,6 +990,7 @@ class DbWrapperBase(ABC):
                 'endtime': endtime,
                 'spawndef': spawndef,
                 'lastscan': str(last_scanned),
+                'lastnonscan': str(last_non_scanned),
                 'first_detection': str(first_detection)
             }
 

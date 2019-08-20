@@ -1148,8 +1148,8 @@ class RmWrapper(DbWrapperBase):
 
         if len(stop_data['active_fort_modifier']) > 0:
             active_fort_modifier = stop_data['active_fort_modifier'][0]
-            lure = datetime.utcfromtimestamp(
-                30 * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
+            lure = datetime.utcfromtimestamp(self.application_args.lure_duration * 60 + (
+                stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
 
         if "pokestop_display" in stop_data:
             start_ms = stop_data["pokestop_display"]["incident_start_ms"]
@@ -1818,11 +1818,11 @@ class RmWrapper(DbWrapperBase):
         logger.debug('Fetching shiny pokemon stats from db')
         query = (
             "SELECT (select count(DISTINCT encounter_id) from pokemon inner join trs_stats_detect_raw on "
-            "trs_stats_detect_raw.type_id=pokemon.encounter_id where pokemon.pokemon_id=a.pokemon_id and "
+            "CAST(trs_stats_detect_raw.type_id as unsigned int)=pokemon.encounter_id where pokemon.pokemon_id=a.pokemon_id and "
             "trs_stats_detect_raw.worker=b.worker and pokemon.form=a.form), count(DISTINCT encounter_id), a.pokemon_id,"
-            "b.worker, GROUP_CONCAT(DISTINCT encounter_id ORDER BY encounter_id DESC SEPARATOR '<br>'), a.form "
+            "b.worker, GROUP_CONCAT(DISTINCT encounter_id ORDER BY encounter_id DESC SEPARATOR '<br>'), a.form, b.timestamp_scan "
             "FROM pokemon a left join trs_stats_detect_raw b on a.encounter_id=CAST(b.type_id as unsigned int) where b.is_shiny=1 group by "
-            "b.is_shiny, a.pokemon_id, a.form, b.worker order by a.pokemon_id"
+            "b.is_shiny, a.pokemon_id, a.form, b.worker order by b.timestamp_scan DESC "
         )
 
         res = self.execute(query)

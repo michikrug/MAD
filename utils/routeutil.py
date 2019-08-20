@@ -2,7 +2,6 @@ import datetime
 import re
 
 from utils.logging import logger
-from utils.MappingManager import MappingManager
 
 
 def check_walker_value_type(value):

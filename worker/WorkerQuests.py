@@ -310,7 +310,7 @@ class WorkerQuests(MITMBase):
             delay_used = -1
 
         if delay_used < 0:
-            logger.info('No more cooldowntime - start over')
+            logger.info('No need to wait before spinning, continuing...')
         else:
             delay_used = math.floor(delay_used)
             logger.info("Real sleep time: {} seconds: next action {}",
@@ -725,7 +725,7 @@ class WorkerQuests(MITMBase):
                 logger.info('Check for Team Rocket Dialog or other open window')
                 self.process_rocket()
             if data_received == FortSearchResultTypes.INVENTORY:
-                logger.error('Box is full ... Next round!')
+                logger.info('Box is full... Next round!')
                 self.clear_thread_task = 1
                 break
             elif data_received == FortSearchResultTypes.QUEST or data_received == FortSearchResultTypes.COOLDOWN:

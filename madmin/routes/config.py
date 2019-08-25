@@ -211,8 +211,7 @@ class config(object):
         else:
             header = "Add new " + walker
 
-        return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings",
-                               running_ocr=(self._args.only_ocr))
+        return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings")
 
     @auth_required
     def savesortwalker(self):
@@ -680,7 +679,7 @@ class config(object):
                 '<button type="submit" class="btn btn-primary">Save</button></form>')
 
         return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings",
-                               walkernr=_walkernr, edit=edit, tabarea=tabarea, running_ocr=(self._args.only_ocr))
+                               walkernr=_walkernr, edit=edit, tabarea=tabarea)
 
     @auth_required
     def delsetting(self):
@@ -946,7 +945,7 @@ class config(object):
                                settings=tab_content,
                                tabarea=tabarea,
                                title="Mapping Editor", responsive=str(self._args.madmin_noresponsive).lower(),
-                               running_ocr=self._args.only_ocr, autoreloadconfig=self._args.auto_reload_config)
+                               autoreloadconfig=self._args.auto_reload_config)
 
     @auth_required
     def addnew(self):
@@ -961,8 +960,7 @@ class config(object):
             line = line + '<h3><a href="config?type=' + str(output['name']) + '&area=' + str(
                 area) + '&block=fields">' + str(output['name']) + '</a></h3><h5>' + str(
                 output['description']) + '</h5><hr>'
-
-        return render_template('sel_type.html', line=line, title="Type selector", running_ocr=(self._args.only_ocr))
+        return render_template('sel_type.html', line=line, title="Type selector")
 
     @auth_required
     @logger.catch

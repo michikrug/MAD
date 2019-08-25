@@ -102,6 +102,9 @@ msgstr ""
 msgid "Use an item to evolve a Pokemon"
 msgstr ""
 
+msgid "Take {0} snapshots of {type}Pokemon"
+msgstr ""
+
 msgid "Evolve {0} {type}Pokemon"
 msgstr ""
 

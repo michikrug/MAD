@@ -8,7 +8,6 @@ from db.dbWrapperBase import DbWrapperBase
 from madmin.routes.config import config
 from madmin.routes.control import control
 from madmin.routes.map import map
-from madmin.routes.ocr import ocr
 from madmin.routes.path import path
 # routes
 from madmin.routes.statistics import statistics
@@ -28,7 +27,6 @@ def madmin_start(args, db_wrapper: DbWrapperBase, ws_server, mapping_manager: Ma
     control(db_wrapper, args, mapping_manager, ws_server, logger, app)
     map(db_wrapper, args, mapping_manager, app)
     config(db_wrapper, args, logger, app, mapping_manager)
-    ocr(db_wrapper, args, logger, app)
     path(db_wrapper, args, app)
 
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0

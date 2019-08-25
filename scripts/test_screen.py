@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 import sys
 
@@ -6,11 +7,9 @@ import cv2
 import numpy as np
 import pytesseract
 from PIL import Image
-import math
-sys.path.append("..")
 from utils.resolution import Resocalculator
 
-
+sys.path.append("..")
 
 
 class testimage(object):
@@ -59,7 +58,7 @@ class testimage(object):
 
         if self._mode == "check_button_big":
             self._image_check = self.look_for_button(self._image, 1.05, 2.20, upper=False)
-                                                     #2.20, 3.01)
+            # 2.20, 3.01)
 
         if self._mode == "check_button_small":
             self._image_check = self.look_for_button(self._image, 2.20, 3.01, upper=True)
@@ -142,7 +141,7 @@ class testimage(object):
         print('Opening gym')
         x, y = self._resocalc.get_gym_click_coords(
             self)[0], self._resocalc.get_gym_click_coords(self)[1]
-        print (x,y)
+        print(x, y)
         return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
 
     def find_pokeball(self, image):
@@ -161,7 +160,7 @@ class testimage(object):
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
             for (x, y, r) in circles:
-                raidhash = output[y-r-1:y+r+1, x-r-1:x+r+1]
+                raidhash = output[y - r - 1:y + r + 1, x - r - 1:x + r + 1]
                 cv2.imshow("output", np.hstack([raidhash]))
                 cv2.waitKey(0)
         else:
@@ -176,10 +175,10 @@ class testimage(object):
         #y2 += self._resocalc.get_next_item_coord(self)
         #y1 += self._resocalc.get_next_item_coord(self)
         #y2 += self._resocalc.get_next_item_coord(self)
-        h = x1-x2
-        w = y1-y2
+        h = x1 - x2
+        w = y1 - y2
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray = gray[int(y2):(int(y2)+int(w)), int(x2):(int(x2)+int(h))]
+        gray = gray[int(y2):(int(y2) + int(w)), int(x2):(int(x2) + int(h))]
         cv2.imshow("output", gray)
         cv2.waitKey(0)
         filename = "{}.png".format(os.getpid())
@@ -229,7 +228,7 @@ class testimage(object):
         height, width, _ = filename.shape
         _widthold = float(width)
         print("lookForButton: Determined screenshot scale: " +
-                     str(height) + " x " + str(width))
+              str(height) + " x " + str(width))
 
         # resize for better line quality
         # gray = cv2.resize(gray, (0,0), fx=width*0.001, fy=width*0.001)
@@ -258,7 +257,7 @@ class testimage(object):
         if lines is None:
             return False
 
-        lines= (self.check_lines(lines, height))
+        lines = (self.check_lines(lines, height))
 
         _last_y = 0
         for line in lines:
@@ -268,7 +267,7 @@ class testimage(object):
                     and y1 > height / 3 \
                         and (x2 - x1) / 2 + x1 < width / 2 + 50 and (x2 - x1) / 2 + x1 > width / 2 - 50:
                     lineCount += 1
-                    disToMiddleMin_temp = y1 - (height/2)
+                    disToMiddleMin_temp = y1 - (height / 2)
                     if upper:
                         if disToMiddleMin is None:
                             disToMiddleMin = disToMiddleMin_temp
@@ -297,7 +296,7 @@ class testimage(object):
         if 1 < lineCount <= 6:
             click_x = int(((width - _x2) + ((_x2 - _x1) / 2)) /
                           round(factor, 2))
-            click_y =  int(click_y)
+            click_y = int(click_y)
             print('lookForButton: found Button - click on it')
             return cv2.circle(filename, (int(click_x), int(click_y)), 20, (0, 0, 255), -1)
 
@@ -308,7 +307,6 @@ class testimage(object):
 
         print('lookForButton: did not found any Button')
         return False
-
 
     def check_lines(self, lines, height):
         temp_lines = []
@@ -326,13 +324,14 @@ class testimage(object):
         button_value = height / 40
 
         for line in sort_arr:
-            if int(old_y1+int(button_value)) < int(line[0]):
+            if int(old_y1 + int(button_value)) < int(line[0]):
                 if int(line[0]) == int(line[1]):
-                    sort_lines.append([line[2],line[0],line[3],line[1]])
+                    sort_lines.append([line[2], line[0], line[3], line[1]])
                     old_y1 = line[0]
             index += 1
 
         return np.asarray(sort_lines, dtype=np.int32)
+
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--image", required=True, help="Path to the image")

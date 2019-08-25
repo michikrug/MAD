@@ -1,17 +1,16 @@
 import collections
 import heapq
 import json
+import math
 import os
 import time
-import math
 from abc import ABC, abstractmethod
 from datetime import datetime
 from queue import Queue
 from threading import Event, Lock, RLock, Thread
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-
 from db.dbWrapperBase import DbWrapperBase
 from geofence.geofenceHelper import GeofenceHelper
 from route.routecalc.calculate_route import getJsonRoute
@@ -231,7 +230,8 @@ class RouteManagerBase(ABC):
             os.remove(str(routefile) + ".calc")
         new_route = getJsonRoute(coords, max_radius, max_coords_within_radius, num_processes=num_procs,
                                  routefile=routefile, algorithm=calctype)
-        if self._overwrite_calculation: self._overwrite_calculation = False
+        if self._overwrite_calculation:
+            self._overwrite_calculation = False
         return new_route
 
     def empty_routequeue(self):
@@ -442,10 +442,10 @@ class RouteManagerBase(ABC):
         # if that is not the case, simply increase the index in route and return the location on route
 
         # determine whether we move to the next location or the prio queue top's item
-        if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False)
-                                                              or self.starve_route)
-                                                             and self._prio_queue and len(self._prio_queue) > 0
-                                                             and self._prio_queue[0][0] < time.time())):
+        if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False) or
+                                                              self.starve_route) and
+                                                             self._prio_queue and len(self._prio_queue) > 0 and
+                                                             self._prio_queue[0][0] < time.time())):
             logger.debug("{}: Priority event", str(self.name))
             next_stop = heapq.heappop(self._prio_queue)[1]
             next_lat = next_stop.lat
@@ -525,8 +525,7 @@ class RouteManagerBase(ABC):
             next_lng = next_coord[1]
             self._route_queue.task_done()
             logger.info("{}: Moving on with location {} [{} coords left (Workerpool) - {} coords left (Route)]",
-                        str(self.name), str(next_coord), str(self._routepool[origin].qsize())
-                        , str(self._route_queue.qsize()))
+                        str(self.name), str(next_coord), str(self._routepool[origin].qsize()), str(self._route_queue.qsize()))
 
             self._last_round_prio[origin] = False
         logger.debug("{}: Done grabbing next coord, releasing lock and returning location: {}, {}", str(
@@ -569,13 +568,14 @@ class RouteManagerBase(ABC):
             self._workers_fillup_mutex.release()
 
         logger.success('Filled up Routepool for origin {} with {} coords'.format(str(origin),
-                                                                              self._routepool[origin].qsize()))
+                                                                                 self._routepool[origin].qsize()))
         return True
 
     def get_worker_workerpool(self):
         for origin in self._routepool:
             logger.info('Worker {}: {} open positions (Route: {})'.format(str(origin),
-                                                                          str(self._routepool[origin].qsize()),
+                                                                          str(self._routepool[origin].qsize(
+                                                                          )),
                                                                           str(self.name)))
 
     def del_from_route(self):
@@ -583,7 +583,7 @@ class RouteManagerBase(ABC):
             "{}: Location available, acquiring lock and trying to return location", str(self.name))
         self._manager_mutex.acquire()
         logger.info('Removing coords from Route')
-        self._route.pop(int(self._current_index_of_route)-1)
+        self._route.pop(int(self._current_index_of_route) - 1)
         self._current_index_of_route -= 1
         if len(self._route) == 0:
             logger.info('No more coords are available... Sleeping.')

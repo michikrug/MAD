@@ -1,19 +1,20 @@
 import json
 import os
+from pathlib import Path
 from typing import List, Optional
 
-from flask import (jsonify, render_template, request, redirect)
-from flask_caching import Cache
+from flask import jsonify, redirect, render_template, request
 
 from db.dbWrapperBase import DbWrapperBase
-from madmin.functions import auth_required, getCoordFloat, getBoundParameter, getBasePath
-from utils.MappingManager import MappingManager
+from flask_caching import Cache
+from madmin.functions import (auth_required, getBasePath, getBoundParameter,
+                              getCoordFloat)
 from utils.collections import Location
 from utils.gamemechanicutil import get_raid_boss_cp
+from utils.logging import logger
+from utils.MappingManager import MappingManager
 from utils.questGen import generate_quest
 from utils.s2Helper import S2Helper
-from utils.logging import logger
-from pathlib import Path
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
@@ -141,7 +142,8 @@ class map(object):
 
         for routemanager in routemanager_names:
             mode = self._mapping_manager.routemanager_get_mode(routemanager)
-            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_route(routemanager)
+            route: Optional[List[Location]
+                            ] = self._mapping_manager.routemanager_get_current_route(routemanager)
 
             if route is None:
                 continue
@@ -167,7 +169,8 @@ class map(object):
 
         for routemanager in routemanager_names:
             mode = self._mapping_manager.routemanager_get_mode(routemanager)
-            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_prioroute(routemanager)
+            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_prioroute(
+                routemanager)
 
             if route is None:
                 continue
@@ -363,11 +366,9 @@ class map(object):
         file.write("[" + str(name) + "]\n")
         for i in range(len(coords_split)):
             latlon_split = coords_split[i].split(",")
-            file.write("{0},{1}\n".format(str(float(latlon_split[0]) % 90), str(float(latlon_split[0]) % 360)))
+            file.write("{0},{1}\n".format(
+                str(float(latlon_split[0]) % 90), str(float(latlon_split[0]) % 360)))
 
         file.close()
 
         return redirect(getBasePath(request) + "/map", code=302)
-
-
-

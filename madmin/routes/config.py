@@ -6,7 +6,7 @@ from functools import cmp_to_key
 
 from flask import redirect, render_template, request
 
-from madmin.functions import auth_required, getBasePath
+from madmin.functions import auth_required, getBasePath, nocache
 from utils.adb import ADBConnect
 from utils.language import i8ln, open_json_file
 from utils.logging import InterceptHandler, logger
@@ -46,17 +46,18 @@ class config(object):
             self._app.route(route, methods=['GET', 'POST'])(view_func)
 
     @auth_required
+    @nocache
     def addwalker(self):
         fieldwebsite = []
         walkervalue = ""
         walkerposition = ""
         walkermax = ""
         walkertext = ""
-        edit = request.args.get('edit')
-        walker = request.args.get('walker')
-        add = request.args.get('add')
+        edit = request.values.get('edit')
+        walker = request.values.get('walker')
+        add = request.values.get('add')
 
-        walkernr = request.args.get('walkernr')
+        walkernr = request.values.get('walkernr')
 
         with open(self._args.mappings) as f:
             mapping = json.load(f)
@@ -64,17 +65,17 @@ class config(object):
                 mapping['walker'] = []
 
         if add:
-            walkerarea = request.args.get('walkerarea')
-            walkertype = request.args.get('walkertype')
-            walkervalue = request.args.get('walkervalue')
-            walkernr = request.args.get('walkernr')
-            walkermax = request.args.get('walkermax')
-            walkertext = request.args.get('walkertext').replace(' ', '_')
-            walkerposition = request.args.get('walkerposition', False)
+            walkerarea = request.values.get('walkerarea')
+            walkertype = request.values.get('walkertype')
+            walkervalue = request.values.get('walkervalue')
+            walkernr = request.values.get('walkernr')
+            walkermax = request.values.get('walkermax')
+            walkertext = request.values.get('walkertext').replace(' ', '_')
+            walkerposition = request.values.get('walkerposition', False)
             if not walkerposition:
                 walkerposition = False
-            oldwalkerposition = request.args.get('oldwalkerposition')
-            edit = request.args.get('edit')
+            oldwalkerposition = request.values.get('oldwalkerposition')
+            edit = request.values.get('edit')
 
             walkerlist = {'walkerarea': walkerarea, 'walkertype': walkertype, 'walkervalue': walkervalue,
                           'walkermax': walkermax, 'walkertext': walkertext}
@@ -110,7 +111,7 @@ class config(object):
                                 str(walker), code=302)
 
         if walker and edit:
-            walkerposition = request.args.get('walkerposition')
+            walkerposition = request.values.get('walkerposition')
             _walkerval = mapping['walker'][int(
                 walkernr)]['setup'][int(walkerposition)]
             walkerarea = _walkerval['walkerarea']
@@ -214,6 +215,7 @@ class config(object):
         return render_template('parser.html', editform=fieldwebsite, header=header, title="edit settings")
 
     @auth_required
+    @nocache
     def savesortwalker(self):
         walkernr = request.args.get('walkernr')
         data = request.args.getlist('position[]')
@@ -241,6 +243,7 @@ class config(object):
                         code=302)
 
     @auth_required
+    @nocache
     def delwalker(self):
         walker = request.args.get('walker')
         walkernr = request.args.get('walkernr')
@@ -261,6 +264,7 @@ class config(object):
 
     @logger.catch()
     @auth_required
+    @nocache
     def config(self):
         fieldwebsite = []
         oldvalues = []
@@ -682,6 +686,7 @@ class config(object):
                                walkernr=_walkernr, edit=edit, tabarea=tabarea)
 
     @auth_required
+    @nocache
     def delsetting(self):
         edit = request.args.get('edit')
         area = request.args.get('area')
@@ -721,6 +726,7 @@ class config(object):
             return False
 
     @auth_required
+    @nocache
     def addedit(self):
         data = request.form.to_dict(flat=False)
         datavalue = {}
@@ -837,6 +843,7 @@ class config(object):
 
     @logger.catch
     @auth_required
+    @nocache
     def showsettings(self):
         tab_content = ''
         tabarea = request.args.get("area", 'devices')
@@ -948,6 +955,7 @@ class config(object):
                                autoreloadconfig=self._args.auto_reload_config)
 
     @auth_required
+    @nocache
     def addnew(self):
         area = request.args.get('area')
         line = ''
@@ -964,6 +972,7 @@ class config(object):
 
     @auth_required
     @logger.catch
+    @nocache
     def showmonsidpicker(self):
         edit = request.args.get('edit')
         type = request.args.get('type')
@@ -1050,6 +1059,7 @@ class config(object):
                                title=title)
 
     @auth_required
+    @nocache
     def reload(self):
         if not self._args.auto_reload_config:
             self._mapping_mananger.update()

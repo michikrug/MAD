@@ -122,7 +122,7 @@ class config(object):
                 walkermax = ''
             edit = True
 
-        fieldwebsite.append('<form action="addwalker" id="settings">')
+        fieldwebsite.append('<form action="addwalker" id="settings" method="post">')
         fieldwebsite.append(
             '<input type="hidden" name="walker" value="' + walker + '">')
         fieldwebsite.append('<input type="hidden" name="add" value=True>')

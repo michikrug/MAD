@@ -1,9 +1,11 @@
-import json
 import datetime
+import json
 import os
-from flask import (make_response, request)
 from functools import update_wrapper, wraps
 from math import floor
+
+from flask import make_response, request
+
 from utils.walkerArgs import parseArgs
 
 mapping_args = parseArgs()

@@ -1,17 +1,17 @@
 import datetime
-import time
 import os
+import time
+
+from flask import redirect, render_template, request
+
 import cv2
-from flask import (render_template, request, redirect)
-
 from db.dbWrapperBase import DbWrapperBase
-from madmin.functions import (auth_required, generate_device_screenshot_path, getBasePath, nocache)
-from utils.MappingManager import MappingManager
-from utils.functions import (creation_date, generate_phones,
-                             image_resize)
-
+from madmin.functions import (auth_required, generate_device_screenshot_path,
+                              getBasePath, nocache)
 from utils.adb import ADBConnect
+from utils.functions import creation_date, generate_phones, image_resize
 from utils.madGlobals import ScreenshotType
+from utils.MappingManager import MappingManager
 
 
 class control(object):
@@ -199,7 +199,7 @@ class control(object):
             self._logger.info('MADMin: ADB screenswipe successfully ({})', str(origin))
         else:
             self._logger.info('MADMin WS Swipe x:{} y:{} xe:{} ye:{} ({})', str(real_click_x), str(real_click_y),
-                        str(real_click_xe), str(real_click_ye), str(origin))
+                              str(real_click_xe), str(real_click_ye), str(origin))
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.touchandhold(int(real_click_x), int(
                 real_click_y), int(real_click_xe), int(real_click_ye))
@@ -217,14 +217,18 @@ class control(object):
         adb = devicemappings.get(origin, {}).get('adb', False)
         self._logger.info('MADmin: Restart Pogo ({})', str(origin))
         if useadb == 'True' and self._adb_connect.send_shell_command(adb, origin, "am force-stop com.nianticlabs.pokemongo"):
-            self._logger.info('MADMin: ADB shell force-stop game command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB shell force-stop game command successfully ({})', str(origin))
             if restart:
                 time.sleep(1)
-                started = self._adb_connect.send_shell_command(adb, origin, "am start com.nianticlabs.pokemongo")
+                started = self._adb_connect.send_shell_command(
+                    adb, origin, "am start com.nianticlabs.pokemongo")
                 if started:
-                    self._logger.info('MADMin: ADB shell start game command successfully ({})', str(origin))
+                    self._logger.info(
+                        'MADMin: ADB shell start game command successfully ({})', str(origin))
                 else:
-                    self._logger.error('MADMin: ADB shell start game command failed ({})', str(origin))
+                    self._logger.error(
+                        'MADMin: ADB shell start game command failed ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             if restart:
@@ -249,7 +253,7 @@ class control(object):
         self._logger.info('MADmin: Restart Phone ({})', str(origin))
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
-                        adb, origin,"am broadcast -a android.intent.action.BOOT_COMPLETED")):
+                    adb, origin, "am broadcast -a android.intent.action.BOOT_COMPLETED")):
             self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
@@ -266,13 +270,12 @@ class control(object):
         self._logger.info('MADmin: Clear game data for phone ({})', str(origin))
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
-                        adb, origin, "pm clear com.nianticlabs.pokemongo")):
+                    adb, origin, "pm clear com.nianticlabs.pokemongo")):
             self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.resetAppdata("com.nianticlabs.pokemongo")
         return redirect(getBasePath(request) + '/phonecontrol')
-
 
     @auth_required
     def send_gps(self):
@@ -288,13 +291,13 @@ class control(object):
         if len(coords) < 2:
             return 'Wrong Format!'
         self._logger.info('MADmin: Set GPS Coords {}, {} - WS Mode only! ({})',
-                    str(coords[0]), str(coords[1]), str(origin))
+                          str(coords[0]), str(coords[1]), str(origin))
         try:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.setLocation(coords[0], coords[1], 0)
             if int(sleeptime) > 0:
                 self._logger.info("MADmin: Set additional sleeptime: {} ({})",
-                            str(sleeptime), str(origin))
+                                  str(sleeptime), str(origin))
                 self._ws_server.set_geofix_sleeptime_worker(origin, sleeptime)
         except Exception as e:
             self._logger.exception(

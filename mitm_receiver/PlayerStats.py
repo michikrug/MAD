@@ -1,11 +1,11 @@
+import datetime
 import json
 import os
 import time
-import datetime
+from copy import deepcopy
 from math import floor
 from multiprocessing import Lock
 from pathlib import Path
-from copy import deepcopy
 
 from db.dbWrapperBase import DbWrapperBase
 from mitm_receiver import MitmMapper
@@ -115,13 +115,13 @@ class PlayerStats(object):
         with self.__mapping_mutex:
             if 102 not in self.__stats_collected:
                 self.__stats_collected[102] = {}
-    
+
             if 'mon_iv' not in self.__stats_collected[102]:
                 self.__stats_collected[102]['mon_iv'] = {}
-    
+
             if 'mon_iv_count' not in self.__stats_collected[102]:
                 self.__stats_collected[102]['mon_iv_count'] = 0
-    
+
             if encounter_id not in self.__stats_collected[102]['mon_iv']:
                 self.__stats_collected[102]['mon_iv'][encounter_id] = {}
                 self.__stats_collected[102]['mon_iv'][encounter_id]['count'] = 1
@@ -220,7 +220,8 @@ class PlayerStats(object):
                       str(quest_count)
                       )
 
-        logger.debug('Submit complete stats for {} - Period: {}: {}', str(client_id), str(period), str(stats_data))
+        logger.debug('Submit complete stats for {} - Period: {}: {}',
+                     str(client_id), str(period), str(stats_data))
 
         return stats_data
 
@@ -237,7 +238,8 @@ class PlayerStats(object):
                          str(location_ok),
                          str(location_nok))
 
-        logger.debug('Submit location stats for {} - Period: {}: {}', str(client_id), str(period), str(location_data))
+        logger.debug('Submit location stats for {} - Period: {}: {}',
+                     str(client_id), str(period), str(location_data))
 
         return location_data
 
@@ -251,7 +253,7 @@ class PlayerStats(object):
                 data_location_raw.append(loc_raw)
 
         logger.debug('Submit raw location stats for {} - Period: {} - Count: {}', str(client_id), str(period),
-                    str(len(data_location_raw)))
+                     str(len(data_location_raw)))
 
         return data_location_raw
 
@@ -317,18 +319,6 @@ class PlayerStats(object):
                                               ))
 
         logger.debug('Submit raw detection stats for {} - Period: {} - Count: {}', str(client_id), str(period),
-                    str(len(data_location_raw)))
+                     str(len(data_location_raw)))
 
         return data_location_raw
-
-
-
-
-
-
-
-
-
-
-
-

@@ -62,7 +62,9 @@ class WorkerBase(ABC):
         self._pogoWindowManager = pogoWindowManager
         self._waittime_without_delays = 0
         self._transporttype = 0
-        self._not_injected_count = 0
+        self._not_injected_count: int = 0
+        self._same_screen_count: int = 0
+        self._last_screen_type: ScreenType = ScreenType.UNDEFINED
 
         self.current_location = Location(0.0, 0.0)
         self.last_location = self.get_devicesettings_value(
@@ -574,15 +576,32 @@ class WorkerBase(ABC):
             time.sleep(self.get_devicesettings_value(
                 "post_turn_screen_on_delay", 2))
 
-    def _check_windows(self):
+    def _check_windows(self, quickcheck=False):
         logger.info('Checking pogo screen...')
         loginerrorcounter: int = 0
         returncode: ScreenType = ScreenType.UNDEFINED
 
         while not returncode == ScreenType.POGO and not self._stop_worker_event.is_set():
-            returncode = self._WordToScreenMatching.matchScreen()
+            returncode = self._WordToScreenMatching.matchScreen(quickcheck)
 
             if returncode != ScreenType.POGO:
+
+                if (returncode not in (ScreenType.UNDEFINED, ScreenType.ERROR,
+                                       ScreenType.PERMISSION)) \
+                        and self._last_screen_type == returncode \
+                        and self._same_screen_count == 3:
+                    logger.warning('Pogo freeze - restart Phone')
+                    self._stop_worker_event.set()
+                    self._stop_pogo()
+                    time.sleep(5)
+                    self._reboot()
+
+                if (returncode not in (ScreenType.UNDEFINED, ScreenType.ERROR,
+                                       ScreenType.PERMISSION)) \
+                        and self._last_screen_type == returncode \
+                        and self._same_screen_count < 3:
+                    self._same_screen_count += 1
+                    logger.warning('Getting same screen again - maybe Pogo freeze?')
 
                 if returncode == ScreenType.GAMEDATA or returncode == ScreenType.CONSENT:
                     logger.warning('Error getting Gamedata or strange ggl message appears')
@@ -599,15 +618,22 @@ class WorkerBase(ABC):
                     returncode == ScreenType.POGO
                     break
 
-                elif returncode == ScreenType.ERROR:
+                elif returncode == ScreenType.UPDATE:
+                    logger.error('Found update pogo screen - wait for update action')
+                    # update pogo - later with new rgc version
+                    while not self._stop_worker_event.is_set():
+                        time.sleep(10)
+
+                elif returncode == ScreenType.ERROR or returncode == ScreenType.FAILURE:
                     logger.warning('Something wrong with screendetection')
                     loginerrorcounter += 1
 
-                if loginerrorcounter == 4 or returncode == ScreenType.SN:
+                if loginerrorcounter == 3 or returncode == ScreenType.SN:
                     logger.error(
                         'Cannot login again - (clear pogo game data and) restart phone / SN Error')
                     self._stop_worker_event.set()
                     self._stop_pogo()
+                    self._communicator.clearAppCache("com.nianticlabs.pokemongo")
                     time.sleep(5)
                     if self.get_devicesettings_value('clear_game_data', True):
                         logger.info('Clearing game data')
@@ -618,7 +644,10 @@ class WorkerBase(ABC):
                     logger.error('Cannot login two times in row - restart pogo')
                     self._stop_pogo()
                     time.sleep(5)
+                    self._communicator.clearAppCache("com.nianticlabs.pokemongo")
                     self._turn_screen_on_and_start_pogo()
+
+                self._last_screen_type = returncode
 
         logger.info('Checking pogo screen is finished')
         return True

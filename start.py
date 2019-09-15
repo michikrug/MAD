@@ -1,13 +1,14 @@
 import calendar
 import datetime
 import gc
-import glob
 import os
 import sys
 import time
 from multiprocessing import Process
 from threading import Thread, active_count
 from typing import Optional
+
+import pkg_resources
 
 import psutil
 from db.DbFactory import DbFactory
@@ -19,7 +20,6 @@ from utils.MappingManager import MappingManager, MappingManagerManager
 from utils.rarity import Rarity
 from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
-from watchdog.observers import Observer
 from websocket.WebsocketServer import WebsocketServer
 
 py_version = sys.version_info
@@ -157,7 +157,20 @@ def create_folder(folder):
         os.makedirs(folder)
 
 
+def check_dependencies():
+    with open("requirements.txt", "r") as f:
+        deps = f.readlines()
+        try:
+            pkg_resources.require(deps)
+        except pkg_resources.VersionConflict as version_error:
+            logger.error("Some dependencies aren't met. Required: {} (Installed: {})",
+                         version_error.req, version_error.dist)
+            sys.exit(1)
+
+
 if __name__ == "__main__":
+    check_dependencies()
+
     # TODO: globally destroy all threads upon sys.exit() for example
     install_thread_excepthook()
 

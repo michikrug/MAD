@@ -1,11 +1,14 @@
-import json
 import datetime
+import json
 import os
-from flask import (make_response, request)
 from functools import update_wrapper, wraps
 from math import floor
-from utils.walkerArgs import parseArgs
 from pathlib import Path
+
+from flask import make_response, request
+
+from utils.walkerArgs import parseArgs
+
 mapping_args = parseArgs()
 
 
@@ -158,7 +161,7 @@ def generate_coords_from_geofence(mapping_manager, fence):
     geofencexport = []
     for name, fences in geofences.items():
         if name != fence:
-                continue
+            continue
         coordinates = []
         for fname, coords in fences.get('include').items():
             coordinates.append([coords, fences.get('exclude').get(fname, [])])

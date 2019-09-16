@@ -1,6 +1,5 @@
 import json
 import sys
-
 import time
 from multiprocessing import JoinableQueue, Process
 
@@ -9,9 +8,9 @@ from gevent.pywsgi import WSGIServer
 
 from mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mitm_receiver.MitmMapper import MitmMapper
-from utils.MappingManager import MappingManager
 from utils.authHelper import check_auth
 from utils.logging import LogLevelChanger, logger
+from utils.MappingManager import MappingManager
 
 app = Flask(__name__)
 
@@ -41,9 +40,10 @@ class EndpointAction(object):
                 logger.warning("Missing Origin header in request")
                 self.response = Response(status=500, headers={})
                 abort = True
-            elif (self.mapping_manager.get_all_devicemappings().keys() is not None
-                  and (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
-                logger.warning("MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
+            elif (self.mapping_manager.get_all_devicemappings().keys() is not None and
+                  (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
+                logger.warning(
+                    "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
                 self.response = Response(status=403, headers={})
                 abort = True
             elif self.mapping_manager.get_auths() is not None:
@@ -128,7 +128,8 @@ class MITMReceiver(Process):
             logger.error("Invalid REST method specified")
             sys.exit(1)
         self.app.add_url_rule(endpoint, endpoint_name,
-                              EndpointAction(handler, self.__application_args, self.__mapping_manager),
+                              EndpointAction(handler, self.__application_args,
+                                             self.__mapping_manager),
                               methods=methods_passed)
 
     def proto_endpoint(self, origin, data):
@@ -181,13 +182,17 @@ class MITMReceiver(Process):
         process_count: int = 0
         for origin in self.__mapping_manager.get_all_devicemappings().keys():
             origin_return[origin] = {}
-            origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(origin)
-            origin_return[origin]['latest_data'] = self.__mitm_mapper.request_latest(origin, 'timestamp_last_data')
-            origin_return[origin]['mode_value'] = self.__mitm_mapper.request_latest(origin, 'injected_settings')
+            origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(
+                origin)
+            origin_return[origin]['latest_data'] = self.__mitm_mapper.request_latest(
+                origin, 'timestamp_last_data')
+            origin_return[origin]['mode_value'] = self.__mitm_mapper.request_latest(
+                origin, 'injected_settings')
 
         for process in self.worker_threads:
             process_return['MITMReceiver-' + str(process_count)] = {}
-            process_return['MITMReceiver-' + str(process_count)]['queue_length'] = process.get_queue_items()
+            process_return['MITMReceiver-' + str(process_count)
+                           ]['queue_length'] = process.get_queue_items()
             process_count += 1
 
         data_return['origin_status'] = origin_return

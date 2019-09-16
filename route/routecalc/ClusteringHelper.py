@@ -13,8 +13,8 @@ class ClusteringHelper:
         relations = {}
         for event in queue:
             for other_event in queue:
-                if (event[1].lat == other_event[1].lat and event[1].lng == other_event[1].lng
-                        and event not in relations.keys()):
+                if (event[1].lat == other_event[1].lat and event[1].lng == other_event[1].lng and
+                        event not in relations.keys()):
                     relations[event] = []
                 distance = get_distance_of_two_points_in_meters(event[1].lat, event[1].lng,
                                                                 other_event[1].lat, other_event[1].lng)
@@ -26,8 +26,8 @@ class ClusteringHelper:
                     # avoid duplicates
                     already_present = False
                     for relation in relations[event]:
-                        if (relation[0][1].lat == other_event[1].lat
-                                and relation[0][1].lng == other_event[1].lng):
+                        if (relation[0][1].lat == other_event[1].lat and
+                                relation[0][1].lng == other_event[1].lng):
                             already_present = True
                     if not already_present:
                         relations[event].append(
@@ -50,8 +50,8 @@ class ClusteringHelper:
         distance = -1
         farthest = None
         for relation in to_be_inspected:
-            if ((len(relation.other_event) == 4 and not relation.other_event[3] or len(relation) < 4)
-                    and relation.timedelta <= self.max_timedelta_seconds and relation.distance > distance):
+            if ((len(relation.other_event) == 4 and not relation.other_event[3] or len(relation) < 4) and
+                    relation.timedelta <= self.max_timedelta_seconds and relation.distance > distance):
                 distance = relation.distance
                 farthest = relation
         return farthest.other_event, distance

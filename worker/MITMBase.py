@@ -1,15 +1,15 @@
 import collections
-import time
 import math
+import time
 from abc import abstractmethod
 from datetime import datetime
 from enum import Enum
 
 from mitm_receiver.MitmMapper import MitmMapper
 from ocr.pogoWindows import PogoWindows
-from utils.MappingManager import MappingManager
 from utils.logging import logger
 from utils.madGlobals import InternalStopWorkerException
+from utils.MappingManager import MappingManager
 from worker.WorkerBase import WorkerBase
 
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -42,7 +42,8 @@ class MITMBase(WorkerBase):
         self._current_sleep_time = 0
 
         self._mitm_mapper.collect_location_stats(self._id, self.current_location, 1, time.time(), 2, 0,
-                                                 self._mapping_manager.routemanager_get_mode(self._routemanager_name),
+                                                 self._mapping_manager.routemanager_get_mode(
+                                                     self._routemanager_name),
                                                  99)
 
     def _wait_for_data(self, timestamp: float = None, proto_to_wait_for=106, timeout=None):
@@ -78,9 +79,11 @@ class MITMBase(WorkerBase):
 
             time.sleep(1)
 
-        position_type = self._mapping_manager.routemanager_get_position_type(self._routemanager_name, self._id)
+        position_type = self._mapping_manager.routemanager_get_position_type(
+            self._routemanager_name, self._id)
         if position_type is None:
-            logger.warning("Mappings/Routemanagers have changed, stopping worker to be created again")
+            logger.warning(
+                "Mappings/Routemanagers have changed, stopping worker to be created again")
             raise InternalStopWorkerException
         if data_requested != LatestReceivedType.UNDEFINED:
             logger.debug('Got the data requested...')
@@ -99,7 +102,8 @@ class MITMBase(WorkerBase):
 
             self._mitm_mapper.collect_location_stats(self._id, self.current_location, 0, self._waittime_without_delays,
                                                      position_type, 0,
-                                                     self._mapping_manager.routemanager_get_mode(self._routemanager_name),
+                                                     self._mapping_manager.routemanager_get_mode(
+                                                         self._routemanager_name),
                                                      self._transporttype)
 
             self._restart_count += 1
@@ -146,7 +150,7 @@ class MITMBase(WorkerBase):
                         str(self._id), str(self._not_injected_count), str(injection_thresh_reboot))
             if self._not_injected_count in [3, 6, 9, 15]:
                 logger.info("Worker {} will retry check_windows while waiting for injection at count {}",
-                        str(self._id), str(self._not_injected_count))
+                            str(self._id), str(self._not_injected_count))
                 self._check_windows()
             if self._stop_worker_event.isSet():
                 logger.error("Worker {} killed while waiting for injection", str(self._id))
@@ -249,28 +253,31 @@ class MITMBase(WorkerBase):
             self.current_location.lat), str(self.current_location.lng))
         logger.debug('Last Pos: {} {}', str(
             self.last_location.lat), str(self.last_location.lng))
-        routemanager_status = self._mapping_manager.routemanager_get_route_stats(self._routemanager_name, self._id)
+        routemanager_status = self._mapping_manager.routemanager_get_route_stats(
+            self._routemanager_name, self._id)
         if routemanager_status is None:
             logger.warning("Routemanager not available")
             routemanager_status = [None, None]
         else:
-            logger.debug('Route Pos: {} - Route Length: {}', str(routemanager_status[0]), str(routemanager_status[1]))
-        routemanager_init: bool = self._mapping_manager.routemanager_get_init(self._routemanager_name)
+            logger.debug('Route Pos: {} - Route Length: {}',
+                         str(routemanager_status[0]), str(routemanager_status[1]))
+        routemanager_init: bool = self._mapping_manager.routemanager_get_init(
+            self._routemanager_name)
         logger.debug('Init Mode: {}', str(routemanager_init))
         logger.debug('Last Date/Time of Data: {}', str(self._rec_data_time))
         logger.debug('===============================')
 
         dataToSave = {
-            'Origin':            self._id,
-            'Routemanager':      str(self._routemanager_name),
-            'RebootCounter':     str(self._reboot_count),
-            'RestartCounter':    str(self._restart_count),
-            'RebootingOption':   str(self.get_devicesettings_value("reboot", False)),
-            'CurrentPos':        str(self.current_location.lat) + ", " + str(self.current_location.lng),
-            'LastPos':           str(self.last_location.lat) + ", " + str(self.last_location.lng),
-            'RoutePos':          str(routemanager_status[0]),
-            'RouteMax':          str(routemanager_status[1]),
-            'Init':              str(routemanager_init),
+            'Origin': self._id,
+            'Routemanager': str(self._routemanager_name),
+            'RebootCounter': str(self._reboot_count),
+            'RestartCounter': str(self._restart_count),
+            'RebootingOption': str(self.get_devicesettings_value("reboot", False)),
+            'CurrentPos': str(self.current_location.lat) + ", " + str(self.current_location.lng),
+            'LastPos': str(self.last_location.lat) + ", " + str(self.last_location.lng),
+            'RoutePos': str(routemanager_status[0]),
+            'RouteMax': str(routemanager_status[1]),
+            'Init': str(routemanager_init),
             'LastProtoDateTime': str(self._rec_data_time),
             'CurrentSleepTime': str(self._current_sleep_time)
         }

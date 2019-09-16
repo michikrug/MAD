@@ -7,20 +7,19 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
+from operator import itemgetter
 from threading import Event, Lock, RLock, Thread
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-
 from db.dbWrapperBase import DbWrapperBase
 from geofence.geofenceHelper import GeofenceHelper
-from route.routecalc.ClusteringHelper import ClusteringHelper
 from route.routecalc.calculate_route import getJsonRoute
+from route.routecalc.ClusteringHelper import ClusteringHelper
 from utils.collections import Location
+from utils.geo import get_distance_of_two_points_in_meters
 from utils.logging import logger
 from utils.walkerArgs import parseArgs
-from utils.geo import get_distance_of_two_points_in_meters
-from operator import itemgetter
 
 args = parseArgs()
 
@@ -305,12 +304,12 @@ class RouteManagerBase(ABC):
     def _get_round_finished_string(self):
         round_finish_time = datetime.now()
         round_completed_in = (
-                "%d hours, %d minutes, %d seconds" % (
-            self.dhms_from_seconds(
-                self.date_diff_in_seconds(
-                    round_finish_time, self._round_started_time)
+            "%d hours, %d minutes, %d seconds" % (
+                self.dhms_from_seconds(
+                    self.date_diff_in_seconds(
+                        round_finish_time, self._round_started_time)
+                )
             )
-        )
         )
         return round_completed_in
 
@@ -472,8 +471,10 @@ class RouteManagerBase(ABC):
             logger.debug(
                 "{}: Checking if a location is available...", str(self.name))
             with self._manager_mutex:
-                got_location = self._prio_queue is not None and len(self._prio_queue) > 0 or self.mode != 'iv_mitm'
-                if not got_location: time.sleep(1)
+                got_location = self._prio_queue is not None and len(
+                    self._prio_queue) > 0 or self.mode != 'iv_mitm'
+                if not got_location:
+                    time.sleep(1)
 
         logger.debug(
             "{}: Location available, acquiring lock and trying to return location", self.name)
@@ -482,10 +483,10 @@ class RouteManagerBase(ABC):
             # if that is not the case, simply increase the index in route and return the location on route
 
             # determine whether we move to the next location or the prio queue top's item
-            if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False)
-                                                                  or self.starve_route)
-                                                                 and self._prio_queue and len(self._prio_queue) > 0
-                                                                 and self._prio_queue[0][0] < time.time())):
+            if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False) or
+                                                                  self.starve_route) and
+                                                                 self._prio_queue and len(self._prio_queue) > 0 and
+                                                                 self._prio_queue[0][0] < time.time())):
                 logger.debug("{}: Priority event", self.name)
                 next_coord = heapq.heappop(self._prio_queue)[1]
                 if self._other_worker_closer_to_prioq(next_coord, origin):
@@ -560,7 +561,8 @@ class RouteManagerBase(ABC):
                         self._routepool[origin].last_access = time.time()
                         return None
                     elif len(self._routepool[origin].queue) == 0 and len(self._routepool[origin].subroute) > 0:
-                        [self._routepool[origin].queue.append(i) for i in self._routepool[origin].subroute]
+                        [self._routepool[origin].queue.append(i)
+                         for i in self._routepool[origin].subroute]
                     elif len(self._routepool[origin].queue) > 0 and len(self._routepool[origin].subroute) > 0:
                         logger.info("Getting new coords for route {}", str(self.name))
                     else:
@@ -702,16 +704,19 @@ class RouteManagerBase(ABC):
                     logger.info('Something happens with the worker - breakup')
                     return False
             i: int = 0
-            temp_total_round: collections.deque = collections.deque(self._current_route_round_coords)
+            temp_total_round: collections.deque = collections.deque(
+                self._current_route_round_coords)
 
             # we want to order the dict by the time's we added the workers to the areas
             # we first need to build a list of tuples with only origin, time_added
             logger.debug("Checking routepool: {}", self._routepool)
-            reduced_routepools = [(origin, self._routepool[origin].time_added) for origin in self._routepool]
+            reduced_routepools = [(origin, self._routepool[origin].time_added)
+                                  for origin in self._routepool]
             sorted_routepools = sorted(reduced_routepools, key=itemgetter(1))
 
             logger.debug("Checking routepools in the following order: {}", sorted_routepools)
-            compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
+
+            def compare(x, y): return collections.Counter(x) == collections.Counter(y)
             for origin, time_added in sorted_routepools:
                 entry: RoutePoolEntry = self._routepool[origin]
                 logger.debug("Checking subroute of {}", origin)
@@ -742,7 +747,8 @@ class RouteManagerBase(ABC):
                         # TODO: what now?
                         logger.debug('new_subroute: {}', new_subroute)
                         logger.debug('entry.subroute: {}', entry.subroute)
-                        logger.debug('new_subroute == entry.subroute: {}', new_subroute == entry.subroute)
+                        logger.debug('new_subroute == entry.subroute: {}',
+                                     new_subroute == entry.subroute)
                         entry.subroute = new_subroute
                 elif len(new_subroute) == 0:
                     logger.info("New subroute of {} is empty...", origin)
@@ -759,7 +765,8 @@ class RouteManagerBase(ABC):
                         pass
 
                     if len(old_queue) == 0:
-                        logger.debug("{}'s queue is empty, we can just pass him the new subroute", origin)
+                        logger.debug(
+                            "{}'s queue is empty, we can just pass him the new subroute", origin)
                         # just set new route...
                         entry.queue = collections.deque()
                         for location in new_subroute:
@@ -767,7 +774,8 @@ class RouteManagerBase(ABC):
                     else:
                         # we now are at a point where we need to also check the end of the old queue and
                         # append possibly missing coords to it
-                        logger.debug("Checking if the last element of the old queue is present in new subroute")
+                        logger.debug(
+                            "Checking if the last element of the old queue is present in new subroute")
                         last_el_old_q: Location = old_queue[len(old_queue) - 1]
                         if last_el_old_q in new_subroute:
                             # we have the last element in the old subroute, we can actually append stuff with the
@@ -777,7 +785,8 @@ class RouteManagerBase(ABC):
                             new_subroute_copy = collections.deque(new_subroute)
                             while len(new_subroute_copy) > 0 and new_subroute_copy.popleft() != last_el_old_q:
                                 pass
-                            logger.debug("Length of subroute to be extended by {}", len(new_subroute_copy))
+                            logger.debug("Length of subroute to be extended by {}",
+                                         len(new_subroute_copy))
                             # replace queue with old_queue
                             entry.queue.clear()
                             entry.queue = old_queue
@@ -811,10 +820,12 @@ class RouteManagerBase(ABC):
                         # if in current queue, remove from end of new subroute to end of old queue
                         logger.debug("Last element of new subroute is in old queue, removing everything after that "
                                      "element")
-                        del old_queue_list[old_queue.index(last_el_new_route): len(old_queue_list) - 1]
+                        del old_queue_list[old_queue.index(
+                            last_el_new_route): len(old_queue_list) - 1]
                     elif last_el_old_route in new_subroute:
                         # append from end of queue (compared to new subroute) to end of new subroute
-                        logger.debug("Last element of old queue in new subroute, appending everything afterwards")
+                        logger.debug(
+                            "Last element of old queue in new subroute, appending everything afterwards")
                         missing_new_route_part: List[Location] = new_subroute.copy()
                         del missing_new_route_part[0: new_subroute.index(last_el_old_route)]
                         old_queue_list.extend(missing_new_route_part)
@@ -883,7 +894,6 @@ class RouteManagerBase(ABC):
             return len(self._workers_registered)
         finally:
             self._workers_registered_mutex.release()
-        
 
     def get_position_type(self, origin: str) -> Optional[str]:
         return self._positiontyp.get(origin, None)
@@ -910,7 +920,8 @@ class RouteManagerBase(ABC):
         return self._level
 
     def redo_stop(self, worker, lat, lon):
-        logger.info('Worker {} redo a unprocessed Stop ({}, {})'.format(str(worker), str(lat), str(lon)))
+        logger.info('Worker {} redo a unprocessed Stop ({}, {})'.format(
+            str(worker), str(lat), str(lon)))
         if worker in self._routepool:
             self._routepool[worker].has_prio_event = True
             self._routepool[worker].prio_coords = Location(lat, lon)
@@ -925,4 +936,3 @@ class RouteManagerBase(ABC):
 
         logger.debug('Open Coords from workers: {}'.format(str(coordlist)))
         return coordlist
-

@@ -755,7 +755,7 @@ class RmWrapper(DbWrapperBase):
             return list_of_coords
 
     def quests_from_db(self, neLat=None, neLon=None, swLat=None, swLon=None, oNeLat=None, oNeLon=None,
-                       oSwLat=None, oSwLon=None, timestamp=None):
+                       oSwLat=None, oSwLon=None, timestamp=None, fence=None):
         logger.debug("RmWrapper::quests_from_db called")
         questinfo = {}
 
@@ -790,6 +790,11 @@ class RmWrapper(DbWrapperBase):
             oquery_where = " AND trs_quest.quest_timestamp >= {}".format(
                 timestamp)
             query_where = query_where + oquery_where
+
+        if fence is not None:
+            query_where = query_where + " AND ST_CONTAINS(ST_GEOMFROMTEXT( 'POLYGON(( {} ))')," \
+                                        " POINT(pokestop.latitude, pokestop.longitude))".format(
+                                            str(fence))
 
         query_order = " ORDER BY trs_quest.quest_timestamp DESC"
 
@@ -1080,7 +1085,7 @@ class RmWrapper(DbWrapperBase):
         if minutes:
             minutes = datetime.utcnow().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where last_modified > \'%s\' ' % str(minutes)
+            query_where = ' WHERE last_modified > \'%s\' ' % str(minutes)
 
         query = (
             "SELECT  %s, count(DISTINCT encounter_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon "
@@ -1127,7 +1132,7 @@ class RmWrapper(DbWrapperBase):
         query_where = ''
         if hours:
             hours = datetime.utcnow() - timedelta(hours=hours)
-            query_where = ' where disappear_time > \'%s\' ' % str(hours)
+            query_where = ' WHERE disappear_time > \'%s\' ' % str(hours)
 
         query = (
             "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(

@@ -7,7 +7,8 @@ from flask import jsonify, redirect, render_template, request
 
 from db.dbWrapperBase import DbWrapperBase
 from flask_caching import Cache
-from madmin.functions import (auth_required, getBasePath, getBoundParameter,
+from madmin.functions import (auth_required, generate_coords_from_geofence,
+                              get_geofences, getBasePath, getBoundParameter,
                               getCoordFloat)
 from utils.collections import Location
 from utils.gamemechanicutil import get_raid_boss_cp
@@ -47,7 +48,7 @@ class map(object):
             ("/get_rstops", self.get_rstops),
             ("/get_map_mons", self.get_map_mons),
             ("/get_cells", self.get_cells),
-            ("/savefence", self.savefence),
+            ("/savefence", self.savefence)
         ]
         for route, view_func in routes:
             self._app.route(route)(view_func)
@@ -82,42 +83,7 @@ class map(object):
     def get_geofence(self):
         geofences = {}
 
-        areas = self._mapping_manager.get_areas()
-        for name, area in areas.items():
-            geofence_include = {}
-            geofence_exclude = {}
-            geofence_name = 'Unknown'
-            for line in area['geofence_included'].splitlines():
-                line = line.strip()
-                if not line:  # Empty line.
-                    continue
-                elif line.startswith("["):  # Name line.
-                    geofence_name = line.replace("[", "").replace("]", "")
-                    geofence_include[geofence_name] = []
-                else:  # Coordinate line.
-                    lat, lon = line.split(",")
-                    geofence_include[geofence_name].append([
-                        getCoordFloat(lon),
-                        getCoordFloat(lat)
-                    ])
-
-            if area['geofence_excluded']:
-                geofence_name = 'Unknown'
-                for line in area['geofence_excluded'].splitlines():
-                    line = line.strip()
-                    if not line:  # Empty line.
-                        continue
-                    elif line.startswith("["):  # Name line.
-                        geofence_name = line.replace("[", "").replace("]", "")
-                        geofence_exclude[geofence_name] = []
-                    else:  # Coordinate line.
-                        lat, lon = line.split(",")
-                        geofence_exclude[geofence_name].append([
-                            getCoordFloat(lon),
-                            getCoordFloat(lat)
-                        ])
-
-            geofences[name] = {'include': geofence_include, 'exclude': geofence_exclude}
+        geofences = get_geofences(self._mapping_manager)
 
         geofencexport = []
         for name, fences in geofences.items():
@@ -263,8 +229,13 @@ class map(object):
     def get_quests(self):
         quests = []
 
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
-            request)
+        fence = request.args.get("fence", None)
+        if fence not in (None, 'None', 'All'):
+            fence = generate_coords_from_geofence(self._mapping_manager, fence)
+        else:
+            fence = None
+
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
 
         data = self._db.quests_from_db(
@@ -276,7 +247,8 @@ class map(object):
             oNeLon=oNeLon,
             oSwLat=oSwLat,
             oSwLon=oSwLon,
-            timestamp=timestamp
+            timestamp=timestamp,
+            fence=fence
         )
 
         for stopid in data:

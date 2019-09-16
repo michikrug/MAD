@@ -1,11 +1,13 @@
-from flask import render_template, send_from_directory
+from flask import render_template, request, send_from_directory
 
-from madmin.functions import auth_required, nocache
+from madmin.functions import auth_required, get_geofences, nocache
 from utils.functions import generate_path
+from utils.logging import logger
+from utils.MappingManager import MappingManager
 
 
 class path(object):
-    def __init__(self, db, args, app):
+    def __init__(self, db, args, app, mapping_manager: MappingManager,):
         self._db = db
         self._args = args
         self._app = app
@@ -13,6 +15,7 @@ class path(object):
             self._datetimeformat = '%Y-%m-%d %I:%M:%S %p'
         else:
             self._datetimeformat = '%Y-%m-%d %H:%M:%S'
+            self._mapping_manager = mapping_manager
         self.add_route()
 
     def add_route(self):
@@ -81,13 +84,24 @@ class path(object):
                                title="show unkown Gym")
 
     @auth_required
+    @logger.catch()
     def quest(self):
+        fence = request.args.get("fence", None)
+        stop_fences = []
+        stop_fences.append('All')
+        for possible_fence in get_geofences(self._mapping_manager, 'pokestops'):
+            stop_fences.append(possible_fence)
         return render_template('quests.html', pub=False,
                                responsive=str(self._args.madmin_noresponsive).lower(),
-                               title="show daily Quests")
+                               title="show daily Quests", fence=fence, stop_fences=stop_fences)
 
     @auth_required
     def quest_pub(self):
+        fence = request.args.get("fence", None)
+        stop_fences = []
+        stop_fences.append('All')
+        for possible_fence in get_geofences(self._mapping_manager, 'pokestops'):
+            stop_fences.append(possible_fence)
         return render_template('quests.html', pub=True,
                                responsive=str(self._args.madmin_noresponsive).lower(),
-                               title="show daily Quests")
+                               title="show daily Quests", fence=fence, stop_fences=stop_fences)

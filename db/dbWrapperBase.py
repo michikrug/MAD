@@ -665,10 +665,11 @@ class DbWrapperBase(ABC):
         self.execute(query_trs_spawn, commit=True)
         self.execute(query_trs_spawnsightings, commit=True)
 
-    def download_spawns(self, neLat, neLon, swLat, swLon, oNeLat=None, oNeLon=None,
-                        oSwLat=None, oSwLon=None, timestamp=None):
+    def download_spawns(self, neLat=None, neLon=None, swLat=None, swLon=None, oNeLat=None, oNeLon=None,
+                        oSwLat=None, oSwLon=None, timestamp=None, fence=None):
         logger.debug("dbWrapper::download_spawns")
         spawn = {}
+        query_where = ""
 
         query = (
             "SELECT spawnpoint, latitude, longitude, calc_endminsec, "
@@ -676,10 +677,11 @@ class DbWrapperBase(ABC):
             "FROM `trs_spawn`"
         )
 
-        query_where = (
-            " WHERE (latitude >= {} AND longitude >= {} "
-            " AND latitude <= {} AND longitude <= {}) "
-        ).format(swLat, swLon, neLat, neLon)
+        if neLat is not None:
+            query_where = (
+                " WHERE (latitude >= {} AND longitude >= {} "
+                " AND latitude <= {} AND longitude <= {}) "
+            ).format(swLat, swLon, neLat, neLon)
 
         if oNeLat is not None and oNeLon is not None and oSwLat is not None and oSwLon is not None:
             oquery_where = (
@@ -697,6 +699,11 @@ class DbWrapperBase(ABC):
             ).format(tsdt)
 
             query_where = query_where + oquery_where
+
+        if fence is not None:
+            query_where = query_where + " WHERE ST_CONTAINS(ST_GEOMFROMTEXT( 'POLYGON(( {} ))')," \
+                                        " POINT(trs_spawn.latitude, trs_spawn.longitude))".format(
+                                            str(fence))
 
         query = query + query_where
         res = self.execute(query)
@@ -1132,7 +1139,7 @@ class DbWrapperBase(ABC):
         if worker and minutes:
             worker_where = ' and worker = \'%s\' ' % str(worker)
         if worker and not minutes:
-            worker_where = ' where worker = \'%s\' ' % str(worker)
+            worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if grouped:
             grouped_query = ", day(FROM_UNIXTIME(timestamp_scan)), hour(FROM_UNIXTIME(timestamp_scan))"
         query_where = ''
@@ -1140,7 +1147,7 @@ class DbWrapperBase(ABC):
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+            query_where = ' WHERE (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
                 minutes)
 
         query = (
@@ -1191,13 +1198,13 @@ class DbWrapperBase(ABC):
         if worker and minutes:
             worker_where = ' and worker = \'%s\' ' % str(worker)
         if worker and not minutes:
-            worker_where = ' where worker = \'%s\' ' % str(worker)
+            worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if grouped:
             grouped_query = ", day(FROM_UNIXTIME(timestamp_scan)), hour(FROM_UNIXTIME(timestamp_scan))"
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+            query_where = ' WHERE (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
                 minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
@@ -1219,13 +1226,13 @@ class DbWrapperBase(ABC):
         if worker and minutes:
             worker_where = ' and worker = \'%s\' ' % str(worker)
         if worker and not minutes:
-            worker_where = ' where worker = \'%s\' ' % str(worker)
+            worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if grouped:
             grouped_query = ", success, type"
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(
+            query_where = ' WHERE (period) >= unix_timestamp(\'%s\') ' % str(
                 minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
@@ -1260,11 +1267,11 @@ class DbWrapperBase(ABC):
         if worker and minutes:
             worker_where = ' and worker = \'%s\' ' % str(worker)
         if worker and not minutes:
-            worker_where = ' where worker = \'%s\' ' % str(worker)
+            worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
+            query_where = ' WHERE (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(
                 minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
@@ -1284,11 +1291,11 @@ class DbWrapperBase(ABC):
         if worker and minutes:
             worker_where = ' and worker = \'%s\' ' % str(worker)
         if worker and not minutes:
-            worker_where = ' where worker = \'%s\' ' % str(worker)
+            worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' where (period) >= unix_timestamp(\'%s\') ' % str(
+            query_where = ' WHERE (period) >= unix_timestamp(\'%s\') ' % str(
                 minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"

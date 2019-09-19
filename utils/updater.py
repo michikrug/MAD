@@ -2,9 +2,11 @@ import json
 import os
 import time
 from enum import Enum
-from multiprocessing import  Queue
-from threading import  RLock, Thread
+from multiprocessing import Queue
+from threading import RLock, Thread
+
 from utils.logging import logger
+
 
 class jobType(Enum):
     INSTALLATION = 0
@@ -14,6 +16,7 @@ class jobType(Enum):
     PASSTHROUGH = 4
     START = 5
     CHAIN = 99
+
 
 class deviceUpdater(object):
     def __init__(self, websocket, args):
@@ -36,7 +39,7 @@ class deviceUpdater(object):
         t_updater.start()
 
     def init_jobs(self):
-        self._commands =  {}
+        self._commands = {}
         if os.path.exists('commands.json'):
             with open('commands.json') as logfile:
                 self._commands = json.load(logfile)
@@ -60,6 +63,7 @@ class deviceUpdater(object):
                 self.update_status_log()
 
     logger.catch()
+
     def process_update_queue(self):
         logger.info("Starting Device Job processor")
         while True:
@@ -70,7 +74,8 @@ class deviceUpdater(object):
                 if id_ in self._log:
                     self._current_job_id = id_
 
-                    logger.info("Job for {} (File/Job: {}) started (ID: {})".format(str(origin), str(file_), str(id_)))
+                    logger.info(
+                        "Job for {} (File/Job: {}) started (ID: {})".format(str(origin), str(file_), str(id_)))
                     self._log[id_]['status'] = 'processing'
                     self.update_status_log()
 
@@ -87,12 +92,13 @@ class deviceUpdater(object):
                         self._websocket.set_job_activated(origin)
                         self._log[id_]['status'] = 'starting'
                         self.update_status_log()
-                        logger.info('Job processor waiting for worker start resting - Device {}'.format(str(origin)))
-                        #time.sleep(30)
+                        logger.info(
+                            'Job processor waiting for worker start resting - Device {}'.format(str(origin)))
+                        # time.sleep(30)
                         try:
                             if self.start_job_type(item, jobtype, temp_comm):
                                 logger.info('Job {} could be executed successfully - Device {} - File/Job {} (ID: {})'
-                                             .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                            .format(str(jobtype), str(origin), str(file_), str(id_)))
                                 self._log[id_]['status'] = 'success'
                                 self.update_status_log()
                             else:
@@ -186,7 +192,8 @@ class deviceUpdater(object):
             return ws_conn.startApp("com.nianticlabs.pokemongo")
         elif jobtype == jobType.PASSTHROUGH:
             command = item[2]
-            returning = ws_conn.passthrough(command).replace('\r', '').replace('\n', '').replace('  ', '')
+            returning = ws_conn.passthrough(command).replace(
+                '\r', '').replace('\n', '').replace('  ', '')
             self._log[str(item[0])]['returning'] = returning
             self.update_status_log()
             return True

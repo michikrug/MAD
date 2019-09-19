@@ -1,15 +1,18 @@
-import json
 import datetime
-import os
 import glob
-from flask import (make_response, request)
+import json
+import os
 from functools import update_wrapper, wraps
 from math import floor
-from utils.walkerArgs import parseArgs
-from utils.functions import (creation_date)
 from pathlib import Path
 
+from flask import make_response, request
+
+from utils.functions import creation_date
+from utils.walkerArgs import parseArgs
+
 mapping_args = parseArgs()
+
 
 def auth_required(func):
     @wraps(func)
@@ -41,7 +44,8 @@ def uploaded_files(datetimeformat):
     for file in glob.glob(str(mapping_args.upload_path) + "/*.apk"):
         creationdate = datetime.datetime.fromtimestamp(
             creation_date(file)).strftime(datetimeformat)
-        fileJson = ({'jobname': os.path.basename(file), 'creation': creationdate, 'type': 'jobType.INSTALLATION'})
+        fileJson = ({'jobname': os.path.basename(file),
+                     'creation': creationdate, 'type': 'jobType.INSTALLATION'})
         files.append(fileJson)
 
     if os.path.exists('commands.json'):
@@ -195,6 +199,7 @@ def generate_coords_from_geofence(mapping_manager, fence):
 
     fence_string.append(fence_string[0])
     return ",".join(fence_string)
+
 
 def get_quest_areas(mapping_manager):
     stop_fences = []

@@ -1,6 +1,8 @@
 import base64
 import re
+
 from utils.logging import logger
+
 
 def check_auth(authHeader, args, auths):
     valid = False
@@ -23,4 +25,3 @@ def check_auth(authHeader, args, auths):
     except ValueError as err:
         logger.warning('Unable to determine auth parameters from {}', str(authHeader))
     return valid
-

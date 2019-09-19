@@ -118,7 +118,8 @@ class RouteManagerQuests(RouteManagerBase):
 
             for stop, error_count in self._stops_not_processed.items():
                 if stop not in self._stoplist:
-                    logger.info("Location {} is no longer in our stoplist and will be ignored".format(str(stop)))
+                    logger.info(
+                        "Location {} is no longer in our stoplist and will be ignored".format(str(stop)))
                     self._coords_to_be_ignored.add(stop)
                 elif error_count < 4:
                     logger.warning("Found stop not processed yet: {}".format(str(stop)))
@@ -175,14 +176,15 @@ class RouteManagerQuests(RouteManagerBase):
                         logger.warning("Stop with coords {} seems new and not in route.", str(stop))
 
                 if len(stops) == 0:
-                    logger.info('No unprocessed Stops detected in route {} - quit worker', str(self.name))
+                    logger.info(
+                        'No unprocessed Stops detected in route {} - quit worker', str(self.name))
                     self._shutdown_route = True
                     self._restore_original_route()
                     self._route: List[Location] = []
                     return False
 
                 if 0 < len(stops) < len(self._route) \
-                        and len(stops)/len(self._route) <= 0.3:
+                        and len(stops) / len(self._route) <= 0.3:
                     # Calculating new route because 70 percent of stops are processed
                     logger.info('There are less stops without quest than routepositions - recalc')
                     self._recalc_stop_route(stops)
@@ -194,7 +196,8 @@ class RouteManagerQuests(RouteManagerBase):
                 else:
                     self._init_route_queue()
 
-                logger.info('Getting {} positions in route {}'.format(len(self._route), str(self.name)))
+                logger.info('Getting {} positions in route {}'.format(
+                    len(self._route), str(self.name)))
                 return True
 
         finally:
@@ -214,7 +217,8 @@ class RouteManagerQuests(RouteManagerBase):
         logger.info('Shutdown Route {}', str(self.name))
         self._is_started = False
         self._round_started_time = None
-        if self.init: self._first_started = False
+        if self.init:
+            self._first_started = False
         self._restore_original_route()
         self._shutdown_route = False
         if self._check_routepools_thread is not None:

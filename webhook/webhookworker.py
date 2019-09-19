@@ -398,8 +398,7 @@ class WebhookWorker:
 
             if mon.get("cp_multiplier", None) is not None:
                 mon_payload["cp_multiplier"] = mon["cp_multiplier"]
-                mon_payload["pokemon_level"] = calculate_mon_level(
-                    mon["cp_multiplier"])
+                mon_payload["pokemon_level"] = calculate_mon_level(mon["cp_multiplier"])
 
             if mon["form"] is not None and mon["form"] > 0:
                 mon_payload["form"] = mon["form"]

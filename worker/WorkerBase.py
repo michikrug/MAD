@@ -535,6 +535,9 @@ class WorkerBase(ABC):
                         str(self._geofix_sleeptime))
             time.sleep(int(self._geofix_sleeptime))
             self._geofix_sleeptime = 0
+
+        self._check_for_mad_job()
+
         self.current_location = self._mapping_manager.routemanager_get_next_location(
             self._routemanager_name, self._id)
         return self._mapping_manager.routemanager_get_settings(self._routemanager_name)
@@ -547,6 +550,17 @@ class WorkerBase(ABC):
                 while not self._restart_pogo():
                     logger.warning("failed starting pogo")
                     # TODO: stop after X attempts
+
+    def _check_for_mad_job(self):
+        if self.get_devicesettings_value("job", False):
+            logger.info("Worker {} get a job - waiting".format(str(self._id)))
+            while self.get_devicesettings_value("job", False) and not self._stop_worker_event.is_set():
+                time.sleep(10)
+            logger.info("Worker {} processed the job - checking screen and go on ".format(str(self._id)))
+            if not self._check_windows():
+                logger.error('Kill Worker...')
+                self._stop_worker_event.set()
+                return False
 
     def _check_location_is_valid(self):
         if self.current_location is None:
@@ -573,8 +587,7 @@ class WorkerBase(ABC):
             self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
             logger.warning("Turning screen on")
             self._communicator.turnScreenOn()
-            time.sleep(self.get_devicesettings_value(
-                "post_turn_screen_on_delay", 2))
+            time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 2))
 
     def _check_windows(self, quickcheck=False):
         logger.info('Checking pogo screen...')
@@ -681,8 +694,7 @@ class WorkerBase(ABC):
             return False
 
         while not returncode == ScreenType.POGO:
-            returncode = self._WordToScreenMatching.checkQuest(
-                self.get_screenshot_path())
+            returncode = self._WordToScreenMatching.checkQuest(self.get_screenshot_path())
 
             if returncode == ScreenType.QUEST:
                 questcounter += 1

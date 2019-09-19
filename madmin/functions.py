@@ -1,4 +1,5 @@
 import datetime
+import glob
 import json
 import os
 from functools import update_wrapper, wraps
@@ -7,6 +8,7 @@ from pathlib import Path
 
 from flask import make_response, request
 
+from utils.functions import creation_date
 from utils.walkerArgs import parseArgs
 
 mapping_args = parseArgs()
@@ -30,6 +32,38 @@ def auth_required(func):
         return make_response('Could not verify!', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
     return decorated
+
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = set(['apk', 'txt'])
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def uploaded_files(datetimeformat):
+    files = []
+    for file in glob.glob(str(mapping_args.upload_path) + "/*.apk"):
+        creationdate = datetime.datetime.fromtimestamp(
+            creation_date(file)).strftime(datetimeformat)
+        fileJson = ({'jobname': os.path.basename(file),
+                     'creation': creationdate, 'type': 'jobType.INSTALLATION'})
+        files.append(fileJson)
+
+    if os.path.exists('commands.json'):
+        with open('commands.json') as logfile:
+            commands = json.load(logfile)
+
+        for command in commands:
+            files.append({'jobname': command, 'creation': '', 'type': 'jobType.CHAIN'})
+
+    processJson = ({'jobname': 'Reboot-Phone', 'creation': '', 'type': 'jobType.REBOOT'})
+    files.append(processJson)
+    processJson = ({'jobname': 'Restart-Pogo', 'creation': '', 'type': 'jobType.RESTART'})
+    files.append(processJson)
+    processJson = ({'jobname': 'Stop-Pogo', 'creation': '', 'type': 'jobType.STOP'})
+    files.append(processJson)
+    processJson = ({'jobname': 'Start-Pogo', 'creation': '', 'type': 'jobType.START'})
+    files.append(processJson)
+    return files
 
 
 def nocache(view):
@@ -143,26 +177,30 @@ def get_geofences(mapping_manager, fence_type=None):
 
 
 def generate_coords_from_geofence(mapping_manager, fence):
-    first_coord: str = None
-    fence_string: str = ""
-
+    fence_string = []
     geofences = get_geofences(mapping_manager)
-    if fence not in geofences:
-        return ""
-
-    geofencexport = []
+    coordinates = []
     for name, fences in geofences.items():
-        if name != fence:
-            continue
-        coordinates = []
         for fname, coords in fences.get('include').items():
-            coordinates.append([coords, fences.get('exclude').get(fname, [])])
-        geofencexport.append({'name': name, 'coordinates': coordinates})
+            if fname != fence:
+                continue
+            coordinates.append(coords)
 
-    for coord in geofencexport[0]["coordinates"][0][0]:
-        if first_coord is None:
-            first_coord = str(coord[0]) + " " + str(coord[1])
-        fence_string = fence_string + str(coord[0]) + " " + str(coord[1]) + ", "
+    for coord in coordinates[0]:
+        fence_string.append(str(coord[0]) + " " + str(coord[1]))
 
-    fence_string = fence_string + first_coord
-    return fence_string
+    fence_string.append(fence_string[0])
+    return ",".join(fence_string)
+
+
+def get_quest_areas(mapping_manager):
+    stop_fences = []
+    stop_fences.append('All')
+    possible_fences = get_geofences(mapping_manager, 'pokestops')
+    for possible_fence in get_geofences(mapping_manager, 'pokestops'):
+        for subfence in possible_fences[possible_fence]['include']:
+            if subfence in stop_fences:
+                continue
+            stop_fences.append(subfence)
+
+    return stop_fences

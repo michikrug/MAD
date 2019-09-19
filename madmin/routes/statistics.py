@@ -31,8 +31,7 @@ class statistics(object):
             ("/statistics_mon", self.statistics_mon),
             ("/get_game_stats", self.game_stats),
             ("/get_game_stats_mon", self.game_stats_mon),
-            ("/statistics_detection_worker_data",
-             self.statistics_detection_worker_data),
+            ("/statistics_detection_worker_data", self.statistics_detection_worker_data),
             ("/statistics_detection_worker", self.statistics_detection_worker),
             ("/status", self.status),
             ("/get_status", self.get_status),
@@ -224,8 +223,7 @@ class statistics(object):
         for dat in data:
             form_suffix = "%02d" % form_mapper(dat[2], dat[5])
             mon = "%03d" % dat[2]
-            monPic = 'asset/pokemon_icons/pokemon_icon_' + \
-                mon + '_' + form_suffix + '_shiny.png'
+            monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
             monName_raw = (get_raid_boss_cp(dat[2]))
             monName = i8ln(monName_raw['name'])
             diff: int = dat[0]
@@ -260,8 +258,7 @@ class statistics(object):
 
                 form_suffix = "%02d" % form_mapper(dat, form_dat)
                 mon = "%03d" % dat
-                monPic = 'asset/pokemon_icons/pokemon_icon_' + \
-                    mon + '_' + form_suffix + '_shiny.png'
+                monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
                 monName_raw = (get_raid_boss_cp(dat))
                 monName = i8ln(monName_raw['name'])
 
@@ -274,8 +271,7 @@ class statistics(object):
 
         shiny_stats_worker = []
         for dat in shiny_worker:
-            shiny_stats_worker.append(
-                {'sum': shiny_worker[dat], 'worker': dat})
+            shiny_stats_worker.append({'sum': shiny_worker[dat], 'worker': dat})
 
         stats = {'spawn': spawn, 'good_spawns': good_spawns, 'shiny': shiny_stats, 'shiny_worker': shiny_stats_worker,
                  'shiny_hour': shiny_hour, 'shiny_stats_avg': shiny_stats_avg}
@@ -415,30 +411,38 @@ class statistics(object):
         return jsonify(data)
 
     @auth_required
+    @logger.catch()
     def get_spawnpoints_stats(self):
 
         coords = []
         known = []
         unknown = []
+        processed_fences = []
 
-        for possible_fence in get_geofences(self._mapping_manager, 'mon_mitm'):
-            fence = generate_coords_from_geofence(self._mapping_manager, possible_fence)
-            known.clear()
-            unknown.clear()
+        possible_fences = get_geofences(self._mapping_manager, 'mon_mitm')
+        for possible_fence in possible_fences:
 
-            data = json.loads(
-                self._db.download_spawns(
-                    fence=fence
+            for subfence in possible_fences[possible_fence]['include']:
+                if subfence in processed_fences:
+                    continue
+                processed_fences.append(subfence)
+                fence = generate_coords_from_geofence(self._mapping_manager, subfence)
+                known.clear()
+                unknown.clear()
+
+                data = json.loads(
+                    self._db.download_spawns(
+                        fence=fence
+                    )
                 )
-            )
 
-            for spawnid in data:
-                if data[str(spawnid)]["endtime"] == None:
-                    unknown.append(spawnid)
-                else:
-                    known.append(spawnid)
-            coords.append({'fence': possible_fence, 'known': len(known), 'unknown': len(unknown),
-                           'sum': len(known) + len(unknown)})
+                for spawnid in data:
+                    if data[str(spawnid)]["endtime"] == None:
+                        unknown.append(spawnid)
+                    else:
+                        known.append(spawnid)
+                coords.append({'fence': subfence, 'known': len(known), 'unknown': len(unknown),
+                               'sum': len(known) + len(unknown)})
 
         stats = {'spawnpoints': coords}
         return jsonify(stats)

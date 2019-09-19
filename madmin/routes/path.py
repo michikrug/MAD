@@ -1,6 +1,7 @@
 from flask import render_template, request, send_from_directory
 
-from madmin.functions import auth_required, get_geofences, nocache
+from madmin.functions import (auth_required, get_geofences, get_quest_areas,
+                              nocache)
 from utils.functions import generate_path
 from utils.logging import logger
 from utils.MappingManager import MappingManager
@@ -15,7 +16,7 @@ class path(object):
             self._datetimeformat = '%Y-%m-%d %I:%M:%S %p'
         else:
             self._datetimeformat = '%Y-%m-%d %H:%M:%S'
-            self._mapping_manager = mapping_manager
+        self._mapping_manager = mapping_manager
         self.add_route()
 
     def add_route(self):
@@ -31,7 +32,8 @@ class path(object):
             ("/gyms", self.gyms),
             ("/unknown", self.unknown),
             ("/quests", self.quest),
-            ("/quests_pub", self.quest_pub)
+            ("/quests_pub", self.quest_pub),
+            ("/pick_worker", self.pickworker)
         ]
         for route, view_func in routes:
             self._app.route(route)(view_func)
@@ -87,10 +89,7 @@ class path(object):
     @logger.catch()
     def quest(self):
         fence = request.args.get("fence", None)
-        stop_fences = []
-        stop_fences.append('All')
-        for possible_fence in get_geofences(self._mapping_manager, 'pokestops'):
-            stop_fences.append(possible_fence)
+        stop_fences = get_quest_areas(self._mapping_manager)
         return render_template('quests.html', pub=False,
                                responsive=str(self._args.madmin_noresponsive).lower(),
                                title="show daily Quests", fence=fence, stop_fences=stop_fences)
@@ -98,10 +97,14 @@ class path(object):
     @auth_required
     def quest_pub(self):
         fence = request.args.get("fence", None)
-        stop_fences = []
-        stop_fences.append('All')
-        for possible_fence in get_geofences(self._mapping_manager, 'pokestops'):
-            stop_fences.append(possible_fence)
+        stop_fences = get_quest_areas(self._mapping_manager)
         return render_template('quests.html', pub=True,
                                responsive=str(self._args.madmin_noresponsive).lower(),
                                title="show daily Quests", fence=fence, stop_fences=stop_fences)
+
+    @auth_required
+    def pickworker(self):
+        jobname = request.args.get("jobname", None)
+        type = request.args.get("type", None)
+        return render_template('workerpicker.html', responsive=str(self._args.madmin_noresponsive).lower(),
+                               title="Select Worker", jobname=jobname, type=type)

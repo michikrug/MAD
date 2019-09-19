@@ -182,8 +182,7 @@ class MitmMapper(object):
 
     def collect_mon_iv_stats(self, origin: str, encounter_id: str, shiny: int):
         if self.__playerstats.get(origin, None) is not None:
-            self.__playerstats.get(origin).stats_collect_mon_iv(
-                encounter_id, shiny)
+            self.__playerstats.get(origin).stats_collect_mon_iv(encounter_id, shiny)
 
     def collect_quest_stats(self, origin: str, stop_id: str):
         if self.__playerstats.get(origin, None) is not None:

@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from typing import List, Optional
 
 from flask import jsonify, redirect, render_template, request
@@ -227,8 +226,14 @@ class map(object):
 
     @auth_required
     def get_quests(self):
+
         quests = []
 
+        fence = request.args.get("fence", None)
+        if fence not in (None, 'None', 'All'):
+            fence = generate_coords_from_geofence(self._mapping_manager, fence)
+        else:
+            fence = None
         fence = request.args.get("fence", None)
         if fence not in (None, 'None', 'All'):
             fence = generate_coords_from_geofence(self._mapping_manager, fence)

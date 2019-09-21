@@ -143,6 +143,7 @@ class control(object):
         return render_template('phonescreens.html', editform=screens_phone, header="Phonecontrol", title="Phonecontrol")
 
     @auth_required
+    @nocache
     def take_screenshot(self, origin=None, adb=False):
         origin = request.args.get('origin')
         useadb = request.args.get('adb', False)
@@ -178,6 +179,7 @@ class control(object):
         return creationdate
 
     @auth_required
+    @nocache
     def click_screenshot(self):
         origin = request.args.get('origin')
         click_x = request.args.get('clickx')
@@ -207,6 +209,7 @@ class control(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def swipe_screenshot(self):
         origin = request.args.get('origin')
         click_x = request.args.get('clickx')
@@ -243,6 +246,7 @@ class control(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def quit_pogo(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
@@ -268,19 +272,23 @@ class control(object):
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             if restart:
-                self._logger.info('MADMin: trying to restart game on {}', str(origin))
+                self._logger.info(
+                    'MADMin: trying to restart game on {}', str(origin))
                 temp_comm.restartApp("com.nianticlabs.pokemongo")
 
                 time.sleep(1)
             else:
-                self._logger.info('MADMin: trying to stop game on {}', str(origin))
+                self._logger.info(
+                    'MADMin: trying to stop game on {}', str(origin))
                 temp_comm.stopApp("com.nianticlabs.pokemongo")
 
-            self._logger.info('MADMin: WS command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: WS command successfully ({})', str(origin))
         time.sleep(2)
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def restart_phone(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
@@ -291,30 +299,35 @@ class control(object):
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
                     adb, origin, "am broadcast -a android.intent.action.BOOT_COMPLETED")):
-            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.reboot()
         return redirect(getBasePath(request) + '/phonecontrol')
 
     @auth_required
+    @nocache
     def clear_game_data(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
         devicemappings = self._mapping_manager.get_all_devicemappings()
 
         adb = devicemappings.get(origin, {}).get('adb', False)
-        self._logger.info('MADmin: Clear game data for phone ({})', str(origin))
+        self._logger.info(
+            'MADmin: Clear game data for phone ({})', str(origin))
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
                     adb, origin, "pm clear com.nianticlabs.pokemongo")):
-            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.resetAppdata("com.nianticlabs.pokemongo")
         return redirect(getBasePath(request) + '/phonecontrol')
 
     @auth_required
+    @nocache
     def send_gps(self):
         origin = request.args.get('origin')
         devicemappings = self._mapping_manager.get_all_devicemappings()
@@ -344,6 +357,7 @@ class control(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def send_text(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
@@ -365,6 +379,7 @@ class control(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def send_command(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
@@ -414,18 +429,22 @@ class control(object):
         return render_template('upload.html', header="File Upload", title="File Upload")
 
     @auth_required
+    @nocache
     def get_uploaded_files(self):
         return jsonify(uploaded_files(self._datetimeformat, self._device_updater.return_commands()))
 
     @auth_required
+    @nocache
     def uploaded_files(self):
         origin = request.args.get('origin', False)
         useadb = request.args.get('adb', False)
         return render_template('uploaded_files.html',
-                               responsive=str(self._args.madmin_noresponsive).lower(),
+                               responsive=str(
+                                   self._args.madmin_noresponsive).lower(),
                                title="Uploaded Files", origin=origin, adb=useadb)
 
     @auth_required
+    @nocache
     def delete_file(self):
         filename = request.args.get('filename')
         if os.path.exists(os.path.join(self._args.upload_path, filename)):
@@ -435,8 +454,8 @@ class control(object):
 
     @auth_required
     @logger.catch
+    @nocache
     def install_file(self):
-
         jobname = request.args.get('jobname')
         origin = request.args.get('origin')
         useadb = request.args.get('adb', False)
@@ -467,6 +486,7 @@ class control(object):
 
     @auth_required
     @logger.catch
+    @nocache
     def get_install_log(self):
         return_log = []
         log = self._device_updater.get_log()
@@ -477,6 +497,7 @@ class control(object):
 
     @auth_required
     @logger.catch()
+    @nocache
     def delete_log_entry(self):
         id_ = request.args.get('id')
         if self._device_updater.delete_log_id(id_):
@@ -487,13 +508,16 @@ class control(object):
 
     @auth_required
     @logger.catch
+    @nocache
     def install_status(self):
         return render_template('installation_status.html',
-                               responsive=str(self._args.madmin_noresponsive).lower(),
+                               responsive=str(
+                                   self._args.madmin_noresponsive).lower(),
                                title="Installation Status")
 
     @auth_required
     @logger.catch()
+    @nocache
     def install_file_all_devices(self):
         jobname = request.args.get('jobname', None)
         type_ = request.args.get('type', None)
@@ -512,6 +536,7 @@ class control(object):
 
     @auth_required
     @logger.catch()
+    @nocache
     def restart_job(self):
         id: int = request.args.get('id', None)
         if id is not None:
@@ -524,11 +549,13 @@ class control(object):
 
     @auth_required
     @logger.catch()
+    @nocache
     def delete_log(self):
         self._device_updater.delete_log()
         return redirect(getBasePath(request) + '/install_status')
 
     @auth_required
+    @nocache
     def get_all_workers(self):
         devices = self._mapping_manager.get_all_devices()
         devicesreturn = []
@@ -538,6 +565,7 @@ class control(object):
         return jsonify(devicesreturn)
 
     @auth_required
+    @nocache
     def job_for_worker(self):
         jobname = request.args.get('jobname', None)
         type_ = request.args.get('type', None)

@@ -1,8 +1,11 @@
-from flask import (send_from_directory, render_template, request)
-from madmin.functions import (auth_required, nocache, get_geofences, get_quest_areas)
-from utils.functions import (generate_path)
-from utils.MappingManager import MappingManager
+from flask import render_template, request, send_from_directory
+
+from madmin.functions import (auth_required, get_geofences, get_quest_areas,
+                              nocache)
+from utils.functions import generate_path
 from utils.logging import logger
+from utils.MappingManager import MappingManager
+
 
 class path(object):
     def __init__(self, db, args, app, mapping_manager: MappingManager,):
@@ -105,4 +108,3 @@ class path(object):
         type = request.args.get("type", None)
         return render_template('workerpicker.html', responsive=str(self._args.madmin_noresponsive).lower(),
                                title="Select Worker", jobname=jobname, type=type)
-

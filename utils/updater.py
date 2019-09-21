@@ -1,12 +1,14 @@
+import glob
 import json
 import os
-import glob
 import time
 from datetime import datetime, timedelta
 from enum import Enum
-from multiprocessing import  Queue
-from threading import  RLock, Thread
+from multiprocessing import Queue
+from threading import RLock, Thread
+
 from utils.logging import logger
+
 
 class jobType(Enum):
     INSTALLATION = 0
@@ -16,6 +18,7 @@ class jobType(Enum):
     PASSTHROUGH = 4
     START = 5
     CHAIN = 99
+
 
 class deviceUpdater(object):
     def __init__(self, websocket, args):
@@ -52,7 +55,7 @@ class deviceUpdater(object):
                     peronal_cmd = json.loads(personal_command.read())
                 for command in peronal_cmd:
                     if command in self._commands:
-                         logger.error("Command {} already exist - skipping".format(str(command)))
+                        logger.error("Command {} already exist - skipping".format(str(command)))
                     else:
                         logger.info('Loading personal command: {}'.format(command))
                         self._commands[command] = peronal_cmd[command]
@@ -75,7 +78,8 @@ class deviceUpdater(object):
                 self._globaljoblog[globalid]['laststatus'] = None
                 self._globaljoblog[globalid]['lastjobend'] = None
 
-            self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype, status='requeued')
+            self.add_job(globalid=globalid, origin=origin, file=file_,
+                         id_=id_, type=jobtype, status='requeued')
 
         return True
 
@@ -110,7 +114,7 @@ class deviceUpdater(object):
                     # breakup job because last job in chain is faulty
                     logger.error(
                         'Breakup job {} on device {} - File/Job: {} - previous job in chain was broken (ID: {})'
-                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                     self._log[id_]['status'] = 'terminated'
                     continue
 
@@ -160,7 +164,7 @@ class deviceUpdater(object):
                         counter = counter + 1
                         logger.error(
                             'Cannot start job {} on device {} - File/Job: {} - Device not connected (ID: {})'
-                                .format(str(jobtype), str(origin), str(file_), str(id_)))
+                            .format(str(jobtype), str(origin), str(file_), str(id_)))
                         self._globaljoblog[globalid]['laststatus'] = 'not connected'
                         self._globaljoblog[globalid]['lastjobid'] = id_
                         self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype,
@@ -179,14 +183,14 @@ class deviceUpdater(object):
                             if self.start_job_type(item, jobtype, temp_comm):
                                 logger.info(
                                     'Job {} could be executed successfully - Device {} - File/Job {} (ID: {})'
-                                        .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                    .format(str(jobtype), str(origin), str(file_), str(id_)))
                                 self._log[id_]['status'] = 'success'
                                 self._globaljoblog[globalid]['laststatus'] = 'success'
                                 self.update_status_log()
                             else:
                                 logger.error(
                                     'Job {} could not be executed successfully - Device {} - File/Job {} (ID: {})'
-                                        .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                    .format(str(jobtype), str(origin), str(file_), str(id_)))
                                 counter = counter + 1
                                 self._globaljoblog[globalid]['laststatus'] = 'failure'
                                 self._globaljoblog[globalid]['lastjobid'] = id_
@@ -299,7 +303,8 @@ class deviceUpdater(object):
             return ws_conn.startApp("com.nianticlabs.pokemongo")
         elif jobtype == jobType.PASSTHROUGH:
             command = self._log[str(item)]['file']
-            returning = ws_conn.passthrough(command).replace('\r', '').replace('\n', '').replace('  ', '')
+            returning = ws_conn.passthrough(command).replace(
+                '\r', '').replace('\n', '').replace('  ', '')
             self._log[str(item)]['returning'] = returning
             self.update_status_log()
             return returning if 'KO' not in returning else False

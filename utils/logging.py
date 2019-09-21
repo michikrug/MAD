@@ -1,6 +1,6 @@
+import logging
 import os
 import sys
-import logging
 
 from loguru import logger
 
@@ -87,7 +87,7 @@ def logLevel(arg_log_level, arg_debug_level):
     # Case insensitive.
     arg_log_level = arg_log_level.upper() if arg_log_level else None
     # Easy label->level lookup.
-    verbosity_map = { k.upper(): v for k,v in verbosity_levels }
+    verbosity_map = {k.upper(): v for k, v in verbosity_levels}
 
     # Log level by label.
     forced_log_level = verbosity_map.get(arg_log_level, None)
@@ -100,7 +100,8 @@ def logLevel(arg_log_level, arg_debug_level):
 
     # Log level based on count(-v) verbosity arguments.
     # Limit it to allowed grades, starting at DEBUG.
-    debug_log_level_idx = next(key for key,(label, level) in enumerate(verbosity_levels) if label == 'DEBUG')
+    debug_log_level_idx = next(key for key, (label, level)
+                               in enumerate(verbosity_levels) if label == 'DEBUG')
 
     # Limit custom verbosity to existing grades.
     debug_levels = verbosity_levels[:debug_log_level_idx + 1]
@@ -111,8 +112,8 @@ def logLevel(arg_log_level, arg_debug_level):
         # for console logging, once for file logging.
         if not hasattr(logLevel, 'bounds_exceeded'):
             logger.debug("Verbosity -v={} is outside of the bounds [0, {}]. Changed to nearest limit.",
-                        str(arg_debug_level),
-                        str(debug_levels_length))
+                         str(arg_debug_level),
+                         str(debug_levels_length))
             logLevel.bounds_exceeded = True
 
         arg_debug_level = min(arg_debug_level, debug_levels_length)

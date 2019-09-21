@@ -234,11 +234,6 @@ class map(object):
             fence = generate_coords_from_geofence(self._mapping_manager, fence)
         else:
             fence = None
-        fence = request.args.get("fence", None)
-        if fence not in (None, 'None', 'All'):
-            fence = generate_coords_from_geofence(self._mapping_manager, fence)
-        else:
-            fence = None
 
         neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)

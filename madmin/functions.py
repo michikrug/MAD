@@ -39,7 +39,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def uploaded_files(datetimeformat):
+def uploaded_files(datetimeformat, jobs):
     files = []
     for file in glob.glob(str(mapping_args.upload_path) + "/*.apk"):
         creationdate = datetime.datetime.fromtimestamp(
@@ -48,12 +48,8 @@ def uploaded_files(datetimeformat):
                      'creation': creationdate, 'type': 'jobType.INSTALLATION'})
         files.append(fileJson)
 
-    if os.path.exists('commands.json'):
-        with open('commands.json') as logfile:
-            commands = json.load(logfile)
-
-        for command in commands:
-            files.append({'jobname': command, 'creation': '', 'type': 'jobType.CHAIN'})
+    for command in jobs:
+        files.append({'jobname': command, 'creation': '', 'type': 'jobType.CHAIN'})
 
     processJson = ({'jobname': 'Reboot-Phone', 'creation': '', 'type': 'jobType.REBOOT'})
     files.append(processJson)

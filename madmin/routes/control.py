@@ -70,6 +70,7 @@ class control(object):
 
     @auth_required
     @nocache
+    @logger.catch()
     def get_phonescreens(self):
         if not os.path.exists(os.path.join(self._args.temp_path, "madmin")):
             os.makedirs(os.path.join(self._args.temp_path, "madmin"))
@@ -139,8 +140,7 @@ class control(object):
                                                 dummy=True)
                             )
 
-        return render_template('phonescreens.html', editform=screens_phone, header="Phonecontrol", title="Phonecontrol",
-                               files=uploaded_files(self._datetimeformat))
+        return render_template('phonescreens.html', editform=screens_phone, header="Phonecontrol", title="Phonecontrol")
 
     @auth_required
     def take_screenshot(self, origin=None, adb=False):
@@ -251,7 +251,8 @@ class control(object):
 
         adb = devicemappings.get(origin, {}).get('adb', False)
         self._logger.info('MADmin: Restart Pogo ({})', str(origin))
-        if useadb == 'True' and self._adb_connect.send_shell_command(adb, origin, "am force-stop com.nianticlabs.pokemongo"):
+        if useadb == 'True' and \
+                self._adb_connect.send_shell_command(adb, origin, "am force-stop com.nianticlabs.pokemongo"):
             self._logger.info(
                 'MADMin: ADB shell force-stop game command successfully ({})', str(origin))
             if restart:
@@ -405,7 +406,7 @@ class control(object):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(self._args.upload_path, filename))
                 flash('File could be uploaded successfully')
-                return redirect('/uploaded_files')
+                return redirect(getBasePath(request) + '/uploaded_files')
             else:
                 flash('Allowed file type is apk only!')
                 return redirect(getBasePath(request) + request.url)
@@ -414,7 +415,7 @@ class control(object):
 
     @auth_required
     def get_uploaded_files(self):
-        return jsonify(uploaded_files(self._datetimeformat))
+        return jsonify(uploaded_files(self._datetimeformat, self._device_updater.return_commands()))
 
     @auth_required
     def uploaded_files(self):
@@ -478,7 +479,6 @@ class control(object):
     @logger.catch()
     def delete_log_entry(self):
         id_ = request.args.get('id')
-        jobtype = request.args.get('type')
         if self._device_updater.delete_log_id(id_):
             flash('Job could be deleted successfully')
         else:

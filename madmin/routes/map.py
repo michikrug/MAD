@@ -2,18 +2,19 @@ import json
 import os
 from typing import List, Optional
 
-from flask import (jsonify, render_template, request, redirect)
-from flask_caching import Cache
+from flask import jsonify, redirect, render_template, request
 
 from db.dbWrapperBase import DbWrapperBase
-from madmin.functions import (auth_required, getCoordFloat, getBoundParameter,
-                              getBasePath, get_geofences, generate_coords_from_geofence)
-from utils.MappingManager import MappingManager
+from flask_caching import Cache
+from madmin.functions import (auth_required, generate_coords_from_geofence,
+                              get_geofences, getBasePath, getBoundParameter,
+                              getCoordFloat)
 from utils.collections import Location
 from utils.gamemechanicutil import get_raid_boss_cp
+from utils.logging import logger
+from utils.MappingManager import MappingManager
 from utils.questGen import generate_quest
 from utils.s2Helper import S2Helper
-from utils.logging import logger
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
@@ -97,7 +98,8 @@ class map(object):
 
         for routemanager in routemanager_names:
             mode = self._mapping_manager.routemanager_get_mode(routemanager)
-            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_route(routemanager)
+            route: Optional[List[Location]
+                            ] = self._mapping_manager.routemanager_get_current_route(routemanager)
 
             if route is None:
                 continue
@@ -123,7 +125,8 @@ class map(object):
 
         for routemanager in routemanager_names:
             mode = self._mapping_manager.routemanager_get_mode(routemanager)
-            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_prioroute(routemanager)
+            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_prioroute(
+                routemanager)
 
             if route is None:
                 continue
@@ -224,7 +227,6 @@ class map(object):
             fence = generate_coords_from_geofence(self._mapping_manager, fence)
         else:
             fence = None
-
 
         neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
@@ -328,7 +330,8 @@ class map(object):
         for i in range(len(coords_split)):
             if coords_split[i] != '':
                 latlon_split = coords_split[i].split(",")
-                file.write("{0},{1}\n".format(str(float(latlon_split[0])), str(float(latlon_split[1]))))
+                file.write("{0},{1}\n".format(
+                    str(float(latlon_split[0])), str(float(latlon_split[1]))))
 
         file.close()
 

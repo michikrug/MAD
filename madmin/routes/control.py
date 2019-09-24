@@ -63,7 +63,8 @@ class control(object):
             ("/restart_job", self.restart_job),
             ("/delete_log", self.delete_log),
             ("/get_all_workers", self.get_all_workers),
-            ("/job_for_worker", self.job_for_worker)
+            ("/job_for_worker", self.job_for_worker),
+            ("/reload_jobs", self.reload_jobs)
         ]
         for route, view_func in routes:
             self._app.route(route, methods=['GET', 'POST'])(view_func)
@@ -299,8 +300,7 @@ class control(object):
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
                     adb, origin, "am broadcast -a android.intent.action.BOOT_COMPLETED")):
-            self._logger.info(
-                'MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.reboot()
@@ -319,8 +319,7 @@ class control(object):
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
                     adb, origin, "pm clear com.nianticlabs.pokemongo")):
-            self._logger.info(
-                'MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.resetAppdata("com.nianticlabs.pokemongo")
@@ -485,13 +484,20 @@ class control(object):
         return redirect(getBasePath(request) + '/uploaded_files?origin=' + str(origin) + '&adb=' + str(useadb))
 
     @auth_required
+    def reload_jobs(self):
+        logger.info("Reload existing jobs")
+        self._device_updater.init_jobs()
+        return redirect(getBasePath(request) + '/uploaded_files')
+
+    @auth_required
     @logger.catch
     @nocache
     def get_install_log(self):
+        withautojobs = request.args.get('withautojobs', False)
         return_log = []
-        log = self._device_updater.get_log()
+        log = self._device_updater.get_log(withautojobs=withautojobs)
         for entry in log:
-            return_log.append(log[entry])
+            return_log.append(entry)
 
         return jsonify(return_log)
 
@@ -510,10 +516,10 @@ class control(object):
     @logger.catch
     @nocache
     def install_status(self):
+        withautojobs = request.args.get('withautojobs', False)
         return render_template('installation_status.html',
-                               responsive=str(
-                                   self._args.madmin_noresponsive).lower(),
-                               title="Installation Status")
+                               responsive=str(self._args.madmin_noresponsive).lower(),
+                               title="Installation Status", withautojobs=withautojobs)
 
     @auth_required
     @logger.catch()
@@ -551,7 +557,8 @@ class control(object):
     @logger.catch()
     @nocache
     def delete_log(self):
-        self._device_updater.delete_log()
+        onlysuccess = request.args.get('only_success', False)
+        self._device_updater.delete_log(onlysuccess=onlysuccess)
         return redirect(getBasePath(request) + '/install_status')
 
     @auth_required

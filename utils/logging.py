@@ -34,7 +34,8 @@ def initLogging(args):
 
                 "colorize": colorize,
                 "level": "ERROR",
-                "backtrace": log_trace,
+                "diagnose": log_trace,
+                "backtrace": True,
                 "enqueue": True
             }
         ]
@@ -45,7 +46,8 @@ def initLogging(args):
             "sink": os.path.join(args.log_path, args.log_filename),
             "format": "[{time:MM-DD HH:mm:ss.SS}] [{thread.name: >17}] [{module: >19}:{line: <4}] [{level: >8}] {message}",
             "level": log_file_level,
-            "backtrace": log_file_trace,
+            "backtrace": True,
+            "diagnose": log_file_trace,
             "enqueue": True,
             "encoding": "UTF-8"
         }

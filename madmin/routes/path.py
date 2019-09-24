@@ -1,4 +1,4 @@
-from flask import render_template, request, send_from_directory
+from flask import jsonify, render_template, request, send_from_directory
 
 from madmin.functions import (auth_required, get_geofences, get_quest_areas,
                               nocache)
@@ -8,10 +8,11 @@ from utils.MappingManager import MappingManager
 
 
 class path(object):
-    def __init__(self, db, args, app, mapping_manager: MappingManager,):
+    def __init__(self, db, args, app, mapping_manager: MappingManager, jobstatus):
         self._db = db
         self._args = args
         self._app = app
+        self._jobstatus = jobstatus
         if self._args.madmin_time == "12":
             self._datetimeformat = '%Y-%m-%d %I:%M:%S %p'
         else:
@@ -33,7 +34,8 @@ class path(object):
             ("/unknown", self.unknown),
             ("/quests", self.quest),
             ("/quests_pub", self.quest_pub),
-            ("/pick_worker", self.pickworker)
+            ("/pick_worker", self.pickworker),
+            ("/jobstatus", self.jobstatus)
         ]
         for route, view_func in routes:
             self._app.route(route)(view_func)
@@ -108,3 +110,7 @@ class path(object):
         type = request.args.get("type", None)
         return render_template('workerpicker.html', responsive=str(self._args.madmin_noresponsive).lower(),
                                title="Select Worker", jobname=jobname, type=type)
+
+    @auth_required
+    def jobstatus(self):
+        return jsonify(self._jobstatus)

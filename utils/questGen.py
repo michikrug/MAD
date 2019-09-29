@@ -21,6 +21,7 @@ def generate_quest(quest):
 
     item_id = 0
     item_amount = 1
+    item_type = ''
     pokemon_id = 0
     pokemon_name = ''
     pokemon_form = extractForm(quest['quest_reward'])
@@ -248,8 +249,20 @@ def questtask(typeid, condition, target):
         text = _('Make {0} {type}{curve}Throws{inrow}')
     elif typeid == 17:
         text = _('Earn {0} Candies walking with your buddy')
+    elif typeid == 22:
+        if int(target) == int(1):
+            text = _('Make a new friend')
+        else:
+            text = _('Make {0} new friends')
     elif typeid == 23:
         text = _('Trade {0} Pokemon')
+        arr['distance'] = ""
+        if re.search(r'"type": 25', condition) is not None:
+            arr['distance'] = re.search(r'"distance_km": ([0-9, ]+)', condition).group(1)
+            if int(target) == int(1):
+                text = _('Trade Pokemon caught {distance} km apart')
+            else:
+                text = _('Trade {0} Pokemon caught {distance} km apart')
     elif typeid == 24:
         text = _('Send {0} gifts to friends')
     elif typeid == 27:
@@ -302,6 +315,7 @@ def questtask(typeid, condition, target):
         text = text.replace(_(' Battles'), _(' Battle'))
         text = text.replace(_(' candies'), _(' candy'))
         text = text.replace(_(' gifts'), _(' gift'))
+        text = text.replace(_(' Pokestops'), _(' Pokestop'))
         text = text.replace(_(' {0} snapshots'), _(' a snapshot'))
         text = text.replace(_('Make {0} {type}{curve}Throws'), _('Make a {type}{curve}Throw'))
         text = text.replace(_(' {0} times'), '')
@@ -310,6 +324,6 @@ def questtask(typeid, condition, target):
     for key, val in arr.items():
         text = text.replace('{' + key + '}', str(val))
 
-    text = text.replace('  ', ' ')
+    text = text.replace('  ', ' ').strip()
 
     return text

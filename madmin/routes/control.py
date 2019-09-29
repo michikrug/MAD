@@ -1,22 +1,23 @@
 import datetime
-import time
-import os
-import cv2
 import glob
-from flask import (render_template, request, redirect, flash, jsonify)
+import os
+import time
+
+from flask import flash, jsonify, redirect, render_template, request
 from werkzeug.utils import secure_filename
 
+import cv2
 from db.dbWrapperBase import DbWrapperBase
-from madmin.functions import (auth_required, generate_device_screenshot_path, getBasePath, nocache, allowed_file,
-                              uploaded_files)
-from utils.MappingManager import MappingManager
-from utils.functions import (creation_date, generate_phones, image_resize)
-from utils.logging import logger
-
+from madmin.functions import (allowed_file, auth_required,
+                              generate_device_screenshot_path, getBasePath,
+                              nocache, uploaded_files)
 from utils.adb import ADBConnect
+from utils.functions import creation_date, generate_phones, image_resize
+from utils.logging import logger
 from utils.madGlobals import ScreenshotType
-
+from utils.MappingManager import MappingManager
 from utils.updater import jobType
+
 
 class control(object):
     def __init__(self, db_wrapper: DbWrapperBase, args, mapping_manager: MappingManager, websocket, logger, app,
@@ -222,7 +223,7 @@ class control(object):
             self._logger.info('MADMin: ADB screenswipe successfully ({})', str(origin))
         else:
             self._logger.info('MADMin WS Swipe x:{} y:{} xe:{} ye:{} ({})', str(real_click_x), str(real_click_y),
-                        str(real_click_xe), str(real_click_ye), str(origin))
+                              str(real_click_xe), str(real_click_ye), str(origin))
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.touchandhold(int(real_click_x), int(
                 real_click_y), int(real_click_xe), int(real_click_ye))
@@ -241,14 +242,18 @@ class control(object):
         self._logger.info('MADmin: Restart Pogo ({})', str(origin))
         if useadb == 'True' and \
                 self._adb_connect.send_shell_command(adb, origin, "am force-stop com.nianticlabs.pokemongo"):
-            self._logger.info('MADMin: ADB shell force-stop game command successfully ({})', str(origin))
+            self._logger.info(
+                'MADMin: ADB shell force-stop game command successfully ({})', str(origin))
             if restart:
                 time.sleep(1)
-                started = self._adb_connect.send_shell_command(adb, origin, "am start com.nianticlabs.pokemongo")
+                started = self._adb_connect.send_shell_command(
+                    adb, origin, "am start com.nianticlabs.pokemongo")
                 if started:
-                    self._logger.info('MADMin: ADB shell start game command successfully ({})', str(origin))
+                    self._logger.info(
+                        'MADMin: ADB shell start game command successfully ({})', str(origin))
                 else:
-                    self._logger.error('MADMin: ADB shell start game command failed ({})', str(origin))
+                    self._logger.error(
+                        'MADMin: ADB shell start game command failed ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             if restart:
@@ -274,7 +279,7 @@ class control(object):
         self._logger.info('MADmin: Restart Phone ({})', str(origin))
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
-                        adb, origin,"am broadcast -a android.intent.action.BOOT_COMPLETED")):
+                    adb, origin, "am broadcast -a android.intent.action.BOOT_COMPLETED")):
             self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
@@ -291,13 +296,12 @@ class control(object):
         self._logger.info('MADmin: Clear game data for phone ({})', str(origin))
         if (useadb == 'True' and
                 self._adb_connect.send_shell_command(
-                        adb, origin, "pm clear com.nianticlabs.pokemongo")):
+                    adb, origin, "pm clear com.nianticlabs.pokemongo")):
             self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.resetAppdata("com.nianticlabs.pokemongo")
         return redirect(getBasePath(request) + '/phonecontrol')
-
 
     @auth_required
     def send_gps(self):
@@ -313,13 +317,13 @@ class control(object):
         if len(coords) < 2:
             return 'Wrong Format!'
         self._logger.info('MADmin: Set GPS Coords {}, {} - WS Mode only! ({})',
-                    str(coords[0]), str(coords[1]), str(origin))
+                          str(coords[0]), str(coords[1]), str(origin))
         try:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             temp_comm.setLocation(coords[0], coords[1], 0)
             if int(sleeptime) > 0:
                 self._logger.info("MADmin: Set additional sleeptime: {} ({})",
-                            str(sleeptime), str(origin))
+                                  str(sleeptime), str(origin))
                 self._ws_server.set_geofix_sleeptime_worker(origin, sleeptime)
         except Exception as e:
             self._logger.exception(
@@ -438,12 +442,12 @@ class control(object):
                     flash('File could not be installed successfully :(')
             else:
                 self._device_updater.preadd_job(origin=origin, job=jobname, id_=int(time.time()),
-                                             type=type_)
+                                                type=type_)
                 flash('File successfully queued --> See Job Status')
 
         elif type_ != jobType.INSTALLATION:
             self._device_updater.preadd_job(origin=origin, job=jobname, id_=int(time.time()),
-                                         type=type_)
+                                            type=type_)
             flash('Job successfully queued --> See Job Status')
 
         return redirect(getBasePath(request) + '/uploaded_files?origin=' + str(origin) + '&adb=' + str(useadb))
@@ -453,7 +457,6 @@ class control(object):
         logger.info("Reload existing jobs")
         self._device_updater.init_jobs()
         return redirect(getBasePath(request) + '/uploaded_files')
-
 
     @auth_required
     @logger.catch

@@ -95,7 +95,7 @@ class GeofenceHelper:
         if geofence_file:
             with open(geofence_file) as f:
                 first_line = True
-                
+
                 for line in f:
                     line = line.strip()
                     if len(line) == 0:  # Empty line.

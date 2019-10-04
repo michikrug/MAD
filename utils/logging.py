@@ -1,6 +1,6 @@
+import logging
 import os
 import sys
-import logging
 
 from loguru import logger
 
@@ -102,7 +102,8 @@ def logLevel(arg_log_level, arg_debug_level):
 
     # Log level based on count(-v) verbosity arguments.
     # Limit it to allowed grades, starting at DEBUG.
-    debug_log_level_idx = next(key for key, (label, level) in enumerate(verbosity_levels) if label == 'DEBUG')
+    debug_log_level_idx = next(key for key, (label, level)
+                               in enumerate(verbosity_levels) if label == 'DEBUG')
 
     # Limit custom verbosity to existing grades.
     debug_levels = verbosity_levels[:debug_log_level_idx + 1]

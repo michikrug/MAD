@@ -211,7 +211,8 @@ class RmWrapper(DbWrapperBase):
         if wild_pokemon is None:
             return
 
-        logger.debug("Updating IV sent by {} for encounter at {}".format(str(origin), str(timestamp)))
+        logger.debug("Updating IV sent by {} for encounter at {}".format(
+            str(origin), str(timestamp)))
 
         now = datetime.utcfromtimestamp(
             time.time()).strftime('%Y-%m-%d %H:%M:%S')
@@ -255,10 +256,10 @@ class RmWrapper(DbWrapperBase):
         # ditto detector
 
         if pokemon_data.get('id') in (13, 46, 48, 163, 165, 167, 187, 223, 273, 293, 300, 316, 322, 399) and \
-                (pokemon_display.get('weather_boosted_value', None) is not None
-                  and pokemon_display.get('weather_boosted_value', None) > 0) \
+                (pokemon_display.get('weather_boosted_value', None) is not None and
+                 pokemon_display.get('weather_boosted_value', None) > 0) \
             and (pokemon_data.get("individual_attack") < 4 or pokemon_data.get("individual_defense") < 4 or
-                 pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3):
+             pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3):
             # mon must be a ditto :D
             mon_id = 132
             gender = 3
@@ -684,7 +685,8 @@ class RmWrapper(DbWrapperBase):
 
         if len(stop_data['active_fort_modifier']) > 0:
             active_fort_modifier = stop_data['active_fort_modifier'][0]
-            lure = datetime.utcfromtimestamp(self.application_args.lure_duration * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
+            lure = datetime.utcfromtimestamp(self.application_args.lure_duration * 60 + (
+                stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
 
         if "pokestop_display" in stop_data:
             start_ms = stop_data["pokestop_display"]["incident_start_ms"]
@@ -692,10 +694,12 @@ class RmWrapper(DbWrapperBase):
             incident_grunt_type = stop_data["pokestop_display"]["character_display"]["character"]
 
             if start_ms > 0:
-                incident_start = datetime.utcfromtimestamp(start_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                incident_start = datetime.utcfromtimestamp(
+                    start_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
             if expiration_ms > 0:
-                incident_expiration = datetime.utcfromtimestamp(expiration_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                incident_expiration = datetime.utcfromtimestamp(
+                    expiration_ms / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
         return stop_data['id'], 1, stop_data['latitude'], stop_data['longitude'], last_modified, lure, now, active_fort_modifier, incident_start, incident_expiration, incident_grunt_type
 
@@ -814,7 +818,8 @@ class RmWrapper(DbWrapperBase):
 
         if fence is not None:
             query_where = query_where + " and ST_CONTAINS(ST_GEOMFROMTEXT( 'POLYGON(( {} ))'), " \
-                                        "POINT(pokestop.latitude, pokestop.longitude))".format(str(fence))
+                                        "POINT(pokestop.latitude, pokestop.longitude))".format(
+                                            str(fence))
 
         res = self.execute(query + query_where)
 

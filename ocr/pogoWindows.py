@@ -9,12 +9,13 @@ from multiprocessing.pool import ThreadPool
 import cv2
 import numpy as np
 import pytesseract
-from pytesseract import Output
+from ocr.matching_trash import trash_image_matching
 from PIL import Image
+from pytesseract import Output
 # from numpy import round, ones, uint8
 # from tinynumpy import tinynumpy as np
 from utils.logging import logger
-from ocr.matching_trash import trash_image_matching
+
 Coordinate = collections.namedtuple("Coordinate", ['x', 'y'])
 Bounds = collections.namedtuple("Bounds", ['top', 'bottom', 'left', 'right'])
 
@@ -99,8 +100,8 @@ class PogoWindows:
 
         if crop:
             screenshot_read = screenshot_read[int(height) - int(int(height / 4)):int(height),
-                                            int(int(width) / 2) - int(int(width) / 8):int(int(width) / 2) + int(
-                                            int(width) / 8)]
+                                              int(int(width) / 2) - int(int(width) / 8):int(int(width) / 2) + int(
+                int(width) / 8)]
 
         logger.debug("__read_circle_count: Determined screenshot scale: " +
                      str(height) + " x " + str(width))
@@ -172,7 +173,7 @@ class PogoWindows:
 
         if crop:
             screenshot_read = screenshot_read[int(height) - int(height / 5):int(height),
-                                            int(width) / 2 - int(width) / 8:int(width) / 2 + int(width) / 8]
+                                              int(width) / 2 - int(width) / 8:int(width) / 2 + int(width) / 8]
 
         logger.debug("__readCircleCords: Determined screenshot scale: " +
                      str(height) + " x " + str(width))
@@ -395,7 +396,7 @@ class PogoWindows:
 
         height, width, _ = screenshot_read.shape
         screenshot_read = screenshot_read[int(height / 2) - int(height / 3):int(height / 2) + int(height / 3),
-                                        int(0):int(width)]
+                                          int(0):int(width)]
         gray = cv2.cvtColor(screenshot_read, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
         logger.debug("__check_raid_line: Determined screenshot scale: " +
@@ -456,7 +457,7 @@ class PogoWindows:
             return False
 
         height, width, _ = image.shape
-        image = image[int(height / 2 - (height / 3))                      :int(height / 2 + (height / 3)), 0:int(width)]
+        image = image[int(height / 2 - (height / 3)):int(height / 2 + (height / 3)), 0:int(width)]
         cv2.imwrite(os.path.join(self.temp_dir_path, str(
             identifier) + '_AmountOfRaids.jpg'), image)
 
@@ -532,7 +533,7 @@ class PogoWindows:
         time.sleep(4)
         return False
 
-    def __check_close_present(self, filename, identifier, communicator,  radiusratio=12, Xcord=True):
+    def __check_close_present(self, filename, identifier, communicator, radiusratio=12, Xcord=True):
         if not os.path.isfile(filename):
             logger.warning(
                 "__check_close_present: {} does not exist", str(filename))
@@ -549,7 +550,7 @@ class PogoWindows:
                                  str(identifier) + '_exitcircle.jpg'), image)
 
         if self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_exitcircle.jpg'), identifier,
-                                  float(radiusratio), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
+                                    float(radiusratio), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
             return True
 
     def check_close_except_nearby_button(self, filename, identifier, communicator, close_raid=False):
@@ -564,7 +565,7 @@ class PogoWindows:
     def __internal_check_close_except_nearby_button(self, filename, identifier, communicator, close_raid=False):
         logger.debug(
             "__internal_check_close_except_nearby_button: Checking close except nearby with: file {}, identifier {}",
-                filename, identifier)
+            filename, identifier)
         try:
             screenshot_read = cv2.imread(filename)
         except:
@@ -580,9 +581,9 @@ class PogoWindows:
         if not close_raid:
             logger.debug(
                 "__internal_check_close_except_nearby_button: Raid is not to be closed...")
-            if (not os.path.isfile(filename)
-                    or self.__check_raid_line(filename, identifier, communicator)
-                    or self.__check_raid_line(filename, identifier, communicator, True)):
+            if (not os.path.isfile(filename) or
+                    self.__check_raid_line(filename, identifier, communicator) or
+                    self.__check_raid_line(filename, identifier, communicator, True)):
                 # file not found or raid tab present
                 logger.debug(
                     "__internal_check_close_except_nearby_button: Not checking for close button (X). Input wrong "
@@ -615,7 +616,7 @@ class PogoWindows:
         else:
             logger.debug("Could not find close button (X).")
             return False
-        
+
     def get_inventory_text(self, filename, identifier, x1, x2, y1, y2):
         if not os.path.isfile(filename):
             logger.error("get_inventory_text: {} does not exist", str(filename))
@@ -680,7 +681,7 @@ class PogoWindows:
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
             for (x, y, r) in circles:
-                if x < width_ - width_/3:
+                if x < width_ - width_ / 3:
                     mainscreen += 1
 
         if mainscreen > 0:
@@ -703,7 +704,7 @@ class PogoWindows:
             return False
 
         if self.__read_circle_count(filename, identifier,
-                                  float(7.7), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
+                                    float(7.7), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
             logger.debug(
                 "Found close button (X). Closing the window - Ratio: 10")
             return True
@@ -746,10 +747,11 @@ class PogoWindows:
             "get_screen_text: Reading screen text - identifier {}", identifier)
 
         try:
-                returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT, timeout=40,
-                                                           config='--dpi 70')
+            returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT, timeout=40,
+                                                       config='--dpi 70')
         except:
-            logger.error("Tesseract Error for device {}: {}".format(str(identifier), str(returning_dict)))
+            logger.error("Tesseract Error for device {}: {}".format(
+                str(identifier), str(returning_dict)))
             returning_dict = []
 
         if isinstance(returning_dict, dict):

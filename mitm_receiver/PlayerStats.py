@@ -24,6 +24,7 @@ class PlayerStats(object):
         self._last_processed_timestamp = 0
         self._db_wrapper: DbWrapperBase = db_wrapper
         self._stats_period = 0
+        self._generate_stats = application_args.game_stats
         self.__mapping_mutex = Lock()
         self.__mitm_mapper_parent: MitmMapper = mitm_mapper_parent
 
@@ -82,19 +83,21 @@ class PlayerStats(object):
         logger.debug2("Creating stats_collector task for {}".format(self._id))
         with self.__mapping_mutex:
             if not self._stats_collector_start:
-                if time.time() - self._last_processed_timestamp > 600 or self.compare_hour(self._last_processed_timestamp):
-                    stats_collected_tmp = deepcopy(self.__stats_collected)
-                    del self.__stats_collected
-                    self.__stats_collected = {}
+                if time.time() - self._last_processed_timestamp > 600 or \
+                        self.compare_hour(self._last_processed_timestamp):
+
                     self._last_processed_timestamp = time.time()
 
-                    self.__mitm_mapper_parent.add_stats_to_process(self._id, stats_collected_tmp,
+                    self.__mitm_mapper_parent.add_stats_to_process(self._id, self.__stats_collected,
                                                                    self._last_processed_timestamp)
+                    self.__stats_collected.clear()
             else:
                 self._stats_collector_start = False
                 self._last_processed_timestamp = time.time()
 
     def stats_collect_mon(self, encounter_id: str):
+        if not self._generate_stats:
+            return
         with self.__mapping_mutex:
             if 106 not in self.__stats_collected:
                 self.__stats_collected[106] = {}
@@ -112,6 +115,8 @@ class PlayerStats(object):
                 self.__stats_collected[106]['mon'][encounter_id] += 1
 
     def stats_collect_mon_iv(self, encounter_id: str, shiny: int):
+        if not self._generate_stats:
+            return
         with self.__mapping_mutex:
             if 102 not in self.__stats_collected:
                 self.__stats_collected[102] = {}
@@ -131,6 +136,8 @@ class PlayerStats(object):
                 self.__stats_collected[102]['mon_iv'][encounter_id]['count'] += 1
 
     def stats_collect_raid(self, gym_id: str):
+        if not self._generate_stats:
+            return
         with self.__mapping_mutex:
             if 106 not in self.__stats_collected:
                 self.__stats_collected[106] = {}
@@ -148,6 +155,8 @@ class PlayerStats(object):
                 self.__stats_collected[106]['raid'][gym_id] += 1
 
     def stats_collect_quest(self, stop_id):
+        if not self._generate_stats:
+            return
         with self.__mapping_mutex:
             if 106 not in self.__stats_collected:
                 self.__stats_collected[106] = {}
@@ -166,6 +175,8 @@ class PlayerStats(object):
 
     def stats_collect_location_data(self, location, datarec, start_timestamp, type, rec_timestamp, walker,
                                     transporttype):
+        if not self._generate_stats:
+            return
         with self.__mapping_mutex:
             if 'location' not in self.__stats_collected:
                 self.__stats_collected['location'] = []

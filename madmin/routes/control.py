@@ -1,7 +1,9 @@
 import datetime
-import glob
 import os
 import time
+from multiprocessing import Queue
+from queue import Empty
+from threading import Thread
 
 from flask import flash, jsonify, redirect, render_template, request
 from werkzeug.utils import secure_filename
@@ -11,6 +13,7 @@ from db.dbWrapperBase import DbWrapperBase
 from madmin.functions import (allowed_file, auth_required,
                               generate_device_screenshot_path, getBasePath,
                               nocache, uploaded_files)
+from PIL import Image
 from utils.adb import ADBConnect
 from utils.functions import creation_date, generate_phones, image_resize
 from utils.logging import logger
@@ -30,6 +33,7 @@ class control(object):
             self._datetimeformat = '%Y-%m-%d %H:%M:%S'
         self._adb_connect = ADBConnect(self._args)
         self._device_updater = deviceUpdater
+        self.research_trigger_queue = Queue()
 
         self._mapping_manager: MappingManager = mapping_manager
 
@@ -38,6 +42,11 @@ class control(object):
         self._logger = logger
         self._app = app
         self.add_route()
+
+        self.trigger_thread = None
+        self.trigger_thread = Thread(name='research_trigger', target=self.research_trigger)
+        self.trigger_thread.daemon = True
+        self.trigger_thread.start()
 
     def add_route(self):
         routes = [
@@ -64,14 +73,37 @@ class control(object):
             ("/delete_log", self.delete_log),
             ("/get_all_workers", self.get_all_workers),
             ("/job_for_worker", self.job_for_worker),
-            ("/reload_jobs", self.reload_jobs)
+            ("/reload_jobs", self.reload_jobs),
+            ("/trigger_research_menu", self.trigger_research_menu)
         ]
         for route, view_func in routes:
             self._app.route(route, methods=['GET', 'POST'])(view_func)
 
-    @auth_required
-    @nocache
     @logger.catch()
+    def research_trigger(self):
+        logger.info("Starting research trigger thread")
+        while True:
+            try:
+                try:
+                    origin = self.research_trigger_queue.get()
+                except Empty:
+                    time.sleep(2)
+                    continue
+
+                logger.info("Trigger research menu for device {}".format(str(origin)))
+                self._ws_server.trigger_worker_check_research(origin)
+                self.generate_screenshot(origin)
+                time.sleep(3)
+
+            except KeyboardInterrupt as e:
+                logger.info("research_trigger received keyboard interrupt, stopping")
+                if self.trigger_thread is not None:
+                    self.trigger_thread.join()
+                break
+
+    @auth_required
+    @logger.catch()
+    @nocache
     def get_phonescreens(self):
         if not os.path.exists(os.path.join(self._args.temp_path, "madmin")):
             os.makedirs(os.path.join(self._args.temp_path, "madmin"))
@@ -149,35 +181,40 @@ class control(object):
         origin = request.args.get('origin')
         useadb = request.args.get('adb', False)
         self._logger.info('MADmin: Making screenshot ({})', str(origin))
-        devicemappings = self._mapping_manager.get_all_devicemappings()
 
+        devicemappings = self._mapping_manager.get_all_devicemappings()
         adb = devicemappings.get(origin, {}).get('adb', False)
+        filename = generate_device_screenshot_path(origin, devicemappings, self._args)
 
         if useadb == 'True' and self._adb_connect.make_screenshot(adb, origin, "jpg"):
             self._logger.info(
                 'MADMin: ADB screenshot successfully ({})', str(origin))
         else:
+            self.generate_screenshot(origin)
 
-            screenshot_type: ScreenshotType = ScreenshotType.JPEG
-            if devicemappings.get(origin, {}).get("screenshot_type", "jpeg") == "png":
-                screenshot_type = ScreenshotType.PNG
+        creationdate = datetime.datetime.fromtimestamp(
+            creation_date(filename)).strftime(self._datetimeformat)
 
-            screenshot_quality: int = devicemappings.get(
-                origin, {}).get("screenshot_quality", 80)
+        return creationdate
 
-            temp_comm = self._ws_server.get_origin_communicator(origin)
-            temp_comm.get_screenshot(generate_device_screenshot_path(origin, devicemappings, self._args),
-                                     screenshot_quality, screenshot_type)
+    def generate_screenshot(self, origin):
+        devicemappings = self._mapping_manager.get_all_devicemappings()
+        screenshot_type: ScreenshotType = ScreenshotType.JPEG
+        if devicemappings.get(origin, {}).get("screenshot_type", "jpeg") == "png":
+            screenshot_type = ScreenshotType.PNG
+
+        screenshot_quality: int = devicemappings.get(origin, {}).get("screenshot_quality", 80)
+
+        temp_comm = self._ws_server.get_origin_communicator(origin)
+        temp_comm.get_screenshot(generate_device_screenshot_path(origin, devicemappings, self._args),
+                                 screenshot_quality, screenshot_type)
 
         filename = generate_device_screenshot_path(
             origin, devicemappings, self._args)
         image_resize(filename, os.path.join(
             self._args.temp_path, "madmin"), width=250)
 
-        creationdate = datetime.datetime.fromtimestamp(
-            creation_date(filename)).strftime(self._datetimeformat)
-
-        return creationdate
+        return
 
     @auth_required
     @nocache
@@ -188,10 +225,9 @@ class control(object):
         useadb = request.args.get('adb')
         devicemappings = self._mapping_manager.get_all_devicemappings()
 
-        filename = generate_device_screenshot_path(
-            origin, devicemappings, self._args)
-        img = cv2.imread(filename, 0)
-        height, width = img.shape[:2]
+        filename = generate_device_screenshot_path(origin, devicemappings, self._args)
+        with Image.open(filename) as screenshot:
+            width, height = screenshot.size
 
         real_click_x = int(width / float(click_x))
         real_click_y = int(height / float(click_y))
@@ -221,10 +257,9 @@ class control(object):
 
         devicemappings = self._mapping_manager.get_all_devicemappings()
 
-        filename = generate_device_screenshot_path(
-            origin, devicemappings, self._args)
-        img = cv2.imread(filename, 0)
-        height, width = img.shape[:2]
+        filename = generate_device_screenshot_path(origin, devicemappings, self._args)
+        with Image.open(filename) as screenshot:
+            width, height = screenshot.size
 
         real_click_x = int(width / float(click_x))
         real_click_y = int(height / float(click_y))
@@ -354,6 +389,18 @@ class control(object):
 
         time.sleep(2)
         return self.take_screenshot(origin, useadb)
+
+    @auth_required
+    @nocache
+    def trigger_research_menu(self):
+        origin = request.args.get('origin')
+        try:
+            self.research_trigger_queue.put(origin)
+        except Exception as e:
+            self._logger.exception(
+                'MADmin: Exception occurred while trigger research menu: {}.', e)
+
+        return redirect(getBasePath(request) + '/phonecontrol')
 
     @auth_required
     @nocache

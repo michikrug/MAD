@@ -51,6 +51,8 @@ class MitmMapper(object):
     def __internal_playerstats_db_update_consumer(self):
         try:
             while not self.__playerstats_db_update_stop.is_set():
+                if not self.__application_args.game_stats:
+                    break
                 try:
                     with self.__playerstats_db_update_mutex:
                         next_item = self.__playerstats_db_update_queue.get_nowait()
@@ -87,6 +89,10 @@ class MitmMapper(object):
                 client_id, stats, last_processed_timestamp)
             self.__db_wrapper.submit_stats_locations_raw(data_send_location_raw)
             self.__db_wrapper.submit_stats_detections_raw(data_send_detection_raw)
+
+        data_send_stats.clear()
+        data_send_location.clear()
+
         self.__db_wrapper.cleanup_statistics()
 
     def shutdown(self):

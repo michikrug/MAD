@@ -204,6 +204,10 @@ class WebsocketServer(object):
                     "Worker with origin {} is already running, killing the running one and have client reconnect",
                     str(origin))
                 self.__current_users.get(origin)[1].stop_worker()
+                # todo: do this better :D
+                logger.info("Old worker thread is still alive - waiting 20 seconds")
+                await asyncio.sleep(20)
+                logger.info("Reconnect ...")
                 return
 
             self.__users_connecting.append(origin)
@@ -373,6 +377,7 @@ class WebsocketServer(object):
         finally:
             async with self.__users_mutex:
                 self.__users_connecting.remove(origin)
+            await asyncio.sleep(20)
         return True
 
     async def __unregister(self, websocket_client_connection):
@@ -578,6 +583,7 @@ class WebsocketServer(object):
         if event_triggered:
             logger.debug("Received answer in time, popping response")
             await self.__reset_fail_counter(id)
+            await self.__remove_request(message_id)
             result = await self.__pop_response(message_id)
             if isinstance(result, str):
                 logger.debug("Response to {}: {}",
@@ -644,6 +650,11 @@ class WebsocketServer(object):
     def set_geofix_sleeptime_worker(self, origin, sleeptime):
         if self.__current_users.get(origin, None) is not None:
             return self.__current_users[origin][1].set_geofix_sleeptime(sleeptime)
+        return False
+
+    def trigger_worker_check_research(self, origin):
+        if self.__current_users.get(origin, None) is not None:
+            return self.__current_users[origin][1].trigger_check_research()
         return False
 
     def set_update_sleeptime_worker(self, origin, sleeptime):

@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta
 from enum import Enum
 from multiprocessing import Queue
+from queue import Empty
 from threading import RLock, Thread
 
 from utils.logging import logger
@@ -47,9 +48,10 @@ class deviceUpdater(object):
         self.kill_old_jobs()
         self.load_automatic_jobs()
 
-        t_updater = Thread(name='apk_updater', target=self.process_update_queue)
-        t_updater.daemon = False
-        t_updater.start()
+        self.t_updater = None
+        self.t_updater = Thread(name='apk_updater', target=self.process_update_queue)
+        self.t_updater.daemon = True
+        self.t_updater.start()
 
     def init_jobs(self):
         self._commands = {}
@@ -128,7 +130,11 @@ class deviceUpdater(object):
         while True:
             try:
                 jobstatus = jobReturn.UNKNOWN
-                item = self._update_queue.get()
+                try:
+                    item = self._update_queue.get()
+                except Empty:
+                    time.sleep(2)
+                    continue
 
                 if item not in self._log:
                     continue
@@ -322,6 +328,8 @@ class deviceUpdater(object):
 
             except KeyboardInterrupt as e:
                 logger.info("process_update_queue received keyboard interrupt, stopping")
+                if self.t_updater is not None:
+                    self.t_updater.join()
                 break
 
             time.sleep(5)
@@ -499,29 +507,31 @@ class deviceUpdater(object):
             logger.info('Found {} autojobs - add them'.format(str(len(autocommands))))
 
             for autocommand in autocommands:
-                globalid = autocommand.get('uniqueid', int(time.time()))
-                redo = autocommand.get('redo', False)
-                algo = self.get_job_algo_value(algotyp=autocommand.get('algotype', 'flex'),
-                                               algovalue=autocommand.get('algovalue', 0))
-                startwithinit = autocommand.get('startwithinit', False)
                 origins = autocommand['origins'].split('|')
-                job = autocommand['job']
-
-                self._globaljoblog[globalid] = {}
-                self._globaljoblog[globalid]['redo'] = redo
-                self._globaljoblog[globalid]['algo'] = algo
-                self._globaljoblog[globalid]['algovalue'] = autocommand.get('algovalue', 0)
-                self._globaljoblog[globalid]['algotype'] = autocommand.get('algotype', 'flex')
-                self._globaljoblog[globalid]['startwithinit'] = startwithinit
-                self._globaljoblog[globalid]['autojob'] = True
-                self._globaljoblog[globalid]['redoonerror'] = autocommand.get('redoonerror', False)
-
                 for origin in origins:
+                    redo = autocommand.get('redo', False)
+                    algo = self.get_job_algo_value(algotyp=autocommand.get('algotype', 'flex'),
+                                                   algovalue=autocommand.get('algovalue', 0))
+                    startwithinit = autocommand.get('startwithinit', False)
+
+                    job = autocommand['job']
+
+                    globalid = int(time.time())
+
+                    self._globaljoblog[globalid] = {}
+                    self._globaljoblog[globalid]['redo'] = redo
+                    self._globaljoblog[globalid]['algo'] = algo
+                    self._globaljoblog[globalid]['algovalue'] = autocommand.get('algovalue', 0)
+                    self._globaljoblog[globalid]['algotype'] = autocommand.get('algotype', 'flex')
+                    self._globaljoblog[globalid]['startwithinit'] = startwithinit
+                    self._globaljoblog[globalid]['autojob'] = True
+                    self._globaljoblog[globalid]['redoonerror'] = autocommand.get(
+                        'redoonerror', False)
+
                     self.preadd_job(origin=origin, job=job, id_=int(time.time()),
-                                    type=str(jobType.CHAIN), globalid=globalid)
+                                    type=str(jobType.CHAIN))
                     # get a unique id !
                     time.sleep(1)
-
         else:
             logger.info('Did not find any automatic jobs')
 

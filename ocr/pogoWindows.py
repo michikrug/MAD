@@ -747,13 +747,16 @@ class PogoWindows:
                                               (screenshot, identifier)).get()
 
     def __internal_get_screen_text(self, screenshot, identifier):
+        returning_dict = []
         logger.debug(
             "get_screen_text: Reading screen text - identifier {}", identifier)
 
         try:
-            returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT, timeout=20,
+            returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT, timeout=40,
                                                        config='--dpi 70')
         except:
+            logger.error("Tesseract Error for device {}: {}".format(
+                str(identifier), str(returning_dict)))
             returning_dict = []
 
         if isinstance(returning_dict, dict):

@@ -42,8 +42,7 @@ class EndpointAction(object):
                 abort = True
             elif (self.mapping_manager.get_all_devicemappings().keys() is not None and
                   (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
-                logger.warning(
-                    "MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
+                logger.warning("MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
                 self.response = Response(status=403, headers={})
                 abort = True
             elif self.mapping_manager.get_auths() is not None:
@@ -185,12 +184,10 @@ class MITMReceiver(Process):
         process_count: int = 0
         for origin in self.__mapping_manager.get_all_devicemappings().keys():
             origin_return[origin] = {}
-            origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(
-                origin)
-            origin_return[origin]['latest_data'] = self.__mitm_mapper.request_latest(
-                origin, 'timestamp_last_data')
-            origin_return[origin]['mode_value'] = self.__mitm_mapper.request_latest(
-                origin, 'injected_settings')
+            origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(origin)
+            origin_return[origin]['latest_data'] = self.__mitm_mapper.request_latest(origin, 'timestamp_last_data')
+            origin_return[origin]['mode_value'] = self.__mitm_mapper.request_latest(origin, 'injected_settings')
+            origin_return[origin]['last_possibly_moved'] = self.__mitm_mapper.get_last_timestamp_possible_moved(origin)
 
         for process in self.worker_threads:
             process_return['MITMReceiver-' + str(process_count)] = {}

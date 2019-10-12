@@ -231,7 +231,10 @@ class WorkerBase(ABC):
         # do some other stuff in the main process
         while not self._stop_worker_event.isSet():
             time.sleep(1)
-        t_main_work.join()
+
+        while t_main_work.isAlive():
+            time.sleep(1)
+            t_main_work.join()
         logger.info("Worker {} stopped gracefully", str(self._id))
         # async_result.get()
         return self._last_known_state
@@ -308,6 +311,7 @@ class WorkerBase(ABC):
     def _internal_cleanup(self):
         # set the event just to make sure - in case of exceptions for example
         self._stop_worker_event.set()
+        self._mapping_manager.unregister_worker_from_routemanager(self._routemanager_name, self._id)
         logger.info("Internal cleanup of {} started", str(self._id))
         self._cleanup()
         logger.info(
@@ -317,10 +321,8 @@ class WorkerBase(ABC):
             logger.info("Stopping worker's asyncio loop")
             self.loop.call_soon_threadsafe(self.loop.stop)
             self._async_io_looper_thread.join()
-            time.sleep(1)
+            time.sleep(10)
 
-        logger.info("Stopped Route")
-        self._mapping_manager.unregister_worker_from_routemanager(self._routemanager_name, self._id)
         self._communicator.cleanup_websocket()
 
         logger.info("Internal cleanup of {} finished", str(self._id))
@@ -618,17 +620,12 @@ class WorkerBase(ABC):
 
                 if returncode == ScreenType.GAMEDATA or returncode == ScreenType.CONSENT:
                     logger.warning('Error getting Gamedata or strange ggl message appears')
-                    self._stop_pogo()
-                    time.sleep(2)
-                    self._communicator.startApp("com.nianticlabs.pokemongo")
-                    time.sleep(1)
-                    self._wait_pogo_start_delay()
+                    self._loginerrorcounter += 1
+                    self._restart_pogo(True)
 
                 elif returncode == ScreenType.CLOSE:
                     logger.warning('Pogo not in foreground...')
-                    self._communicator.startApp("com.nianticlabs.pokemongo")
-                    time.sleep(1)
-                    self._wait_pogo_start_delay()
+                    self._restart_pogo(True)
 
                 elif returncode == ScreenType.DISABLED:
                     # Screendetection is disabled
@@ -641,8 +638,12 @@ class WorkerBase(ABC):
                         time.sleep(10)
 
                 elif returncode == ScreenType.ERROR or returncode == ScreenType.FAILURE:
-                    logger.warning('Something wrong with screendetection')
+                    logger.warning('Something wrong with screendetection or pogo failure screen')
                     self._loginerrorcounter += 1
+
+                elif returncode == ScreenType.GPS:
+                    logger.warning("Detecting GPS Error 11 - reboot phone")
+                    self._reboot()
 
                 elif returncode == ScreenType.SN:
                     logger.warning('Getting SN Screen - reset Magisk Settings')
@@ -656,11 +657,11 @@ class WorkerBase(ABC):
                     self._reboot()
                     break
 
-                if self._loginerrorcounter == 3:
+                if self._loginerrorcounter == 2:
                     logger.error('Cannot login again - (clear pogo game data and) restart phone')
                     self._stop_pogo()
                     self._communicator.clearAppCache("com.nianticlabs.pokemongo")
-                    if self.get_devicesettings_value('clear_game_data', True):
+                    if self.get_devicesettings_value('clear_game_data', False):
                         logger.info('Clearing game data')
                         self._communicator.resetAppdata("com.nianticlabs.pokemongo")
                     self._reboot()

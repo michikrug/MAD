@@ -48,13 +48,13 @@ class RouteManagerIV(RouteManagerBase):
 
     def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, include_geofence,
                  exclude_geofence, routefile, mode=None, init=False,
-                 name="unknown", settings=None):
+                 name="unknown", settings=None, joinqueue=None):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
                                   include_geofence=include_geofence,
                                   exclude_geofence=exclude_geofence,
                                   routefile=routefile, init=init,
-                                  name=name, settings=settings, mode=mode
+                                  name=name, settings=settings, mode=mode, joinqueue=joinqueue
                                   )
         self.encounter_ids_left: List[int] = []
         self.starve_route = True
@@ -78,13 +78,8 @@ class RouteManagerIV(RouteManagerBase):
 
     def _quit_route(self):
         logger.info('Shutdown Route {}', str(self.name))
-        if self._update_prio_queue_thread is not None:
-            self._stop_update_thread.set()
-            self._update_prio_queue_thread = None
-            self._stop_update_thread.clear()
         self._is_started = False
         self._round_started_time = None
-        self._init_route_queue()
 
     def _check_coords_before_returning(self, lat, lng):
         return True

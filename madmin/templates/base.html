@@ -27,53 +27,62 @@
   {% endif %}
 </head>
 <body>
-  {% if not pub %}
-  <nav class="navbar navbar-dark bg-dark fixed-top navbar-expand-lg">
-    <div class="container">
-      <a class="navbar-brand" href=".">
-        <img src="{{ url_for('static', filename='mad_banner_trans.png').lstrip('/') }}" class="brandimg">
-      </a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div id="navbarNav" class="navbar-collapse collapse">
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
-            <a href="map" class="nav-link">Map</a>
-          </li>
-          <li class="nav-item">
-            <a href="quests" class="nav-link">Quests</a>
-          </li>
-          <li class="nav-item">
-            <a href="showsettings" class="nav-link">Mapping Editor</a>
-          </li>
-          <li class="nav-item">
-            <a href="status" class="nav-link">Status</a>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="statistics" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Statistics</a>
-            <div class="dropdown-menu" i aria-labelledby="navbarDropdown">
-              <a href="statistics" class="dropdown-item">Global Stats</a>
-              <a href="statistics_mon" class="dropdown-item">Mon Stats</a>
-              <a href="statistics_spawns" class="dropdown-item">Spawnpoint Stats</a>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a href="phonecontrol" class="nav-link">Phonecontrol</a>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="uploaded_files" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Jobs</a>
-            <div class="dropdown-menu" i aria-labelledby="navbarDropdown">
-              <a href="uploaded_files" class="dropdown-item">Existing Files / Jobs</a>
-              <a href="upload" class="dropdown-item">Upload File</a>
-              <a href="install_status" class="dropdown-item">Job Status</a>
-              <a href="install_status?withautojobs=true" class="dropdown-item">Auto Job Status</a>
-              <a href="reload_jobs" class="dropdown-item">Reload existing Jobs</a>
-            </div>
-          </li>
-        </ul>
-      </div>
+    {% if not pub %}
+    <nav class="navbar navbar-dark bg-dark fixed-top navbar-expand-lg">
+        <div class="container">
+          <a class="navbar-brand" href=".">
+              <img src="{{ url_for('static', filename='mad_banner_trans.png').lstrip('/') }}" class="brandimg">
+          </a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+          </button>
+          <div id="navbarNav" class="navbar-collapse collapse">
+              <ul class="navbar-nav mr-auto">
+                  <li class="nav-item">
+                    <a href="map" class="nav-link">Map</a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="quests" class="nav-link">Quests</a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="showsettings" class="nav-link">Mapping Editor</a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="status" class="nav-link">Status</a>
+                  </li>
+                  <li class="nav-item dropdown">
+                      <a class="nav-link dropdown-toggle" href="statistics" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Statistics
+                    </a>
+                      <div class="dropdown-menu"i aria-labelledby="navbarDropdown">
+                      <a href="statistics" class="dropdown-item">Global Stats</a>
+                      <a href="statistics_mon" class="dropdown-item">Mon Stats</a>
+                      <a href="statistics_shiny" class="dropdown-item">Shiny Stats</a>
+                      <a href="statistics_spawns" class="dropdown-item">Spawnpoint Stats</a>
+                    </div>
+                  </li>
+                  <li class="nav-item">
+                    <a href="phonecontrol" class="nav-link">Phonecontrol</a>
+                  </li>
+                  <li class="nav-item dropdown">
+                      <a class="nav-link dropdown-toggle" href="uploaded_files" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Jobs
+                    </a>
+                      <div class="dropdown-menu"i aria-labelledby="navbarDropdown">
+                      <a href="uploaded_files" class="dropdown-item">Existing Files / Jobs</a>
+                      <a href="upload" class="dropdown-item">Upload File</a>
+                          <a href="install_status" class="dropdown-item">Job Status</a>
+                          <a href="install_status?withautojobs=true" class="dropdown-item">Auto Job Status</a>
+                          <a href="reload_jobs" class="dropdown-item">Reload existing Jobs</a>
+                    </div>
+                  </li>
+              </ul>
+          </div>
+        </div>
+    </nav>
+    {% endif %}
+    <div class="container" role="main">
+        {% block content %}{% endblock %}
     </div>
   </nav>
   {% endif %}

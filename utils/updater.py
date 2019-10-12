@@ -86,6 +86,7 @@ class deviceUpdater(object):
             globalid = self._log[id_]['globalid']
             redo = self._log[id_].get('redo', False)
             waittime = self._log[id_].get('waittime', 0)
+            jobname = self._log[id_].get('redo', None)
 
             if globalid not in self._globaljoblog:
                 self._globaljoblog[globalid] = {}
@@ -104,12 +105,12 @@ class deviceUpdater(object):
                 self.write_status_log(str(id_), field='processingdate', value=processtime)
                 self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype,
                              counter=0,
-                             status='future', waittime=waittime, processtime=processtime, redo=redo)
+                             status='future', waittime=waittime, processtime=processtime, redo=redo, jobname=jobname)
 
             else:
                 self.write_status_log(str(id_), field='processingdate', delete=True)
-                self.add_job(globalid=globalid, origin=origin, file=file_,
-                             id_=id_, type=jobtype, status='requeued')
+                self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype, status='requeued',
+                             jobname=jobname)
 
         return True
 
@@ -354,18 +355,19 @@ class deviceUpdater(object):
                 self.add_job(globalid=globalid, origin=origin, file=subjob['SYNTAX'], id_=int(time.time()),
                              type=subjob['TYPE'], waittime=subjob.get('WAITTIME', 0),
                              redo=self._globaljoblog[globalid].get('redo', False),
-                             fieldname=subjob.get('FIELDNAME', 'unknown'))
+                             fieldname=subjob.get('FIELDNAME', 'unknown'), jobname=job)
                 time.sleep(1)
         else:
             self.add_job(globalid=globalid, origin=origin, file=job, id_=int(id_), type=type)
 
     @logger.catch()
     def add_job(self, globalid, origin, file, id_: int, type, counter=0, status='pending', waittime=0, processtime=None,
-                redo=False, fieldname=None):
+                redo=False, fieldname=None, jobname=None):
         if str(id_) not in self._log:
             log_entry = ({
                 'id': int(id_),
                 'origin': origin,
+                'jobname': jobname if jobname is not None else file,
                 'file': file,
                 'status': status,
                 'fieldname': fieldname if fieldname is not None else "unknown",

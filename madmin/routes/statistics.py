@@ -29,6 +29,10 @@ class statistics(object):
         routes = [
             ("/statistics", self.statistics),
             ("/statistics_mon", self.statistics_mon),
+
+            ("/statistics_shiny", self.statistics_shiny),
+            ("/get_game_stats_shiny", self.game_stats_shiny_v2),
+
             ("/get_game_stats", self.game_stats),
             ("/get_game_stats_mon", self.game_stats_mon),
             ("/statistics_detection_worker_data", self.statistics_detection_worker_data),
@@ -36,7 +40,9 @@ class statistics(object):
             ("/status", self.status),
             ("/get_status", self.get_status),
             ("/get_spawnpoints_stats", self.get_spawnpoints_stats),
-            ("/statistics_spawns", self.statistics_spawns)
+            ("/statistics_spawns", self.statistics_spawns),
+            ("/shiny_stats", self.statistics_shiny),
+            ("/shiny_stats_data", self.shiny_stats_data),
         ]
         for route, view_func in routes:
             self._app.route(route)(view_func)
@@ -59,6 +65,12 @@ class statistics(object):
 
         return render_template('statistics/mon_statistics.html', title="MAD Mon Statisics", minutes_spawn=minutes_spawn,
                                time=self._args.madmin_time,
+                               responsive=str(self._args.madmin_noresponsive).lower())
+
+    @auth_required
+    def statistics_shiny(self):
+        return render_template('statistics/shiny_statistics.html', title="MAD Shiny Statisics",
+                               time=self._args.madmin_time, running_ocr=self._args.only_ocr,
                                responsive=str(self._args.madmin_noresponsive).lower())
 
     @auth_required
@@ -153,6 +165,7 @@ class statistics(object):
         return jsonify(stats)
 
     @logger.catch
+    @auth_required
     def game_stats_mon(self):
         minutes_spawn = request.args.get('minutes_spawn', 10)
 
@@ -179,6 +192,29 @@ class statistics(object):
 
         spawn = {'iv': iv, 'noniv': noniv, 'sum': sumg}
 
+        # good_spawns avg
+        good_spawns = []
+        data = self._db.get_best_pokemon_spawns()
+        for dat in data:
+            mon = "%03d" % dat[1]
+            monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
+            monName_raw = (get_raid_boss_cp(dat[1]))
+            monName = i8ln(monName_raw['name'])
+            if self._args.db_method == "rm":
+                lvl = calculate_mon_level(dat[6])
+            else:
+                lvl = dat[6]
+            good_spawns.append({'id': dat[1], 'iv': round(calculate_iv(dat[3], dat[4], dat[5]), 0),
+                                'lvl': lvl, 'cp': dat[7], 'img': monPic,
+                                'name': monName,
+                                'periode': datetime.datetime.fromtimestamp
+                                (self.utc2local(dat[2])).strftime(self._datetimeformat)})
+
+        stats = {'spawn': spawn, 'good_spawns': good_spawns}
+        return jsonify(stats)
+
+    @auth_required
+    def shiny_stats_data(self):
         # shiny hour
 
         shiny_hour_temp = {}
@@ -197,24 +233,6 @@ class statistics(object):
         for dat in sorted(shiny_hour_calc):
             sht = ([self.utc2local(dat * 60 * 60) * 1000, shiny_hour_calc[dat]])
             shiny_hour.append(sht)
-
-        # good_spawns avg
-        good_spawns = []
-        data = self._db.get_best_pokemon_spawns()
-        for dat in data:
-            mon = "%03d" % dat[1]
-            monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
-            monName_raw = (get_raid_boss_cp(dat[1]))
-            monName = i8ln(monName_raw['name'])
-            if self._args.db_method == "rm":
-                lvl = calculate_mon_level(dat[6])
-            else:
-                lvl = dat[6]
-            good_spawns.append({'id': dat[1], 'iv': round(calculate_iv(dat[3], dat[4], dat[5]), 0),
-                                'lvl': lvl, 'cp': dat[7], 'img': monPic,
-                                'name': monName,
-                                'periode': datetime.datetime.fromtimestamp
-                                (self.utc2local(dat[2])).strftime(self._datetimeformat)})
 
         shiny_stats = []
         shiny_worker = {}
@@ -250,12 +268,11 @@ class statistics(object):
             shiny_stats.append({'sum': dat[0], 'shiny': dat[1], 'img': monPic, 'name': monName, 'ratio': ratio,
                                 'worker': dat[3], 'encounterid': dat[4],
                                 'periode': datetime.datetime.fromtimestamp
-                                (self.utc2local(dat[6])).strftime(self._datetimeformat)})
+                                (dat[6]).strftime(self._datetimeformat)})
 
         shiny_stats_avg = []
         for dat in shiny_avg:
             for form_dat in shiny_avg[dat]:
-
                 form_suffix = "%02d" % form_mapper(dat, form_dat)
                 mon = "%03d" % dat
                 monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
@@ -266,15 +283,95 @@ class statistics(object):
                 total_nonshiny_encounters = sum(shiny_avg[dat][form_dat]['total_nonshiny'])
                 shiny_avg_click = round(total_nonshiny_encounters / total_shiny_encounters, 0)
 
-                shiny_stats_avg.append({'name': monName, 'img': monPic, 'total_shiny_encounters': total_shiny_encounters,
-                                        'total_nonshiny_encounters': total_nonshiny_encounters, 'click_for_shiny': shiny_avg_click})
+                shiny_stats_avg.append(
+                    {'name': monName, 'img': monPic, 'total_shiny_encounters': total_shiny_encounters,
+                     'total_nonshiny_encounters': total_nonshiny_encounters, 'click_for_shiny': shiny_avg_click})
 
         shiny_stats_worker = []
         for dat in shiny_worker:
             shiny_stats_worker.append({'sum': shiny_worker[dat], 'worker': dat})
 
-        stats = {'spawn': spawn, 'good_spawns': good_spawns, 'shiny': shiny_stats, 'shiny_worker': shiny_stats_worker,
+        stats = {'shiny': shiny_stats, 'shiny_worker': shiny_stats_worker,
                  'shiny_hour': shiny_hour, 'shiny_stats_avg': shiny_stats_avg}
+        return jsonify(stats)
+
+    @logger.catch
+    @auth_required
+    def game_stats_shiny_v2(self):
+        logger.debug('game_stats_shiny_v2')
+        timestamp_from = request.args.get('from', None)
+        if (timestamp_from):
+            timestamp_from = self.local2utc(int(timestamp_from))
+            logger.debug('using timestamp_from: {}', timestamp_from)
+
+        timestamp_to = request.args.get('to', None)
+        if (timestamp_to):
+            timestamp_to = self.local2utc(int(timestamp_to))
+            logger.debug('using timestamp_to: {}', timestamp_to)
+
+        tmp_perworker_v2 = {}
+        data = self._db.statistics_get_shiny_stats_v2(timestamp_from, timestamp_to)
+        # SELECT pokemon.pokemon_id, pokemon.form, pokemon.latitude, pokemon.longitude, pokemon.gender, pokemon.costume, tr.count, tr.timestamp_scan, tr.worker, pokemon.encounter_id
+        found_shiny_mon_id = []
+        shiny_count = {}
+        mon_names = {}
+        tmp_perhour_v2 = {}
+
+        if data is None or len(data) == 0:
+            return jsonify({'empty': True})
+
+        shiny_stats_v2 = []
+        for dat in data:
+            form_suffix = "%02d" % form_mapper(dat[0], dat[1])
+            mon = "%03d" % dat[0]
+            monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
+            monName_raw = (get_raid_boss_cp(dat[0]))
+            monName = i8ln(monName_raw['name'])
+            mon_names[dat[0]] = monName
+            found_shiny_mon_id.append(mon)  # append everything now, we will set() it later to remove duplicates
+            if dat[8] not in tmp_perworker_v2:
+                tmp_perworker_v2[dat[8]] = 0
+            tmp_perworker_v2[dat[8]] += 1
+
+            if dat[0] not in shiny_count:
+                shiny_count[dat[0]] = {}
+            if dat[1] not in shiny_count[dat[0]]:
+                shiny_count[dat[0]][dat[1]] = 0
+            shiny_count[dat[0]][dat[1]] += 1
+
+            # there is later strftime which converts to local time too, can't use utc2local - it will do double shift
+            timestamp = datetime.datetime.fromtimestamp(dat[7])
+
+            if timestamp.hour in tmp_perhour_v2:
+                tmp_perhour_v2[timestamp.hour] += 1
+            else:
+                tmp_perhour_v2[timestamp.hour] = 1
+
+            shiny_stats_v2.append({'img': monPic, 'name': monName, 'worker': dat[8], 'lat': dat[2], 'lat_5': "{:.5f}".format(dat[2]), 'lng_5': "{:.5f}".format(
+                dat[3]), 'lng': dat[3], 'timestamp': timestamp.strftime(self._datetimeformat), 'form': dat[1], 'mon_id': dat[0], 'encounter_id': dat[9]})
+
+        # print(shiny_count)
+        global_shiny_stats_v2 = []
+        data = self._db.statistics_get_shiny_stats_global_v2(set(found_shiny_mon_id), timestamp_from, timestamp_to)
+        for dat in data:
+            if dat[1] in shiny_count and dat[2] in shiny_count[dat[1]]:
+                odds = round(dat[0] / shiny_count[dat[1]][dat[2]], 0)
+                form_suffix = "%02d" % form_mapper(dat[1], dat[2])
+                mon = "%03d" % dat[1]
+                monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
+                global_shiny_stats_v2.append({'name': mon_names[dat[1]], 'count': dat[0], 'img': monPic, 'shiny': shiny_count[dat[1]]
+                                              [dat[2]], 'odds': odds, 'mon_id': dat[1], 'form': dat[2], 'gender': dat[3], 'costume': dat[4]})
+
+        shiny_stats_perworker_v2 = []
+        for worker in tmp_perworker_v2:
+            shiny_stats_perworker_v2.append({'name': worker, 'count': tmp_perworker_v2[worker]})
+
+        shiny_stats_perhour_v2 = []
+        for hour in tmp_perhour_v2:
+            shiny_stats_perhour_v2.append([hour, tmp_perhour_v2[hour]])
+
+        stats = {'empty': False, 'shiny_statistics': shiny_stats_v2, 'global_shiny_statistics': global_shiny_stats_v2,
+                 'per_worker': shiny_stats_perworker_v2, 'per_hour': shiny_stats_perhour_v2}
         return jsonify(stats)
 
     def utc2local(self, ts):
@@ -282,6 +379,12 @@ class statistics(object):
         now = datetime.datetime.now()
         offset = time.mktime(now.timetuple()) - time.mktime(utc.timetuple())
         return ts + offset
+
+    def local2utc(self, ts):
+        utc = datetime.datetime.utcnow()
+        now = datetime.datetime.now()
+        offset = time.mktime(now.timetuple()) - time.mktime(utc.timetuple())
+        return ts - offset
 
     @auth_required
     def statistics_detection_worker_data(self):

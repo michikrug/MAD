@@ -43,18 +43,21 @@ class RouteManagerQuests(RouteManagerBase):
     def __init__(self, db_wrapper: DbWrapperBase, coords: List[Location], max_radius: float,
                  max_coords_within_radius: int, include_geofence: str, exclude_geofence: str,
                  routefile: str, mode=None, init: bool = False, name: str = "unknown", settings: dict = None,
-                 level: bool = False, calctype: str = "optimized"):
+                 level: bool = False, calctype: str = "optimized", joinqueue=None):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
                                   include_geofence=include_geofence,
                                   exclude_geofence=exclude_geofence,
                                   routefile=routefile, init=init,
-                                  name=name, settings=settings, mode=mode, level=level, calctype=calctype
+                                  name=name, settings=settings, mode=mode, level=level, calctype=calctype,
+                                  joinqueue=joinqueue
                                   )
         self.starve_route = False
         self._stoplist: List[Location] = []
 
         self._shutdown_route: bool = False
+        self._routecopy: List[Location] = []
+        self._tempinit: bool = False
 
     def _get_coords_after_finish_route(self) -> bool:
         if self._level:
@@ -155,7 +158,6 @@ class RouteManagerQuests(RouteManagerBase):
                 self.delay_after_timestamp_prio = None
                 self.starve_route = False
                 self._first_round_finished = False
-                self._tempinit: bool = False
                 self._start_check_routepools()
 
                 if self.init:
@@ -207,6 +209,8 @@ class RouteManagerQuests(RouteManagerBase):
         finally:
             self._manager_mutex.release()
 
+        return True
+
     def _recalc_stop_route(self, stops):
         self._clear_coords()
         self.add_coords_list(stops)
@@ -219,16 +223,17 @@ class RouteManagerQuests(RouteManagerBase):
 
     def _quit_route(self):
         logger.info('Shutdown Route {}', str(self.name))
-        self._is_started = False
-        self._round_started_time = None
-        if self.init:
-            self._first_started = False
-        self._restore_original_route()
-        self._shutdown_route = False
-        if self._check_routepools_thread is not None:
-            self._stop_update_thread.set()
-            self._check_routepools_thread = None
-            self._stop_update_thread.clear()
+        if self._is_started:
+            self._is_started = False
+            self._round_started_time = None
+            if self.init:
+                self._first_started = False
+            self._restore_original_route()
+            self._shutdown_route = False
+
+        # clear not processed stops
+        self._stops_not_processed.clear()
+        self._coords_to_be_ignored.clear()
 
     def _check_coords_before_returning(self, lat, lng):
         if self.init:

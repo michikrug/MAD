@@ -1001,8 +1001,8 @@ class config(object):
 
         if this_area == None:
             return render_template('showmonsidpicker.html',
-                                   error_msg="No area (" + edit + " with mode: " +
-                                   type + ") found in mappings, add it first.",
+                                   error_msg="No area (" + edit + " with mode: " + type +
+                                   ") found in mappings, add it first.",
                                    header=header, title=title)
 
         title = "Mons ID Picker for " + edit
@@ -1014,8 +1014,7 @@ class config(object):
             if not new_mons_list:
                 return redirect("/showsettings", code=302)
             # force single 'string' value to tuple. Not pretty, but it works.
-            mapping["monivlist"][this_area_index]["mon_ids_iv"] = ast.literal_eval(
-                new_mons_list + ",")
+            mapping["monivlist"][this_area_index]["mon_ids_iv"] = ast.literal_eval(new_mons_list + ",")
 
             with open(self._args.mappings, 'w') as outfile:
                 json.dump(mapping, outfile, indent=4, sort_keys=True)

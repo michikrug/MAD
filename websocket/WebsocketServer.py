@@ -7,6 +7,7 @@ import queue
 import sys
 import time
 from asyncio import Handle
+from queue import Empty
 from threading import Event, Lock, Thread, current_thread
 from typing import Optional
 
@@ -90,7 +91,10 @@ class WebsocketServer(object):
                 continue
             if next_item is not None:
                 logger.info("Trying to join worker thread")
-                next_item.join()
+                next_item.join(10)
+                if next_item.isAlive():
+                    logger.error("Error while joining worker thread - requeue it")
+                    self.__worker_shutdown_queue.put(next_item)
                 self.__worker_shutdown_queue.task_done()
                 logger.info("Done joining worker thread")
 
@@ -250,8 +254,7 @@ class WebsocketServer(object):
                     self.__mapping_manager.set_devicesetting_value_of(
                         origin, 'last_cleanup_time', None)
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'job', False)
-                    # give the settings a moment... (dirty "workaround" against race condition)
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(1)  # give the settings a moment... (dirty "workaround" against race condition)
                 walker_index = devicesettings.get('walker_area_index', 0)
 
                 if walker_index > 0:
@@ -308,10 +311,8 @@ class WebsocketServer(object):
                              str(origin), devicesettings)
                 logger.info('{} using walker area {} [{}/{}]', str(origin), str(
                     walker_area_name), str(walker_index + 1), str(len(walker_area_array)))
-                walker_routemanager_mode = self.__mapping_manager.routemanager_get_mode(
-                    walker_area_name)
-                self.__mapping_manager.set_devicesetting_value_of(
-                    origin, 'walker_area_index', walker_index + 1)
+                walker_routemanager_mode = self.__mapping_manager.routemanager_get_mode(walker_area_name)
+                self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', walker_index + 1)
                 self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
                 if walker_index >= len(walker_area_array) - 1:
                     self.__mapping_manager.set_devicesetting_value_of(
@@ -377,7 +378,7 @@ class WebsocketServer(object):
         finally:
             async with self.__users_mutex:
                 self.__users_connecting.remove(origin)
-            await asyncio.sleep(20)
+            await asyncio.sleep(5)
         return True
 
     async def __unregister(self, websocket_client_connection):

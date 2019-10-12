@@ -17,13 +17,13 @@ class RouteManagerMon(RouteManagerBase):
 
     def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, include_geofence,
                  exclude_geofence, routefile, mode=None, coords_spawns_known=False, init=False,
-                 name="unknown", settings=None):
+                 name="unknown", settings=None, joinqueue=None):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
                                   include_geofence=include_geofence,
                                   exclude_geofence=exclude_geofence,
                                   routefile=routefile, init=init,
-                                  name=name, settings=settings, mode=mode
+                                  name=name, settings=settings, mode=mode, joinqueue=joinqueue
                                   )
         self.coords_spawns_known = coords_spawns_known
 
@@ -67,14 +67,6 @@ class RouteManagerMon(RouteManagerBase):
 
     def _quit_route(self):
         logger.info('Shutdown Route {}', str(self.name))
-        if self._update_prio_queue_thread is not None:
-            self._stop_update_thread.set()
-            self._update_prio_queue_thread = None
-            self._stop_update_thread.clear()
-        if self._check_routepools_thread is not None:
-            self._stop_update_thread.set()
-            self._check_routepools_thread = None
-            self._stop_update_thread.clear()
         self._is_started = False
         self._round_started_time = None
 

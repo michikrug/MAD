@@ -183,7 +183,7 @@ def generate_coords_from_geofence(mapping_manager, fence):
             coordinates.append(coords)
 
     for coord in coordinates[0]:
-        fence_string.append(str(coord[0]) + " " + str(coord[1]))
+        fence_string.append(str(coord[1]) + " " + str(coord[0]))
 
     fence_string.append(fence_string[0])
     return ",".join(fence_string)

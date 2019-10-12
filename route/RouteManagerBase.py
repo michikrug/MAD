@@ -7,22 +7,20 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-
+from operator import itemgetter
+from queue import Empty, Queue
 from threading import Event, Lock, RLock, Thread
 from typing import Dict, List, Optional, Tuple
-from queue import Queue, Empty
 
 import numpy as np
-
 from db.dbWrapperBase import DbWrapperBase
 from geofence.geofenceHelper import GeofenceHelper
-from route.routecalc.ClusteringHelper import ClusteringHelper
 from route.routecalc.calculate_route import getJsonRoute
+from route.routecalc.ClusteringHelper import ClusteringHelper
 from utils.collections import Location
+from utils.geo import get_distance_of_two_points_in_meters
 from utils.logging import logger
 from utils.walkerArgs import parseArgs
-from utils.geo import get_distance_of_two_points_in_meters
-from operator import itemgetter
 
 args = parseArgs()
 
@@ -48,7 +46,7 @@ class RouteManagerBase(ABC):
     def __init__(self, db_wrapper: DbWrapperBase, coords: List[Location], max_radius: float,
                  max_coords_within_radius: int, path_to_include_geofence: str, path_to_exclude_geofence: str,
                  routefile: str, mode=None, init: bool = False, name: str = "unknown", settings: dict = None,
-                 level: bool = False, calctype: str = "optimized", joinqueue = None):
+                 level: bool = False, calctype: str = "optimized", joinqueue=None):
         self.db_wrapper: DbWrapperBase = db_wrapper
         self.init: bool = init
         self.name: str = name
@@ -150,7 +148,8 @@ class RouteManagerBase(ABC):
         self._quit_route()
         self._stop_update_thread.set()
 
-        if self._joinqueue is not None: self._joinqueue.set_queue(self.name)
+        if self._joinqueue is not None:
+            self._joinqueue.set_queue(self.name)
         logger.info("Shutdown of route {} completed".format(str(self.name)))
 
     def _init_route_queue(self):
@@ -336,12 +335,12 @@ class RouteManagerBase(ABC):
     def _get_round_finished_string(self):
         round_finish_time = datetime.now()
         round_completed_in = (
-                "%d hours, %d minutes, %d seconds" % (
-            self.dhms_from_seconds(
-                self.date_diff_in_seconds(
-                    round_finish_time, self._round_started_time)
+            "%d hours, %d minutes, %d seconds" % (
+                self.dhms_from_seconds(
+                    self.date_diff_in_seconds(
+                        round_finish_time, self._round_started_time)
+                )
             )
-        )
         )
         return round_completed_in
 
@@ -504,7 +503,8 @@ class RouteManagerBase(ABC):
                 "{}: Checking if a location is available...", str(self.name))
             with self._manager_mutex:
                 got_location = self._prio_queue is not None and len(self._prio_queue) > 0 or self.mode != 'iv_mitm'
-                if not got_location: time.sleep(1)
+                if not got_location:
+                    time.sleep(1)
 
         logger.debug(
             "{}: Location available, acquiring lock and trying to return location", self.name)
@@ -513,10 +513,10 @@ class RouteManagerBase(ABC):
             # if that is not the case, simply increase the index in route and return the location on route
 
             # determine whether we move to the next location or the prio queue top's item
-            if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False)
-                                                                  or self.starve_route)
-                                                                 and self._prio_queue and len(self._prio_queue) > 0
-                                                                 and self._prio_queue[0][0] < time.time())):
+            if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False) or
+                                                                  self.starve_route) and
+                                                                 self._prio_queue and len(self._prio_queue) > 0 and
+                                                                 self._prio_queue[0][0] < time.time())):
                 logger.debug("{}: Priority event", self.name)
                 next_coord = heapq.heappop(self._prio_queue)[1]
                 if self._other_worker_closer_to_prioq(next_coord, origin):
@@ -743,7 +743,8 @@ class RouteManagerBase(ABC):
             sorted_routepools = sorted(reduced_routepools, key=itemgetter(1))
 
             logger.debug("Checking routepools in the following order: {}", sorted_routepools)
-            compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
+
+            def compare(x, y): return collections.Counter(x) == collections.Counter(y)
             for origin, time_added in sorted_routepools:
                 entry: RoutePoolEntry = self._routepool[origin]
                 logger.debug("Checking subroute of {}", origin)
@@ -956,4 +957,3 @@ class RouteManagerBase(ABC):
 
         logger.debug('Open Coords from workers: {}'.format(str(coordlist)))
         return coordlist
-

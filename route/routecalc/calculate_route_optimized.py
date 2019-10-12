@@ -3,7 +3,9 @@ import multiprocessing
 import secrets
 
 from utils.logging import logger
+
 from .util import *
+
 
 def route_calc_impl(lessCoordinates, num_processes):
     init_temp = 100

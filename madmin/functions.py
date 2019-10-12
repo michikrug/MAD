@@ -1,15 +1,18 @@
-import json
 import datetime
-import os
 import glob
-from flask import (make_response, request)
+import json
+import os
 from functools import update_wrapper, wraps
 from math import floor
-from utils.walkerArgs import parseArgs
-from utils.functions import (creation_date)
 from pathlib import Path
 
+from flask import make_response, request
+
+from utils.functions import creation_date
+from utils.walkerArgs import parseArgs
+
 mapping_args = parseArgs()
+
 
 def auth_required(func):
     @wraps(func)

@@ -1,17 +1,18 @@
-import os
-import time
-import re
-
-import xml.etree.ElementTree as ET
-from utils.logging import logger
-from utils.MappingManager import MappingManager
-from typing import Optional, List
-from utils.collections import Login_PTC, Login_GGL
-from enum import Enum
-import numpy as np
-from utils.madGlobals import ScreenshotType
-from PIL import Image
 import gc
+import os
+import re
+import time
+import xml.etree.ElementTree as ET
+from enum import Enum
+from typing import List, Optional
+
+import numpy as np
+from PIL import Image
+from utils.collections import Login_GGL, Login_PTC
+from utils.logging import logger
+from utils.madGlobals import ScreenshotType
+from utils.MappingManager import MappingManager
+
 
 class ScreenType(Enum):
     UNDEFINED = -1
@@ -36,6 +37,7 @@ class ScreenType(Enum):
     BLACK = 110
     CLOSE = 500
     DISABLED = 999
+
 
 class LoginType(Enum):
     UNKNOWN = -1
@@ -103,7 +105,7 @@ class WordToScreenMatching(object):
             logger.info('Cannot return new account - no one is set')
             return None
         if self._accountindex <= self._accountcount - 1:
-            logger.info('Request next Account - Using Nr. {}'.format(self._accountindex+1))
+            logger.info('Request next Account - Using Nr. {}'.format(self._accountindex + 1))
             self._accountindex += 1
         elif self._accountindex > self._accountcount - 1:
             logger.info('Request next Account - Restarting with Nr. 1')
@@ -113,12 +115,12 @@ class WordToScreenMatching(object):
 
         if self._logintype == LoginType.ptc:
             logger.info('Using PTC Account: {}'.format
-                        (self.censor_account(self._PTC_accounts[self._accountindex-1].username, isPTC=True)))
-            return self._PTC_accounts[self._accountindex-1]
+                        (self.censor_account(self._PTC_accounts[self._accountindex - 1].username, isPTC=True)))
+            return self._PTC_accounts[self._accountindex - 1]
         else:
             logger.info('Using GGL Account: {}'.format
-                        (self.censor_account(self._GGL_accounts[self._accountindex-1].username)))
-            return self._GGL_accounts[self._accountindex-1]
+                        (self.censor_account(self._GGL_accounts[self._accountindex - 1].username)))
+            return self._GGL_accounts[self._accountindex - 1]
 
     def return_memory_account_count(self):
         return self._accountcount
@@ -172,7 +174,7 @@ class WordToScreenMatching(object):
             return ScreenType.DISABLED
         else:
             if not self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
-                                                delayAfter=2):
+                                        delayAfter=2):
                 logger.error("_check_windows: Failed getting screenshot")
                 return ScreenType.ERROR
 
@@ -282,10 +284,13 @@ class WordToScreenMatching(object):
             temp_dict: dict = {}
             n_boxes = len(globaldict['level'])
             for i in range(n_boxes):
-                if 'Facebook' in (globaldict['text'][i]): temp_dict['Facebook'] = globaldict['top'][i] / diff
-                if 'CLUB' in (globaldict['text'][i]): temp_dict['CLUB'] = globaldict['top'][i] / diff
+                if 'Facebook' in (globaldict['text'][i]):
+                    temp_dict['Facebook'] = globaldict['top'][i] / diff
+                if 'CLUB' in (globaldict['text'][i]):
+                    temp_dict['CLUB'] = globaldict['top'][i] / diff
                 # french ...
-                if 'DRESSEURS' in (globaldict['text'][i]): temp_dict['CLUB'] = globaldict['top'][i] / diff
+                if 'DRESSEURS' in (globaldict['text'][i]):
+                    temp_dict['CLUB'] = globaldict['top'][i] / diff
 
                 if self.get_devicesettings_value('logintype', 'google') == 'ptc':
                     self._nextscreen = ScreenType.PTC
@@ -446,8 +451,8 @@ class WordToScreenMatching(object):
 
                     match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
 
-                    click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1)))/2)
-                    click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2)))/2)
+                    click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
+                    click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
                     logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                     self._communicator.click(click_x, click_y)
                     time.sleep(2)
@@ -501,24 +506,24 @@ class WordToScreenMatching(object):
         if devicemappings is None:
             return default_value
         return devicemappings.get("settings", {}).get(key, default_value)
-    
+
     def censor_account(self, emailaddress, isPTC=False):
         # PTC account
         if isPTC:
-            return (emailaddress[0:2]+"***"+emailaddress[-2:])
+            return (emailaddress[0:2] + "***" + emailaddress[-2:])
         # GGL - make sure we have @ there.
         # If not it could be wrong match, so returning original
         if '@' in emailaddress:
             d = emailaddress.split("@", 1)
             # long local-part, censor middle part only
             if len(d[0]) > 6:
-                return (d[0][0:2]+"***"+d[0][-2:]+"@"+d[1])
+                return (d[0][0:2] + "***" + d[0][-2:] + "@" + d[1])
             # domain only, just return
             elif len(d[0]) == 0:
                 return (emailaddress)
             # local-part is short, asterix for each char
             else:
-                return ("*"*len(d[0])+"@"+d[1])
+                return ("*" * len(d[0]) + "@" + d[1])
         return emailaddress
 
     def get_screenshot_path(self, fileaddon: bool = False) -> str:
@@ -536,7 +541,7 @@ class WordToScreenMatching(object):
             logger.info("Creating debugscreen: {}".format(screenshot_filename))
 
         return os.path.join(
-                self._applicationArgs.temp_path, screenshot_filename)
+            self._applicationArgs.temp_path, screenshot_filename)
 
     def _takeScreenshot(self, delayAfter=0.0, delayBefore=0.0, errorscreen: bool = False):
         logger.debug("Taking screenshot...")
@@ -561,7 +566,3 @@ class WordToScreenMatching(object):
             self._lastScreenshotTaken = time.time()
             time.sleep(delayAfter)
             return True
-
-
-
-

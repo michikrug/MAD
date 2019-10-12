@@ -1,16 +1,17 @@
-import time
 import math
-
+import time
 from threading import Event
 from typing import Optional
-from utils.logging import logger
-from websocket.communicator import Communicator
-from utils.routeutil import check_walker_value_type
-from utils.MappingManager import MappingManager
-from mitm_receiver.MitmMapper import MitmMapper
+
 from db.dbWrapperBase import DbWrapperBase
-from utils.madGlobals import (WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException,
-                              InternalStopWorkerException)
+from mitm_receiver.MitmMapper import MitmMapper
+from utils.logging import logger
+from utils.madGlobals import (InternalStopWorkerException,
+                              WebsocketWorkerRemovedException,
+                              WebsocketWorkerTimeoutException)
+from utils.MappingManager import MappingManager
+from utils.routeutil import check_walker_value_type
+from websocket.communicator import Communicator
 
 
 class WorkerConfigmode(object):
@@ -84,7 +85,7 @@ class WorkerConfigmode(object):
             countdown = self._walker['walkervalue']
             if not countdown:
                 logger.error(
-                        "No Value for Mode - check your settings! Killing worker")
+                    "No Value for Mode - check your settings! Killing worker")
                 return False
             if self.workerstart is None:
                 self.workerstart = math.floor(time.time())
@@ -97,7 +98,7 @@ class WorkerConfigmode(object):
             exittime = self._walker['walkervalue']
             if not exittime or ':' not in exittime:
                 logger.error(
-                        "No or wrong Value for Mode - check your settings! Killing worker")
+                    "No or wrong Value for Mode - check your settings! Killing worker")
                 return False
             return check_walker_value_type(exittime)
         elif mode == "round":
@@ -108,7 +109,7 @@ class WorkerConfigmode(object):
             period = self._walker['walkervalue']
             if len(period) == 0:
                 logger.error(
-                        "No Value for Mode - check your settings! Killing worker")
+                    "No Value for Mode - check your settings! Killing worker")
                 return False
             return check_walker_value_type(period)
         elif mode == "coords":
@@ -120,7 +121,7 @@ class WorkerConfigmode(object):
             logger.debug("Checking walker mode 'idle'")
             if len(self._walker['walkervalue']) == 0:
                 logger.error(
-                        "Wrong Value for mode - check your settings! Killing worker")
+                    "Wrong Value for mode - check your settings! Killing worker")
                 return False
             sleeptime = self._walker['walkervalue']
             logger.info('{} going to sleep', str(self._id))
@@ -153,7 +154,7 @@ class WorkerConfigmode(object):
             if attempts > 10:
                 return False
             stop_result = self._communicator.stopApp(
-                    "com.nianticlabs.pokemongo")
+                "com.nianticlabs.pokemongo")
             time.sleep(1)
             pogoTopmost = self._communicator.isPogoTopmost()
         return stop_result
@@ -189,7 +190,8 @@ class WorkerConfigmode(object):
                 logger.error("Worker {} not get injected in time - reboot", str(self._id))
                 self._reboot()
                 return False
-            logger.info("PogoDroid on worker {} didn't connect yet. Probably not injected? (Count: {})", str(self._id), str(self._not_injected_count))
+            logger.info("PogoDroid on worker {} didn't connect yet. Probably not injected? (Count: {})",
+                        str(self._id), str(self._not_injected_count))
             if self._stop_worker_event.isSet():
                 logger.error("Worker {} get killed while waiting for injection", str(self._id))
                 return False

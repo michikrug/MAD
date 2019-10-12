@@ -1,7 +1,8 @@
+import calendar
 import datetime
 import os
-import calendar
 import time
+
 from PIL import Image
 
 with open('madmin/static/vars/template/phone.tpl', 'r') as file:
@@ -81,5 +82,3 @@ def get_now_timestamp():
 def ConvertDateTimeToLocal(timestampValue):
     offset = datetime.datetime.now() - datetime.datetime.utcnow()
     return datetime.datetime.fromtimestamp(timestampValue) + offset + datetime.timedelta(seconds=1)
-
-

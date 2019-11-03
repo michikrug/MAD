@@ -9,7 +9,6 @@ from typing import List, Optional
 import mysql
 from bitstring import BitArray
 from mysql.connector.pooling import MySQLConnectionPool
-
 from utils.collections import Location
 from utils.logging import logger
 from utils.questGen import questtask

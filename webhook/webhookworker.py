@@ -1,14 +1,14 @@
 import json
 import time
-from typing import Optional, List
+from typing import List, Optional
 
 import requests
 
 from geofence.geofenceHelper import GeofenceHelper
-from utils.MappingManager import MappingManager
 from utils.gamemechanicutil import calculate_mon_level, get_raid_boss_cp
 from utils.logging import logger
 from utils.madGlobals import terminate_mad
+from utils.MappingManager import MappingManager
 from utils.questGen import generate_quest
 from utils.s2Helper import S2Helper
 
@@ -365,9 +365,9 @@ class WebhookWorker:
                 continue
 
             if (
-                not self.__args.pokemon_webhook_nonivs
-                and mon["pokemon_id"] in self.__IV_MON
-                and (mon["individual_attack"] is None)
+                not self.__args.pokemon_webhook_nonivs and
+                mon["pokemon_id"] in self.__IV_MON and
+                (mon["individual_attack"] is None)
             ):
                 # skipping this mon since IV has not been scanned yet
                 continue
@@ -426,8 +426,8 @@ class WebhookWorker:
                 mon_payload["rarity"] = pokemon_rarity
 
             if (
-                mon["weather_boosted_condition"] is not None
-                and mon["weather_boosted_condition"] > 0
+                mon["weather_boosted_condition"] is not None and
+                mon["weather_boosted_condition"] > 0
             ):
                 if self.__args.quest_webhook_flavor == "default":
                     mon_payload["boosted_weather"] = mon["weather_boosted_condition"]

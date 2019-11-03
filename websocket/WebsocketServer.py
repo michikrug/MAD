@@ -1,24 +1,23 @@
 import asyncio
 import collections
 import functools
+import logging
 import math
 import queue
-from queue import Empty
 import sys
 import time
-import logging
 from asyncio import Handle
-from threading import Event, Thread, current_thread, Lock
+from queue import Empty
+from threading import Event, Lock, Thread, current_thread
 from typing import Optional
 
 import websockets
-
-from utils.MappingManager import MappingManager
 from utils.authHelper import check_auth
-from utils.logging import logger, InterceptHandler
+from utils.logging import InterceptHandler, logger
 from utils.madGlobals import (WebsocketWorkerRemovedException,
                               WebsocketWorkerTimeoutException,
                               WrongAreaInWalker)
+from utils.MappingManager import MappingManager
 from utils.routeutil import pre_check_value
 from worker.WorkerConfigmode import WorkerConfigmode
 from worker.WorkerMITM import WorkerMITM
@@ -206,7 +205,7 @@ class WebsocketServer(object):
                     "Worker with origin {} is already running, killing the running one and have client reconnect",
                     str(origin))
                 self.__current_users.get(origin)[1].stop_worker()
-                ## todo: do this better :D
+                # todo: do this better :D
                 logger.debug("Old worker thread is still alive - waiting 20 seconds")
                 await asyncio.sleep(20)
                 logger.info("Reconnect ...")
@@ -223,9 +222,9 @@ class WebsocketServer(object):
                 return False
             logger.info("Starting worker {}".format(origin))
             if self._configmode:
-                worker = WorkerConfigmode(self.args, origin, self, walker = None,
-                                          mapping_manager = self.__mapping_manager, mitm_mapper = self.__mitm_mapper,
-                                          db_wrapper = self.__db_wrapper, routemanager_name=None)
+                worker = WorkerConfigmode(self.args, origin, self, walker=None,
+                                          mapping_manager=self.__mapping_manager, mitm_mapper=self.__mitm_mapper,
+                                          db_wrapper=self.__db_wrapper, routemanager_name=None)
                 logger.debug("Starting worker for {}", str(origin))
                 new_worker_thread = Thread(
                     name='worker_%s' % origin, target=worker.start_worker)
@@ -247,7 +246,7 @@ class WebsocketServer(object):
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'last_action_time', None)
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'last_cleanup_time', None)
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'job', False)
-                    await asyncio.sleep(1) # give the settings a moment... (dirty "workaround" against race condition)
+                    await asyncio.sleep(1)  # give the settings a moment... (dirty "workaround" against race condition)
                 walker_index = devicesettings.get('walker_area_index', 0)
 
                 if walker_index > 0:
@@ -282,8 +281,8 @@ class WebsocketServer(object):
 
                 devicesettings = self.__mapping_manager.get_devicesettings_of(origin)
                 logger.debug("Checking walker_area_index length")
-                if (devicesettings.get("walker_area_index", None) is None
-                        or devicesettings['walker_area_index'] >= len(walker_area_array)):
+                if (devicesettings.get("walker_area_index", None) is None or
+                        devicesettings['walker_area_index'] >= len(walker_area_array)):
                     # check if array is smaller than expected - f.e. on the fly changes in mappings.json
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', 0)
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
@@ -349,7 +348,7 @@ class WebsocketServer(object):
                 new_worker_thread.daemon = True
                 async with self.__users_mutex:
                     self.__current_users[origin] = [new_worker_thread,
-                                                worker, websocket_client_connection, 0]
+                                                    worker, websocket_client_connection, 0]
                 new_worker_thread.start()
         except WrongAreaInWalker:
             logger.error('Unknown Area in Walker settings - check config')
@@ -449,8 +448,8 @@ class WebsocketServer(object):
         :return:
         """
         async with self.__users_mutex:
-            if worker_id in self.__current_users.keys() and (worker_instance is None
-                                                             or self.__current_users[worker_id][1] == worker_instance):
+            if worker_id in self.__current_users.keys() and (worker_instance is None or
+                                                             self.__current_users[worker_id][1] == worker_instance):
                 if self.__current_users[worker_id][2].open:
                     logger.info("Calling close for {}...", str(worker_id))
                     await self.__current_users[worker_id][2].close()
@@ -461,7 +460,7 @@ class WebsocketServer(object):
         logger.debug2("Cleanup of {} called with ref {}".format(worker_id, str(worker_instance)))
         with self.__loop_mutex:
             future = asyncio.run_coroutine_threadsafe(
-                    self.__internal_clean_up_user(worker_id, worker_instance), self.__loop)
+                self.__internal_clean_up_user(worker_id, worker_instance), self.__loop)
         future.result()
 
     async def __on_message(self, message):
@@ -567,7 +566,7 @@ class WebsocketServer(object):
                              str(id), str(result.strip()))
             else:
                 logger.debug("Received binary data to {}, starting with {}", str(
-                        id), str(result[:10]))
+                    id), str(result[:10]))
         return result
 
     def send_and_wait(self, id, worker_instance, message, timeout, byte_command: int = None):
@@ -581,7 +580,7 @@ class WebsocketServer(object):
             logger.debug("Appending send_and_wait to {}".format(str(self.__loop)))
             with self.__loop_mutex:
                 future = asyncio.run_coroutine_threadsafe(
-                        self.__send_and_wait_internal(id, worker_instance, message, timeout, byte_command=byte_command), self.__loop)
+                    self.__send_and_wait_internal(id, worker_instance, message, timeout, byte_command=byte_command), self.__loop)
             result = future.result()
         except WebsocketWorkerRemovedException:
             logger.error("Worker {} was removed, propagating exception".format(id))
@@ -606,7 +605,7 @@ class WebsocketServer(object):
                 new_count = self.__current_users[id][3] + 1
                 self.__current_users[id][3] = new_count
             else:
-                    new_count = 100
+                new_count = 100
         return new_count
 
     async def __remove_request(self, message_id):

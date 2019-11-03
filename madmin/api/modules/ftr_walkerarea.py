@@ -1,5 +1,7 @@
-from .. import apiHandler
 import flask
+
+from .. import apiHandler
+
 
 class APIWalkerArea(apiHandler.ResourceHandler):
     config_section = 'walkerarea'

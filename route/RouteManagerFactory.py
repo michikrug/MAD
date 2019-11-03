@@ -5,6 +5,7 @@ from route.RouteManagerMon import RouteManagerMon
 from route.RouteManagerQuests import RouteManagerQuests
 from route.RouteManagerRaids import RouteManagerRaids
 
+
 class RouteManagerFactory:
     @staticmethod
     def get_routemanager(db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
@@ -42,4 +43,3 @@ class RouteManagerFactory:
         else:
             raise RuntimeError("Invalid mode found in mapping parser.")
         return route_manager
-

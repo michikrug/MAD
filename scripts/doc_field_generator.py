@@ -1,9 +1,11 @@
 # Run in mad root directory
 # python3 -b scripts/doc_field_generator.py
-import sys
 import os
-sys.path.append(os.getcwd())
+import sys
+
 import madmin.api
+
+sys.path.append(os.getcwd())
 
 EXPECTED_TYPES = {
     str: 'String',
@@ -12,6 +14,7 @@ EXPECTED_TYPES = {
     list: 'Comma-delimited list',
     bool: 'Boolean'
 }
+
 
 def print_api_doc(elem):
     if 'fields' in elem:
@@ -24,6 +27,7 @@ def print_api_doc(elem):
         print('| Field Name | Type  | Required  | Description   |')
         print('| --         | --    | --        | --            |')
         print_section(elem['settings'])
+
 
 def print_section(sect):
     keys = sorted(sect.keys())
@@ -38,8 +42,10 @@ def print_section(sect):
         print('|%s|%s|%s|%s|' % tuple(args))
     print('')
 
+
 def safe_convert(thing):
     return thing.replace('|', '\|')
+
 
 for module_name, elem in madmin.api.valid_modules.items():
     print('# %s' % (module_name))
@@ -51,4 +57,4 @@ for module_name, elem in madmin.api.valid_modules.items():
         for mode_name in keys:
             print('# %s' % mode_name)
             print_api_doc(config[mode_name])
-    print('\n\n') 
+    print('\n\n')

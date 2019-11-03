@@ -1,13 +1,15 @@
+import glob
 import json
 import os
-import glob
 import time
 from datetime import datetime, timedelta
 from enum import Enum
 from multiprocessing import Queue
-from threading import RLock, Thread
-from utils.logging import logger
 from queue import Empty
+from threading import RLock, Thread
+
+from utils.logging import logger
+
 
 class jobType(Enum):
     INSTALLATION = 0
@@ -65,7 +67,7 @@ class deviceUpdater(object):
                     peronal_cmd = json.loads(personal_command.read())
                 for command in peronal_cmd:
                     if command in self._commands:
-                         logger.error("Command {} already exist - skipping".format(str(command)))
+                        logger.error("Command {} already exist - skipping".format(str(command)))
                     else:
                         logger.info('Loading personal command: {}'.format(command))
                         self._commands[command] = peronal_cmd[command]
@@ -96,7 +98,7 @@ class deviceUpdater(object):
                                                                                         'flex'),
                                                algovalue=self._globaljoblog[globalid].get('algovalue',
                                                                                           0)) \
-                       + waittime
+                    + waittime
 
                 processtime = datetime.timestamp(datetime.now() + timedelta(minutes=algo))
 
@@ -157,7 +159,7 @@ class deviceUpdater(object):
                     # breakup job because last job in chain is faulty
                     logger.error(
                         'Breakup job {} on device {} - File/Job: {} - previous job in chain was broken (ID: {})'
-                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                     self.write_status_log(str(id_), field='status', value='terminated')
                     self.send_webhook(id_=id_, status=jobReturn.TERMINATED)
                     continue
@@ -237,7 +239,7 @@ class deviceUpdater(object):
                             errorcount += 1
                             logger.error(
                                 'Cannot start job {} on device {} - File/Job: {} - Device not connected (ID: {})'
-                                    .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                .format(str(jobtype), str(origin), str(file_), str(id_)))
                             self._globaljoblog[globalid]['laststatus'] = 'not connected'
                             self.write_status_log(str(id_), field='laststatus', value='not connected')
                             self._globaljoblog[globalid]['lastjobid'] = id_
@@ -252,7 +254,7 @@ class deviceUpdater(object):
                                 if self.start_job_type(item, jobtype, temp_comm):
                                     logger.info(
                                         'Job {} executed successfully - Device {} - File/Job {} (ID: {})'
-                                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                                     self.write_status_log(str(id_), field='status', value='success')
                                     self.write_status_log(str(id_), field='laststatus', value='success')
                                     self._globaljoblog[globalid]['laststatus'] = 'success'
@@ -262,7 +264,7 @@ class deviceUpdater(object):
                                 else:
                                     logger.error(
                                         'Job {} could not be executed successfully - Device {} - File/Job {} (ID: {})'
-                                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                                     errorcount += 1
                                     self._globaljoblog[globalid]['laststatus'] = 'failure'
                                     self.write_status_log(str(id_), field='laststatus', value='failure')
@@ -283,8 +285,8 @@ class deviceUpdater(object):
                                 jobstatus = jobReturn.FAILURE
 
                     # check jobstatus and readd if possible
-                    if jobstatus != jobReturn.SUCCESS and (jobstatus == jobReturn.NOCONNECT
-                                                           and self._args.job_restart_notconnect == 0):
+                    if jobstatus != jobReturn.SUCCESS and (jobstatus == jobReturn.NOCONNECT and
+                                                           self._args.job_restart_notconnect == 0):
                         logger.error("Job for {} (File/Job: {} - Type {}) failed 3 times in row - aborting (ID: {})"
                                      .format(str(origin), str(file_), str(jobtype), str(id_)))
                         self._globaljoblog[globalid]['laststatus'] = 'faulty'
@@ -456,7 +458,8 @@ class deviceUpdater(object):
 
         else:
             for job in self._log.copy():
-                if not self._log[job].get('redo', False): self.delete_log_id(job)
+                if not self._log[job].get('redo', False):
+                    self.delete_log_id(job)
 
     def send_webhook(self, id_, status):
         if not self._log[str(id_)]['auto']:

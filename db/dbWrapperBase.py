@@ -393,7 +393,7 @@ class DbWrapperBase(ABC):
             "DbWrapperBase::create_quest_database_if_not_exists called")
         logger.debug('Creating hash db in database')
 
-        query = (' Create table if not exists trs_quest ( ' +
+        query = (' Create table IF NOT EXISTS trs_quest ( ' +
                  ' GUID varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,' +
                  ' quest_type tinyint(3) NOT NULL, ' +
                  ' quest_timestamp int(11) NOT NULL,' +
@@ -740,7 +740,7 @@ class DbWrapperBase(ABC):
             "WHERE calc_endminsec IS NOT NULL "
             "AND (latitude >= {} AND longitude >= {} AND latitude <= {} AND longitude <= {}) "
             "AND DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') BETWEEN DATE_FORMAT(DATE_ADD(NOW(), "
-            " INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') "
+            "INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') "
             "AND DATE_FORMAT(DATE_ADD(NOW(), INTERVAL if(spawndef=15,70,40) MINUTE),'%i:%s')"
         ).format(minLat, minLon, maxLat, maxLon)
 
@@ -839,7 +839,7 @@ class DbWrapperBase(ABC):
         logger.debug(
             "DbWrapperBase::create_status_database_if_not_exists called")
 
-        query = (' Create table if not exists trs_status (  '
+        query = (' Create table IF NOT EXISTS trs_status (  '
                  'origin VARCHAR(50) NOT NULL , '
                  ' currentPos VARCHAR(50) NULL DEFAULT NULL, '
                  ' lastPos VARCHAR(50) NULL DEFAULT NULL, '
@@ -866,7 +866,7 @@ class DbWrapperBase(ABC):
         logger.debug(
             "DbWrapperBase::create_statistics_databases_if_not_exists called")
 
-        query = ('CREATE TABLE if not exists trs_stats_location_raw ( '
+        query = ('CREATE TABLE IF NOT EXISTS trs_stats_location_raw ( '
                  ' id int(11) AUTO_INCREMENT,'
                  ' worker varchar(100) NOT NULL,'
                  ' lat double NOT NULL,'
@@ -886,7 +886,7 @@ class DbWrapperBase(ABC):
 
         self.execute(query, commit=True)
 
-        query = ('CREATE TABLE if not exists trs_stats_location ('
+        query = ('CREATE TABLE IF NOT EXISTS trs_stats_location ('
                  ' id int(11) AUTO_INCREMENT,'
                  ' worker varchar(100) NOT NULL,'
                  ' timestamp_scan int(11) NOT NULL,'
@@ -899,7 +899,7 @@ class DbWrapperBase(ABC):
 
         self.execute(query, commit=True)
 
-        query = ('CREATE TABLE if not exists trs_stats_detect_raw ('
+        query = ('CREATE TABLE IF NOT EXISTS trs_stats_detect_raw ('
                  ' id int(11) AUTO_INCREMENT,'
                  ' worker varchar(100) NOT NULL,'
                  ' type_id varchar(100) NOT NULL,'
@@ -912,7 +912,7 @@ class DbWrapperBase(ABC):
 
         self.execute(query, commit=True)
 
-        query = ('CREATE TABLE if not exists trs_stats_detect ('
+        query = ('CREATE TABLE IF NOT EXISTS trs_stats_detect ('
                  ' id  int(100) AUTO_INCREMENT,'
                  ' worker  varchar(100) NOT NULL,'
                  ' timestamp_scan  int(11) NOT NULL,'
@@ -932,7 +932,7 @@ class DbWrapperBase(ABC):
         logger.debug(
             "DbWrapperBase::create_usage_database_if_not_exists called")
 
-        query = ('CREATE TABLE if not exists trs_usage ( '
+        query = ('CREATE TABLE IF NOT EXISTS trs_usage ( '
                  'usage_id INT(10) NOT NULL AUTO_INCREMENT, '
                  'instance varchar(100) NULL DEFAULT NULL, '
                  'cpu FLOAT NULL DEFAULT NULL , '
@@ -950,7 +950,7 @@ class DbWrapperBase(ABC):
         logger.debug("dbWrapper::insert_usage")
 
         query = (
-            "INSERT into trs_usage (instance, cpu, memory, garbage, timestamp) VALUES "
+            "INSERT INTO trs_usage (instance, cpu, memory, garbage, timestamp) VALUES "
             "(%s, %s, %s, %s, %s)"
         )
         vals = (
@@ -964,9 +964,9 @@ class DbWrapperBase(ABC):
         logger.debug("dbWrapper::save_status")
 
         query = (
-            "INSERT into trs_status (instance, origin, currentPos, lastPos, routePos, routeMax, "
+            "INSERT INTO trs_status (instance, origin, currentPos, lastPos, routePos, routeMax, "
             "routemanager, rebootCounter, lastProtoDateTime, "
-            "init, rebootingOption, restartCounter, currentSleepTime) values "
+            "init, rebootingOption, restartCounter, currentSleepTime) VALUES "
             "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             "ON DUPLICATE KEY UPDATE currentPos=VALUES(currentPos), "
             "lastPos=VALUES(lastPos), routePos=VALUES(routePos), "
@@ -989,8 +989,8 @@ class DbWrapperBase(ABC):
         logger.debug("dbWrapper::save_last_reboot")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = (
-            "insert into trs_status(instance, origin, lastPogoReboot, globalrebootcount) "
-            "values (%s, %s, %s, %s) "
+            "INSERT INTO trs_status(instance, origin, lastPogoReboot, globalrebootcount) "
+            "VALUES (%s, %s, %s, %s) "
             "ON DUPLICATE KEY UPDATE lastPogoReboot=VALUES(lastPogoReboot), globalrebootcount=(globalrebootcount+1)"
         )
 
@@ -1006,8 +1006,8 @@ class DbWrapperBase(ABC):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = (
 
-            "insert into trs_status(instance, origin, lastPogoRestart, globalrestartcount) "
-            "values (%s, %s, %s, %s) "
+            "INSERT INTO trs_status(instance, origin, lastPogoRestart, globalrestartcount) "
+            "VALUES (%s, %s, %s, %s) "
             "ON DUPLICATE KEY UPDATE lastPogoRestart=VALUES(lastPogoRestart), globalrestartcount=(globalrestartcount+1)"
         )
 
@@ -1070,9 +1070,9 @@ class DbWrapperBase(ABC):
                 days)
 
         query = (
-            "SELECT %s, count(GUID) as Count  FROM trs_quest %s "
-            "group by day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp)) "
-            "order by quest_timestamp" %
+            "SELECT %s, count(GUID) AS Count FROM trs_quest %s "
+            "GROUP BY day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp)) "
+            "ORDER BY quest_timestamp" %
                 (str(query_date), str(query_where))
         )
 
@@ -1091,11 +1091,11 @@ class DbWrapperBase(ABC):
 
         if instance is not None:
             query_where = query_where + \
-                ' and instance = \'%s\' ' % str(instance)
+                ' AND instance = \'%s\' ' % str(instance)
 
         query = (
             "SELECT cpu, memory, garbage, timestamp, instance FROM trs_usage %s "
-            "order by timestamp" %
+            "ORDER BY timestamp" %
                 (str(query_where))
         )
 
@@ -1141,7 +1141,7 @@ class DbWrapperBase(ABC):
         grouped_query = ""
         worker_where = ""
         if worker and minutes:
-            worker_where = ' and worker = \'%s\' ' % str(worker)
+            worker_where = ' AND worker = \'%s\' ' % str(worker)
         if worker and not minutes:
             worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if grouped:
@@ -1155,9 +1155,9 @@ class DbWrapperBase(ABC):
                 minutes)
 
         query = (
-            "SELECT  %s, worker, sum(mon) as Mon, sum(mon_iv) as MonIV, sum(raid) as Raids, sum(quest) as Quests FROM "
-            "trs_stats_detect %s %s group by worker %s"
-            " order by timestamp_scan" %
+            "SELECT  %s, worker, sum(mon) AS Mon, sum(mon_iv) AS MonIV, sum(raid) AS Raids, sum(quest) AS Quests FROM "
+            "trs_stats_detect %s %s GROUP BY worker %s"
+            " ORDER BY timestamp_scan" %
                 (str(query_date), str(query_where), str(
                     worker_where), str(grouped_query))
         )
@@ -1171,22 +1171,22 @@ class DbWrapperBase(ABC):
         query_where = ""
         worker_where = ""
         if worker:
-            worker_where = ' and worker = \'%s\' ' % str(worker)
+            worker_where = ' AND worker = \'%s\' ' % str(worker)
         if grouped:
             grouped_query = ", day(FROM_UNIXTIME(period)), hour(FROM_UNIXTIME(period)), transporttype"
         if minutes:
             minutes = datetime.now().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
-            query_where = ' and (period) >= unix_timestamp(\'%s\') ' % str(
+            query_where = ' AND (period) >= unix_timestamp(\'%s\') ' % str(
                 minutes)
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
         query = (
             "SELECT %s, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
-            "'other')), worker, count(fix_ts), avg(data_ts-fix_ts) as data_time, walker from trs_stats_location_raw "
-            "where success=1 and type in (0,1) and (walker='mon_mitm' or walker='iv_mitm' or walker='pokestops') "
-            "%s %s group by worker %s" %
+            "'other')), worker, count(fix_ts), avg(data_ts-fix_ts) AS data_time, walker from trs_stats_location_raw "
+            "WHERE success=1 AND type in (0,1) AND (walker='mon_mitm' or walker='iv_mitm' or walker='pokestops') "
+            "%s %s GROUP BY worker %s" %
             (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
 
@@ -1200,7 +1200,7 @@ class DbWrapperBase(ABC):
         query_where = ""
         worker_where = ""
         if worker and minutes:
-            worker_where = ' and worker = \'%s\' ' % str(worker)
+            worker_where = ' AND worker = \'%s\' ' % str(worker)
         if worker and not minutes:
             worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if grouped:
@@ -1215,7 +1215,7 @@ class DbWrapperBase(ABC):
 
         query = (
             "SELECT %s, worker, sum(location_count), sum(location_ok), sum(location_nok) from trs_stats_location "
-            " %s %s group by worker %s" %
+            " %s %s GROUP BY worker %s" %
             (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
         res = self.execute(query)
@@ -1228,7 +1228,7 @@ class DbWrapperBase(ABC):
         query_where = ""
         worker_where = ""
         if worker and minutes:
-            worker_where = ' and worker = \'%s\' ' % str(worker)
+            worker_where = ' AND worker = \'%s\' ' % str(worker)
         if worker and not minutes:
             worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if grouped:
@@ -1244,7 +1244,7 @@ class DbWrapperBase(ABC):
         query = (
             "SELECT %s, worker, count(period), if(type=0,if(success=1,'OK-Normal','NOK-Normal'),"
             "if(success=1,'OK-PrioQ','NOK-PrioQ')) from trs_stats_location_raw "
-            " %s %s and type in(0,1) group by worker %s" %
+            " %s %s AND type in(0,1) GROUP BY worker %s" %
             (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
 
@@ -1254,10 +1254,10 @@ class DbWrapperBase(ABC):
 
     def statistics_get_all_empty_scanns(self):
         logger.debug('Fetching all empty locations from db')
-        query = ("SELECT count(b.id) as Count, b.lat, b.lng, GROUP_CONCAT(DISTINCT b.worker order by worker asc "
+        query = ("SELECT count(b.id) AS Count, b.lat, b.lng, GROUP_CONCAT(DISTINCT b.worker ORDER BY worker asc "
                  "SEPARATOR ', '), if(b.type=0,'Normal','PrioQ'), max(b.period), (select count(c.id) "
-                 "from trs_stats_location_raw c where c.lat=b.lat and c.lng=b.lng and c.success=1) as successcount from "
-                 "trs_stats_location_raw b where success=0 group by lat, lng HAVING Count > 5 and successcount=0 "
+                 "from trs_stats_location_raw c WHERE c.lat=b.lat AND c.lng=b.lng AND c.success=1) AS successcount from "
+                 "trs_stats_location_raw b WHERE success=0 GROUP BY lat, lng HAVING Count > 5 AND successcount=0 "
                  "ORDER BY count(id) DESC"
                  )
 
@@ -1269,7 +1269,7 @@ class DbWrapperBase(ABC):
         query_where = ""
         worker_where = ""
         if worker and minutes:
-            worker_where = ' and worker = \'%s\' ' % str(worker)
+            worker_where = ' AND worker = \'%s\' ' % str(worker)
         if worker and not minutes:
             worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if minutes:
@@ -1281,7 +1281,7 @@ class DbWrapperBase(ABC):
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
 
         query = (
-            "SELECT %s, type, type_id, count FROM trs_stats_detect_raw %s %s order by id asc" %
+            "SELECT %s, type, type_id, count FROM trs_stats_detect_raw %s %s ORDER BY id asc" %
             (str(query_date), (query_where), str(worker_where))
         )
 
@@ -1293,7 +1293,7 @@ class DbWrapperBase(ABC):
         query_where = ""
         worker_where = ""
         if worker and minutes:
-            worker_where = ' and worker = \'%s\' ' % str(worker)
+            worker_where = ' AND worker = \'%s\' ' % str(worker)
         if worker and not minutes:
             worker_where = ' WHERE worker = \'%s\' ' % str(worker)
         if minutes:
@@ -1307,7 +1307,7 @@ class DbWrapperBase(ABC):
         query = ("SELECT %s, lat, lng, if(type=0,'Normal',if(type=1,'PrioQ', if(type=2,'Startup',"
                  "if(type=3,'Reboot','Restart')))), if(success=1,'OK','NOK'), fix_ts, "
                  "if(data_ts=0,fix_ts,data_ts), count, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
-                 "'other')) from trs_stats_location_raw %s %s order by id asc" %
+                 "'other')) from trs_stats_location_raw %s %s ORDER BY id asc" %
                  (str(query_date), (query_where), str(worker_where))
                  )
 
@@ -1318,9 +1318,9 @@ class DbWrapperBase(ABC):
         logger.debug('Fetching all empty locations from db')
         query = (
             "select worker, sum(location_count), sum(location_ok), sum(location_nok), "
-            "sum(location_nok) / sum(location_count) * 100 as Loc_fail_rate "
+            "sum(location_nok) / sum(location_count) * 100 AS Loc_fail_rate "
             "from trs_stats_location "
-            "group by worker"
+            "GROUP BY worker"
         )
 
         res = self.execute(query)
@@ -1329,23 +1329,23 @@ class DbWrapperBase(ABC):
     def cleanup_statistics(self):
         logger.debug("Cleanup statistics tables")
         query = (
-            "delete from trs_stats_detect where timestamp_scan < (UNIX_TIMESTAMP() - 604800)"
+            "DELETE FROM trs_stats_detect WHERE timestamp_scan < (UNIX_TIMESTAMP() - 604800)"
         )
         self.execute(query, commit=True)
 
         # stop deleting shiny entries. For science, please (-:
         query = (
-            "delete from trs_stats_detect_raw where timestamp_scan < (UNIX_TIMESTAMP() - 604800) AND is_shiny = 0"
+            "DELETE FROM trs_stats_detect_raw WHERE timestamp_scan < (UNIX_TIMESTAMP() - 604800) AND is_shiny = 0"
         )
         self.execute(query, commit=True)
 
         query = (
-            "delete from trs_stats_location where timestamp_scan < (UNIX_TIMESTAMP() - 604800)"
+            "DELETE FROM trs_stats_location WHERE timestamp_scan < (UNIX_TIMESTAMP() - 604800)"
         )
         self.execute(query, commit=True)
 
         query = (
-            "delete from trs_stats_location_raw where period < (UNIX_TIMESTAMP() - 604800)"
+            "DELETE FROM trs_stats_location_raw WHERE period < (UNIX_TIMESTAMP() - 604800)"
         )
         self.execute(query, commit=True)
 
@@ -1415,8 +1415,8 @@ class DbWrapperBase(ABC):
     def statistics_get_shiny_stats_hour(self):
         logger.debug('Fetching shiny pokemon stats from db')
         query = (
-            "SELECT hour(FROM_UNIXTIME(timestamp_scan)) as hour, type_id FROM trs_stats_detect_raw where "
-            "is_shiny=1 group by type_id, hour ORDER BY hour ASC"
+            "SELECT hour(FROM_UNIXTIME(timestamp_scan)) AS hour, type_id FROM trs_stats_detect_raw WHERE "
+            "is_shiny=1 GROUP BY type_id, hour ORDER BY hour ASC"
         )
 
         res = self.execute(query)

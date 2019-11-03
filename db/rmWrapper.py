@@ -625,8 +625,8 @@ class RmWrapper(DbWrapperBase):
             "FROM pokemon "
             "WHERE individual_attack IS NULL AND individual_defense IS NULL AND individual_stamina IS NULL "
             "AND encounter_id != 0 "
-            "and (disappear_time BETWEEN DATE_ADD(UTC_TIMESTAMP(), INTERVAL %s SECOND) "
-            "and DATE_ADD(UTC_TIMESTAMP(), INTERVAL 60 MINUTE))"
+            "AND (disappear_time BETWEEN DATE_ADD(UTC_TIMESTAMP(), INTERVAL %s SECOND) "
+            "AND DATE_ADD(UTC_TIMESTAMP(), INTERVAL 60 MINUTE))"
             "ORDER BY expire ASC"
         )
 
@@ -726,10 +726,10 @@ class RmWrapper(DbWrapperBase):
         logger.debug("RmWrapper::check_stop_quest called")
         query = (
             "SELECT trs_quest.GUID "
-            "from trs_quest inner join pokestop on pokestop.pokestop_id = trs_quest.GUID where "
+            "FROM trs_quest INNER JOIN pokestop on pokestop.pokestop_id = trs_quest.GUID WHERE "
             "from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d') = "
             "date_format(DATE_ADD( now() , INTERVAL '-15' MINUTE ), '%Y-%m-%d') "
-            "and pokestop.latitude=%s and pokestop.longitude=%s"
+            "AND pokestop.latitude=%s AND pokestop.longitude=%s"
         )
         data = (latitude, longitude)
 
@@ -1100,16 +1100,16 @@ class RmWrapper(DbWrapperBase):
     def statistics_get_pokemon_count(self, minutes):
         logger.debug('Fetching pokemon spawns count from db')
         query_where = ''
-        query_date = "UNIX_TIMESTAMP(DATE_FORMAT(last_modified, '%y-%m-%d %k:00:00')) as timestamp"
+        query_date = "UNIX_TIMESTAMP(DATE_FORMAT(last_modified, '%y-%m-%d %k:00:00')) AS timestamp"
         if minutes:
             minutes = datetime.utcnow().replace(
                 minute=0, second=0, microsecond=0) - timedelta(minutes=int(minutes))
             query_where = ' WHERE last_modified > \'%s\' ' % str(minutes)
 
         query = (
-            "SELECT  %s, count(DISTINCT encounter_id) as Count, if(CP is NULL, 0, 1) as IV FROM pokemon "
+            "SELECT  %s, count(DISTINCT encounter_id) AS Count, if(CP is NULL, 0, 1) AS IV FROM pokemon "
             " %s "
-            "group by IV, day(TIMESTAMP(last_modified)), hour(TIMESTAMP(last_modified)) order by timestamp" %
+            "GROUP BY IV, day(TIMESTAMP(last_modified)), hour(TIMESTAMP(last_modified)) ORDER BY timestamp" %
                 (str(query_date), str(query_where))
         )
 
@@ -1122,7 +1122,7 @@ class RmWrapper(DbWrapperBase):
 
         query = (
             "SELECT if (team_id=0, 'WHITE', if (team_id=1, 'BLUE', if (team_id=2, 'RED', 'YELLOW'))) "
-            "as Color, count(team_id) as Count FROM `gym` group by team_id"
+            "AS Color, count(team_id) AS Count FROM `gym` GROUP BY team_id"
 
         )
 
@@ -1136,10 +1136,10 @@ class RmWrapper(DbWrapperBase):
         query = (
             "SELECT "
             "if(FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d') is NULL,'NO QUEST',"
-            "FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')) as Quest, "
-            "count(pokestop.pokestop_id) as Count FROM pokestop left join trs_quest "
+            "FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')) AS Quest, "
+            "count(pokestop.pokestop_id) AS Count FROM pokestop LEFT JOIN trs_quest "
             "on pokestop.pokestop_id = trs_quest.GUID "
-            "group by FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')"
+            "GROUP BY FROM_UNIXTIME(trs_quest.quest_timestamp, '%y-%m-%d')"
 
         )
         res = self.execute(query)
@@ -1154,7 +1154,7 @@ class RmWrapper(DbWrapperBase):
             query_where = ' WHERE disappear_time > \'%s\' ' % str(hours)
 
         query = (
-            "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(
+            "SELECT pokemon_id, count(pokemon_id) FROM pokemon %s GROUP BY pokemon_id" % str(
                 query_where)
         )
 
@@ -1171,7 +1171,7 @@ class RmWrapper(DbWrapperBase):
             "SELECT encounter_id, pokemon_id, unix_timestamp(last_modified),"
             " individual_attack, individual_defense, individual_stamina, cp_multiplier, cp"
             " FROM pokemon"
-            " WHERE individual_attack>14 and individual_defense>14 and individual_stamina>14"
+            " WHERE individual_attack>14 AND individual_defense>14 AND individual_stamina>14"
             " ORDER BY UNIX_TIMESTAMP(last_modified) DESC LIMIT 300"
         )
 
@@ -1181,7 +1181,7 @@ class RmWrapper(DbWrapperBase):
     def delete_stop(self, latitude: float, longitude: float):
         logger.debug('Deleting stop from db')
         query = (
-            "delete from pokestop where latitude=%s and longitude=%s"
+            "DELETE FROM pokestop WHERE latitude=%s AND longitude=%s"
         )
         del_vars = (latitude, longitude)
         self.execute(query, del_vars, commit=True)
@@ -1265,8 +1265,8 @@ class RmWrapper(DbWrapperBase):
         logger.debug("RmWrapper::check_stop_quest_level called")
         query = (
             "SELECT trs_stats_detect_raw.type_id "
-            "from trs_stats_detect_raw inner join pokestop on pokestop.pokestop_id = trs_stats_detect_raw.type_id "
-            "where pokestop.latitude=%s and pokestop.longitude=%s and trs_stats_detect_raw.worker=%s"
+            "FROM trs_stats_detect_raw INNER JOIN pokestop on pokestop.pokestop_id = trs_stats_detect_raw.type_id "
+            "WHERE pokestop.latitude=%s AND pokestop.longitude=%s AND trs_stats_detect_raw.worker=%s"
         )
         data = (latitude, longitude, worker)
 
@@ -1352,12 +1352,12 @@ class RmWrapper(DbWrapperBase):
     def statistics_get_shiny_stats(self):
         logger.debug('Fetching shiny pokemon stats from db')
         query = (
-            "SELECT (select count(DISTINCT encounter_id) from pokemon inner join trs_stats_detect_raw on "
-            "CAST(trs_stats_detect_raw.type_id as unsigned int)=pokemon.encounter_id where pokemon.pokemon_id=a.pokemon_id and "
-            "trs_stats_detect_raw.worker=b.worker and pokemon.form=a.form), count(DISTINCT encounter_id), a.pokemon_id,"
+            "SELECT (select count(DISTINCT encounter_id) FROM pokemon INNER JOIN trs_stats_detect_raw on "
+            "CAST(trs_stats_detect_raw.type_id AS unsigned int)=pokemon.encounter_id WHERE pokemon.pokemon_id=a.pokemon_id AND "
+            "trs_stats_detect_raw.worker=b.worker AND pokemon.form=a.form), count(DISTINCT encounter_id), a.pokemon_id,"
             "b.worker, GROUP_CONCAT(DISTINCT encounter_id ORDER BY encounter_id DESC SEPARATOR '<br>'), a.form, b.timestamp_scan "
-            "FROM pokemon a left join trs_stats_detect_raw b on a.encounter_id=CAST(b.type_id as unsigned int) where b.is_shiny=1 group by "
-            "b.is_shiny, a.pokemon_id, a.form, b.worker order by b.timestamp_scan DESC "
+            "FROM pokemon a LEFT JOIN trs_stats_detect_raw b on a.encounter_id=CAST(b.type_id AS unsigned int) WHERE b.is_shiny=1 GROUP BY "
+            "b.is_shiny, a.pokemon_id, a.form, b.worker ORDER BY b.timestamp_scan DESC "
         )
 
         res = self.execute(query)
@@ -1373,7 +1373,7 @@ class RmWrapper(DbWrapperBase):
         query = (
             "SELECT pokemon.pokemon_id, pokemon.form, pokemon.latitude, pokemon.longitude, pokemon.gender, pokemon.costume, "
             "tr.count, tr.timestamp_scan, tr.worker, pokemon.encounter_id FROM pokemon "
-            "JOIN trs_stats_detect_raw tr on CAST(tr.type_id as unsigned int)=pokemon.encounter_id "
+            "JOIN trs_stats_detect_raw tr on CAST(tr.type_id AS unsigned int)=pokemon.encounter_id "
             "WHERE tr.is_shiny=1 "
         )
 

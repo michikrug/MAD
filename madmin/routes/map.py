@@ -81,53 +81,7 @@ class map(object):
 
     @auth_required
     def get_geofence(self):
-        geofences = {}
         areas = self._mapping_manager.get_areas()
-        for uri, area in areas.items():
-            aname = area['name']
-            geofence_include = {}
-            geofence_exclude = {}
-            geofence_name = 'Unknown'
-            geofence_included = Path(area["geofence_included"])
-            if not geofence_included.is_file():
-                continue
-            with geofence_included.open() as gf:
-                for line in gf:
-                    line = line.strip()
-                    if not line:  # Empty line.
-                        continue
-                    elif line.startswith("["):  # Name line.
-                        geofence_name = line.replace("[", "").replace("]", "")
-                        geofence_include[geofence_name] = []
-                    else:  # Coordinate line.
-                        lat, lon = line.split(",")
-                        geofence_include[geofence_name].append([
-                            getCoordFloat(lat),
-                            getCoordFloat(lon)
-                        ])
-
-            if area['geofence_excluded']:
-                geofence_name = 'Unknown'
-                geofence_excluded = Path(area["geofence_excluded"])
-                if not geofence_excluded.is_file():
-                    continue
-                with geofence_excluded.open() as gf:
-                    for line in gf:
-                        line = line.strip()
-                        if not line:  # Empty line.
-                            continue
-                        elif line.startswith("["):  # Name line.
-                            geofence_name = line.replace("[", "").replace("]", "")
-                            geofence_exclude[geofence_name] = []
-                        else:  # Coordinate line.
-                            lat, lon = line.split(",")
-                            geofence_exclude[geofence_name].append([
-                                getCoordFloat(lat),
-                                getCoordFloat(lon)
-                            ])
-
-            geofences[aname] = {'include': geofence_include,
-                                'exclude': geofence_exclude}
         geofences = get_geofences(self._mapping_manager)
         geofencexport = []
         for name, fences in geofences.items():

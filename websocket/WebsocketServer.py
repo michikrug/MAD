@@ -84,8 +84,7 @@ class WebsocketServer(object):
     def __internal_worker_join(self):
         while not self.__stop_server.is_set():
             try:
-                next_item: Optional[Thread] = self.__worker_shutdown_queue.get_nowait(
-                )
+                next_item: Optional[Thread] = self.__worker_shutdown_queue.get_nowait()
             except queue.Empty:
                 time.sleep(1)
                 continue

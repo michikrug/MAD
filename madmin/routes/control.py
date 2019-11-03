@@ -8,7 +8,6 @@ from threading import Thread
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
-import cv2
 from db.dbWrapperBase import DbWrapperBase
 from madmin.functions import (allowed_file, auth_required,
                               generate_device_screenshot_path, nocache,

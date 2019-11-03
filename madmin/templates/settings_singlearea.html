@@ -119,6 +119,10 @@ $(document).ready(function () {
         {% endfor %}
       </select>
       {% elif field.settings.type == 'geofence' %}
+      <textarea class="form-control" name="{{ key }}" id="{{ key }}">
+        {{ element[key] }}
+      </textarea>
+      <!--
       <select class="form-control" name="{{ key }}" data-default="{{ element[key] }}">
         {% if field.settings.require != True %}
         <option value='None' {{ 'selected="selected"' if uri == element.settings[key] }}>None</option>
@@ -127,6 +131,7 @@ $(document).ready(function () {
         <option value="{{ uri }}" {{ 'selected="selected"' if uri == element[key] }}>{{ data|lower }}</option>
         {% endfor %}
       </select>
+      -->
       {% else %}
       <input type="{{ field.type }}" name="{{ key }}" data-default="{{ element[key] }}" class="form-control" id="{{ key }}" value="{% if element[key] is not none and element[key] != 'None' %}{{ element[key] }}{% endif %}">
       {% endif %}

@@ -326,15 +326,16 @@
                 "paging": true,
                 "columns": columns,
                 "ordering": true,
+                "order": [],
                 "columnDefs": defs,
-                //"responsive": {{ responsive }},
+                "responsive": {{ responsive }},
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                dom: 'Blfrtip',
-                buttons: [
+                "dom": 'Blfrtip',
+                "buttons": [
                     'copy', 'csv', 'excel', 'pdf'
                 ],
-                sorting: true,
-                stateSave: true,
+                "sorting": true,
+                "stateSave": true,
                 stateSaveCallback: function (settings, data) {
                     localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data))
                 },

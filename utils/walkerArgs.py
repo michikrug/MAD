@@ -234,6 +234,9 @@ def parseArgs():
     parser.add_argument('-mmpassword', '--madmin_password', default='',
                         help='Password for MADmin Frontend.')
 
+    parser.add_argument('-mmbp', '--madmin_base_path', default='/',
+                        help='Base path for madmin')
+
     parser.add_argument('-pfile', '--position_file', default='current',
                         help='Filename for bot\'s current position (Default: current)')
 
@@ -251,6 +254,8 @@ def parseArgs():
 
     parser.add_argument('-rdt', '--raid_time', default='45', type=int,
                         help='Raid Battle time in minutes. (Default: 45)')
+    parser.add_argument('-advcfg', '--advanced_config', default=True, type=bool,
+                        help='Basically unusued: enables additional information to be modified when working with areas')
 
     parser.add_argument('-ld', '--lure_duration', default='30', type=int,
                         help='Lure duration in minutes. (Default: 30)')
@@ -273,7 +278,7 @@ def parseArgs():
 
     # adb
     parser.add_argument('-adb', '--use_adb', action='store_true', default=False,
-                        help='Use ADB for phonecontrol (Default: False)')
+                        help='Use ADB for "device control" (Default: False)')
     parser.add_argument('-adbservip', '--adb_server_ip', default='127.0.0.1',
                         help='IP address of ADB server (Default: 127.0.0.1)')
 

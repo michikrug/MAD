@@ -11,9 +11,11 @@ from typing import Optional
 import pkg_resources
 
 import psutil
+import utils.data_manager
 from db.DbFactory import DbFactory
 from mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mitm_receiver.MITMReceiver import MITMReceiver
+from utils.functions import generate_mappingjson
 from utils.logging import initLogging, logger
 from utils.madGlobals import terminate_mad
 from utils.MappingManager import MappingManager, MappingManagerManager
@@ -85,18 +87,6 @@ def install_thread_excepthook():
                 sys.excepthook(exc_type, exc_value, exc_trace)
     Thread.run = run_thread
     Process.run = run_process
-
-
-def generate_mappingjson():
-    import json
-    newfile = {}
-    newfile['areas'] = []
-    newfile['auth'] = []
-    newfile['devices'] = []
-    newfile['walker'] = []
-    newfile['devicesettings'] = []
-    with open(args.mappings, 'w') as outfile:
-        json.dump(newfile, outfile, indent=4, sort_keys=True)
 
 
 def find_referring_graphs(obj):
@@ -173,10 +163,22 @@ def check_dependencies():
 if __name__ == "__main__":
     check_dependencies()
 
+    if not os.path.exists(args.mappings):
+        logger.error(
+            "Couldn't find configuration file. Please run 'configmode.py' instead, if this is the first time starting MAD.")
+        sys.exit(1)
+
     # TODO: globally destroy all threads upon sys.exit() for example
     install_thread_excepthook()
 
     db_wrapper, db_wrapper_manager = DbFactory.get_wrapper(args)
+    wrong_modes = db_wrapper.running_mysql_modes()
+    if len(wrong_modes) > 0:
+        logger.error("Your MySQL/MariaDB sql_mode settings needs an adjustment.")
+        logger.error("Please drop those settings: {}.", ", ".join(wrong_modes))
+        logger.error(
+            "More info: https://mad-docs.readthedocs.io/en/latest/common-issues/faq/#sql-mode-error-mysql-strict-mode-mysql-mode")
+        sys.exit(1)
     db_wrapper.check_and_create_spawn_tables()
     db_wrapper.create_quest_database_if_not_exists()
     db_wrapper.create_status_database_if_not_exists()
@@ -214,12 +216,13 @@ if __name__ == "__main__":
     t_file_watcher = None
     t_whw = None
 
+    data_manager = utils.data_manager.DataManager(logger, args)
+
     if args.only_scan or args.only_routes:
         MappingManagerManager.register('MappingManager', MappingManager)
         mapping_manager_manager = MappingManagerManager()
         mapping_manager_manager.start()
-        mapping_manager: MappingManager = mapping_manager_manager.MappingManager(
-            db_wrapper, args, False)
+        mapping_manager: MappingManager = mapping_manager_manager.MappingManager(db_wrapper, args, data_manager, False)
         filename = args.mappings
         if not os.path.exists(filename):
             logger.error(
@@ -288,7 +291,7 @@ if __name__ == "__main__":
 
         logger.info("Starting Madmin on port {}", str(args.madmin_port))
         t_madmin = Thread(name="madmin", target=madmin_start,
-                          args=(args, db_wrapper, ws_server, mapping_manager, device_Updater, jobstatus))
+                          args=(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater, jobstatus))
         t_madmin.daemon = True
         t_madmin.start()
 

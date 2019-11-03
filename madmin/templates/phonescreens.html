@@ -81,6 +81,10 @@
         text-align: center;
     }
 
+    .dialog-on-top {
+        z-index: 2001 !important;
+    }
+
     @media only screen and (max-width: 600px) {
         .screen {
             width: 90%;
@@ -97,6 +101,7 @@
 <script type="text/javascript" src="static/js/jquery.Aplus.min.js"></script>
 <script>
     $(document).ready(function () {
+
         $('body').Aplus();
         $('dialog-confirm').dialog();
 
@@ -113,6 +118,41 @@
                     $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
                     $('div#' + origin).unblock();
                 }
+            });
+        });
+
+        $("a#quit").bind("click", function (event) {
+            event.preventDefault();
+            var origin = $(this).attr("origin");
+            var url = $(this).attr("href");
+
+            $("#dialog-confirm").dialog({
+                draggable: false,
+                resizable: false,
+                height: "auto",
+                title: origin,
+                dialogClass: "dialog-on-top",
+                width: "auto",
+                modal: true,
+                buttons: [
+                    {
+                        text: "Quit",
+                        icon: "ui-icon-power",
+                        click: function () {
+                            $(this).dialog("close");
+                            $('div#' + origin).block({ message: '<img src="static/loading.gif" width="100px"><br><h2>Load...</h2>' });
+                            $.ajax({
+                                type: "GET",
+                                url: url,
+                                success: function (data) {
+                                    $('#date' + origin).text(data);
+                                    $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+                                    $('div#' + origin).unblock();
+                                }
+                            });
+                        }
+                    }
+                ]
             });
         });
 
@@ -259,16 +299,13 @@
             window.open(img, '_blank');
         });
 
-
         $(".screenshot").mousedown(function (e) {
             e.preventDefault();
-
             $(this).data("tracking", true);
             $(this).data("start", {
                 x: e.offsetX, y: e.offsetY,
                 xe: e.offsetX, ye: e.offsetY
             });
-
         }).mousemove(function (e) {
             if ($(this).data("tracking")) {
                 var start = $(this).data("start");
@@ -278,7 +315,6 @@
                     x: start.x, y: start.y,
                     xe: w, ye: h
                 });
-
             }
         }).mouseup(function (e) {
             $(this).data("tracking", false);

@@ -8,7 +8,6 @@ class RouteManagerRaids(RouteManagerBase):
 
     def _get_coords_after_finish_route(self):
         self._init_route_queue()
-        self.get_worker_workerpool()
         return True
 
     def _recalc_route_workertype(self):
@@ -16,15 +15,15 @@ class RouteManagerRaids(RouteManagerBase):
                           nofile=False)
         self._init_route_queue()
 
-    def __init__(self, db_wrapper, coords, max_radius, max_coords_within_radius, include_geofence,
+    def __init__(self, db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius, include_geofence,
                  exclude_geofence, routefile, mode=None, settings=None, init=False,
-                 name="unknown", joinqueue=None):
-        RouteManagerBase.__init__(self, db_wrapper=db_wrapper, coords=coords, max_radius=max_radius,
+                 name="unknown", joinqueue=None, useS2: bool = False, S2level: int = 15):
+        RouteManagerBase.__init__(self, db_wrapper=db_wrapper, dbm=dbm, area_id=area_id, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
                                   include_geofence=include_geofence,
                                   exclude_geofence=exclude_geofence,
                                   routefile=routefile, init=init,
-                                  name=name, settings=settings, mode=mode, joinqueue=joinqueue
+                                  name=name, settings=settings, mode=mode, useS2=True, S2level=S2level, joinqueue=joinqueue
                                   )
 
     def _retrieve_latest_priority_queue(self):

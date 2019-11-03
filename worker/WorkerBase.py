@@ -263,7 +263,7 @@ class WorkerBase(ABC):
             self._get_screen_size()
             # register worker  in routemanager
             logger.info("Try to register {} in Routemanager {}", str(
-                self._id), str(self._routemanager_name))
+                self._id), str(self._mapping_manager.routemanager_get_name(self._routemanager_name)))
             self._mapping_manager.register_worker_to_routemanager(self._routemanager_name, self._id)
         except WebsocketWorkerRemovedException:
             logger.error("Timeout during init of worker {}", str(self._id))
@@ -339,7 +339,7 @@ class WorkerBase(ABC):
 
         if not self.check_max_walkers_reached():
             logger.warning('Max. Walkers in Area {} - closing connections',
-                           str(self._routemanager_name))
+                           str(self._mapping_manager.routemanager_get_name(self._routemanager_name)))
             self.set_devicesettings_value('finished', True)
             self._internal_cleanup()
             return
@@ -603,7 +603,7 @@ class WorkerBase(ABC):
                                        ScreenType.PERMISSION)) \
                         and self._last_screen_type == returncode \
                         and self._same_screen_count == 3:
-                    logger.warning('Pogo freeze - restart Phone')
+                    logger.warning('Gamefreezed - restarting device')
                     self._reboot()
                     break
 
@@ -642,7 +642,7 @@ class WorkerBase(ABC):
                     self._loginerrorcounter += 1
 
                 elif returncode == ScreenType.GPS:
-                    logger.warning("Detecting GPS Error 11 - reboot phone")
+                    logger.warning("Detected GPS error 11 - rebooting device")
                     self._reboot()
 
                 elif returncode == ScreenType.SN:
@@ -658,7 +658,7 @@ class WorkerBase(ABC):
                     break
 
                 if self._loginerrorcounter == 2:
-                    logger.error('Cannot login again - (clear pogo game data and) restart phone')
+                    logger.error('Could not login again - (clearing game data + restarting device')
                     self._stop_pogo()
                     self._communicator.clearAppCache("com.nianticlabs.pokemongo")
                     if self.get_devicesettings_value('clear_game_data', False):
@@ -776,7 +776,7 @@ class WorkerBase(ABC):
                                                self._mapping_manager.routemanager_get_mode(
                                                    self._routemanager_name),
                                                99)
-        self._db_wrapper.save_last_reboot(self._id)
+        self._db_wrapper.save_last_reboot(self._applicationArgs.status_name, self._id)
         self.stop_worker()
         return start_result
 
@@ -791,7 +791,7 @@ class WorkerBase(ABC):
 
     def _restart_pogo(self, clear_cache=True, mitm_mapper: Optional[MitmMapper] = None):
         successful_stop = self._stop_pogo()
-        self._db_wrapper.save_last_restart(self._id)
+        self._db_wrapper.save_last_restart(self._applicationArgs.status_name, self._id)
         logger.debug("restartPogo: stop game resulted in {}",
                      str(successful_stop))
         if successful_stop:

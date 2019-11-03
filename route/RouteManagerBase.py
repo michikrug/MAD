@@ -18,6 +18,7 @@ from geofence.geofenceHelper import GeofenceHelper
 from route.routecalc.calculate_route import getJsonRoute
 from route.routecalc.ClusteringHelper import ClusteringHelper
 from utils.collections import Location
+from utils.data_manager import DataManager
 from utils.geo import get_distance_of_two_points_in_meters
 from utils.logging import logger
 from utils.walkerArgs import parseArgs
@@ -43,13 +44,18 @@ class RoutePoolEntry:
 
 
 class RouteManagerBase(ABC):
-    def __init__(self, db_wrapper: DbWrapperBase, coords: List[Location], max_radius: float,
+    def __init__(self, db_wrapper: DbWrapperBase, dbm: DataManager, area_id: str, coords: List[Location], max_radius: float,
                  max_coords_within_radius: int, include_geofence: str, exclude_geofence: str,
                  routefile: str, mode=None, init: bool = False, name: str = "unknown", settings: dict = None,
-                 level: bool = False, calctype: str = "optimized", joinqueue=None):
+                 level: bool = False, calctype: str = "optimized", useS2: bool = False, S2level: int = 15, joinqueue=None):
         self.db_wrapper: DbWrapperBase = db_wrapper
         self.init: bool = init
         self.name: str = name
+        self._data_manager = dbm
+        self.useS2: bool = useS2
+        self.S2level: int = S2level
+        self.area_id = area_id
+
         self._coords_unstructured: List[Location] = coords
         self.geofence_helper: GeofenceHelper = GeofenceHelper(
             include_geofence, exclude_geofence)
@@ -125,7 +131,7 @@ class RouteManagerBase(ABC):
         self._check_routepools_thread.start()
 
     def join_threads(self):
-        logger.info("Join Route Threads")
+        logger.info("Shutdown Route Threads")
         if self._update_prio_queue_thread is not None:
             while self._update_prio_queue_thread.isAlive():
                 time.sleep(1)
@@ -141,15 +147,17 @@ class RouteManagerBase(ABC):
         self._update_prio_queue_thread = None
         self._check_routepools_thread = None
         self._stop_update_thread.clear()
-        logger.info("Done joining Route Threads")
+        logger.info("Shutdown Route Threads completed")
 
-    def stop_routemanager(self):
+    def stop_routemanager(self, joinwithqueue=True):
         # call routetype stoppper
+        if self._joinqueue is not None and joinwithqueue:
+            logger.info("Adding route {} to queue".format(str(self.name)))
+            self._joinqueue.set_queue(self.name)
+
         self._quit_route()
         self._stop_update_thread.set()
 
-        if self._joinqueue is not None:
-            self._joinqueue.set_queue(self.name)
         logger.info("Shutdown of route {} completed".format(str(self.name)))
 
     def _init_route_queue(self):
@@ -230,8 +238,9 @@ class RouteManagerBase(ABC):
         return self._is_started
 
     def _start_priority_queue(self):
-        if (self._update_prio_queue_thread is None and (self.delay_after_timestamp_prio is not None or self.mode ==
-                                                        "iv_mitm") and not self.mode == "pokestops"):
+        logger.info("Try to activate PrioQ thread for route {}".format(str(self.name)))
+        if (self.delay_after_timestamp_prio is not None or self.mode == "iv_mitm") and not self.mode == "pokestops":
+            logger.info("PrioQ thread for route {} could be activate".format(str(self.name)))
             self._prio_queue = []
             if self.mode not in ["iv_mitm", "pokestops"]:
                 self.clustering_helper = ClusteringHelper(self._max_radius,
@@ -241,6 +250,8 @@ class RouteManagerBase(ABC):
                                                     target=self._update_priority_queue_loop)
             self._update_prio_queue_thread.daemon = True
             self._update_prio_queue_thread.start()
+        else:
+            logger.info("Cannot activate Prio Q - maybe wrong mode or delay_after_prio_event is null")
 
     # list_coords is a numpy array of arrays!
     def add_coords_numpy(self, list_coords: np.ndarray):
@@ -271,7 +282,7 @@ class RouteManagerBase(ABC):
             logger.debug("Deleting routefile...")
             os.remove(str(routefile) + ".calc")
         new_route = getJsonRoute(coords, max_radius, max_coords_within_radius, num_processes=num_procs,
-                                 routefile=routefile, algorithm=calctype)
+                                 routefile=routefile, algorithm=calctype, useS2=self.useS2, S2level=self.S2level)
         if self._overwrite_calculation:
             self._overwrite_calculation = False
         return new_route
@@ -502,9 +513,13 @@ class RouteManagerBase(ABC):
             logger.debug(
                 "{}: Checking if a location is available...", str(self.name))
             with self._manager_mutex:
-                got_location = self._prio_queue is not None and len(self._prio_queue) > 0 or self.mode != 'iv_mitm'
-                if not got_location:
-                    time.sleep(1)
+                if self.mode == "iv_mitm":
+                    got_location = self._prio_queue is not None and len(self._prio_queue) > 0
+                    if not got_location:
+                        time.sleep(1)
+                else:
+                    # normal mode - should always have a route
+                    got_location = True
 
         logger.debug(
             "{}: Location available, acquiring lock and trying to return location", self.name)
@@ -774,7 +789,7 @@ class RouteManagerBase(ABC):
                     if compare(new_subroute, entry.subroute):
                         logger.info("Apparently no changes in subroutes...")
                     else:
-                        logger.critical("Subroute of {} has changed. Replacing entirely", origin)
+                        logger.info("Subroute of {} has changed. Replacing entirely", origin)
                         # TODO: what now?
                         logger.debug('new_subroute: {}', new_subroute)
                         logger.debug('entry.subroute: {}', entry.subroute)
@@ -900,15 +915,10 @@ class RouteManagerBase(ABC):
             #   remove the coords of that coord onward)
 
     def change_init_mapping(self, name_area: str):
-        with open(args.mappings) as f:
-            vars = json.load(f)
-
-        for var in vars['areas']:
-            if (var['name']) == name_area:
-                var['init'] = bool(False)
-
-        with open(args.mappings, 'w') as outfile:
-            json.dump(vars, outfile, indent=4, sort_keys=True)
+        update = {
+            'init': False
+        }
+        self._data_manager.set_data('area', 'patch', update, identifier=self.area_id)
 
     def get_route_status(self, origin) -> Tuple[int, int]:
         if self._route and origin in self._routepool:

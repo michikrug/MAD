@@ -93,7 +93,7 @@ class WebsocketServer(object):
                 logger.info("Trying to join worker thread")
                 next_item.join(10)
                 if next_item.isAlive():
-                    logger.error("Error while joining worker thread - requeue it")
+                    logger.debug("Error while joining worker thread - requeue it")
                     self.__worker_shutdown_queue.put(next_item)
                 self.__worker_shutdown_queue.task_done()
                 logger.info("Done joining worker thread")
@@ -183,8 +183,8 @@ class WebsocketServer(object):
             return False
 
         if origin not in self.__mapping_manager.get_all_devicemappings().keys():
-            logger.warning(
-                "Register attempt of unknown Origin: {}".format(origin))
+            logger.warning("Register attempt of unknown origin: {}. "
+                           "Have you forgot to hit 'APPLY SETTINGS' in MADmin?".format(origin))
             return False
 
         if origin in self.__users_connecting:
@@ -209,7 +209,7 @@ class WebsocketServer(object):
                     str(origin))
                 self.__current_users.get(origin)[1].stop_worker()
                 # todo: do this better :D
-                logger.info("Old worker thread is still alive - waiting 20 seconds")
+                logger.debug("Old worker thread is still alive - waiting 20 seconds")
                 await asyncio.sleep(20)
                 logger.info("Reconnect ...")
                 return
@@ -274,7 +274,7 @@ class WebsocketServer(object):
                 while not pre_check_value(walker_settings) and walker_index - 1 <= len(walker_area_array):
                     walker_area_name = walker_area_array[walker_index]['walkerarea']
                     logger.info(
-                        '{} not using area {} - Walkervalue out of range', str(origin), str(walker_area_name))
+                        '{} not using area {} - Walkervalue out of range', str(origin), str(self.__mapping_manager.routemanager_get_name(walker_area_name)))
                     if walker_index >= len(walker_area_array) - 1:
                         logger.error(
                             'Could not find any working area at this time - check your mappings for device: {}',
@@ -310,7 +310,7 @@ class WebsocketServer(object):
                 logger.debug('Devicesettings {}: {}',
                              str(origin), devicesettings)
                 logger.info('{} using walker area {} [{}/{}]', str(origin), str(
-                    walker_area_name), str(walker_index + 1), str(len(walker_area_array)))
+                    self.__mapping_manager.routemanager_get_name(walker_area_name)), str(walker_index + 1), str(len(walker_area_array)))
                 walker_routemanager_mode = self.__mapping_manager.routemanager_get_mode(walker_area_name)
                 self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', walker_index + 1)
                 self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
@@ -370,10 +370,8 @@ class WebsocketServer(object):
         except WrongAreaInWalker:
             logger.error('Unknown Area in Walker settings - check config')
             await websocket_client_connection.close()
-        except Exception as e:
-            exc_type, exc_value, exc_trace = sys.exc_info()
-            logger.error("Other unhandled exception during register: {}\n{}, {}".format(e.with_traceback(None),
-                                                                                        exc_value, str(e)))
+        except Exception:
+            logger.opt(exception=True).error("Other unhandled exception during registration of {}.", origin)
             await websocket_client_connection.close()
         finally:
             async with self.__users_mutex:

@@ -63,6 +63,7 @@
 #home_lng:                   # Center Lng of your scan location (Default: 0.0)
 #language:                   # Language for several things like quests or mon names in the IV list (default:en - others: de, fr )
 #mitm_status_password: SetPls # Header Authorization password for MITM /status/ page
+#advanced_config             # Enables additional settings when creating and editing areas
 
 # MADmin statistics
 ######################
@@ -80,7 +81,7 @@
 
 # ADB
 ######################
-#use_adb                      # Use ADB for phonecontrol (Default: False)
+#use_adb                      # Use ADB for "device control" (Default: False)
 #adb_server_ip:               # IP address of ADB server (Default: 127.0.0.1)
 #adb_server_port:             # Port of ADB server (Default: 5037)
 

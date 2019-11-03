@@ -2,8 +2,10 @@ import os
 import sys
 from threading import Thread
 
+import utils.data_manager
 from db.DbFactory import DbFactory
 from db.dbWrapperBase import DbWrapperBase
+from utils.functions import generate_mappingjson
 from utils.logging import initLogging, logger
 from utils.MappingManager import MappingManager, MappingManagerManager
 from utils.updater import deviceUpdater
@@ -16,40 +18,28 @@ os.environ['LANGUAGE'] = args.language
 initLogging(args)
 
 
-def generate_mappingjson():
-    import json
-    newfile = {}
-    newfile['areas'] = []
-    newfile['auth'] = []
-    newfile['devices'] = []
-    newfile['walker'] = []
-    newfile['devicesettings'] = []
-    with open(args.mappings, 'w') as outfile:
-        json.dump(newfile, outfile, indent=4, sort_keys=True)
-
-
 def create_folder(folder):
     if not os.path.exists(folder):
         logger.info(str(folder) + ' created')
         os.makedirs(folder)
 
 
-def start_madmin(args, db_wrapper: DbWrapperBase, ws_server, mapping_manager: MappingManager, deviceUpdater, jobstatus):
+def start_madmin(args, db_wrapper: DbWrapperBase, ws_server, mapping_manager: MappingManager, data_manager, deviceUpdater, jobstatus):
     from madmin.madmin import madmin_start
-    madmin_start(args, db_wrapper, ws_server, mapping_manager, deviceUpdater, jobstatus)
+    madmin_start(args, db_wrapper, ws_server, mapping_manager, data_manager, deviceUpdater, jobstatus)
 
 
 if __name__ == "__main__":
-    logger.info('Start MAD configmode - pls wait')
+    logger.info('Starting MAD config mode')
     filename = os.path.join('configs', 'config.ini')
     if not os.path.exists(filename):
         logger.error(
-            'config.ini file not found - check configs folder and copy .example')
+            'config.ini file not found. Check configs folder and copy example config')
         sys.exit(1)
 
     filename = args.mappings
     if not os.path.exists(filename):
-        generate_mappingjson()
+        generate_mappingjson(args.mappings)
 
     create_folder(args.file_path)
     create_folder(args.upload_path)
@@ -64,12 +54,13 @@ if __name__ == "__main__":
     version = MADVersion(args, db_wrapper)
     version.get_version()
 
+    data_manager = utils.data_manager.DataManager(logger, args)
+
     MappingManagerManager.register('MappingManager', MappingManager)
     mapping_manager_manager = MappingManagerManager()
     mapping_manager_manager.start()
     mapping_manager_stop_event = mapping_manager_manager.Event()
-    mapping_manager: MappingManager = mapping_manager_manager.MappingManager(
-        db_wrapper, args, True)
+    mapping_manager: MappingManager = mapping_manager_manager.MappingManager(db_wrapper, args, data_manager, True)
 
     ws_server = WebsocketServer(
         args, None, db_wrapper, mapping_manager, None, True)
@@ -82,8 +73,8 @@ if __name__ == "__main__":
     device_Updater = deviceUpdater(ws_server, args, jobstatus)
 
     logger.success(
-        'Starting MADmin on port {} - open browser and click "Mapping Editor"', int(args.madmin_port))
+        'Starting MADmin on port {} - Open a browser, visit MADmin and go to "Settings"', int(args.madmin_port))
     t_flask = Thread(name='madmin', target=start_madmin,
-                     args=(args, db_wrapper, ws_server, mapping_manager, device_Updater, jobstatus))
+                     args=(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater, jobstatus))
     t_flask.daemon = False
     t_flask.start()

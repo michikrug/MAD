@@ -1,7 +1,7 @@
-from flask import jsonify, render_template, request, send_from_directory
+from flask import (jsonify, redirect, render_template, request,
+                   send_from_directory, url_for)
 
-from madmin.functions import (auth_required, get_geofences, get_quest_areas,
-                              nocache)
+from madmin.functions import auth_required, get_quest_areas
 from utils.functions import generate_path
 from utils.logging import logger
 from utils.MappingManager import MappingManager
@@ -67,7 +67,7 @@ class path(object):
 
     @auth_required
     def root(self):
-        return render_template('index.html')
+        return redirect(url_for('settings'))
 
     @auth_required
     def raids(self):

@@ -320,7 +320,6 @@ class config(object):
         return redirect(url_for('settings_devices'), code=302)
 
     @auth_required
-    @nocache
     def reload(self):
         if not self._args.auto_reload_config:
             self._mapping_mananger.update()

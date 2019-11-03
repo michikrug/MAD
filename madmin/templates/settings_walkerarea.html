@@ -6,7 +6,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script type="text/javascript" src="{{ url_for('static', filename='js/madmin_settings.js').lstrip('/') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/madmin_settings.js') }}"></script>
 <script>
     function validate_walker() {
         var digitsOnlyNotEmptyPattern = "^[0-9]+$";
@@ -43,7 +43,7 @@
         if(validate_walker() == false) {
             return;
         }
-        $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif').lstrip('/') }}" width="100px" /><br /><h2>Saving {{ subtab }}...</h2>' });
+        $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px" /><br /><h2>Saving {{ subtab }}...</h2>' });
         save_data = get_save_data();
         if(isEmptyObj(save_data) != false) {
             alert('No changes have been made');

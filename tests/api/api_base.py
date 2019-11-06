@@ -1,8 +1,10 @@
 import copy
-import local_api
 from collections import namedtuple
 from unittest import TestCase
+
 import global_variables
+import local_api
+
 
 class APITestBase(TestCase):
     generated_uris = []

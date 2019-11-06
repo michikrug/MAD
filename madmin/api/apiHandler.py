@@ -96,6 +96,7 @@ class ResourceHandler(object):
                             save_data[key] = entry_def['settings']['empty']
                         else:
                             missing_fields.append(key)
+                        continue
                 except:
                     pass
                 continue
@@ -114,7 +115,10 @@ class ResourceHandler(object):
                     if (type(val) in [str]):
                         if len(val) == 0:
                             if entry_def['settings']['require'] == True:
-                                missing_fields.append(key)
+                                if 'empty' in entry_def['settings']:
+                                    save_data[key] = entry_def['settings']['empty']
+                                else:
+                                    missing_fields.append(key)
                                 continue
                             elif keep_empty_values:
                                 formated_val = none_val

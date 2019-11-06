@@ -7,7 +7,7 @@ from utils.logging import logger
 
 from .convert_mapping import convert_mappings
 
-current_version = 15
+current_version = 16
 
 
 class MADVersion(object):
@@ -370,6 +370,19 @@ class MADVersion(object):
             self.__convert_to_id(settings)
             with open(self._application_args.mappings, 'w') as outfile:
                 json.dump(settings, outfile, indent=4, sort_keys=True)
+
+        if self._version < 16:
+            query = (
+                "CREATE TABLE IF NOT EXISTS `trs_visited` ("
+                "`pokestop_id` varchar(50) NOT NULL collate utf8mb4_unicode_ci,"
+                "`origin` varchar(50) NOT NULL collate utf8mb4_unicode_ci,"
+                "PRIMARY KEY (`pokestop_id`,`origin`)"
+                ")"
+            )
+            try:
+                self.dbwrapper.execute(query, commit=True)
+            except Exception as e:
+                logger.exception("Unexpected error: {}", e)
 
         self.set_version(current_version)
 

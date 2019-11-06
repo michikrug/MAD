@@ -32,20 +32,32 @@
   {% if not pub %}
   <nav class="navbar navbar-dark bg-dark fixed-top navbar-expand-lg">
     <div class="container">
-      <a class="navbar-brand" href="{{ url_for('root') }}"><img src="{{ url_for('static', filename='mad_banner_trans.png') }}" class="brandimg"></a>
+      <a class="navbar-brand" href="{{ url_for('root') }}">
+        <img src="{{ url_for('static', filename='mad_banner_trans.png') }}" class="brandimg">
+      </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div id="navbarNav" class="navbar-collapse collapse">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item"><a href="{{ url_for('map') }}" class="nav-link">Map</a></li>
-          <li class="nav-item"><a href="{{ url_for('quest') }}" class="nav-link">Quests</a></li>
-          <li class="nav-item"><a href="{{ url_for('settings_devices') }}" class="nav-link">Settings</a></li>
-          <li class="nav-item"><a href="{{ url_for('status') }}" class="nav-link">Status</a></li>
+          <li class="nav-item">
+            <a href="{{ url_for('map') }}" class="nav-link">Map</a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('quest') }}" class="nav-link">Quests</a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('settings_devices') }}" class="nav-link">Settings</a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('status') }}" class="nav-link">Status</a>
+          </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="statistics" id="navbarDropdown" role="button"
-              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Statistics</a>
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Statistics
+            </a>
             <div class="dropdown-menu" i aria-labelledby="navbarDropdown">
               <a href="{{ url_for('statistics') }}" class="dropdown-item">Global Stats</a>
               <a href="{{ url_for('statistics_mon') }}" class="dropdown-item">Mon Stats</a>
@@ -53,10 +65,14 @@
               <a href="{{ url_for('statistics_spawns') }}" class="dropdown-item">Spawnpoint Stats</a>
             </div>
           </li>
-          <li class="nav-item"><a href="{{ url_for('get_phonescreens') }}" class="nav-link">Phonecontrol</a></li>
+          <li class="nav-item">
+            <a href="{{ url_for('get_phonescreens') }}" class="nav-link">Devicecontrol</a>
+          </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="uploaded_files" id="navbarDropdown" role="button"
-              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Jobs</a>
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Jobs
+            </a>
             <div class="dropdown-menu" i aria-labelledby="navbarDropdown">
               <a href="{{ url_for('uploaded_files') }}" class="dropdown-item">Existing Files / Jobs</a>
               <a href="{{ url_for('upload') }}" class="dropdown-item">Upload File</a>
@@ -66,7 +82,8 @@
             </div>
           </li>
         </ul>
-        <button type="button" class="btn btn-success btn-sm nav-link text-uppercase font-weight-bold" id="reload">Apply settings</a>
+        <button type="button" class="btn btn-success btn-sm nav-link text-uppercase font-weight-bold" id="reload">Apply
+          settings</a>
       </div>
     </div>
   </nav>

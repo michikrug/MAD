@@ -81,7 +81,7 @@ class APIDevice(apiHandler.ResourceHandler):
                 "settings": {
                     "type": "option",
                     "require": False,
-                    "values": [False, True],
+                    "values": [None, False, True],
                     "description": "Add extra cooldown after teleport",
                     "expected": bool
                 }
@@ -118,6 +118,22 @@ class APIDevice(apiHandler.ResourceHandler):
                     "expected": float
                 }
             },
+            "inventory_clear_rounds": {
+                "settings": {
+                    "type": "text",
+                    "require": False,
+                    "description": "Number of rounds to clear the inventory. (Default: 10)",
+                    "expected": int
+                }
+            },
+            "inventory_clear_item_amount_tap_duration": {
+                "settings": {
+                    "type": "text",
+                    "require": False,
+                    "description": "Number of seconds to tap the + button when clearing an inventory item. (Default: 3)",
+                    "expected": float
+                }
+            },
             "mitm_wait_timeout": {
                 "settings": {
                     "type": "text",
@@ -138,7 +154,7 @@ class APIDevice(apiHandler.ResourceHandler):
                 "settings": {
                     "type": "option",
                     "require": False,
-                    "values": [False, True],
+                    "values": [None, False, True],
                     "description": "Reboot device if reboot_thresh is reached (Default: false)",
                     "expected": bool
                 }

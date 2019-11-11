@@ -1,7 +1,9 @@
 import copy
 from unittest import TestCase
+
 import api_base
 import global_variables
+
 
 class APIArea(api_base.APITestBase):
     uri = copy.copy(global_variables.DEFAULT_OBJECTS['area']['uri'])
@@ -63,7 +65,8 @@ class APIArea(api_base.APITestBase):
         headers = {
             'X-Mode': 'fake-mode'
         }
-        errors = {'errors': 'Invalid mode specified [fake-mode].  Valid modes: mon_mitm,iv_mitm,pokestops,raids_mitm,idle'}
+        errors = {
+            'errors': 'Invalid mode specified [fake-mode].  Valid modes: mon_mitm,iv_mitm,pokestops,raids_mitm,idle'}
         super().invalid_post(payload, errors, error_code=400, headers=headers)
 
     def test_invalid_post(self):

@@ -261,13 +261,13 @@ class RmWrapper(DbWrapperBase):
         # ditto detector
 
         if pokemon_data.get('id') in (13, 46, 48, 163, 165, 167, 187, 223, 273, 293, 300, 316, 322, 399) and \
-                ((pokemon_display.get('weather_boosted_value', None) is not None
-                  and pokemon_display.get('weather_boosted_value', None) > 0) \
-            and (pokemon_data.get("individual_attack") < 4 or pokemon_data.get("individual_defense") < 4 or
-                 pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or \
-                (pokemon_display.get('weather_boosted_value', None) is not None
-                  and pokemon_display.get('weather_boosted_value', None) == 0) \
-            and pokemon_data.get("cp_multiplier") > .733) :
+                ((pokemon_display.get('weather_boosted_value', None) is not None and
+                  pokemon_display.get('weather_boosted_value', None) > 0) and
+                 (pokemon_data.get("individual_attack") < 4 or pokemon_data.get("individual_defense") < 4 or
+                  pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or
+                 (pokemon_display.get('weather_boosted_value', None) is not None and
+                  pokemon_display.get('weather_boosted_value', None) == 0) and
+                 pokemon_data.get("cp_multiplier") > .733):
             # mon must be a ditto :D
             mon_id = 132
             gender = 3
@@ -693,7 +693,8 @@ class RmWrapper(DbWrapperBase):
 
         if len(stop_data['active_fort_modifier']) > 0:
             active_fort_modifier = stop_data['active_fort_modifier'][0]
-            lure = datetime.utcfromtimestamp(self.application_args.lure_duration * 60 + (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
+            lure = datetime.utcfromtimestamp(self.application_args.lure_duration * 60 +
+                                             (stop_data['last_modified_timestamp_ms'] / 1000)).strftime("%Y-%m-%d %H:%M:%S")
 
         if "pokestop_displays" in stop_data and len(stop_data["pokestop_displays"]) > 0 \
                 and stop_data["pokestop_displays"][0]["character_display"] is not None \
@@ -1393,7 +1394,7 @@ class RmWrapper(DbWrapperBase):
         data = ()
 
         query = (
-                "SELECT count(*), pokemon_id, form, gender, costume FROM pokemon WHERE individual_attack IS NOT NULL "
+            "SELECT count(*), pokemon_id, form, gender, costume FROM pokemon WHERE individual_attack IS NOT NULL "
         )
         query = query + "AND pokemon_id IN(" + ",".join(map(str, mon_id_list)) + ") "
         if timestamp_from:

@@ -1,11 +1,14 @@
 import collections
 import copy
-import flask
 import json
-from madmin.functions import auth_required
 import re
-from . import apiResponse, apiRequest, apiException
+
+import flask
+
 import utils.data_manager
+from madmin.functions import auth_required
+
+from . import apiException, apiRequest, apiResponse
 
 
 class ResourceHandler(object):
@@ -44,24 +47,27 @@ class ResourceHandler(object):
             self._app.route(route, methods=['GET', 'POST'], endpoint='api_%s' % (self.component,))(self.process_request)
             if self.iterable:
                 route = '%s/<string:identifier>' % (self.uri_base,)
-                self._app.route(route, methods=['DELETE', 'GET', 'PATCH', 'PUT'], endpoint='api_%s' % (self.component,))(self.process_request)
+                self._app.route(route, methods=['DELETE', 'GET', 'PATCH', 'PUT'],
+                                endpoint='api_%s' % (self.component,))(self.process_request)
 
     def format_data(self, data, config, operation):
         save_data = {}
         invalid_fields = []
         missing_fields = []
         invalid_uris = []
-        unknown_fields  = []
+        unknown_fields = []
         sections = ['fields', 'settings']
         for section in sections:
             if section == 'fields':
-                (tmp_save, tmp_inv, tmp_missing, tmp_uri, tmp_unknown) = self.format_section(data, config[section], operation, keep_empty_values=True)
+                (tmp_save, tmp_inv, tmp_missing, tmp_uri, tmp_unknown) = self.format_section(
+                    data, config[section], operation, keep_empty_values=True)
                 for key, val in tmp_save.items():
                     save_data[key] = val
                 unknown_fields = list(set(data.keys()) - set(config[section].keys()))
             else:
                 try:
-                    (tmp_save, tmp_inv, tmp_missing, tmp_uri, tmp_unknown) = self.format_section(data[section], config[section], operation)
+                    (tmp_save, tmp_inv, tmp_missing, tmp_uri, tmp_unknown) = self.format_section(
+                        data[section], config[section], operation)
                     save_data[section] = tmp_save
                     unknown_fields += list(set(data[section].keys()) - set(config[section].keys()))
                     if section in unknown_fields and type(data[section]) is dict:
@@ -95,7 +101,8 @@ class ResourceHandler(object):
                     pass
                 continue
             if type(val) is dict:
-                (save_data[key], rec_invalid, rec_missing, rec_uri, rec_unknown) = self.format_data(val, current[key], operation)
+                (save_data[key], rec_invalid, rec_missing, rec_uri,
+                 rec_unknown) = self.format_data(val, current[key], operation)
                 invalid_fields += rec_invalid
                 missing_fields += rec_missing
                 invalid_uris += rec_uri
@@ -144,7 +151,8 @@ class ResourceHandler(object):
                                 else:
                                     identifier = str(match.group(1))
                                     try:
-                                        lookup = self._data_manager.get_data(entry_def['settings']['data_source'], identifier=identifier)
+                                        lookup = self._data_manager.get_data(
+                                            entry_def['settings']['data_source'], identifier=identifier)
                                         uri_valid.append(identifier)
                                     except utils.data_manager.DataManagerInvalidModeUnknownIdentifier:
                                         invalid_uris.append(elem)
@@ -242,7 +250,8 @@ class ResourceHandler(object):
         resource_info = self.get_resource_info(config)
         # Use an ordered dict so we can guarantee the order is returned per the class specification
         disp_field = self.api_req.params.get('display_field', self.default_sort)
-        raw_data = self._data_manager.get_data(self.component, fetch_all=fetch_all, display_field=disp_field, mode=self.mode)
+        raw_data = self._data_manager.get_data(self.component, fetch_all=fetch_all,
+                                               display_field=disp_field, mode=self.mode)
         api_response_data = collections.OrderedDict()
         key_translation = '%s/%%s' % (flask.url_for('api_%s' % (self.component,)))
         try:
@@ -324,7 +333,8 @@ class ResourceHandler(object):
                     return self.get_resource_data_root(config)
                 else:
                     return self.get(identifier, config=config)
-            (self.api_req.data, invalid, missing, uris, unknown) = self.format_data(self.api_req.data, config, flask.request.method)
+            (self.api_req.data, invalid, missing, uris, unknown) = self.format_data(
+                self.api_req.data, config, flask.request.method)
             errors = {}
             if missing:
                 errors['missing'] = missing
@@ -348,7 +358,8 @@ class ResourceHandler(object):
             }
             return apiResponse.APIResponse(self._logger, self.api_req)(None, 422, headers=headers)
         except apiException.NoModeSpecified:
-            msg = 'Please specify a mode for resource information.  Valid modes: %s' % (','.join(self.configuration.keys()))
+            msg = 'Please specify a mode for resource information.  Valid modes: %s' % (
+                ','.join(self.configuration.keys()))
             error = {
                 'error': msg
             }
@@ -394,7 +405,8 @@ class ResourceHandler(object):
         """ API call to update data """
         append = self.api_req.headers.get('X-Append')
         try:
-            self._data_manager.set_data(self.component, 'patch', self.api_req.data, identifier=identifier, append=append)
+            self._data_manager.set_data(self.component, 'patch', self.api_req.data,
+                                        identifier=identifier, append=append)
         except KeyError:
             return apiResponse.APIResponse(self._logger, self.api_req)(None, 404)
         else:

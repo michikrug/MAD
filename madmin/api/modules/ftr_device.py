@@ -1,5 +1,6 @@
 from .. import apiHandler
 
+
 class APIDevice(apiHandler.ResourceHandler):
     config_section = 'devices'
     component = 'device'
@@ -27,7 +28,7 @@ class APIDevice(apiHandler.ResourceHandler):
                     "data_source": "walker",
                     "uri_source": "api_walker"
                 }
-        },
+            },
             "pool": {
                 "settings": {
                     "type": "poolselect",
@@ -52,7 +53,7 @@ class APIDevice(apiHandler.ResourceHandler):
             }
         },
         "settings": {
-            "post_walk_delay": { 
+            "post_walk_delay": {
                 "settings": {
                     "type": "text",
                     "require": False,
@@ -218,7 +219,7 @@ class APIDevice(apiHandler.ResourceHandler):
             "route_calc_algorithm": {
                 "settings": {
                     "type": "option",
-                    "values": ["optimized","quick"],
+                    "values": ["optimized", "quick"],
                     "require": False,
                     "description": "Method of calculation for routes. (Default: optimized)",
                     "expected": str
@@ -302,7 +303,7 @@ class APIDevice(apiHandler.ResourceHandler):
                 }
             },
             "injection_thresh_reboot": {
-                 "settings": {
+                "settings": {
                     "type": "text",
                     "require": False,
                     "empty": None,

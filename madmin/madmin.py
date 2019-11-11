@@ -1,22 +1,21 @@
+import logging
 import sys
 
-import logging
 from flask import Flask
 from flask.logging import default_handler
 from werkzeug.utils import secure_filename
 
 from db.dbWrapperBase import DbWrapperBase
-from utils.MappingManager import MappingManager
-from utils.logging import InterceptHandler, logger
-# routes
-from madmin.routes.statistics import statistics
-from madmin.routes.control import control
-from madmin.routes.map import map
-from madmin.routes.config import config
-from madmin.routes.path import path
 from madmin.api import APIHandler
 from madmin.reverseproxy import ReverseProxied
-
+from madmin.routes.config import config
+from madmin.routes.control import control
+from madmin.routes.map import map
+from madmin.routes.path import path
+# routes
+from madmin.routes.statistics import statistics
+from utils.logging import InterceptHandler, logger
+from utils.MappingManager import MappingManager
 
 sys.path.append("..")  # Adds higher directory to python modules path.
 

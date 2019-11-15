@@ -1,12 +1,12 @@
 import os
 import time
-from queue import Empty, Queue
-from multiprocessing import Lock, Event, Queue
+from multiprocessing import Event, Lock, Queue
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from queue import Empty, Queue
 from threading import Thread
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from db.dbWrapperBase import DbWrapperBase
 from geofence.geofenceHelper import GeofenceHelper
@@ -173,7 +173,7 @@ class MappingManager:
             return []
         else:
             logger.warning("IV list '{}' has been used in area '{}' but does not exist. Using empty IV list instead.",
-                        listname, areaname)
+                           listname, areaname)
             return []
 
     def get_all_routemanager_names(self):
@@ -327,11 +327,11 @@ class MappingManager:
                         )
                     )
 
-            area_dict = {"mode":              area["mode"],
+            area_dict = {"mode": area["mode"],
                          "geofence_included": area["geofence_included"],
                          "geofence_excluded": area.get("geofence_excluded", None),
-                         "routecalc":         area["routecalc"],
-                         "name":              area['name']}
+                         "routecalc": area["routecalc"],
+                         "name": area['name']}
             # also build a routemanager for each area...
 
             # grab coords
@@ -352,17 +352,20 @@ class MappingManager:
                                                                  mode_mapping.get(mode, {}).get("range", 0),
                                                                  mode_mapping.get(mode, {}).get("max_count", 99999999),
                                                                  area["geofence_included"],
-                                                                 path_to_exclude_geofence=area.get("geofence_excluded", None),
+                                                                 path_to_exclude_geofence=area.get(
+                                                                     "geofence_excluded", None),
                                                                  mode=mode,
                                                                  settings=area.get("settings", None),
                                                                  init=area.get("init", False),
                                                                  name=area.get("name", "unknown"),
                                                                  level=area.get("level", False),
-                                                                 coords_spawns_known=area.get("coords_spawns_known", False),
+                                                                 coords_spawns_known=area.get(
+                                                                     "coords_spawns_known", False),
                                                                  routefile=area["routecalc"],
                                                                  calctype=area.get("route_calc_algorithm", "optimized"),
                                                                  joinqueue=self.join_routes_queue,
-                                                                 S2level=mode_mapping.get(mode, {}).get("s2_cell_level", 30)
+                                                                 S2level=mode_mapping.get(
+                                                                     mode, {}).get("s2_cell_level", 30)
                                                                  )
 
             if mode not in ("iv_mitm", "idle"):
@@ -381,11 +384,11 @@ class MappingManager:
                     areas_procs[area_id] = proc
                 else:
                     logger.info(
-                            "Init mode enabled. Going row-based for {}", str(area.get("name", "unknown")))
+                        "Init mode enabled. Going row-based for {}", str(area.get("name", "unknown")))
                     # we are in init, let's write the init route to file to make it visible in madmin
                     if area["routecalc"] is not None:
                         routefile = os.path.join(
-                                self.__args.file_path, area["routecalc"])
+                            self.__args.file_path, area["routecalc"])
                         if os.path.isfile(routefile + '.calc'):
                             os.remove(routefile + '.calc')
                         with open(routefile + '.calc', 'a') as f:
@@ -590,7 +593,7 @@ class MappingManager:
                 # File has changed in the last refresh_time_sec seconds.
                 if time_diff_sec < refresh_time_sec:
                     logger.info(
-                            'Change found in {}. Updating device mappings.', filename)
+                        'Change found in {}. Updating device mappings.', filename)
                     self.update()
                 else:
                     logger.debug('No change found in {}.', filename)
@@ -599,7 +602,7 @@ class MappingManager:
                 break
             except Exception as e:
                 logger.exception(
-                        'Exception occurred while updating device mappings: {}.', e)
+                    'Exception occurred while updating device mappings: {}.', e)
 
     def get_all_devices(self):
         devices = []

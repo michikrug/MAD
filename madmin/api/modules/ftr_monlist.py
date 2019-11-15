@@ -1,5 +1,6 @@
 from .. import apiHandler
 
+
 class APIMonList(apiHandler.ResourceHandler):
     config_section = 'monivlist'
     component = 'monivlist'

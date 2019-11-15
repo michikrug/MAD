@@ -1,7 +1,9 @@
 import copy
 from unittest import TestCase
+
 import api_base
 import global_variables
+
 
 class APIWalker(api_base.APITestBase):
     uri = copy.copy(global_variables.DEFAULT_OBJECTS['walker']['uri'])

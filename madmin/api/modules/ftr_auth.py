@@ -1,5 +1,6 @@
 from .. import apiHandler
 
+
 class APIAuth(apiHandler.ResourceHandler):
     config_section = 'auth'
     component = 'auth'
@@ -15,7 +16,7 @@ class APIAuth(apiHandler.ResourceHandler):
                     "require": True,
                     "description": "Username of device",
                     "lockonedit": True,
-                "expected": str
+                    "expected": str
                 }
             },
             "password": {
@@ -23,7 +24,7 @@ class APIAuth(apiHandler.ResourceHandler):
                     "type": "text",
                     "require": True,
                     "description": "Password of device",
-                "expected": str
+                    "expected": str
                 }
             }
         }

@@ -28,7 +28,7 @@ DEFAULT_OBJECTS = {
         'uri': '/api/device',
         'payload': {
             'origin': 'UnitTest Device',
-            'walker': None, # This must be populated
+            'walker': None,  # This must be populated
             'settings': {
                 'screenshot_type': 'jpg'
             }
@@ -60,7 +60,7 @@ DEFAULT_OBJECTS = {
     'walkerarea': {
         'uri': '/api/walkerarea',
         'payload': {
-            'walkerarea': 'UnitTest WalkerArea', # This must be populated with a valid area_uri
+            'walkerarea': 'UnitTest WalkerArea',  # This must be populated with a valid area_uri
             'walkertype': 'raids_mitm',
             'walkervalue': '',
             'walkermax': ''

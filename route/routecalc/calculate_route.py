@@ -11,7 +11,7 @@ from utils.logging import logger
 from .util import *
 
 
-def getLessCoords(npCoordinates, maxRadius, maxCountPerCircle, useS2: bool=False, S2level: int=15):
+def getLessCoords(npCoordinates, maxRadius, maxCountPerCircle, useS2: bool = False, S2level: int = 15):
     coordinates = []
     for coord in npCoordinates:
         coordinates.append(
@@ -33,9 +33,10 @@ def getLessCoords(npCoordinates, maxRadius, maxCountPerCircle, useS2: bool=False
     return coords_cleaned_up
 
 
-def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=1, algorithm='optimized', useS2: bool = False, S2level: int=15):
+def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=1, algorithm='optimized', useS2: bool = False, S2level: int = 15):
     export_data = []
-    if useS2: logger.debug("Using S2 method for calculation with S2 level: {}", S2level)
+    if useS2:
+        logger.debug("Using S2 method for calculation with S2 level: {}", S2level)
     if routefile is not None and os.path.isfile(routefile + '.calc'):
         logger.debug('Found existing routefile {}', routefile)
         with open(routefile + '.calc', 'r') as route:
@@ -98,5 +99,3 @@ def getJsonRoute(coords, maxRadius, maxCoordsInRadius, routefile, num_processes=
 
     # return json.dumps(export_data)
     return export_data
-
-

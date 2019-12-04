@@ -1,8 +1,8 @@
-from multiprocessing import Queue, Process
 from datetime import datetime
+from multiprocessing import Process, Queue
 
-from db.DbWrapper import DbWrapper
 from db.DbPogoProtoSubmit import DbPogoProtoSubmit
+from db.DbWrapper import DbWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from utils.logging import logger
 

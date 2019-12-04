@@ -5,12 +5,12 @@ from datetime import datetime
 from db.DbWrapper import DbWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from ocr.pogoWindows import PogoWindows
-from utils.MappingManager import MappingManager
 from utils.geo import (get_distance_of_two_points_in_meters,
                        get_lat_lng_offsets_by_distance)
 from utils.logging import logger
 from utils.madGlobals import InternalStopWorkerException
-from worker.MITMBase import MITMBase, LatestReceivedType
+from utils.MappingManager import MappingManager
+from worker.MITMBase import LatestReceivedType, MITMBase
 
 
 class WorkerMITM(MITMBase):
@@ -48,8 +48,8 @@ class WorkerMITM(MITMBase):
             max_distance = int(200)
 
         if (speed == 0 or
-                (max_distance and 0 < max_distance < distance)
-                or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
+                (max_distance and 0 < max_distance < distance) or
+                (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
             logger.debug("main: Teleporting...")
             self._transporttype = 0
             self._communicator.setLocation(
@@ -168,8 +168,8 @@ class WorkerMITM(MITMBase):
         # if iv ids are specified we will sync the workers encountered ids to newest time.
         if ids_iv:
             (self._latest_encounter_update, encounter_ids) = self._db_wrapper.update_encounters_from_db(
-                    self._mapping_manager.routemanager_get_geofence_helper(self._routemanager_name),
-                    self._latest_encounter_update)
+                self._mapping_manager.routemanager_get_geofence_helper(self._routemanager_name),
+                self._latest_encounter_update)
             if encounter_ids:
                 logger.debug("Found {} new encounter_ids", len(encounter_ids))
             self._encounter_ids = {**encounter_ids, **self._encounter_ids}

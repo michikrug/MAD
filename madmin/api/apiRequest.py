@@ -1,5 +1,6 @@
-from . import apiException, global_variables
 import json
+
+from . import apiException, global_variables
 
 
 class APIRequest(object):
@@ -18,6 +19,7 @@ class APIRequest(object):
         _request (flask.request): Incoming request
         params (dict): Parameters from the request
     """
+
     def __init__(self, logger, request):
         self._logger = logger
         self._request = request

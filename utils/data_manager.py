@@ -5,6 +5,7 @@ import re
 import six
 
 import madmin.api
+from utils.logging import logger
 
 
 class DataManagerException(Exception):
@@ -28,8 +29,7 @@ class DataManagerInvalidModeUnknownIdentifier(DataManagerException):
 
 
 class DataManager(object):
-    def __init__(self, logger, args):
-        self._logger = logger
+    def __init__(self, args):
         self.__raw = {}
         self.__location = args.mappings
         self.update()
@@ -68,10 +68,10 @@ class DataManager(object):
                 self.delete_data(section, identifier=comp_id)
             return None
         except AttributeError:
-            self._logger.debug('Invalid URI set in location, {}', location)
+            logger.debug('Invalid URI set in location, {}', location)
             return None
         except KeyError:
-            self._logger.debug('Data for {},{} not found in configuration file', location, identifier)
+            logger.debug('Data for {},{} not found in configuration file', location, identifier)
             raise
         return True
 
@@ -81,7 +81,7 @@ class DataManager(object):
             location_args = [madmin.api.BASE_URI, self.translate_location(location), *args]
             return uri.format(*location_args)
         except KeyError:
-            self._logger.warning('Invalid location for URI generation: {}', location)
+            logger.warning('Invalid location for URI generation: {}', location)
             return None
 
     def get_api_attribute(self, location, attribute):
@@ -103,16 +103,16 @@ class DataManager(object):
                         valid[key] = data
                 data = valid
         except AttributeError:
-            self._logger.debug('Invalid URI set in location, {}', location)
+            logger.debug('Invalid URI set in location, {}', location)
             return None
         except KeyError:
-            self._logger.debug('Data for {},{} not found in configuration file', location, identifier)
+            logger.debug('Data for {},{} not found in configuration file', location, identifier)
             raise DataManagerInvalidModeUnknownIdentifier()
         try:
             if identifier is not None:
                 return data[str(identifier)]
         except KeyError:
-            self._logger.debug('Data for {},{} not found in configuration file', location, identifier)
+            logger.debug('Data for {},{} not found in configuration file', location, identifier)
             raise DataManagerInvalidModeUnknownIdentifier()
         if identifier is None:
             disp_field = kwargs.get('display_field', self.get_api_attribute(location, 'default_sort'))
@@ -281,7 +281,7 @@ class DataManager(object):
                     walkerareas_original = set(self.__raw[config_section]['entries'][identifier]['setup'])
                     removed_walkerareas = set(walkerareas_original) - set(walkerareas_update)
                     if removed_walkerareas:
-                        self._logger.debug('Change in walkerarea detected. {}', removed_walkerareas)
+                        logger.debug('Change in walkerarea detected. {}', removed_walkerareas)
                         for walkerarea in removed_walkerareas:
                             try:
                                 self.delete_data('walkerarea', identifier=walkerarea)
@@ -335,4 +335,4 @@ class DataManager(object):
             with open(self.__location, 'rb') as fh:
                 self.__raw = json.load(fh)
         except Exception as err:
-            self._logger.critical('Unable to load configuration, {}', err)
+            logger.critical('Unable to load configuration, {}', err)

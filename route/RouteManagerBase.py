@@ -13,7 +13,7 @@ from threading import Event, Lock, RLock, Thread
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-from db.dbWrapperBase import DbWrapperBase
+from db.DbWrapper import DbWrapper
 from geofence.geofenceHelper import GeofenceHelper
 from route.routecalc.calculate_route import getJsonRoute
 from route.routecalc.ClusteringHelper import ClusteringHelper
@@ -44,11 +44,11 @@ class RoutePoolEntry:
 
 
 class RouteManagerBase(ABC):
-    def __init__(self, db_wrapper: DbWrapperBase, dbm: DataManager, area_id: str, coords: List[Location], max_radius: float,
+    def __init__(self, db_wrapper: DbWrapper, dbm: DataManager, area_id: str, coords: List[Location], max_radius: float,
                  max_coords_within_radius: int, include_geofence: str, exclude_geofence: str,
                  routefile: str, mode=None, init: bool = False, name: str = "unknown", settings: dict = None,
                  level: bool = False, calctype: str = "optimized", useS2: bool = False, S2level: int = 15, joinqueue=None):
-        self.db_wrapper: DbWrapperBase = db_wrapper
+        self.db_wrapper: DbWrapper = db_wrapper
         self.init: bool = init
         self.name: str = name
         self._data_manager = dbm
@@ -241,6 +241,8 @@ class RouteManagerBase(ABC):
         logger.info("Try to activate PrioQ thread for route {}".format(str(self.name)))
         if (self.delay_after_timestamp_prio is not None or self.mode == "iv_mitm") and not self.mode == "pokestops":
             logger.info("PrioQ thread for route {} could be activate".format(str(self.name)))
+            if self._stop_update_thread.is_set():
+                self._stop_update_thread.clear()
             self._prio_queue = []
             if self.mode not in ["iv_mitm", "pokestops"]:
                 self.clustering_helper = ClusteringHelper(self._max_radius,

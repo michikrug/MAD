@@ -3,7 +3,7 @@ import time
 from threading import Event
 from typing import Optional
 
-from db.dbWrapperBase import DbWrapperBase
+from db.DbWrapper import DbWrapper
 from mitm_receiver.MitmMapper import MitmMapper
 from utils.logging import logger
 from utils.madGlobals import (InternalStopWorkerException,
@@ -16,7 +16,7 @@ from websocket.communicator import Communicator
 
 class WorkerConfigmode(object):
     def __init__(self, args, id, websocket_handler, walker, mapping_manager,
-                 mitm_mapper: MitmMapper, db_wrapper: DbWrapperBase, routemanager_name: str):
+                 mitm_mapper: MitmMapper, db_wrapper: DbWrapper, routemanager_name: str):
         self._args = args
         self._communicator = Communicator(
             websocket_handler, id, self, args.websocket_command_timeout)

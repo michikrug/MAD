@@ -1,11 +1,14 @@
 from multiprocessing import Lock, Semaphore
 from multiprocessing.managers import SyncManager
+
 import mysql
 from mysql.connector.pooling import MySQLConnectionPool
 from utils.logging import logger
 
+
 class PooledQuerySyncManager(SyncManager):
     pass
+
 
 class PooledQueryExecutor:
 
@@ -24,7 +27,6 @@ class PooledQueryExecutor:
 
         self._init_pool()
 
-
     def _init_pool(self):
         logger.info("Connecting to DB")
         dbconfig = {
@@ -36,10 +38,9 @@ class PooledQueryExecutor:
         }
         self._pool_mutex.acquire()
         self._pool = MySQLConnectionPool(pool_name="db_wrapper_pool",
-                                        pool_size=self._poolsize,
-                                        **dbconfig)
+                                         pool_size=self._poolsize,
+                                         **dbconfig)
         self._pool_mutex.release()
-
 
     def close(self, conn, cursor):
         """
@@ -50,7 +51,6 @@ class PooledQueryExecutor:
         """
         cursor.close()
         conn.close()
-
 
     def execute(self, sql, args=None, commit=False):
         """
@@ -93,7 +93,6 @@ class PooledQueryExecutor:
         finally:
             self.close(conn, cursor)
             self._connection_semaphore.release()
-
 
     def executemany(self, sql, args, commit=False):
         """

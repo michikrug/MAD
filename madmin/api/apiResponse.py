@@ -1,6 +1,9 @@
-import flask
 import json
+
+import flask
+
 from . import apiException, global_variables
+
 
 class APIResponse(object):
     def __init__(self, logger, request, **kwargs):
@@ -27,7 +30,7 @@ class APIResponse(object):
     def convert_to_format(self, content):
         beautify = self.headers.get('X-Beautify')
         if self.mimetype == 'application/json':
-            try: 
+            try:
                 if beautify and beautify.isdigit() and int(beautify) == 1:
                     return json.dumps(content, indent=4)
                 else:

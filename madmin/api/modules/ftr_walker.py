@@ -1,5 +1,6 @@
 from .. import apiHandler
 
+
 class APIWalker(apiHandler.ResourceHandler):
     config_section = 'walker'
     component = 'walker'
@@ -7,7 +8,7 @@ class APIWalker(apiHandler.ResourceHandler):
     description = 'Add/Update/Delete Walkers'
 
     configuration = {
-      "fields": {
+        "fields": {
             "walkername": {
                 "settings": {
                     "type": "text",

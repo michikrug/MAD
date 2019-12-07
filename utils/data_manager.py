@@ -1,26 +1,32 @@
 import collections
 import json
-import madmin.api
 import re
+
 import six
 
+import madmin.api
 from utils.logging import logger
+
 
 class DataManagerException(Exception):
     pass
+
 
 class DataManagerDependencyError(DataManagerException):
     def __init__(self, dependencies):
         self.dependencies = dependencies
         super(DataManagerDependencyError, self).__init__(dependencies)
 
+
 class DataManagerInvalidMode(DataManagerException):
     def __init__(self, mode):
         self.mode = mode
         super(DataManagerInvalidMode, self).__init__(mode)
 
+
 class DataManagerInvalidModeUnknownIdentifier(DataManagerException):
     pass
+
 
 class DataManager(object):
     def __init__(self, args):
@@ -91,7 +97,7 @@ class DataManager(object):
             (location, config_section, identifier) = self.__process_location(location, identifier=identifier)
             data = self.__raw[config_section]['entries']
             if mode and config_section == 'areas':
-                valid={}
+                valid = {}
                 for key, data in data.items():
                     if data['mode'] == mode:
                         valid[key] = data

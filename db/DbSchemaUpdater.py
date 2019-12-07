@@ -1,6 +1,8 @@
 import sys
-from utils.logging import logger
+
 from db.PooledQueryExecutor import PooledQueryExecutor
+from utils.logging import logger
+
 
 class DbSchemaUpdater:
     """
@@ -151,7 +153,6 @@ class DbSchemaUpdater:
         }
     ]
 
-
     column_mods = [
         {
             "table": "raid",
@@ -191,11 +192,9 @@ class DbSchemaUpdater:
         }
     ]
 
-
     def __init__(self, db_exec: PooledQueryExecutor, database: str):
         self._db_exec: PooledQueryExecutor = db_exec
         self._database: str = database
-
 
     def ensure_unversioned_tables_exist(self):
         """
@@ -213,7 +212,6 @@ class DbSchemaUpdater:
             logger.error("Could't add table {}", table_add["table"])
             sys.exit(1)
 
-
     def ensure_unversioned_columns_exist(self):
         """
         Checks the columns defined in DbSchemaUpdater::column_mods and creates
@@ -230,7 +228,6 @@ class DbSchemaUpdater:
             logger.error("Couldn't create required column {}.{}'", column_mod["table"], column_mod["column"])
             sys.exit(1)
 
-
     def check_create_table(self, table_add: dict):
         sql = ("CREATE TABLE IF NOT EXISTS `{}` "
                "({}) "
@@ -239,7 +236,6 @@ class DbSchemaUpdater:
         if self._db_exec.execute(sql, commit=True) is None:
             raise SchemaUpdateError(table_add)
 
-
     def check_create_column(self, column_mod: dict):
         if self.check_column_exists(column_mod["table"], column_mod["column"]):
             return
@@ -247,7 +243,6 @@ class DbSchemaUpdater:
         if not self.check_column_exists(column_mod["table"], column_mod["column"]):
             raise SchemaUpdateError(column_mod)
         logger.info("Successfully added column '{}.{}'", column_mod["table"], column_mod["column"])
-
 
     def create_column(self, column_mod: dict):
         alter_query = (
@@ -258,7 +253,6 @@ class DbSchemaUpdater:
         if "modify_key" in column_mod:
             alter_query = alter_query + ", " + column_mod["modify_key"]
         self._db_exec.execute(alter_query, commit=True)
-
 
     def check_column_exists(self, table: str, column: str) -> bool:
         query = (
@@ -274,7 +268,6 @@ class DbSchemaUpdater:
             self._database,
         )
         return int(self._db_exec.execute(query, vals)[0][0]) == 1
-
 
     def check_index_exists(self, table: str, index: str) -> bool:
         query = (

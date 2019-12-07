@@ -1,5 +1,7 @@
-from .. import apiHandler, apiException
 import copy
+
+from .. import apiException, apiHandler
+
 
 class APIArea(apiHandler.ResourceHandler):
     config_section = 'areas'
@@ -336,7 +338,7 @@ class APIArea(apiHandler.ResourceHandler):
                 "route_calc_algorithm": {
                     "settings": {
                         "type": "option",
-                        "values": ['optimized','quick'],
+                        "values": ['optimized', 'quick'],
                         "require": False,
                         "description": "Method of calculation for routes. (Default optimized)",
                         "expected": str

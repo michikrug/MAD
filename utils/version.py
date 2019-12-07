@@ -1,13 +1,13 @@
 import json
+import re
+import shutil
 import sys
 
-from utils.logging import logger
-import shutil
-from .convert_mapping import convert_mappings
-import re
-
-from db.DbWrapper import DbWrapper
 from db.DbSchemaUpdater import DbSchemaUpdater
+from db.DbWrapper import DbWrapper
+from utils.logging import logger
+
+from .convert_mapping import convert_mappings
 
 current_version = 16
 
@@ -404,10 +404,10 @@ class MADVersion(object):
                 valid = []
                 for elem in val:
                     if type(elem) is str:
-                        valid.append(elem[elem.rfind('/')+1:])
+                        valid.append(elem[elem.rfind('/') + 1:])
                     else:
                         valid.append(elem)
                 data[key] = valid
             elif type(val) is str and regex.search(val):
-                data[key] = val[val.rfind('/')+1:]
+                data[key] = val[val.rfind('/') + 1:]
         return data

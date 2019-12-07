@@ -14,6 +14,7 @@ valid_modules = {
     'walkerarea': ftr_walkerarea.APIWalkerArea
 }
 
+
 class APIHandler(object):
     """ Manager for the MADmin API
 
@@ -26,6 +27,7 @@ class APIHandler(object):
         _logger: logger (loguru.logger): MADmin debug logger
         _modules (dict): Dictionary of APIHandlers for referring to the other API sections
     """
+
     def __init__(self, logger, args, app, data_manager):
         self._logger = logger
         self._args = args

@@ -128,7 +128,7 @@ class WorkerBase(ABC):
 
     def check_max_walkers_reached(self):
         walkermax = self._walker.get('walkermax', False)
-        if not walkermax:
+        if walkermax is False or (type(walkermax) is str and len(walkermax) == 0):
             return True
         reg_workers = self._mapping_manager.routemanager_get_registered_workers(
             self._routemanager_name)
@@ -756,6 +756,11 @@ class WorkerBase(ABC):
             self._communicator.turnScreenOn()
             time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 7))
 
+        # Disable vibration
+        # This only needs to be done once per boot
+        # So, we'll just do it when pogo actually needs starting
+        self._communicator.passthrough("su -c chmod 444 /sys/devices/virtual/timed_output/vibrator/enable")
+
         cur_time = time.time()
         start_result = False
         self._mitm_mapper.set_injection_status(self._id, False)
@@ -770,8 +775,8 @@ class WorkerBase(ABC):
             self._last_known_state["lastPogoRestart"] = cur_time
 
         self._wait_pogo_start_delay()
-        if not self._wait_for_injection() or self._stop_worker_event.is_set():
-            raise InternalStopWorkerException
+        # if not self._wait_for_injection() or self._stop_worker_event.is_set():
+        #     raise InternalStopWorkerException
 
         return start_result
 
@@ -802,7 +807,7 @@ class WorkerBase(ABC):
                                                self._mapping_manager.routemanager_get_mode(
                                                    self._routemanager_name),
                                                99)
-        self._db_wrapper.save_last_reboot(self._applicationArgs.status_name, self._id)
+        self._db_wrapper.save_last_reboot(self._id)
         self.stop_worker()
         return start_result
 
@@ -817,7 +822,7 @@ class WorkerBase(ABC):
 
     def _restart_pogo(self, clear_cache=True, mitm_mapper: Optional[MitmMapper] = None):
         successful_stop = self._stop_pogo()
-        self._db_wrapper.save_last_restart(self._applicationArgs.status_name, self._id)
+        self._db_wrapper.save_last_restart(self._id)
         logger.debug("restartPogo: stop game resulted in {}",
                      str(successful_stop))
         if successful_stop:

@@ -15,16 +15,15 @@ except ImportError:
 
 
 class GeofenceHelper:
-    def __init__(self, includeGeofence, excludeGeofence):
+    def __init__(self, include_geofence, exclude_geofence):
         self.geofenced_areas = []
         self.excluded_areas = []
         self.use_matplotlib = 'matplotlib' in sys.modules
-
-        if includeGeofence or excludeGeofence:
-            self.geofenced_areas = self.parse_geofences(
-                includeGeofence, excluded=False)
-            self.excluded_areas = self.parse_geofences(
-                excludeGeofence, excluded=True)
+        if include_geofence or exclude_geofence:
+            self.geofenced_areas = self.parse_geofences_file(
+                include_geofence, excluded=False)
+            self.excluded_areas = self.parse_geofences_file(
+                exclude_geofence, excluded=True)
             logger.debug2("Loaded {} geofenced and {} excluded areas.", len(
                 self.geofenced_areas), len(self.excluded_areas))
 
@@ -89,12 +88,13 @@ class GeofenceHelper:
         return self.geofenced_areas or self.excluded_areas
 
     @staticmethod
-    def parse_geofences(geofence, excluded):
+    def parse_geofences_file(geo_resource, excluded):
         geofences = []
-        # Read coordinates of areas.
-        if geofence:
+        # Read coordinates of excluded areas from file.
+        if geo_resource:
+            lines = geo_resource['fence_data']
             first_line = True
-            for line in geofence.splitlines():
+            for line in geo_resource['fence_data']:
                 line = line.strip()
                 if len(line) == 0:  # Empty line.
                     continue
@@ -116,10 +116,10 @@ class GeofenceHelper:
                             'polygon': []
                         })
                         logger.debug('Found geofence with no name')
-
+                        first_line = False
                     lat, lon = line.split(",")
-                    latLon = {'lat': float(lat), 'lon': float(lon)}
-                    geofences[-1]['polygon'].append(latLon)
+                    LatLon = {'lat': float(lat), 'lon': float(lon)}
+                    geofences[-1]['polygon'].append(LatLon)
 
         return geofences
 

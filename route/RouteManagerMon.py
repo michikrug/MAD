@@ -11,17 +11,16 @@ class RouteManagerMon(RouteManagerBase):
         return True
 
     def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=True,
-                          nofile=False)
+        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=True, in_memory=False)
         self._init_route_queue()
 
-    def __init__(self, db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius, include_geofence,
-                 exclude_geofence, routefile, mode=None, coords_spawns_known=False, init=False,
+    def __init__(self, db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
+                 path_to_exclude_geofence, routefile, mode=None, coords_spawns_known=False, init=False,
                  name="unknown", settings=None, joinqueue=None):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, dbm=dbm, area_id=area_id, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
-                                  include_geofence=include_geofence,
-                                  exclude_geofence=exclude_geofence,
+                                  path_to_include_geofence=path_to_include_geofence,
+                                  path_to_exclude_geofence=path_to_exclude_geofence,
                                   routefile=routefile, init=init,
                                   name=name, settings=settings, mode=mode, joinqueue=joinqueue
                                   )

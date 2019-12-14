@@ -13,8 +13,7 @@ class RouteManagerIV(RouteManagerBase):
         return True
 
     def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=False,
-                          nofile=False)
+        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=False, in_memory=False)
 
     def _retrieve_latest_priority_queue(self):
         # IV is excluded from clustering, check RouteManagerBase for more info
@@ -46,13 +45,13 @@ class RouteManagerIV(RouteManagerBase):
         # clustering is of no use for now
         pass
 
-    def __init__(self, db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius, include_geofence,
-                 exclude_geofence, routefile, mode=None, init=False,
+    def __init__(self, db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius, path_to_include_geofence,
+                 path_to_exclude_geofence, routefile, mode=None, init=False,
                  name="unknown", settings=None, joinqueue=None):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, dbm=dbm, area_id=area_id, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
-                                  include_geofence=include_geofence,
-                                  exclude_geofence=exclude_geofence,
+                                  path_to_include_geofence=path_to_include_geofence,
+                                  path_to_exclude_geofence=path_to_exclude_geofence,
                                   routefile=routefile, init=init,
                                   name=name, settings=settings, mode=mode, joinqueue=joinqueue
                                   )

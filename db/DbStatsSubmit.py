@@ -1,5 +1,6 @@
-from utils.logging import logger
 from db.PooledQueryExecutor import PooledQueryExecutor
+from utils.logging import logger
+
 
 class DbStatsSubmit:
 

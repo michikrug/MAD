@@ -1,12 +1,15 @@
 import collections
 import copy
-import flask
 import json
-from madmin.functions import auth_required
 import re
-from . import apiResponse, apiRequest, apiException
-import utils.data_manager
 import traceback
+
+import flask
+
+import utils.data_manager
+from madmin.functions import auth_required
+
+from . import apiException, apiRequest, apiResponse
 
 
 class ResourceHandler(object):
@@ -67,7 +70,8 @@ class ResourceHandler(object):
         if fetch_all:
             raw_data = self._data_manager.get_root_resource(self.component)
         else:
-            raw_data = self._data_manager.search(self.component, resource_def=resource_def, resource_info=resource_info, params=self.api_req.params)
+            raw_data = self._data_manager.search(
+                self.component, resource_def=resource_def, resource_info=resource_info, params=self.api_req.params)
         api_response_data = collections.OrderedDict()
         key_translation = '%s/%%s' % (flask.url_for('api_%s' % (self.component,)))
         if resource_def.configuration:
@@ -77,7 +81,7 @@ class ResourceHandler(object):
             for key, val in raw_data.items():
                 api_response_data[key_translation % key] = val
         if not fetch_all and link_disp_field != None:
-            for key,val in api_response_data.items():
+            for key, val in api_response_data.items():
                 try:
                     api_response_data[key] = val[link_disp_field]
                 except KeyError:

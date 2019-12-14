@@ -1,9 +1,9 @@
 import collections
 import time
 from typing import List
+
 from db.DbWrapper import DbWrapper
 from route.RouteManagerBase import RouteManagerBase
-
 from utils.logging import logger
 
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -32,16 +32,18 @@ class RouteManagerQuests(RouteManagerBase):
 
     def _recalc_route_workertype(self):
         if self.init:
-            self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=True, in_memory=False)
+            self.recalc_route(self._max_radius, self._max_coords_within_radius,
+                              1, delete_old_route=True, in_memory=False)
         else:
-            self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=False, in_memory=True)
+            self.recalc_route(self._max_radius, self._max_coords_within_radius,
+                              1, delete_old_route=False, in_memory=True)
 
         self._init_route_queue()
 
     def __init__(self, db_wrapper: DbWrapper, dbm, area_id, coords: List[Location], max_radius: float,
                  max_coords_within_radius: int, path_to_include_geofence: str, path_to_exclude_geofence: str,
                  routefile: str, mode=None, init: bool = False, name: str = "unknown", settings: dict = None,
-                 level: bool = False, calctype: str = "optimized", joinqueue = None):
+                 level: bool = False, calctype: str = "optimized", joinqueue=None):
         RouteManagerBase.__init__(self, db_wrapper=db_wrapper, dbm=dbm, area_id=area_id, coords=coords, max_radius=max_radius,
                                   max_coords_within_radius=max_coords_within_radius,
                                   path_to_include_geofence=path_to_include_geofence,
@@ -179,7 +181,7 @@ class RouteManagerQuests(RouteManagerBase):
                     return False
 
                 if 0 < len(stops) < len(self._route) \
-                        and len(stops)/len(self._route) <= 0.3:
+                        and len(stops) / len(self._route) <= 0.3:
                     # Calculating new route because 70 percent of stops are processed
                     logger.info('There are less stops without quest than routepositions - recalc')
                     self._recalc_stop_route(stops)
@@ -214,7 +216,8 @@ class RouteManagerQuests(RouteManagerBase):
         if self._is_started:
             self._is_started = False
             self._round_started_time = None
-            if self.init: self._first_started = False
+            if self.init:
+                self._first_started = False
             self._restore_original_route()
             self._shutdown_route = False
 

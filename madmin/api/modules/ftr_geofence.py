@@ -1,5 +1,6 @@
 from .. import apiHandler
 
+
 class APIGeofence(apiHandler.ResourceHandler):
     component = 'geofence'
     default_sort = 'name'

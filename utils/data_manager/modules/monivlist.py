@@ -1,6 +1,8 @@
-from .. import dm_exceptions
-from . import resource
 from utils.logging import logger
+
+from . import resource
+from .. import dm_exceptions
+
 
 class MonIVList(resource.Resource):
     table = 'settings_monivlist'

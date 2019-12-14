@@ -19,12 +19,12 @@ class Communicator:
 
     def cleanup_websocket(self):
         logger.info(
-                "Communicator of {} acquiring lock to cleanup worker in websocket", str(self.worker_id))
+            "Communicator of {} acquiring lock to cleanup worker in websocket", str(self.worker_id))
         self.__sendMutex.acquire()
         try:
             logger.info("Communicator of {} calling cleanup", str(self.worker_id))
             self.websocket_handler.clean_up_user(
-                    self.worker_id, self.worker_instance_ref)
+                self.worker_id, self.worker_instance_ref)
         finally:
             self.__sendMutex.release()
 
@@ -35,7 +35,7 @@ class Communicator:
         self.__sendMutex.acquire()
         try:
             result = self.websocket_handler.send_and_wait(
-                    self.worker_id, self.worker_instance_ref, message, timeout, byte_command=byte_command)
+                self.worker_id, self.worker_instance_ref, message, timeout, byte_command=byte_command)
             return result is not None and "OK" == result.strip()
         finally:
             self.__sendMutex.release()
@@ -52,7 +52,7 @@ class Communicator:
     def stopApp(self, package_name):
         if not self.__runAndOk("more stop {}\r\n".format(package_name), self.__command_timeout):
             logger.error(
-                    "Failed stopping {}, please check if SU has been granted", package_name)
+                "Failed stopping {}, please check if SU has been granted", package_name)
             return False
         else:
             return True
@@ -91,14 +91,13 @@ class Communicator:
 
     def swipe(self, x1, y1, x2, y2):
         return self.websocket_handler.send_and_wait(
-                self.worker_id, self.worker_instance_ref, "touch swipe {} {} {} {}\r\n".format(
-                    str(int(round(x1))), str(int(round(y1))), str(int(round(x2))), str(int(round(y2)))),
-                self.__command_timeout)
+            self.worker_id, self.worker_instance_ref, "touch swipe {} {} {} {}\r\n".format(
+                str(int(round(x1))), str(int(round(y1))), str(int(round(x2))), str(int(round(y2)))),
+            self.__command_timeout)
 
-    def touchandhold(self, x1, y1, x2, y2, time:int = 3000) -> bool:
+    def touchandhold(self, x1, y1, x2, y2, time: int = 3000) -> bool:
         return self.__runAndOk("touch swipe {} {} {} {} {}".format(
-            str(int(round(x1))), str(int(round(y1))), str(int(round(x2))), str(int(round(y2))), str(int(time)))
-            , self.__command_timeout)
+            str(int(round(x1))), str(int(round(y1))), str(int(round(x2))), str(int(round(y2))), str(int(time))), self.__command_timeout)
 
     def getscreensize(self) -> str:
         response = self.websocket_handler.send_and_wait(self.worker_id, self.worker_instance_ref, "screen size",
@@ -134,7 +133,7 @@ class Communicator:
             logger.debug("Screenshot response not binary")
             if "KO: " in encoded:
                 logger.error(
-                        "get_screenshot: Could not retrieve screenshot. Make sure your RGC is updated.")
+                    "get_screenshot: Could not retrieve screenshot. Make sure your RGC is updated.")
                 return False
             elif "OK:" not in encoded:
                 logger.error("get_screenshot: response not OK")
@@ -208,7 +207,7 @@ class Communicator:
         self.__sendMutex.acquire()
         try:
             response = self.websocket_handler.send_and_wait(
-                    self.worker_id, self.worker_instance_ref, "exit\r\n", 5)
+                self.worker_id, self.worker_instance_ref, "exit\r\n", 5)
             return response
         finally:
             self.__sendMutex.release()
@@ -222,7 +221,7 @@ class Communicator:
         with self.__sendMutex:
             # calculate the time it will take to walk and add it to the timeout!
             distance = get_distance_of_two_points_in_meters(
-                    startLat, startLng, destLat, destLng)
+                startLat, startLng, destLat, destLng)
             # speed is in kmph, distance in m
             # we want m/s -> speed / 3.6
             speed_meters = speed / 3.6

@@ -1,5 +1,6 @@
 from .. import apiHandler
 
+
 class APIAuth(apiHandler.ResourceHandler):
     component = 'auth'
     default_sort = 'username'

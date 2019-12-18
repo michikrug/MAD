@@ -1,5 +1,6 @@
 from .. import apiHandler
 
+
 class APIDevice(apiHandler.ResourceHandler):
     component = 'device'
     default_sort = 'origin'

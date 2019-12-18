@@ -1,14 +1,15 @@
+import logging
 import sys
+from unittest import TestCase
+
+from db.DbFactory import DbFactory
+from db.dbWrapperBase import DbWrapperBase
+from utils import data_manager
+from utils.walkerArgs import parseArgs
+
 MAD_ROOT = '/opt/mad/'
 sys.path.append(MAD_ROOT)
 
-import logging
-from unittest import TestCase
-
-from db.dbWrapperBase import DbWrapperBase
-from db.DbFactory import DbFactory
-from utils import data_manager
-from utils.walkerArgs import parseArgs
 
 mad_args = parseArgs()
 
@@ -41,4 +42,3 @@ class DataManagerBase(TestCase):
             return resource
         except:
             raise
-

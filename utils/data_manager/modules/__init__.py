@@ -10,6 +10,7 @@ from .walker import Walker
 from .walkerarea import WalkerArea
 from .. import dm_exceptions
 
+
 def AreaFactory(data_manager, identifier=None, mode=None):
     if identifier is None and mode is None:
         raise dm_exceptions.InvalidArea(mode)
@@ -24,6 +25,7 @@ def AreaFactory(data_manager, identifier=None, mode=None):
         raise dm_exceptions.ModeUnknown(mode)
     except ValueError:
         raise dm_exceptions.ModeNotSpecified(mode)
+
 
 MAPPINGS = {
     'area': AreaFactory,

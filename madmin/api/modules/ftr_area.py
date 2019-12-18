@@ -1,5 +1,7 @@
-from .. import apiHandler, apiResponse, apiException
 import threading
+
+from .. import apiException, apiHandler, apiResponse
+
 
 class APIArea(apiHandler.ResourceHandler):
     component = 'area'
@@ -21,7 +23,8 @@ class APIArea(apiHandler.ResourceHandler):
                 if call == 'recalculate':
                     resource = self._data_manager.get_resource('area', identifier=identifier)
                     print(resource)
-                    t = threading.Thread(target=self._mapping_manager.routemanager_recalcualte,args=(resource.identifier,))
+                    t = threading.Thread(target=self._mapping_manager.routemanager_recalcualte,
+                                         args=(resource.identifier,))
                     t.start()
                     return apiResponse.APIResponse(self._logger, self.api_req)(None, 204)
                 else:

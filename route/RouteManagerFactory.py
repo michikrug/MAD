@@ -1,10 +1,11 @@
 from typing import Optional
 
 from route.RouteManagerIV import RouteManagerIV
+from route.RouteManagerLeveling import RouteManagerLeveling
 from route.RouteManagerMon import RouteManagerMon
 from route.RouteManagerQuests import RouteManagerQuests
 from route.RouteManagerRaids import RouteManagerRaids
-from route.RouteManagerLeveling import RouteManagerLeveling
+
 
 class RouteManagerFactory:
     @staticmethod
@@ -36,18 +37,17 @@ class RouteManagerFactory:
                                               )
         elif mode == "pokestops":
             if level:
-                route_manager = RouteManagerLeveling(db_wrapper,  dbm, area_id, coords, max_radius, max_coords_within_radius,
+                route_manager = RouteManagerLeveling(db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius,
                                                      path_to_include_geofence, path_to_exclude_geofence, routefile,
                                                      mode=mode, settings=settings, init=init, name=name, level=True,
                                                      calctype=calctype, joinqueue=joinqueue
                                                      )
             else:
                 route_manager = RouteManagerQuests(db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius,
-                                               path_to_include_geofence, path_to_exclude_geofence, routefile,
-                                               mode=mode, settings=settings, init=init, name=name, level=level,
-                                               calctype=calctype, joinqueue=joinqueue
-                                               )
+                                                   path_to_include_geofence, path_to_exclude_geofence, routefile,
+                                                   mode=mode, settings=settings, init=init, name=name, level=level,
+                                                   calctype=calctype, joinqueue=joinqueue
+                                                   )
         else:
             raise RuntimeError("Invalid mode found in mapping parser.")
         return route_manager
-

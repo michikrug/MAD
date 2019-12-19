@@ -8,6 +8,10 @@ class DependencyError(DataManagerException):
         super().__init__(dependencies)
 
 
+class DeviceIsDisabled(DataManagerException):
+    pass
+
+
 class IdentifierNotSpecified(DataManagerException):
     pass
 

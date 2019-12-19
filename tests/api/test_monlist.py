@@ -1,7 +1,9 @@
 import copy
 from unittest import TestCase
+
 import api_base
 import global_variables
+
 
 class APIMonIVList(api_base.APITestBase):
     uri = copy.copy(global_variables.DEFAULT_OBJECTS['monivlist']['uri'])
@@ -36,7 +38,7 @@ class APIMonIVList(api_base.APITestBase):
     def test_valid_put(self):
         payload = {
             'monlist': 'Test MonIV List',
-            'mon_ids_iv': [1,2,3]
+            'mon_ids_iv': [1, 2, 3]
         }
         super().valid_put(payload, payload)
         self.remove_resources()
@@ -68,7 +70,7 @@ class APIMonIVList(api_base.APITestBase):
         }
         result = {
             'monlist': 'Test MonIV List',
-            'mon_ids_iv': [1,2]
+            'mon_ids_iv': [1, 2]
         }
         headers = {
             'X-Append': '1'

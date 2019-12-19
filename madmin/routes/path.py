@@ -1,8 +1,10 @@
-from flask import (send_from_directory, render_template, request, jsonify, redirect, url_for)
-from madmin.functions import (auth_required, get_quest_areas)
-from utils.functions import (generate_path)
-from utils.MappingManager import MappingManager
+from flask import (jsonify, redirect, render_template, request,
+                   send_from_directory, url_for)
+
+from madmin.functions import auth_required, get_quest_areas
+from utils.functions import generate_path
 from utils.logging import logger
+from utils.MappingManager import MappingManager
 
 
 class path(object):

@@ -1,12 +1,12 @@
+import s2sphere
 from utils.collections import Relation
 from utils.geo import (get_distance_of_two_points_in_meters,
                        get_middle_of_coord_list)
-import s2sphere
 from utils.s2Helper import S2Helper
 
 
 class ClusteringHelper:
-    def __init__(self, max_radius, max_count_per_circle, max_timedelta_seconds, useS2: bool=False, S2level: int = 30):
+    def __init__(self, max_radius, max_count_per_circle, max_timedelta_seconds, useS2: bool = False, S2level: int = 30):
         self.max_radius = max_radius
         self.max_count_per_circle = max_count_per_circle
         self.max_timedelta_seconds = max_timedelta_seconds
@@ -17,8 +17,8 @@ class ClusteringHelper:
         relations = {}
         for event in queue:
             for other_event in queue:
-                if (event[1].lat == other_event[1].lat and event[1].lng == other_event[1].lng
-                        and event not in relations.keys()):
+                if (event[1].lat == other_event[1].lat and event[1].lng == other_event[1].lng and
+                        event not in relations.keys()):
                     relations[event] = []
                 distance = get_distance_of_two_points_in_meters(event[1].lat, event[1].lng,
                                                                 other_event[1].lat, other_event[1].lng)
@@ -30,8 +30,8 @@ class ClusteringHelper:
                     # avoid duplicates
                     already_present = False
                     for relation in relations[event]:
-                        if (relation[0][1].lat == other_event[1].lat
-                                and relation[0][1].lng == other_event[1].lng):
+                        if (relation[0][1].lat == other_event[1].lat and
+                                relation[0][1].lng == other_event[1].lng):
                             already_present = True
                     if not already_present:
                         relations[event].append(
@@ -54,8 +54,8 @@ class ClusteringHelper:
         distance = -1
         farthest = None
         for relation in to_be_inspected:
-            if ((len(relation.other_event) == 4 and not relation.other_event[3] or len(relation) < 4)
-                    and relation.timedelta <= self.max_timedelta_seconds and relation.distance > distance):
+            if ((len(relation.other_event) == 4 and not relation.other_event[3] or len(relation) < 4) and
+                    relation.timedelta <= self.max_timedelta_seconds and relation.distance > distance):
                 distance = relation.distance
                 farthest = relation
         return farthest.other_event, distance
@@ -64,8 +64,9 @@ class ClusteringHelper:
                                                          latest_timestamp, max_radius):
         inside_circle = []
         highest_timedelta = 0
-        if self.useS2: 
-            region = s2sphere.CellUnion(S2Helper.get_S2cells_from_circle(middle.lat, middle.lng, self.max_radius, self.S2level))
+        if self.useS2:
+            region = s2sphere.CellUnion(S2Helper.get_S2cells_from_circle(
+                middle.lat, middle.lng, self.max_radius, self.S2level))
 
         for event_relations in relations:
             # exclude previously clustered events...
@@ -76,7 +77,9 @@ class ClusteringHelper:
                                                             event_relations[1].lat,
                                                             event_relations[1].lng)
             event_in_range = 0 <= distance <= max_radius
-            if self.useS2: event_in_range = region.contains(s2sphere.LatLng.from_degrees(event_relations[1].lat, event_relations[1].lng).to_point())
+            if self.useS2:
+                event_in_range = region.contains(s2sphere.LatLng.from_degrees(
+                    event_relations[1].lat, event_relations[1].lng).to_point())
             # timedelta of event being inspected to the earliest timestamp
             timedelta_end = latest_timestamp - event_relations[0]
             timedelta_start = event_relations[0] - earliest_timestamp

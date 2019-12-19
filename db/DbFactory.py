@@ -1,8 +1,8 @@
 import sys
 from multiprocessing.managers import SyncManager
 
-from db.PooledQueryExecutor import PooledQueryExecutor, PooledQuerySyncManager
 from db.DbWrapper import DbWrapper
+from db.PooledQueryExecutor import PooledQueryExecutor, PooledQuerySyncManager
 from utils.logging import logger
 
 

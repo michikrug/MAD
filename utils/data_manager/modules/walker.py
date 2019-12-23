@@ -1,6 +1,7 @@
-from .. import dm_exceptions
 from . import resource
+from .. import dm_exceptions
 from .walkerarea import WalkerArea
+
 
 class Walker(resource.Resource):
     table = 'settings_walker'
@@ -11,7 +12,7 @@ class Walker(resource.Resource):
         'walkername': 'name'
     }
     configuration = {
-      "fields": {
+        "fields": {
             "walkername": {
                 "settings": {
                     "type": "text",

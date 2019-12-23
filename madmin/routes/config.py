@@ -1,17 +1,19 @@
 import ast
-import os
-import json
 import glob
-from flask import (render_template, request, redirect, url_for, Response)
-from flask_caching import Cache
-from functools import cmp_to_key
-from madmin.functions import auth_required
-from utils.language import i8ln, open_json_file
-from utils.adb import ADBConnect
-from utils.MappingManager import MappingManager
-from utils.logging import logger
+import json
+import os
 import re
+from functools import cmp_to_key
+
+from flask import Response, redirect, render_template, request, url_for
+
 import utils.data_manager
+from flask_caching import Cache
+from madmin.functions import auth_required
+from utils.adb import ADBConnect
+from utils.language import i8ln, open_json_file
+from utils.logging import logger
+from utils.MappingManager import MappingManager
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
@@ -133,7 +135,7 @@ class config(object):
                 return render_template(html_single,
                                        uri=included_data['base_uri'],
                                        redirect=redirect_uri,
-                                       element={'settings':{}},
+                                       element={'settings': {}},
                                        subtab=subtab,
                                        method='POST',
                                        settings_vars=settings_vars,
@@ -321,7 +323,7 @@ class config(object):
             walkerareaconfig = {}
         walkerconfig = self._data_manager.get_resource('walker', identifier=walker_id)
         areaconfig = self._data_manager.get_root_resource('area')
-        walkertypes = ['coords','countdown', 'idle', 'period', 'round', 'timer']
+        walkertypes = ['coords', 'countdown', 'idle', 'period', 'round', 'timer']
         mappings = {
             'uri': walkerarea_uri,
             'element': walkerareaconfig,

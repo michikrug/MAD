@@ -1,4 +1,5 @@
-from .. import apiHandler, apiResponse, apiException
+from .. import apiException, apiHandler, apiResponse
+
 
 class APIArea(apiHandler.ResourceHandler):
     component = 'area'

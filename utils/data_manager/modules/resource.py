@@ -1,8 +1,10 @@
-from .. import dm_exceptions
-from collections import UserDict
 import copy
+from collections import UserDict
+
 import mysql
 from utils.logging import logger
+
+from .. import dm_exceptions
 
 USER_READABLE_ERRORS = {
     str: 'string (MapADroid)',
@@ -11,6 +13,7 @@ USER_READABLE_ERRORS = {
     list: 'Comma-delimited list',
     bool: 'True|False'
 }
+
 
 class ResourceTracker(UserDict):
     def __init__(self, config, data_manager, initialdata={}):
@@ -33,7 +36,7 @@ class ResourceTracker(UserDict):
                     self.issues['missing'].append(key)
             except KeyError:
                 continue
-    
+
     def __delitem__(self, key):
         """ Removes the key from the dict.  Tracks it in the removal state so it can be correctly set to null """
         try:
@@ -119,8 +122,8 @@ class ResourceTracker(UserDict):
             if invalid:
                 this_iteration['invalud_uri'] = True
                 if type(value) != list:
-                   self.issues['invalid_uri'].append(invalid[0])
-                else: 
+                    self.issues['invalid_uri'].append(invalid[0])
+                else:
                     self.issues['invalid_uri'].append(invalid)
         super().__setitem__(key, value)
         try:
@@ -141,7 +144,7 @@ class ResourceTracker(UserDict):
             if type(value) is str:
                 value = True if value.lower() == "true" else False
             else:
-               value = bool(value)
+                value = bool(value)
         elif expected == float:
             value = float(value)
         elif expected == int:
@@ -149,6 +152,7 @@ class ResourceTracker(UserDict):
         elif expected == str:
             value = value.strip()
         return value
+
 
 class Resource(object):
     # Name of the table within the database
@@ -245,14 +249,14 @@ class Resource(object):
         invalid_uris = []
         unknown_fields = []
         for d in list(args) + [kwargs]:
-            for k,v in d.items():
+            for k, v in d.items():
                 if type(v) is dict:
                     self[k].update(v)
                 else:
                     if type(v) is list and append:
                         self[k] += v
                     else:
-                        self[k]=v
+                        self[k] = v
 
     def _cleanup_load(self):
         try:

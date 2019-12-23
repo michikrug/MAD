@@ -1,5 +1,7 @@
 import json
 
+from geofence.geofenceHelper import GeofenceHelper
+
 from . import resource
 from .. import dm_exceptions
 
@@ -78,3 +80,13 @@ class GeoFence(resource.Resource):
         core_data = self.get_resource()
         core_data['fence_data'] = json.dumps(self._data['fields']['fence_data'])
         super().save(core_data=core_data, force_insert=force_insert, ignore_issues=ignore_issues)
+
+    def validate_custom(self):
+        issues = {}
+        try:
+            geofence_helper = GeofenceHelper(self, None)
+        except Exception as err:
+            issues = {
+                'invalid': [('fence_data', 'Must be one coord set per line (float,float)')]
+            }
+        return issues

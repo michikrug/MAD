@@ -1582,9 +1582,9 @@ new Vue({
         }
 
         var fencename = prompt("Please enter name of fence", "");
-        coords = loopCoords(layer.getLatLngs())
+        const coords = loopCoords(layer.getLatLngs())
         newfences[layer] = fencename
-        layer.bindPopup('<b>' + fencename + '</b><br><a href=savefence?name=' + fencename + '&coords=' + coords + '>Save to MAD</a>');
+        layer.bindPopup('<b>' + fencename + '</b><br><a href=savefence?name=' + encodeURI(fencename) + '&coords=' + coords + '>Save to MAD</a>');
         editableLayers.addLayer(layer);
         layer.openPopup();
       });
@@ -1592,8 +1592,8 @@ new Vue({
       map.on('draw:edited', function (e) {
         var layers = e.layers;
         layers.eachLayer(function (layer) {
-          coords = loopCoords(layer.getLatLngs())
-          layer._popup.setContent('<b>' + newfences[layer] + '</b><br><a href=savefence?name=' + newfences[layer] + '&coords=' + coords + '>Save to MAD</a>')
+          const coords = loopCoords(layer.getLatLngs())
+          layer._popup.setContent('<b>' + newfences[layer] + '</b><br><a href=savefence?name=' + encodeURI(newfences[layer]) + '&coords=' + coords + '>Save to MAD</a>')
           layer.openPopup();
         });
       });

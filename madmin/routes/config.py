@@ -189,6 +189,7 @@ class config(object):
                 'fences': 'geofence'
             },
             'passthrough': {
+                'config_mode': self._args.config_mode,
                 'fences': fences
             },
             'mode_required': True

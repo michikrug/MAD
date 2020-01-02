@@ -9,11 +9,10 @@ from multiprocessing.pool import ThreadPool
 import cv2
 import numpy as np
 import pytesseract
-from pytesseract import Output
-from PIL import Image
-
-from utils.logging import logger
 from ocr.matching_trash import trash_image_matching
+from PIL import Image
+from pytesseract import Output
+from utils.logging import logger
 
 Coordinate = collections.namedtuple("Coordinate", ['x', 'y'])
 Bounds = collections.namedtuple("Bounds", ['top', 'bottom', 'left', 'right'])
@@ -37,20 +36,20 @@ class PogoWindows:
         self._ScreenType[3]: list = ['KIDS', 'Google', 'Facebook']
         self._ScreenType[4]: list = ['Benutzername', 'Passwort', 'Username', 'Password', 'DRESSEURS']
         self._ScreenType[5]: list = ['TRY', 'DIFFERENT', 'ACCOUNT', 'Anmeldung', 'Konto', 'anderes',
-                                           'connexion.', 'connexion']
+                                     'connexion.', 'connexion']
         self._ScreenType[6]: list = ['Authentifizierung', 'fehlgeschlagen', 'Unable', 'authenticate',
-                                           'Authentification', 'Essaye']
+                                     'Authentification', 'Essaye']
         self._ScreenType[7]: list = ['incorrect.', 'attempts', 'falsch.', 'gesperrt']
         self._ScreenType[8]: list = ['Spieldaten', 'abgerufen', 'lecture', 'depuis', 'server', 'data']
         self._ScreenType[12]: list = ['Events,', 'Benachrichtigungen', 'Einstellungen', 'events,', 'offers,',
-                                  'notifications', 'évenements,', 'evenements,', 'offres']
+                                      'notifications', 'évenements,', 'evenements,', 'offres']
         self._ScreenType[14]: list = ['kompatibel', 'compatible', 'OS', 'software', 'device', 'Gerät', 'Betriebssystem',
-                           'logiciel']
+                                      'logiciel']
         self._ScreenType[15]: list = ['continuer...', 'aktualisieren?', 'now?', 'Aktualisieren', 'Aktualisieren,',
-                                    'aktualisieren', 'update', 'continue...', 'Veux-tu', 'Fais', 'continuer']
+                                      'aktualisieren', 'update', 'continue...', 'Veux-tu', 'Fais', 'continuer']
         self._ScreenType[16]: list = ['modified', 'client', 'Strike', 'suspension', 'third-party',
-                                    'modifizierte', 'Verstoß', 'Sperrung', 'Drittpartei']
-        self._ScreenType[17]: list = ['Suspension', 'suspended', 'violating', 'days',]
+                                      'modifizierte', 'Verstoß', 'Sperrung', 'Drittpartei']
+        self._ScreenType[17]: list = ['Suspension', 'suspended', 'violating', 'days', ]
         self._ScreenType[18]: list = ['Termination', 'terminated', 'permanently']
         self._ScreenType[21]: list = ['GPS', 'signal', 'GPS-Signal', '(11)', 'introuvable.',
                                       'found.', 'gefunden.', 'Signal']
@@ -126,8 +125,8 @@ class PogoWindows:
 
         if crop:
             screenshot_read = screenshot_read[int(height) - int(int(height / 4)):int(height),
-                                            int(int(width) / 2) - int(int(width) / 8):int(int(width) / 2) + int(
-                                            int(width) / 8)]
+                                              int(int(width) / 2) - int(int(width) / 8):int(int(width) / 2) + int(
+                int(width) / 8)]
 
         logger.debug("__read_circle_count: Determined screenshot scale: " +
                      str(height) + " x " + str(width))
@@ -199,7 +198,7 @@ class PogoWindows:
 
         if crop:
             screenshot_read = screenshot_read[int(height) - int(height / 5):int(height),
-                                            int(width) / 2 - int(width) / 8:int(width) / 2 + int(width) / 8]
+                                              int(width) / 2 - int(width) / 8:int(width) / 2 + int(width) / 8]
 
         logger.debug("__readCircleCords: Determined screenshot scale: " +
                      str(height) + " x " + str(width))
@@ -422,7 +421,7 @@ class PogoWindows:
 
         height, width, _ = screenshot_read.shape
         screenshot_read = screenshot_read[int(height / 2) - int(height / 3):int(height / 2) + int(height / 3),
-                                        int(0):int(width)]
+                                          int(0):int(width)]
         gray = cv2.cvtColor(screenshot_read, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
         logger.debug("__check_raid_line: Determined screenshot scale: " +
@@ -483,7 +482,7 @@ class PogoWindows:
             return False
 
         height, width, _ = image.shape
-        image = image[int(height / 2 - (height / 3))                      :int(height / 2 + (height / 3)), 0:int(width)]
+        image = image[int(height / 2 - (height / 3)):int(height / 2 + (height / 3)), 0:int(width)]
         cv2.imwrite(os.path.join(self.temp_dir_path, str(
             identifier) + '_AmountOfRaids.jpg'), image)
 
@@ -559,7 +558,7 @@ class PogoWindows:
         time.sleep(4)
         return False
 
-    def __check_close_present(self, filename, identifier, communicator,  radiusratio=12, Xcord=True):
+    def __check_close_present(self, filename, identifier, communicator, radiusratio=12, Xcord=True):
         if not os.path.isfile(filename):
             logger.warning(
                 "__check_close_present: {} does not exist", str(filename))
@@ -576,7 +575,7 @@ class PogoWindows:
                                  str(identifier) + '_exitcircle.jpg'), image)
 
         if self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_exitcircle.jpg'), identifier,
-                                  float(radiusratio), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
+                                    float(radiusratio), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
             return True
 
     def check_close_except_nearby_button(self, filename, identifier, communicator, close_raid=False):
@@ -591,7 +590,7 @@ class PogoWindows:
     def __internal_check_close_except_nearby_button(self, filename, identifier, communicator, close_raid=False):
         logger.debug(
             "__internal_check_close_except_nearby_button: Checking close except nearby with: file {}, identifier {}",
-                filename, identifier)
+            filename, identifier)
         try:
             screenshot_read = cv2.imread(filename)
         except:
@@ -607,9 +606,9 @@ class PogoWindows:
         if not close_raid:
             logger.debug(
                 "__internal_check_close_except_nearby_button: Raid is not to be closed...")
-            if (not os.path.isfile(filename)
-                    or self.__check_raid_line(filename, identifier, communicator)
-                    or self.__check_raid_line(filename, identifier, communicator, True)):
+            if (not os.path.isfile(filename) or
+                    self.__check_raid_line(filename, identifier, communicator) or
+                    self.__check_raid_line(filename, identifier, communicator, True)):
                 # file not found or raid tab present
                 logger.debug(
                     "__internal_check_close_except_nearby_button: Not checking for close button (X). Input wrong "
@@ -642,7 +641,7 @@ class PogoWindows:
         else:
             logger.debug("Could not find close button (X).")
             return False
-        
+
     def get_inventory_text(self, filename, identifier, x1, x2, y1, y2):
         if not os.path.isfile(filename):
             logger.error("get_inventory_text: {} does not exist", str(filename))
@@ -707,7 +706,7 @@ class PogoWindows:
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
             for (x, y, r) in circles:
-                if x < width_ - width_/3:
+                if x < width_ - width_ / 3:
                     mainscreen += 1
 
         if mainscreen > 0:
@@ -730,7 +729,7 @@ class PogoWindows:
             return False
 
         if self.__read_circle_count(filename, identifier,
-                                  float(7.7), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
+                                    float(7.7), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
             logger.debug(
                 "Found close button (X). Closing the window - Ratio: 10")
             return True
@@ -773,8 +772,8 @@ class PogoWindows:
             "get_screen_text: Reading screen text - identifier {}", identifier)
 
         try:
-                returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT, timeout=40,
-                                                           config='--dpi 70')
+            returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT, timeout=40,
+                                                       config='--dpi 70')
         except:
             logger.error("Tesseract Error for device {}: {}".format(str(identifier), str(returning_dict)))
             returning_dict = []
@@ -808,7 +807,6 @@ class PogoWindows:
 
         return most_frequent_pixel[1]
 
-
     def screendetection_get_type(self, image, identifier):
 
         return self.__thread_pool.apply_async(self.__screendetection_get_type_internal,
@@ -841,13 +839,15 @@ class PogoWindows:
                     continue
                 n_boxes = len(globaldict['level'])
                 for i in range(n_boxes):
-                    if returntype != -1: break
+                    if returntype != -1:
+                        break
                     if len(globaldict['text'][i]) > 3:
                         for z in self._ScreenType:
                             if globaldict['top'][i] > height / 4 and \
                                     globaldict['text'][i] in self._ScreenType[z]:
                                 returntype = z
-                if returntype != -1: break
+                if returntype != -1:
+                    break
 
             frame.close()
             del textes

@@ -1,11 +1,15 @@
 import collections
 import copy
-import flask
-from madmin.functions import auth_required
 import re
-from .. import apiHandler
-from . import resource_exceptions
+
+import flask
+
 import utils.data_manager
+from madmin.functions import auth_required
+
+from . import resource_exceptions
+from .. import apiHandler
+
 
 class ResourceHandler(apiHandler.APIHandler):
     """ Base handler for API calls for configuration calls """
@@ -47,7 +51,8 @@ class ResourceHandler(apiHandler.APIHandler):
         if fetch_all:
             raw_data = self._data_manager.get_root_resource(self.component)
         else:
-            raw_data = self._data_manager.search(self.component, resource_def=resource_def, resource_info=resource_info, params=self.api_req.params)
+            raw_data = self._data_manager.search(
+                self.component, resource_def=resource_def, resource_info=resource_info, params=self.api_req.params)
         api_response_data = collections.OrderedDict()
         key_translation = '%s/%%s' % (flask.url_for('api_%s' % (self.component,)))
         if resource_def.configuration:
@@ -57,7 +62,7 @@ class ResourceHandler(apiHandler.APIHandler):
             for key, val in raw_data.items():
                 api_response_data[key_translation % key] = val
         if not fetch_all and link_disp_field != None:
-            for key,val in api_response_data.items():
+            for key, val in api_response_data.items():
                 try:
                     api_response_data[key] = val[link_disp_field]
                 except KeyError:
@@ -273,7 +278,7 @@ class ResourceHandler(apiHandler.APIHandler):
             headers = {
                 'X-Status': 'Successfully deleted the object'
             }
-            return (None, 202, {'headers':headers})
+            return (None, 202, {'headers': headers})
 
     def get(self, identifier, resource_def, resource_info, *args, **kwargs):
         """ API call to get data """
@@ -298,7 +303,7 @@ class ResourceHandler(apiHandler.APIHandler):
             headers = {
                 'X-Status': 'Successfully updated the object'
             }
-            return (None, 204, {'headers':headers})
+            return (None, 204, {'headers': headers})
 
     def post(self, identifier, data, resource_def, resource_info, *args, **kwargs):
         """ API call to create data """
@@ -319,7 +324,7 @@ class ResourceHandler(apiHandler.APIHandler):
                 'X-Status': 'Successfully created the object'
             }
             converted = self.translate_data_for_response(resource)
-            return (converted, 201, {'headers':headers})
+            return (converted, 201, {'headers': headers})
         else:
             raise (method, 405)
 
@@ -337,9 +342,9 @@ class ResourceHandler(apiHandler.APIHandler):
             headers = {
                 'X-Status': 'Object does not exist to update'
             }
-            return (None, 404, {'headers':headers})
+            return (None, 404, {'headers': headers})
         else:
             headers = {
                 'X-Status': 'Successfully replaced the object'
             }
-            return (None, 204, {'headers':headers})
+            return (None, 204, {'headers': headers})

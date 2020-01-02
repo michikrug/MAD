@@ -7,24 +7,22 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-
+from operator import itemgetter
+from queue import Empty, Queue
 from threading import Event, Lock, RLock, Thread
 from typing import Dict, List, Optional, Tuple
-from queue import Queue, Empty
 
 import numpy as np
-
 from db.DbWrapper import DbWrapper
-from utils.data_manager import DataManager
-from utils.data_manager.modules.geofence import GeoFence
-from utils.data_manager.modules.routecalc import RouteCalc
 from geofence.geofenceHelper import GeofenceHelper
 from route.routecalc.ClusteringHelper import ClusteringHelper
 from utils.collections import Location
+from utils.data_manager import DataManager
+from utils.data_manager.modules.geofence import GeoFence
+from utils.data_manager.modules.routecalc import RouteCalc
+from utils.geo import get_distance_of_two_points_in_meters
 from utils.logging import logger
 from utils.walkerArgs import parseArgs
-from utils.geo import get_distance_of_two_points_in_meters
-from operator import itemgetter
 
 args = parseArgs()
 
@@ -50,7 +48,7 @@ class RouteManagerBase(ABC):
     def __init__(self, db_wrapper: DbWrapper, dbm: DataManager, area_id: str, coords: List[Location], max_radius: float,
                  max_coords_within_radius: int, path_to_include_geofence: GeoFence, path_to_exclude_geofence: GeoFence,
                  routefile: RouteCalc, mode=None, init: bool = False, name: str = "unknown", settings: dict = None,
-                 level: bool = False, calctype: str = "optimized", useS2: bool = False, S2level: int = 15, joinqueue = None):
+                 level: bool = False, calctype: str = "optimized", useS2: bool = False, S2level: int = 15, joinqueue=None):
         self.db_wrapper: DbWrapper = db_wrapper
         self.init: bool = init
         self.name: str = name
@@ -281,11 +279,11 @@ class RouteManagerBase(ABC):
             calctype = self._calctype
         if coords:
             new_route = self._route_resource.calculate_new_route(coords, max_radius, max_coords_within_radius,
-                                                                delete_old_route, calctype, self.useS2, self.S2level,
-                                                                num_procs=0,
-                                                                overwrite_calculation=self._overwrite_calculation,
-                                                                in_memory=in_memory,
-                                                                route_name=self.name)
+                                                                 delete_old_route, calctype, self.useS2, self.S2level,
+                                                                 num_procs=0,
+                                                                 overwrite_calculation=self._overwrite_calculation,
+                                                                 in_memory=in_memory,
+                                                                 route_name=self.name)
             if self._overwrite_calculation:
                 self._overwrite_calculation = False
             return new_route
@@ -295,16 +293,16 @@ class RouteManagerBase(ABC):
         return len(self._current_route_round_coords) > 0
 
     def initial_calculation(self, max_radius: float, max_coords_within_radius: int, num_procs: int = 1,
-                     delete_old_route: bool = False):
+                            delete_old_route: bool = False):
         if not self._route_resource['routefile']:
             self.recalc_route(max_radius, max_coords_within_radius, num_procs,
                               delete_old_route=delete_old_route,
                               in_memory=True,
                               calctype='quick')
             if self._calctype != 'quick':
-                args=(self._max_radius, self._max_coords_within_radius)
+                args = (self._max_radius, self._max_coords_within_radius)
                 kwargs = {
-                    'num_procs':0
+                    'num_procs': 0
                 }
                 t = Thread(target=self.recalc_route_adhoc, args=args, kwargs=kwargs)
                 t.start()
@@ -386,12 +384,12 @@ class RouteManagerBase(ABC):
     def _get_round_finished_string(self):
         round_finish_time = datetime.now()
         round_completed_in = (
-                "%d hours, %d minutes, %d seconds" % (
-            self.dhms_from_seconds(
-                self.date_diff_in_seconds(
-                    round_finish_time, self._round_started_time)
+            "%d hours, %d minutes, %d seconds" % (
+                self.dhms_from_seconds(
+                    self.date_diff_in_seconds(
+                        round_finish_time, self._round_started_time)
+                )
             )
-        )
         )
         return round_completed_in
 
@@ -555,7 +553,8 @@ class RouteManagerBase(ABC):
             with self._manager_mutex:
                 if self.mode == "iv_mitm":
                     got_location = self._prio_queue is not None and len(self._prio_queue) > 0
-                    if not got_location: time.sleep(1)
+                    if not got_location:
+                        time.sleep(1)
                 else:
                     # normal mode - should always have a route
                     got_location = True
@@ -567,10 +566,10 @@ class RouteManagerBase(ABC):
             # if that is not the case, simply increase the index in route and return the location on route
 
             # determine whether we move to the next location or the prio queue top's item
-            if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False)
-                                                                  or self.starve_route)
-                                                                 and self._prio_queue and len(self._prio_queue) > 0
-                                                                 and self._prio_queue[0][0] < time.time())):
+            if (self.delay_after_timestamp_prio is not None and ((not self._last_round_prio.get(origin, False) or
+                                                                  self.starve_route) and
+                                                                 self._prio_queue and len(self._prio_queue) > 0 and
+                                                                 self._prio_queue[0][0] < time.time())):
                 logger.debug("{}: Priority event", self.name)
                 next_coord = heapq.heappop(self._prio_queue)[1]
                 if self._other_worker_closer_to_prioq(next_coord, origin):
@@ -677,7 +676,7 @@ class RouteManagerBase(ABC):
                         and not self.init:
                     self._current_route_round_coords.remove(next_coord)
                 logger.info("{}: Moving on with location {} [{} coords left (Workerpool)]",
-                            str(self.name), str(next_coord), str(len(self._routepool[origin].queue)+1))
+                            str(self.name), str(next_coord), str(len(self._routepool[origin].queue) + 1))
 
                 self._last_round_prio[origin] = False
                 self._routepool[origin].last_round_prio_event = False
@@ -816,7 +815,8 @@ class RouteManagerBase(ABC):
                 sorted_routepools = sorted(reduced_routepools, key=itemgetter(1))
 
                 logger.debug("Checking routepools in the following order: {}", sorted_routepools)
-                compare = lambda x, y: collections.Counter(x) == collections.Counter(y)
+
+                def compare(x, y): return collections.Counter(x) == collections.Counter(y)
                 for origin, time_added in sorted_routepools:
                     if origin not in self._routepool:
                         # TODO probably should restart this job or something
@@ -1027,4 +1027,3 @@ class RouteManagerBase(ABC):
 
         logger.debug('Open Coords from workers: {}'.format(str(coordlist)))
         return coordlist
-

@@ -1,5 +1,6 @@
 from . import area
 
+
 class AreaPokestops(area.Area):
     area_table = 'settings_area_pokestops'
     area_type = 'pokestops'
@@ -69,7 +70,7 @@ class AreaPokestops(area.Area):
             "route_calc_algorithm": {
                 "settings": {
                     "type": "option",
-                    "values": ['optimized','quick'],
+                    "values": ['optimized', 'quick'],
                     "require": False,
                     "description": "Method of calculation for routes. (Default optimized)",
                     "expected": str

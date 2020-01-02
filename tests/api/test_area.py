@@ -1,7 +1,8 @@
 import copy
 from unittest import TestCase
-from . import api_base
-from . import global_variables
+
+from . import api_base, global_variables
+
 
 class APIArea(api_base.APITestBase):
     uri = copy.copy(global_variables.DEFAULT_OBJECTS['area']['uri'])
@@ -64,7 +65,8 @@ class APIArea(api_base.APITestBase):
         headers = {
             'X-Mode': 'fake-mode'
         }
-        errors = {'error': 'Invalid mode specified [fake-mode].  Valid modes: idle,iv_mitm,mon_mitm,pokestops,raids_mitm'}
+        errors = {
+            'error': 'Invalid mode specified [fake-mode].  Valid modes: idle,iv_mitm,mon_mitm,pokestops,raids_mitm'}
         super().invalid_post(payload, errors, error_code=400, headers=headers)
         self.remove_resources()
 

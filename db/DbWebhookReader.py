@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 
-from utils.logging import logger
 from db.PooledQueryExecutor import PooledQueryExecutor
+from utils.logging import logger
+
 
 class DbWebhookReader:
 
@@ -10,8 +11,7 @@ class DbWebhookReader:
         # TODO: DbWrapper is currently required because `dbWrapper.quests_from_db` is shared between
         # map and webhook. Old typehinting used to avoid circular dependencies. This should be
         # resolved in future iterations.
-        self._db_wrapper = db_wrapper # type: db.DbWrapper
-
+        self._db_wrapper = db_wrapper  # type: db.DbWrapper
 
     def get_raids_changed_since(self, timestamp):
         query = (
@@ -56,7 +56,6 @@ class DbWebhookReader:
             })
         return ret
 
-
     def get_weather_changed_since(self, timestamp):
         query = (
             "SELECT * "
@@ -88,10 +87,8 @@ class DbWebhookReader:
             })
         return ret
 
-
     def get_quests_changed_since(self, timestamp):
         return self._db_wrapper.quests_from_db(timestamp=timestamp)
-
 
     def get_gyms_changed_since(self, timestamp):
         query = (
@@ -128,7 +125,6 @@ class DbWebhookReader:
             })
         return ret
 
-
     def get_stops_changed_since(self, timestamp):
         query = (
             "SELECT pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier, "
@@ -158,7 +154,6 @@ class DbWebhookReader:
                 "incident_grunt_type": incident_grunt_type
             })
         return ret
-
 
     def get_mon_changed_since(self, timestamp):
         query = (

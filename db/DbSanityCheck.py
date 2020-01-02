@@ -1,13 +1,14 @@
 import sys
-from utils.logging import logger
+
 from db.PooledQueryExecutor import PooledQueryExecutor
+from utils.logging import logger
+
 
 class DbSanityCheck:
     blacklisted_modes = "NO_ZERO_DATE NO_ZERO_IN_DATE ONLY_FULL_GROUP_BY"
 
     def __init__(self, db_exec: PooledQueryExecutor):
         self._db_exec: PooledQueryExecutor = db_exec
-
 
     def ensure_correct_sql_mode(self):
         """

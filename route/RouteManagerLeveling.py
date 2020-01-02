@@ -1,11 +1,12 @@
 import collections
 import time
 from typing import List
+
 from db.DbWrapper import DbWrapper
 from route.RouteManagerBase import RoutePoolEntry
 from route.RouteManagerQuests import RouteManagerQuests
+from utils.collections import Location, LocationWithVisits
 from utils.logging import logger
-from utils.collections import LocationWithVisits, Location
 
 
 class RouteManagerLeveling(RouteManagerQuests):

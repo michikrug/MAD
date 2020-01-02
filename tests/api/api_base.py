@@ -2,8 +2,7 @@ import copy
 from collections import namedtuple
 from unittest import TestCase
 
-import global_variables
-import local_api
+from . import global_variables, local_api
 
 
 class APITestBase(TestCase):

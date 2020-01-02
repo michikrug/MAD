@@ -1,9 +1,6 @@
 import datetime
 import os
 import time
-from multiprocessing import Queue
-from queue import Empty
-from threading import Thread
 
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
@@ -32,7 +29,6 @@ class control(object):
             self._datetimeformat = '%Y-%m-%d %H:%M:%S'
         self._adb_connect = ADBConnect(self._args)
         self._device_updater = deviceUpdater
-        self.research_trigger_queue = Queue()
 
         self._mapping_manager: MappingManager = mapping_manager
 
@@ -41,11 +37,6 @@ class control(object):
         self._logger = logger
         self._app = app
         self.add_route()
-
-        self.trigger_thread = None
-        self.trigger_thread = Thread(name='research_trigger', target=self.research_trigger)
-        self.trigger_thread.daemon = True
-        self.trigger_thread.start()
 
     def add_route(self):
         routes = [
@@ -73,33 +64,9 @@ class control(object):
             ("/get_all_workers", self.get_all_workers),
             ("/job_for_worker", self.job_for_worker),
             ("/reload_jobs", self.reload_jobs),
-            ("/trigger_research_menu", self.trigger_research_menu),
-            ("/flushlevel", self.flush)
         ]
         for route, view_func in routes:
             self._app.route(route, methods=['GET', 'POST'])(view_func)
-
-    @logger.catch()
-    def research_trigger(self):
-        logger.info("Starting research trigger thread")
-        while True:
-            try:
-                try:
-                    origin = self.research_trigger_queue.get()
-                except Empty:
-                    time.sleep(2)
-                    continue
-
-                logger.info("Trigger research menu for device {}".format(str(origin)))
-                self._ws_server.trigger_worker_check_research(origin)
-                self.generate_screenshot(origin)
-                time.sleep(3)
-
-            except KeyboardInterrupt as e:
-                logger.info("research_trigger received keyboard interrupt, stopping")
-                if self.trigger_thread is not None:
-                    self.trigger_thread.join()
-                break
 
     @auth_required
     @logger.catch()
@@ -395,19 +362,6 @@ class control(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
-    @nocache
-    def trigger_research_menu(self):
-        origin = request.args.get('origin')
-        try:
-            self.research_trigger_queue.put(origin)
-        except Exception as e:
-            self._logger.exception(
-                'MADmin: Exception occurred while trigger research menu: {}.', e)
-
-        return redirect(url_for('get_phonescreens'), code=302)
-
-    @auth_required
-    @nocache
     def send_text(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
@@ -592,14 +546,6 @@ class control(object):
 
         flash('Job successfully queued')
         return redirect(url_for('install_status'), code=302)
-
-    @logger.catch
-    @auth_required
-    def flush(self):
-        origin = request.args.get("origin")
-        logger.info('Removing visitation status for {}...', origin)
-        self._db.flush_levelinfo(origin)
-        return redirect(url_for('settings_devices'), code=302)
 
     @auth_required
     @logger.catch()

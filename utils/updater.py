@@ -176,6 +176,8 @@ class deviceUpdater(object):
                         .format(str(jobtype), str(origin), str(file_), str(id_)))
                     self.write_status_log(str(id_), field='status', value='terminated')
                     self.send_webhook(id_=id_, status=jobReturn.TERMINATED)
+                    self._current_job_device.remove(origin)
+
                     continue
 
                 if (laststatus is None or laststatus == 'future') and not startwithinit and processtime is None and \
@@ -193,6 +195,8 @@ class deviceUpdater(object):
                     self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype, counter=counter,
                                  status='future', waittime=waittime, processtime=processtime, redo=redo)
 
+                    self._current_job_device.remove(origin)
+
                     continue
 
                 if (laststatus is None or laststatus == 'success') and waittime > 0 and processtime is None:
@@ -209,6 +213,8 @@ class deviceUpdater(object):
                     self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype, counter=counter,
                                  status='future', waittime=waittime, processtime=processtime, redo=redo)
 
+                    self._current_job_device.remove(origin)
+
                     continue
 
                 if laststatus is not None and laststatus in ('pending', 'future', 'failure', 'interrupted',
@@ -221,6 +227,8 @@ class deviceUpdater(object):
                     self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype, counter=counter,
                                  status='future', waittime=waittime, processtime=processtime, redo=redo)
 
+                    self._current_job_device.remove(origin)
+
                     continue
 
                 if processtime is not None and datetime.fromtimestamp(processtime) > datetime.now():
@@ -229,6 +237,8 @@ class deviceUpdater(object):
                                  .format(str(jobtype), str(origin), str(file_), str(id_)))
                     self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype, counter=counter,
                                  status='future', waittime=waittime, processtime=processtime, redo=redo)
+
+                    self._current_job_device.remove(origin)
 
                     continue
 

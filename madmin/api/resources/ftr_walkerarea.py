@@ -1,7 +1,7 @@
-from .. import apiHandler
+from .resourceHandler import ResourceHandler
 
 
-class APIWalkerArea(apiHandler.ResourceHandler):
+class APIWalkerArea(ResourceHandler):
     component = 'walkerarea'
     default_sort = 'walkertext'
     description = 'Add/Update/Delete Area settings used for walkers'

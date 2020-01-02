@@ -1,8 +1,7 @@
 import copy
 from unittest import TestCase
 
-import api_base
-import global_variables
+from . import api_base, global_variables
 
 
 class APIWalker(api_base.APITestBase):

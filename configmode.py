@@ -37,10 +37,6 @@ if __name__ == "__main__":
             'config.ini file not found. Check configs folder and copy example config')
         sys.exit(1)
 
-    filename = args.mappings
-    if not os.path.exists(filename):
-        generate_mappingjson(args.mappings)
-
     create_folder(args.file_path)
     create_folder(args.upload_path)
 
@@ -48,7 +44,7 @@ if __name__ == "__main__":
 
     instance_id = db_wrapper.get_instance_id()
     data_manager = utils.data_manager.DataManager(db_wrapper, instance_id)
-    db_wrapper, db_pool_manager = DbFactory.get_wrapper(args)
+    data_manager.clear_on_boot()
     version = MADVersion(args, data_manager)
     version.get_version()
 

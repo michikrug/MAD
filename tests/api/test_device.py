@@ -1,8 +1,7 @@
 import copy
 from unittest import TestCase
 
-import api_base
-import global_variables
+from . import api_base, global_variables
 
 
 class APIDevice(api_base.APITestBase):
@@ -55,5 +54,17 @@ class APIDevice(api_base.APITestBase):
         device_obj = super().create_valid_resource('device')
         payload = {'origin': 'updated'}
         response = self.api.patch(device_obj['uri'], json=payload)
+        self.assertEqual(response.status_code, 204)
+        self.remove_resources()
+
+    def test_clear_level(self):
+        payload = {
+            "call": "flush_level"
+        }
+        headers = {
+            'Content-Type': 'application/json-rpc'
+        }
+        device_obj = super().create_valid_resource('device')
+        response = self.api.post(device_obj['uri'], json=payload, headers=headers)
         self.assertEqual(response.status_code, 204)
         self.remove_resources()

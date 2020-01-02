@@ -7,7 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from db.DbWrapper import DbWrapper
-from madmin.api import APIHandler
+from madmin.api import APIEntry
 from madmin.reverseproxy import ReverseProxied
 from madmin.routes.config import config
 from madmin.routes.control import control
@@ -36,7 +36,7 @@ def madmin_start(args, db_wrapper: DbWrapper, ws_server, mapping_manager: Mappin
     statistics(db_wrapper, args, app, mapping_manager, data_manager)
     control(db_wrapper, args, mapping_manager, ws_server, logger, app, deviceUpdater)
     map(db_wrapper, args, mapping_manager, app, data_manager)
-    APIHandler(logger, app, data_manager, mapping_manager, ws_server, args.config_mode)
+    APIEntry(logger, app, data_manager, mapping_manager, ws_server, args.config_mode)
     config(db_wrapper, args, logger, app, mapping_manager, data_manager)
     path(db_wrapper, args, app, mapping_manager, jobstatus, data_manager)
 

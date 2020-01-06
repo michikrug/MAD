@@ -1,14 +1,14 @@
-import time
 import json
+import time
 from datetime import datetime, timedelta
 from typing import List, Optional
-from bitstring import BitArray
 
-from utils.logging import logger
+from bitstring import BitArray
+from db.PooledQueryExecutor import PooledQueryExecutor
 from utils.gamemechanicutil import gen_despawn_timestamp
+from utils.logging import logger
 from utils.questGen import questtask
 from utils.s2Helper import S2Helper
-from db.PooledQueryExecutor import PooledQueryExecutor
 
 
 class DbPogoProtoSubmit:
@@ -22,7 +22,6 @@ class DbPogoProtoSubmit:
     def __init__(self, db_exec: PooledQueryExecutor, lure_duration: int):
         self._db_exec: PooledQueryExecutor = db_exec
         self._lure_duration: int = lure_duration
-
 
     def mons(self, origin: str, map_proto: dict, mon_ids_iv: Optional[List[int]], mitm_mapper):
         """
@@ -88,7 +87,6 @@ class DbPogoProtoSubmit:
         self._db_exec.executemany(query_mons, mon_args, commit=True)
         return True
 
-
     def mon_iv(self, origin: str, timestamp: float, encounter_proto: dict, mitm_mapper):
         """
         Update/Insert a mon with IVs
@@ -137,13 +135,13 @@ class DbPogoProtoSubmit:
 
         # ditto detector
         if pokemon_data.get("id") in (13, 46, 48, 163, 165, 167, 187, 223, 273, 293, 300, 316, 322, 399) and \
-                ((pokemon_display.get("weather_boosted_value", None) is not None
-                  and pokemon_display.get("weather_boosted_value", None) > 0) \
-            and (pokemon_data.get("individual_attack") < 4 or pokemon_data.get("individual_defense") < 4 or
-                 pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or \
-                (pokemon_display.get("weather_boosted_value", None) is not None
-                  and pokemon_display.get("weather_boosted_value", None) == 0) \
-            and pokemon_data.get("cp_multiplier") > .733):
+                ((pokemon_display.get("weather_boosted_value", None) is not None and
+                  pokemon_display.get("weather_boosted_value", None) > 0) and
+                 (pokemon_data.get("individual_attack") < 4 or pokemon_data.get("individual_defense") < 4 or
+                  pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or
+                 (pokemon_display.get("weather_boosted_value", None) is not None and
+                  pokemon_display.get("weather_boosted_value", None) == 0) and
+                 pokemon_data.get("cp_multiplier") > .733):
             # mon must be a ditto :D
             mon_id = 132
             gender = 3
@@ -201,7 +199,6 @@ class DbPogoProtoSubmit:
         self._db_exec.execute(query, vals, commit=True)
         logger.debug("Done updating mon in DB")
         return True
-
 
     def spawnpoints(self, origin: str, map_proto: dict):
         logger.debug(
@@ -276,7 +273,6 @@ class DbPogoProtoSubmit:
         self._db_exec.executemany(query_spawnpoints_unseen,
                                   spawnpoint_args_unseen, commit=True)
 
-
     def stops(self, origin: str, map_proto: dict):
         """
         Update/Insert pokestops from a map_proto dict
@@ -306,7 +302,6 @@ class DbPogoProtoSubmit:
         self._db_exec.executemany(query_stops, stops_args, commit=True)
         return True
 
-
     def stop_details(self, stop_proto: dict):
         """
         Update/Insert pokestop details from a GMO
@@ -328,7 +323,6 @@ class DbPogoProtoSubmit:
         if stop_args is not None:
             self._db_exec.execute(query_stops, stop_args, commit=True)
         return True
-
 
     def quest(self, origin: str, quest_proto: dict, mitm_mapper):
         logger.debug("DbPogoProtoSubmit::quest called")
@@ -383,7 +377,6 @@ class DbPogoProtoSubmit:
         self._db_exec.execute(query_quests, vals, commit=True)
 
         return True
-
 
     def gyms(self, origin: str, map_proto: dict):
         """
@@ -450,7 +443,6 @@ class DbPogoProtoSubmit:
         logger.debug("{}: submit_gyms done", str(origin))
         return True
 
-
     def gym(self, origin: str, map_proto: dict):
         """
         Update gyms from a map_proto dict
@@ -491,7 +483,6 @@ class DbPogoProtoSubmit:
         self._db_exec.execute((query), tuple(vals), commit=True)
 
         return True
-
 
     def raids(self, origin: str, map_proto: dict, mitm_mapper):
         """
@@ -574,7 +565,6 @@ class DbPogoProtoSubmit:
             "DbPogoProtoSubmit::raids: Done submitting raids with data received from {}", str(origin))
         return True
 
-
     def weather(self, origin, map_proto, received_timestamp):
         """
         Update/Insert weather from a map_proto dict
@@ -606,7 +596,6 @@ class DbPogoProtoSubmit:
         self._db_exec.executemany(query_weather, list_of_weather_args, commit=True)
         return True
 
-
     def cells(self, origin: str, map_proto: dict):
         protocells = map_proto.get("cells", [])
 
@@ -628,7 +617,6 @@ class DbPogoProtoSubmit:
             cells.append((cell_id, 15, lat, lng, cell["current_timestamp"] / 1000))
 
         self._db_exec.executemany(query, cells, commit=True)
-
 
     def _extract_args_single_stop(self, stop_data):
         if stop_data["type"] != 1:
@@ -681,7 +669,6 @@ class DbPogoProtoSubmit:
                 incident_start, incident_expiration, incident_grunt_type
                 )
 
-
     def _extract_args_single_stop_details(self, stop_data):
         if stop_data.get("type", 999) != 1:
             return None
@@ -693,7 +680,6 @@ class DbPogoProtoSubmit:
         return (stop_data["fort_id"], 1, stop_data["latitude"], stop_data["longitude"],
                 last_modified, now, name, image[0]
                 )
-
 
     def _extract_args_single_weather(self, client_weather_data, time_of_day, received_timestamp):
         now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
@@ -720,7 +706,6 @@ class DbPogoProtoSubmit:
             time_of_day, now
         )
 
-
     def _get_detected_endtime(self, spawn_id):
         logger.debug("DbPogoProtoSubmit::_get_detected_endtime called")
 
@@ -739,7 +724,6 @@ class DbPogoProtoSubmit:
             return str(found[0][0])
         else:
             return False
-
 
     def _get_spawndef(self, spawn_ids):
         if not spawn_ids:
@@ -760,7 +744,6 @@ class DbPogoProtoSubmit:
             spawnret[int(row[0])] = row[1]
         return spawnret
 
-
     def _get_current_spawndef_pos(self):
         min = int(datetime.now().strftime("%M"))
         if min < 15:
@@ -774,7 +757,6 @@ class DbPogoProtoSubmit:
         else:
             pos = None
         return pos
-
 
     def _set_spawn_see_minutesgroup(self, spawndef, pos):
         # b = BitArray([int(digit) for digit in bin(spawndef)[2:]])

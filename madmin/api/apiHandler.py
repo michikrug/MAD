@@ -1,8 +1,11 @@
-import flask
-from madmin.functions import auth_required
-from . import apiResponse, apiRequest, apiException, global_variables
-import utils.data_manager
 import traceback
+
+import flask
+
+import utils.data_manager
+from madmin.functions import auth_required
+
+from . import apiException, apiRequest, apiResponse, global_variables
 
 
 class APIHandler(object):

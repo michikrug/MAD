@@ -1,15 +1,15 @@
 import collections
-import time
 import math
+import time
 from abc import abstractmethod
 from datetime import datetime
 from enum import Enum
 
 from mitm_receiver.MitmMapper import MitmMapper
 from ocr.pogoWindows import PogoWindows
-from utils.MappingManager import MappingManager
 from utils.logging import logger
 from utils.madGlobals import InternalStopWorkerException
+from utils.MappingManager import MappingManager
 from worker.WorkerBase import WorkerBase
 
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -105,7 +105,8 @@ class MITMBase(WorkerBase):
 
             self._mitm_mapper.collect_location_stats(self._id, self.current_location, 0, self._waittime_without_delays,
                                                      position_type, 0,
-                                                     self._mapping_manager.routemanager_get_mode(self._routemanager_name),
+                                                     self._mapping_manager.routemanager_get_mode(
+                                                         self._routemanager_name),
                                                      self._transporttype)
 
             self._restart_count += 1
@@ -261,16 +262,16 @@ class MITMBase(WorkerBase):
         logger.debug('===============================')
 
         dataToSave = {
-            'Origin':            self._id,
-            'Routemanager':      str(self._routemanager_name),
-            'RebootCounter':     str(self._reboot_count),
-            'RestartCounter':    str(self._restart_count),
-            'RebootingOption':   str(self.get_devicesettings_value("reboot", False)),
-            'CurrentPos':        str(self.current_location.lat) + ", " + str(self.current_location.lng),
-            'LastPos':           str(self.last_location.lat) + ", " + str(self.last_location.lng),
-            'RoutePos':          str(routemanager_status[0]),
-            'RouteMax':          str(routemanager_status[1]),
-            'Init':              str(routemanager_init),
+            'Origin': self._id,
+            'Routemanager': str(self._routemanager_name),
+            'RebootCounter': str(self._reboot_count),
+            'RestartCounter': str(self._restart_count),
+            'RebootingOption': str(self.get_devicesettings_value("reboot", False)),
+            'CurrentPos': str(self.current_location.lat) + ", " + str(self.current_location.lng),
+            'LastPos': str(self.last_location.lat) + ", " + str(self.last_location.lng),
+            'RoutePos': str(routemanager_status[0]),
+            'RouteMax': str(routemanager_status[1]),
+            'Init': str(routemanager_init),
             'LastProtoDateTime': str(self._rec_data_time),
             'CurrentSleepTime': str(self._current_sleep_time)
         }

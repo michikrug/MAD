@@ -1,8 +1,11 @@
-from flask import Flask, flash, render_template, redirect, url_for, session, request, send_from_directory, abort
-from flask import Response, Blueprint
+import datetime
+
+from flask import (Blueprint, Flask, Response, abort, flash, redirect,
+                   render_template, request, send_from_directory, session,
+                   url_for)
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
-import datetime
+
 
 class ReverseProxied(object):
 

@@ -3,7 +3,9 @@ import multiprocessing
 import secrets
 
 from utils.logging import logger
+
 from .util import *
+
 
 def route_calc_impl(lessCoordinates, route_name, num_processes):
     init_temp = 100
@@ -56,16 +58,16 @@ def route_calc_impl(lessCoordinates, route_name, num_processes):
     logger.info("There are {} markov steps.  Updating status every {}%", markov_step, round(output_levels * 100, 1))
     while T > T_MIN and cost_best_counter < halt:
         logger.debug("Still calculating... cost_best_counter: {}",
-                    str(cost_best_counter))
-        perc_comp = float(cost_best_counter/halt)
+                     str(cost_best_counter))
+        perc_comp = float(cost_best_counter / halt)
         try:
             last_comp = output_percs[-1]
         except:
             last_comp = 0
-        rounded_perc = round(output_levels * float(math.floor(float(perc_comp)/output_levels)),2)
+        rounded_perc = round(output_levels * float(math.floor(float(perc_comp) / output_levels)), 2)
         if rounded_perc > last_comp:
             output_percs.append(rounded_perc)
-            logger.info("Route calculation is {}% complete for {}", round(rounded_perc*100, 1), route_name)
+            logger.info("Route calculation is {}% complete for {}", round(rounded_perc * 100, 1), route_name)
         if num_cores and num_cores != 1 and thread_pool and cost_best_counter > 0:
             running_calculations = []
             full = secrets.randbelow(2)

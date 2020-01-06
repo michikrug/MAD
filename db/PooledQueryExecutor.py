@@ -1,11 +1,14 @@
 from multiprocessing import Lock, Semaphore
 from multiprocessing.managers import SyncManager
+
 import mysql
 from mysql.connector.pooling import MySQLConnectionPool
 from utils.logging import logger
 
+
 class PooledQuerySyncManager(SyncManager):
     pass
+
 
 class PooledQueryExecutor:
 
@@ -24,7 +27,6 @@ class PooledQueryExecutor:
 
         self._init_pool()
 
-
     def _init_pool(self):
         logger.info("Connecting to DB")
         dbconfig = {
@@ -36,10 +38,9 @@ class PooledQueryExecutor:
         }
         self._pool_mutex.acquire()
         self._pool = MySQLConnectionPool(pool_name="db_wrapper_pool",
-                                        pool_size=self._poolsize,
-                                        **dbconfig)
+                                         pool_size=self._poolsize,
+                                         **dbconfig)
         self._pool_mutex.release()
-
 
     def close(self, conn, cursor):
         """
@@ -80,7 +81,7 @@ class PooledQueryExecutor:
         try:
             if args:
                 if type(args) != tuple:
-                    args=(args,)
+                    args = (args,)
                 cursor.execute(sql, args)
             else:
                 cursor.execute(sql)
@@ -108,7 +109,6 @@ class PooledQueryExecutor:
         finally:
             self.close(conn, cursor)
             self._connection_semaphore.release()
-
 
     def executemany(self, sql, args, commit=False):
         """
@@ -233,7 +233,6 @@ class PooledQueryExecutor:
                 ondupe_out += [tmp_value]
         return (column_names, column_substituion, column_values, literal_values, ondupe_out)
 
-
     def autofetch_all(self, sql, args=()):
         """ Fetch all data and have it returned as a dictionary """
         return self.execute(sql, args=args, get_dict=True, raise_exc=True)
@@ -301,8 +300,8 @@ class PooledQueryExecutor:
         """
         optype = optype.upper()
         if optype not in ["INSERT", "REPLACE", "INSERT IGNORE", "ON DUPLICATE"]:
-            raise ProgrammingError("MySQL operation must be 'INSERT', 'REPLACE', 'INSERT IGNORE', 'ON DUPLICATE',"\
-                                    "got '%s'" % optype)
+            raise ProgrammingError("MySQL operation must be 'INSERT', 'REPLACE', 'INSERT IGNORE', 'ON DUPLICATE',"
+                                   "got '%s'" % optype)
         if type(keyvals) is not dict:
             raise Exception("Data must be a dictionary")
         if type(literals) is not list:

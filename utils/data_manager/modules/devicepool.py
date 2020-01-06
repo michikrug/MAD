@@ -1,5 +1,6 @@
-from .. import dm_exceptions
 from . import resource
+from .. import dm_exceptions
+
 
 class DevicePool(resource.Resource):
     table = 'settings_devicepool'
@@ -202,7 +203,7 @@ class DevicePool(resource.Resource):
                 }
             },
             "injection_thresh_reboot": {
-                 "settings": {
+                "settings": {
                     "type": "text",
                     "require": False,
                     "description": "Reboot (if enabled) device after not injecting for X times in a row (Default: 20)",

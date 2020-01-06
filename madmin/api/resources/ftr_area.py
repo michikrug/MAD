@@ -1,6 +1,7 @@
 from . import resource_exceptions
-from .resourceHandler import ResourceHandler
 from .. import apiHandler
+from .resourceHandler import ResourceHandler
+
 
 class APIArea(ResourceHandler):
     component = 'area'

@@ -1,6 +1,7 @@
 from . import resource_exceptions
 from .resourceHandler import ResourceHandler
 
+
 class APIDevice(ResourceHandler):
     component = 'device'
     default_sort = 'origin'

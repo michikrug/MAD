@@ -1,18 +1,20 @@
-import json
-import sys
-
-from utils.logging import logger
-import shutil
-from .convert_mapping import convert_mappings
-import re
-import utils.data_manager
-from pathlib import Path
-import os
 import copy
-from db.DbWrapper import DbWrapper
+import json
+import os
+import re
+import shutil
+import sys
+from pathlib import Path
+
+import utils.data_manager
 from db.DbSchemaUpdater import DbSchemaUpdater
+from db.DbWrapper import DbWrapper
+from utils.logging import logger
+
+from .convert_mapping import convert_mappings
 
 current_version = 19
+
 
 class MADVersion(object):
 
@@ -340,7 +342,8 @@ class MADVersion(object):
                             elif key == 'devices':
                                 if 'pool' in entry:
                                     try:
-                                        entry['pool'] = '/api/devicesetting/%s' % (cache['devicesettings'][entry['pool']],)
+                                        entry['pool'] = '/api/devicesetting/%s' % (
+                                            cache['devicesettings'][entry['pool']],)
                                     except Exception:
                                         if entry['pool'] is not None:
                                             logger.error('DeviceSettings {} is not valid', entry['pool'])
@@ -435,7 +438,7 @@ class MADVersion(object):
                     del config_file[section]['entries']["0"]
                     config_file[section]['index'] += 1
                 if cache:
-                    logger.info('One or more resources with ID 0 found.  Converting them off 0 and updating the '\
+                    logger.info('One or more resources with ID 0 found.  Converting them off 0 and updating the '
                                 'mappings.json file.  {}', cache)
                     with open(self._application_args.mappings, 'w') as outfile:
                         json.dump(config_file, outfile, indent=4, sort_keys=True)
@@ -592,7 +595,7 @@ class MADVersion(object):
                                 if resource.identifier >= int(config_file[section]['index']):
                                     config_file[section]['index'] = resource.identifier + 1
                 if conversion_issues:
-                    logger.error('The configuration was not partially moved to the database.  The following resources '\
+                    logger.error('The configuration was not partially moved to the database.  The following resources '
                                  'were not converted.')
                     for (section, identifier, issue) in conversion_issues:
                         logger.error('{} {}: {}', section, identifier, issue)
@@ -619,7 +622,7 @@ class MADVersion(object):
             sql = "SELECT `origin` FROM `trs_status` WHERE `instance` = ''"
             bad_devs = self.dbwrapper.autofetch_column(sql)
             if bad_devs:
-                logger.warning('Found devices that have no instance.  These will be removed from the table. '\
+                logger.warning('Found devices that have no instance.  These will be removed from the table. '
                                '{}', bad_devs)
                 del_data = {
                     'instance': ''
@@ -679,7 +682,7 @@ class MADVersion(object):
         name = path
         # Enforce 128 character limit
         if len(name) > 128:
-            name = name[len(name)-128:]
+            name = name[len(name) - 128:]
         update_data = {
             'name': path,
             'fence_type': 'polygon',
@@ -698,10 +701,10 @@ class MADVersion(object):
                 valid = []
                 for elem in val:
                     if type(elem) is str:
-                        valid.append(elem[elem.rfind('/')+1:])
+                        valid.append(elem[elem.rfind('/') + 1:])
                     else:
                         valid.append(elem)
                 data[key] = valid
             elif type(val) is str and regex.search(val):
-                data[key] = val[val.rfind('/')+1:]
+                data[key] = val[val.rfind('/') + 1:]
         return data

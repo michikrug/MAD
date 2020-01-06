@@ -1,5 +1,6 @@
-from .. import dm_exceptions
 from . import resource
+from .. import dm_exceptions
+
 
 class WalkerArea(resource.Resource):
     table = 'settings_walkerarea'

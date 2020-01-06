@@ -1,36 +1,36 @@
+import calendar
+import datetime
+import gc
+import os
 import sys
+import time
+from multiprocessing import Process
+from threading import Thread, active_count
+from typing import Optional
+
+import pkg_resources
+
+import psutil
+import utils.data_manager
+from db.DbFactory import DbFactory
+from mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
+from mitm_receiver.MITMReceiver import MITMReceiver
+from utils.functions import generate_mappingjson
+from utils.logging import initLogging, logger
+from utils.madGlobals import terminate_mad
+from utils.MappingManager import MappingManager, MappingManagerManager
+from utils.rarity import Rarity
+from utils.updater import deviceUpdater
+from utils.version import MADVersion
+from utils.walkerArgs import parseArgs
+from websocket.WebsocketServer import WebsocketServer
+
 py_version = sys.version_info
 if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
     print("MAD requires at least python 3.6! Your version: {}.{}"
           .format(py_version.major, py_version.minor))
     sys.exit(1)
-from multiprocessing import Process
-from typing import Optional
 
-from utils.MappingManager import MappingManager, MappingManagerManager
-
-import calendar
-import datetime
-import gc
-import os
-import pkg_resources
-import time
-from threading import Thread, active_count
-
-import psutil
-
-from db.DbFactory import DbFactory
-from mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
-from mitm_receiver.MITMReceiver import MITMReceiver
-from utils.logging import initLogging, logger
-from utils.madGlobals import terminate_mad
-from utils.rarity import Rarity
-from utils.version import MADVersion
-from utils.walkerArgs import parseArgs
-import utils.data_manager
-from websocket.WebsocketServer import WebsocketServer
-from utils.updater import deviceUpdater
-from utils.functions import generate_mappingjson
 
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language
@@ -73,6 +73,7 @@ def install_thread_excepthook():
     Thread.run = run_thread
     Process.run = run_process
 
+
 def find_referring_graphs(obj):
     REFERRERS_TO_IGNORE = [locals(), globals(), gc.garbage]
 
@@ -99,7 +100,7 @@ def get_system_infos(db_wrapper):
         logger.debug('Collecting...')
         n = gc.collect()
         logger.debug('Unreachable objects: {} - Remaining garbage: {} - Running threads: {}',
-                    str(n), str(gc.garbage), str(active_count()))
+                     str(n), str(gc.garbage), str(active_count()))
 
         for obj in gc.garbage:
             for ref in find_referring_graphs(obj):
@@ -138,7 +139,8 @@ def check_dependencies():
         try:
             pkg_resources.require(deps)
         except pkg_resources.VersionConflict as version_error:
-            logger.error("Some dependencies aren't met. Required: {} (Installed: {})", version_error.req, version_error.dist)
+            logger.error("Some dependencies aren't met. Required: {} (Installed: {})",
+                         version_error.req, version_error.dist)
             logger.error("Most of the times you can fix it by running: pip3 install -r requirements.txt --upgrade")
             sys.exit(1)
 
@@ -189,7 +191,8 @@ if __name__ == "__main__":
         MappingManagerManager.register('MappingManager', MappingManager)
         mapping_manager_manager = MappingManagerManager()
         mapping_manager_manager.start()
-        mapping_manager: MappingManager = mapping_manager_manager.MappingManager(db_wrapper, args, data_manager, ws_server, False)
+        mapping_manager: MappingManager = mapping_manager_manager.MappingManager(
+            db_wrapper, args, data_manager, ws_server, False)
         filename = args.mappings
         if args.only_routes:
             logger.info("Done calculating routes!")

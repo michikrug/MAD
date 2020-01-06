@@ -16,6 +16,7 @@ valid_resources = {
     'walkerarea': ftr_walkerarea.APIWalkerArea
 }
 
+
 class APIEntry(object):
     """ Manager for the MADmin API
 
@@ -28,6 +29,7 @@ class APIEntry(object):
         _logger: logger (loguru.logger): MADmin debug logger
         _resources (dict): Dictionary of APIHandlers for referring to the other API sections
     """
+
     def __init__(self, logger, app, data_manager, mapping_manager, ws_server, config_mode):
         self._logger = logger
         self._app = app

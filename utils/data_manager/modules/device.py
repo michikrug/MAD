@@ -1,6 +1,8 @@
-from .. import dm_exceptions
-from . import resource
 from utils.logging import logger
+
+from . import resource
+from .. import dm_exceptions
+
 
 class Device(resource.Resource):
     table = 'settings_device'
@@ -57,7 +59,7 @@ class Device(resource.Resource):
             }
         },
         "settings": {
-            "post_walk_delay": { 
+            "post_walk_delay": {
                 "settings": {
                     "type": "text",
                     "require": False,

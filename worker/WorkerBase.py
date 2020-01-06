@@ -657,8 +657,10 @@ class WorkerBase(ABC):
 
     def _fix_magisk(self):
         self._stop_pogo()
-        self._stopPogoDroid()
+        time.sleep(1)
+        # self._stopPogoDroid()
         self._communicator.magisk_off("com.nianticlabs.pokemongo")
+        time.sleep(1)
         self._communicator.clearAppCache("com.nianticlabs.pokemongo")
         time.sleep(1)
         self._communicator.magisk_on("com.nianticlabs.pokemongo")
@@ -667,7 +669,8 @@ class WorkerBase(ABC):
         time.sleep(15)
         self._stop_pogo()
         time.sleep(1)
-        self._start_pogodroid()
+        # self._start_pogodroid()
+        # time.sleep(5)
         return self._start_pogo()
 
     def _switch_user(self):

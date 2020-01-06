@@ -190,8 +190,7 @@ def questtask(typeid, condition, target):
         arr['type'] = ''
         match_object = re.search(r'"item": ([0-9]+)', condition)
         if match_object is not None:
-            arr['type'] = items[match_object.group(
-                1)]['name'].replace(_(' Berry'), '')
+            arr['type'] = items[match_object.group(1)]['name'].replace(_(' Berry'), '')
     elif typeid == 14:
         text = _('Power up Pokemon {0} times')
     elif typeid == 15:
@@ -273,11 +272,11 @@ def questtask(typeid, condition, target):
             text = _('Battle another Trainer {0} times')
     elif typeid == 28:
         # Take snapshots quest
-        if re.search(r'"type": 2', condition) is not None:
+        if re.search(r'"type": 28', condition) is not None:
+            text = _('Take {0} snapshots of your Buddy')
+        elif re.search(r'"type": 2', condition) is not None:
             arr['poke'] = ''
-
-            match_object = re.search(
-                r'"pokemon_ids": \[([0-9, ]+)\]', condition)
+            match_object = re.search(r'"pokemon_ids": \[([0-9, ]+)\]', condition)
             if match_object is not None:
                 pt = match_object.group(1).split(', ')
                 last = len(pt)
@@ -295,8 +294,7 @@ def questtask(typeid, condition, target):
             arr['wb'] = ''
             arr['type'] = ''
             arr['poke'] = ''
-            match_object = re.search(
-                r'"pokemon_type": \[([0-9, ]+)\]', condition)
+            match_object = re.search(r'"pokemon_type": \[([0-9, ]+)\]', condition)
             if match_object is not None:
                 pt = match_object.group(1).split(', ')
                 last = len(pt)
@@ -313,6 +311,8 @@ def questtask(typeid, condition, target):
         # Condition type 27 means against a grunt leader WITH_INVASION_CHARACTER
         if re.search(r'"type": 27', condition) is not None:
             text = _('Battle {0} times against the Team GO Rocket Leaders')
+        elif int(target) == int(1):
+            text = _('Battle against a Team Rocket Grunt')
 
         # Condition type 18 means win a battle
         if re.search(r'"type": 18', condition) is not None:
@@ -328,7 +328,8 @@ def questtask(typeid, condition, target):
         text = text.replace(_(' {0} snapshots'), _(' a snapshot'))
         text = text.replace(_('Make {0} {type}{curve}Throws'), _('Make a {type}{curve}Throw'))
         text = text.replace(_(' {0} times'), '')
-        arr['0'] = _('a')
+        text = text.replace(_(' {0} hearts'), _(' a heart'))
+        arr['0'] = _("a")
 
     for key, val in arr.items():
         text = text.replace('{' + key + '}', str(val))

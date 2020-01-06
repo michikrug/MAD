@@ -1,6 +1,7 @@
 import json
 
 from geofence.geofenceHelper import GeofenceHelper
+from utils.logging import logger
 
 from . import resource
 from .. import dm_exceptions
@@ -89,4 +90,5 @@ class GeoFence(resource.Resource):
             issues = {
                 'invalid': [('fence_data', 'Must be one coord set per line (float,float)')]
             }
+            logger.error("Invalid geofence detected for {}: {}", self.identifier, err)
         return issues

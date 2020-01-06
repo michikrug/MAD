@@ -637,14 +637,7 @@ class WorkerBase(ABC):
 
                 elif returncode == ScreenType.SN:
                     logger.warning('Getting SN Screen - reset Magisk Settings')
-                    time.sleep(3)
-                    self._stop_pogo()
-                    self._communicator.magisk_off("com.nianticlabs.pokemongo")
-                    self._communicator.clearAppCache("com.nianticlabs.pokemongo")
-                    time.sleep(1)
-                    self._communicator.magisk_on("com.nianticlabs.pokemongo")
-                    time.sleep(1)
-                    self._reboot()
+                    self._fix_magisk()
                     break
 
                 if self._loginerrorcounter == 2:
@@ -661,6 +654,21 @@ class WorkerBase(ABC):
 
         logger.info('Checking pogo screen is finished')
         return True
+
+    def _fix_magisk(self):
+        self._stop_pogo()
+        self._stopPogoDroid()
+        self._communicator.magisk_off("com.nianticlabs.pokemongo")
+        self._communicator.clearAppCache("com.nianticlabs.pokemongo")
+        time.sleep(1)
+        self._communicator.magisk_on("com.nianticlabs.pokemongo")
+        time.sleep(1)
+        self._start_pogo()
+        time.sleep(15)
+        self._stop_pogo()
+        time.sleep(1)
+        self._start_pogodroid()
+        return self._start_pogo()
 
     def _switch_user(self):
         logger.info('Switching User - please wait ...')
@@ -825,15 +833,16 @@ class WorkerBase(ABC):
         logger.debug("restartPogo: stop game resulted in {}",
                      str(successful_stop))
         if successful_stop:
-            if clear_cache:
-                self._communicator.clearAppCache("com.nianticlabs.pokemongo")
+            # if clear_cache:
+            #     self._communicator.clearAppCache("com.nianticlabs.pokemongo")
             time.sleep(1)
             if mitm_mapper is not None:
                 mitm_mapper.collect_location_stats(self._id, self.current_location, 1, time.time(), 4, 0,
                                                    self._mapping_manager.routemanager_get_mode(
                                                        self._routemanager_name),
                                                    99)
-            return self._start_pogo()
+            return self._fix_magisk()
+            # self._start_pogo()
         else:
             return False
 

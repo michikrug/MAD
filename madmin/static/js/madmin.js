@@ -727,7 +727,7 @@ new Vue({
           leaflet_data["quests"][quest["pokestop_id"]] = L.marker([quest['latitude'], quest['longitude']], {
             id: quest["pokestop_id"],
             virtual: true,
-            icon: $this.build_quest_small(quest['quest_reward_type_raw'], quest['item_id'], quest['pokemon_id'])
+            icon: $this.build_quest_small(quest['quest_reward_type_raw'], quest['item_id'], quest['pokemon_id'], quest['pokemon_form'], quest['pokemon_asset_bundle_id'], quest['pokemon_costume'])
           }).bindPopup($this.build_quest_popup, { "className": "questpopup"});
 
           $this.addMouseEventPopup(leaflet_data["quests"][quest["pokestop_id"]]);
@@ -975,22 +975,25 @@ new Vue({
       var time = moment(marker.options.ctimestamp * 1000);
       return `Due: ${time.format("YYYY-MM-DD HH:mm:ss")} (${marker.options.ctimestamp})`;
     },
-    build_quest_small(quest_reward_type_raw, quest_item_id, quest_pokemon_id) {
+    build_quest_small(quest_reward_type_raw, quest_item_id, quest_pokemon_id, quest_pokemon_form_id, quest_pokemon_asset_bundle_id, quest_pokemon_costume_id) {
+      let image = '';
+      let size = [30, 30];
+      let anchor = [30, 30];
+
       switch (quest_reward_type_raw) {
         case 2:
-          var image = `${iconBasePath}/rewards/reward_${quest_item_id}_1.png`;
-          var size = [30, 30]
-          var anchor = [30, 30]
+          image = `${iconBasePath}/rewards/reward_${quest_item_id}_1.png`;
           break;
         case 3:
-          var image = `${iconBasePath}/rewards/reward_stardust.png`;
-          var size = [30, 30]
-          var anchor = [30, 30]
+          image = `${iconBasePath}/rewards/reward_stardust.png`;
           break;
         case 7:
-          var image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_00.png`;
-          var size = [30, 30]
-          var anchor = [30, 30]
+          var costume = '';
+          // var asset_bundle = quest_pokemon_asset_bundle_id || '00';
+          if (quest_pokemon_costume_id > 0) {
+            costume = '_' + String.prototype.padStart.call(quest_pokemon_costume_id, 2, 0);
+          }
+          image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${String.prototype.padStart.call(quest_pokemon_form_id, 2, 0)}${costume}.png`;
           break;
       }
 
@@ -1005,22 +1008,29 @@ new Vue({
 
       return icon;
     },
-    build_quest(quest_reward_type_raw, quest_task, quest_pokemon_id, quest_item_id, quest_item_amount, quest_pokemon_name, quest_item_type) {
-      var size = "100%";
+    build_quest(quest_reward_type_raw, quest_task, quest_pokemon_id, quest_pokemon_form_id, quest_pokemon_asset_bundle_id, quest_pokemon_costume_id, quest_item_id, quest_item_amount, quest_pokemon_name, quest_item_type) {
+      let image = '';
+      let rewardtext = '';
+      let size = '100%';
 
       switch (quest_reward_type_raw) {
         case 2:
-          var image = `${iconBasePath}/rewards/reward_${quest_item_id}_1.png`;
-          var rewardtext = `${quest_item_amount}x ${quest_item_type}`;
+          image = `${iconBasePath}/rewards/reward_${quest_item_id}_1.png`;
+          rewardtext = `${quest_item_amount}x ${quest_item_type}`;
           break;
         case 3:
-          var image = `${iconBasePath}/rewards/reward_stardust.png`;
-          var rewardtext = `${quest_item_amount} ${quest_item_type}`;
+          image = `${iconBasePath}/rewards/reward_stardust.png`;
+          rewardtext = `${quest_item_amount} ${quest_item_type}`;
           break;
         case 7:
-          var image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_00.png`;
-          var rewardtext = quest_pokemon_name;
-          var size = "150%";
+          let costume = '';
+          // var asset_bundle = quest_pokemon_asset_bundle_id || '00';
+          if (quest_pokemon_costume_id > 0) {
+            costume = '_' + String.prototype.padStart.call(quest_pokemon_costume_id, 2, 0);
+          }
+          image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${String.prototype.padStart.call(quest_pokemon_form_id, 2, 0)}${costume}.png`;
+          rewardtext = quest_pokemon_name;
+          size = "150%";
           break;
       }
 
@@ -1052,7 +1062,7 @@ new Vue({
           ${base_popup}
           <div id="questTimestamp"><i class="fa fa-clock"></i> Scanned: <strong>${moment(quest['timestamp']*1000).format("YYYY-MM-DD HH:mm:ss")}</strong></div>
           <br>
-          ${this.build_quest(quest['quest_reward_type_raw'], quest['quest_task'], quest['pokemon_id'], quest['item_id'], quest['item_amount'], quest['pokemon_name'], quest['item_type'])}
+          ${this.build_quest(quest['quest_reward_type_raw'], quest['quest_task'], quest['pokemon_id'], quest['pokemon_form'], quest['pokemon_asset_bundle_id'], quest['pokemon_costume'], quest['item_id'], quest['item_amount'], quest['pokemon_name'], quest['item_type'])}
         </div>`;
     },
     build_stop_popup(marker) {

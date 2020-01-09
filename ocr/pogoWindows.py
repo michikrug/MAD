@@ -5,11 +5,13 @@ import os
 import os.path
 import time
 from multiprocessing.pool import ThreadPool
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
 import pytesseract
 from ocr.matching_trash import trash_image_matching
+from ocr.screen_type import ScreenType
 from PIL import Image
 from pytesseract import Output
 from utils.logging import logger
@@ -28,9 +30,7 @@ class PogoWindows:
         self.__thread_pool = ThreadPool(processes=thread_count)
 
         # screendetection
-
         self._ScreenType: dict = {}
-
         self._ScreenType[1]: list = ['Geburtdatum', 'birth.', 'naissance.', 'date']
         self._ScreenType[2]: list = ['ZURUCKKEHRENDER', 'ZURÜCKKEHRENDER', 'GAME', 'FREAK', 'SPIELER']
         self._ScreenType[3]: list = ['KIDS', 'Google', 'Facebook']
@@ -54,11 +54,19 @@ class PogoWindows:
         self._ScreenType[21]: list = ['GPS', 'signal', 'GPS-Signal', '(11)', 'introuvable.',
                                       'found.', 'gefunden.', 'Signal']
 
-    def __most_present_colour(self, filename, max_colours):
-        with Image.open(filename) as img:
-            # put a higher value if there are many colors in your image
-            colors = img.getcolors(max_colours)
-        max_occurrence, most_present = 0, 0
+    def __most_present_colour(self, filename, max_colours) -> Optional[List[int]]:
+        if filename is None or max_colours is None:
+            logger.warning("Cannot retrieve most present colour of {} with {} max colours", filename, max_colours)
+            return None
+        try:
+            with Image.open(filename) as img:
+                # put a higher value if there are many colors in your image
+                colors = img.getcolors(max_colours)
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("Failed opening image {} with exception {}", filename, e)
+            return None
+        max_occurrence: int = 0
+        most_present: List[int] = [0, 0, 0]
         try:
             for c in colors:
                 if c[0] > max_occurrence:
@@ -67,7 +75,7 @@ class PogoWindows:
         except TypeError:
             return None
 
-    def is_gps_signal_lost(self, filename, identifier):
+    def is_gps_signal_lost(self, filename, identifier) -> Optional[bool]:
         # run the check for the file here once before having the subprocess check it (as well)
         if not os.path.isfile(filename):
             logger.error("isGpsSignalLost: {} does not exist", str(filename))
@@ -75,7 +83,7 @@ class PogoWindows:
 
         return self.__thread_pool.apply_async(self.__internal_is_gps_signal_lost, (filename, identifier)).get()
 
-    def __internal_is_gps_signal_lost(self, filename, identifier):
+    def __internal_is_gps_signal_lost(self, filename, identifier) -> Optional[bool]:
         if not os.path.isfile(filename):
             logger.error("isGpsSignalLost: {} does not exist", str(filename))
             return None
@@ -99,14 +107,14 @@ class PogoWindows:
             "/" + str(identifier) + "_gpsError.png"
         cv2.imwrite(tempPathColoured, gpsError)
 
-        with Image.open(tempPathColoured) as col:
-            width, height = col.size
-
+        try:
+            with Image.open(tempPathColoured) as col:
+                width, height = col.size
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("Failed opening image {} with exception {}", tempPathColoured, e)
+            return None
         # check for the colour of the GPS error
-        if self.__most_present_colour(tempPathColoured, width * height) == (240, 75, 95):
-            return True
-        else:
-            return False
+        return self.__most_present_colour(tempPathColoured, width * height) == (240, 75, 95)
 
     def __read_circle_count(self, filename, identifier, ratio, communicator, xcord=False, crop=False, click=False,
                             canny=False, secondratio=False):
@@ -230,13 +238,13 @@ class PogoWindows:
             logger.debug("__readCircleCords: Found no Circle")
             return False, 0, 0, 0, 0
 
-    def get_trash_click_positions(self, filename):
+    def get_trash_click_positions(self, filename, full_screen=False):
         if not os.path.isfile(filename):
             logger.error(
                 "get_trash_click_positions: {} does not exist", str(filename))
             return None
 
-        return self.__thread_pool.apply_async(trash_image_matching, (filename,)).get()
+        return self.__thread_pool.apply_async(trash_image_matching, (filename, full_screen, )).get()
 
     def read_amount_raid_circles(self, filename, identifier, communicator):
         if not os.path.isfile(filename):
@@ -416,7 +424,8 @@ class PogoWindows:
             logger.error("Screenshot corrupted :(")
             return False
 
-        if self.__read_circle_count(os.path.join('', filename), identifier, float(11), communicator, xcord=False, crop=True,
+        if self.__read_circle_count(os.path.join('', filename), identifier, float(11), communicator, xcord=False,
+                                    crop=True,
                                     click=False, canny=True) == -1:
             logger.debug("__check_raid_line: Not active")
             return False
@@ -451,7 +460,9 @@ class PogoWindows:
                     # Coords - X: " + str(x1) + " " + str(x2) + " Y: " + str(y1) + " " + str(y2)) return False
                 else:
                     if y1 == y2 and (x2 - x1 <= maxLineLength) and (
-                            x2 - x1 >= minLineLength) and ((x1 < width / 2 and x2 < width / 2) or (x1 < width / 2 and x2 > width / 2)) and y1 < (height / 2):
+                            x2 - x1 >= minLineLength) and (
+                            (x1 < width / 2 and x2 < width / 2) or (x1 < width / 2 and x2 > width / 2)) and y1 < (
+                            height / 2):
                         logger.debug(
                             "__check_raid_line: Nearby is active - but not Raid-Tab")
                         if clickinvers:
@@ -488,7 +499,8 @@ class PogoWindows:
         cv2.imwrite(os.path.join(self.temp_dir_path, str(
             identifier) + '_AmountOfRaids.jpg'), image)
 
-        if self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_AmountOfRaids.jpg'), identifier, 18,
+        if self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_AmountOfRaids.jpg'),
+                                    identifier, 18,
                                     communicator) > 0:
             logger.info(
                 "__check_orange_raid_circle_present: Raidcircle found, assuming raids nearby")
@@ -568,16 +580,16 @@ class PogoWindows:
 
         try:
             image = cv2.imread(filename)
-        except:
-            logger.error("Screenshot corrupted :(")
+        except Exception as e:
+            logger.error("Screenshot corrupted: {}", e)
             return False
 
         cv2.imwrite(os.path.join(self.temp_dir_path,
                                  str(identifier) + '_exitcircle.jpg'), image)
 
-        if self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_exitcircle.jpg'), identifier,
-                                    float(radiusratio), communicator, xcord=False, crop=True, click=True, canny=True) > 0:
-            return True
+        return self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_exitcircle.jpg'), identifier,
+                                        float(radiusratio), communicator, xcord=False, crop=True, click=True,
+                                        canny=True) > 0
 
     def check_close_except_nearby_button(self, filename, identifier, communicator, close_raid=False):
         if not os.path.isfile(filename):
@@ -644,16 +656,15 @@ class PogoWindows:
             logger.debug("Could not find close button (X).")
             return False
 
-    def get_inventory_text(self, filename, identifier, x1, x2, y1, y2):
+    def get_inventory_text(self, filename, identifier, x1, x2, y1, y2) -> Optional[str]:
         if not os.path.isfile(filename):
-            logger.error(
-                "get_inventory_text: {} does not exist", str(filename))
-            return ""
+            logger.error("get_inventory_text: {} does not exist", str(filename))
+            return None
 
         return self.__thread_pool.apply_async(self.__internal_get_inventory_text,
                                               (filename, identifier, x1, x2, y1, y2)).get()
 
-    def __internal_get_inventory_text(self, filename, identifier, x1, x2, y1, y2):
+    def __internal_get_inventory_text(self, filename, identifier, x1, x2, y1, y2) -> Optional[str]:
         screenshot_read = cv2.imread(filename)
         temp_path_item = self.temp_dir_path + \
             "/" + str(identifier) + "_inventory.png"
@@ -669,8 +680,16 @@ class PogoWindows:
         # resize image
         gray = cv2.resize(gray, dim, interpolation=cv2.INTER_AREA)
         cv2.imwrite(temp_path_item, gray)
-        with Image.open(temp_path_item) as im:
-            text = pytesseract.image_to_string(im)
+        try:
+            with Image.open(temp_path_item) as im:
+                try:
+                    text = pytesseract.image_to_string(im)
+                except Exception as e:
+                    logger.error("Error running tesseract on inventory text: {}", e)
+                    return None
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("Failed opening image {} with exception {}", temp_path_item, e)
+            return None
         return text
 
     def check_pogo_mainscreen(self, filename, identifier):
@@ -763,99 +782,121 @@ class PogoWindows:
             logger.debug("Could not find close button (X).")
             return False
 
-    def get_screen_text(self, screenshot, identifier):
-        if screenshot is None:
+    def get_screen_text(self, screenpath: str, identifier) -> Optional[dict]:
+        if screenpath is None:
             logger.error("get_screen_text: image does not exist")
-            return False
+            return None
 
         return self.__thread_pool.apply_async(self.__internal_get_screen_text,
-                                              (screenshot, identifier)).get()
+                                              (screenpath, identifier)).get()
 
-    def __internal_get_screen_text(self, screenshot, identifier):
-        returning_dict = []
+    def __internal_get_screen_text(self, screenpath: str, identifier) -> Optional[dict]:
+        returning_dict: Optional[dict] = {}
         logger.debug(
             "get_screen_text: Reading screen text - identifier {}", identifier)
 
         try:
-            returning_dict = pytesseract.image_to_data(screenshot, output_type=Output.DICT, timeout=40,
-                                                       config='--dpi 70')
-        except:
-            logger.error("Tesseract Error for device {}: {}".format(
-                str(identifier), str(returning_dict)))
-            returning_dict = []
+            with Image.open(screenpath) as frame:
+                frame = frame.convert('LA')
+                try:
+                    returning_dict = pytesseract.image_to_data(frame, output_type=Output.DICT, timeout=40,
+                                                               config='--dpi 70')
+                except Exception as e:
+                    logger.error("Tesseract Error for device {}: {}. Exception: {}".format(str(identifier),
+                                                                                           str(returning_dict), e))
+                    returning_dict = None
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("Failed opening image {} with exception {}", screenpath, e)
+            return None
 
         if isinstance(returning_dict, dict):
             return returning_dict
         else:
-            return []
+            logger.warning("Could not read text in image: {}", returning_dict)
+            return None
 
-    def most_frequent_colour(self, screenshot, identifier):
+    def most_frequent_colour(self, screenshot, identifier) -> Optional[List[int]]:
         if screenshot is None:
             logger.error("get_screen_text: image does not exist")
-            return False
+            return None
 
         return self.__thread_pool.apply_async(self.__most_frequent_colour_internal,
                                               (screenshot, identifier)).get()
 
-    def __most_frequent_colour_internal(self, image, identifier):
+    def __most_frequent_colour_internal(self, image, identifier) -> Optional[List[int]]:
         logger.debug(
             "most_frequent_colour_internal: Reading screen text - identifier {}", identifier)
-        with Image.open(image) as img:
-            w, h = img.size
-            pixels = img.getcolors(w * h)
-            most_frequent_pixel = pixels[0]
+        try:
+            with Image.open(image) as img:
+                w, h = img.size
+                pixels = img.getcolors(w * h)
+                most_frequent_pixel = pixels[0]
 
-            for count, colour in pixels:
-                if count > most_frequent_pixel[0]:
-                    most_frequent_pixel = (count, colour)
+                for count, colour in pixels:
+                    if count > most_frequent_pixel[0]:
+                        most_frequent_pixel = (count, colour)
 
-            logger.debug("Most frequent pixel on {} screen: {}".format(str(identifier), (most_frequent_pixel[1])))
+                logger.debug("Most frequent pixel on {} screen: {}".format(str(identifier), (most_frequent_pixel[1])))
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("Failed opening image {} with exception {}", image, e)
+            return None
 
         return most_frequent_pixel[1]
 
-    def screendetection_get_type(self, image, identifier):
-
+    def screendetection_get_type_by_screen_analysis(self, image,
+                                                    identifier) -> Optional[Tuple[ScreenType,
+                                                                                  Optional[dict], int, int, int]]:
         return self.__thread_pool.apply_async(self.__screendetection_get_type_internal,
                                               (image, identifier)).get()
 
-    def __screendetection_get_type_internal(self, image, identifier):
-        returntype = -1
-        globaldict = {}
+    def __screendetection_get_type_internal(self, image,
+                                            identifier) -> Optional[Tuple[ScreenType, Optional[dict], int, int, int]]:
+        returntype: ScreenType = ScreenType.UNDEFINED
+        globaldict: Optional[dict] = {}
         diff: int = 1
         logger.debug(
             "__screendetection_get_type_internal: Detecting screen type - identifier {}", identifier)
 
-        with Image.open(image) as frame_org:
-            width, height = frame_org.size
+        texts = []
+        try:
+            with Image.open(image) as frame_org:
+                width, height = frame_org.size
 
-            logger.debug("Screensize of origin {}: W:{} x H:{}".format(str(identifier), str(width), str(height)))
+                logger.debug("Screensize of origin {}: W:{} x H:{}".format(str(identifier), str(width), str(height)))
 
-            if width < 1080:
-                logger.info('Resize screen ...')
-                frame_org = frame_org.resize([int(2 * s) for s in frame_org.size], Image.ANTIALIAS)
-                diff: int = 2
+                if width < 1080:
+                    logger.info('Resize screen ...')
+                    frame_org = frame_org.resize([int(2 * s) for s in frame_org.size], Image.ANTIALIAS)
+                    diff: int = 2
 
-            frame = frame_org.convert('LA')
-            textes = [frame, frame_org]
-
-            for text in textes:
-                globaldict = self.__internal_get_screen_text(text, identifier)
-                logger.debug("Screentext: {}".format(str(globaldict)))
-                if 'text' not in globaldict:
-                    continue
-                n_boxes = len(globaldict['level'])
-                for i in range(n_boxes):
-                    if returntype != -1:
+                frame = frame_org.convert('LA')
+                texts = [frame, frame_org]
+                for text in texts:
+                    try:
+                        globaldict = pytesseract.image_to_data(text, output_type=Output.DICT, timeout=40,
+                                                               config='--dpi 70')
+                    except Exception as e:
+                        logger.error("Tesseract Error for device {}: {}. Exception: {}".format(str(identifier),
+                                                                                               str(globaldict), e))
+                        globaldict = None
+                    logger.debug("Screentext: {}".format(str(globaldict)))
+                    if globaldict is None or 'text' not in globaldict:
+                        continue
+                    n_boxes = len(globaldict['level'])
+                    for i in range(n_boxes):
+                        if returntype != ScreenType.UNDEFINED:
+                            break
+                        if len(globaldict['text'][i]) > 3:
+                            for z in self._ScreenType:
+                                if globaldict['top'][i] > height / 4 and globaldict['text'][i] in self._ScreenType[z]:
+                                    returntype = ScreenType(z)
+                    if returntype != ScreenType.UNDEFINED:
                         break
-                    if len(globaldict['text'][i]) > 3:
-                        for z in self._ScreenType:
-                            if globaldict['top'][i] > height / 4 and \
-                                    globaldict['text'][i] in self._ScreenType[z]:
-                                returntype = z
-                if returntype != -1:
-                    break
 
-            frame.close()
-            del textes
+                del texts
+                frame.close()
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("Failed opening image {} with exception {}", image, e)
+            return None
 
         return returntype, globaldict, width, height, diff

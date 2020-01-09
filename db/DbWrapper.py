@@ -273,7 +273,8 @@ class DbWrapper:
 
         query = (
             "SELECT pokestop.pokestop_id, pokestop.latitude, pokestop.longitude, trs_quest.quest_type, "
-            "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_reward_type, "
+            "trs_quest.quest_stardust, trs_quest.quest_pokemon_id, trs_quest.quest_pokemon_form_id, "
+            "trs_quest.quest_pokemon_costume_id, trs_quest.quest_reward_type, "
             "trs_quest.quest_item_id, trs_quest.quest_item_amount, pokestop.name, pokestop.image, "
             "trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp, "
             "trs_quest.quest_task, trs_quest.quest_reward, trs_quest.quest_template "
@@ -309,13 +310,15 @@ class DbWrapper:
         query_order = " ORDER BY trs_quest.quest_timestamp DESC"
         res = self.execute(query + query_where + query_order)
 
-        for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id, quest_reward_type,
+        for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id,
+             quest_pokemon_form_id, quest_pokemon_costume_id, quest_reward_type,
              quest_item_id, quest_item_amount, name, image, quest_target, quest_condition,
              quest_timestamp, quest_task, quest_reward, quest_template) in res:
             questinfo[pokestop_id] = ({
                 'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
                 'quest_type': quest_type, 'quest_stardust': quest_stardust,
-                'quest_pokemon_id': quest_pokemon_id,
+                'quest_pokemon_id': quest_pokemon_id, 'quest_pokemon_form_id': quest_pokemon_form_id,
+                'quest_pokemon_costume_id': quest_pokemon_costume_id,
                 'quest_reward_type': quest_reward_type, 'quest_item_id': quest_item_id,
                 'quest_item_amount': quest_item_amount, 'name': name, 'image': image,
                 'quest_target': quest_target,
@@ -434,7 +437,7 @@ class DbWrapper:
         res = self.execute(query)
         unvisited: List[Location] = []
         if geofence_helper is not None:
-            for (latitude, longitude, vis) in res:
+            for (latitude, longitude) in res:
                 unvisited.append(Location(latitude, longitude))
 
             geofenced_coords = geofence_helper.get_geofenced_coordinates(unvisited)

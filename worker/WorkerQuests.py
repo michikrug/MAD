@@ -440,7 +440,8 @@ class WorkerQuests(MITMBase):
         stop_screen_clear = Event()
         logger.info('Cleanup Box')
         not_allow = ('Gift', 'Geschenk', 'Glücksei', 'Glucks-Ei', 'Glücks-Ei', 'Lucky Egg', 'CEuf Chance',
-                     'Cadeau', 'Appareil photo', 'Wunderbox', 'Mystery Box', 'Boîte Mystère')
+                     'Cadeau', 'Appareil photo', 'Wunderbox', 'Mystery Box', 'Boîte Mystère', 'Premium', 'Raid', 'Teil',
+                     'Élément', 'mystérieux', 'Mysterious', 'Component', 'Mysteriöses')
         x, y = self._resocalc.get_close_main_button_coords(self)[0], self._resocalc.get_close_main_button_coords(self)[
             1]
         self._communicator.click(int(x), int(y))
@@ -492,9 +493,13 @@ class WorkerQuests(MITMBase):
 
                 try:
                     item_text = self._pogoWindowManager.get_inventory_text(self.get_screenshot_path(),
-                                                                           self._id, text_x1, text_x2, check_y_text_ending,
-                                                                           check_y_text_starter)
-
+                                                                           self._id, text_x1, text_x2,
+                                                                           check_y_text_ending, check_y_text_starter)
+                    if item_text is None:
+                        logger.error("Did not get any text in inventory")
+                        # TODO: could this be running forever?
+                        trash += 1
+                        pass
                     logger.info("Found item {}", str(item_text))
                     match_one_item: bool = False
                     for text in not_allow:
@@ -699,7 +704,7 @@ class WorkerQuests(MITMBase):
                 logger.info(
                     'Getting timeout - or other unknown error. Try again')
                 if not self._checkPogoButton():
-                    self._checkPogoClose(takescreen=False)
+                    self._checkPogoClose(takescreen=True)
 
             to += 1
         if data_received in [LatestReceivedType.STOP, LatestReceivedType.UNDEFINED] and self._rocket:

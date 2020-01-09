@@ -272,6 +272,4 @@ def form_mapper(mon_id, form_id):
     if mon is None:
         return 0
 
-    mon_form = mon.get(str(form_id), 0)
-
-    return mon_form
+    return mon.get(str(form_id), 0)

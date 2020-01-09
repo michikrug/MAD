@@ -2,22 +2,21 @@ import json
 import sys
 import time
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
 from functools import reduce
+from typing import List, Optional
 
 import mysql
 from bitstring import BitArray
-
+from db.DbPogoProtoSubmit import DbPogoProtoSubmit
+from db.DbSanityCheck import DbSanityCheck
+from db.DbSchemaUpdater import DbSchemaUpdater
+from db.DbStatsReader import DbStatsReader
+from db.DbStatsSubmit import DbStatsSubmit
+from db.DbWebhookReader import DbWebhookReader
 from geofence.geofenceHelper import GeofenceHelper
 from utils.collections import Location, LocationWithVisits
 from utils.logging import logger
 from utils.s2Helper import S2Helper
-from db.DbSanityCheck import DbSanityCheck
-from db.DbSchemaUpdater import DbSchemaUpdater
-from db.DbPogoProtoSubmit import DbPogoProtoSubmit
-from db.DbStatsSubmit import DbStatsSubmit
-from db.DbStatsReader import DbStatsReader
-from db.DbWebhookReader import DbWebhookReader
 
 
 class DbWrapper:
@@ -38,7 +37,6 @@ class DbWrapper:
         self.stats_reader: DbStatsReader = DbStatsReader(db_exec)
         self.webhook_reader: DbWebhookReader = DbWebhookReader(db_exec, self)
         self.instance_id = self.get_instance_id()
-
 
     def close(self, conn, cursor):
         return self._db_exec.close(conn, cursor)
@@ -332,8 +330,6 @@ class DbWrapper:
 
         return questinfo
 
-
-
     def get_pokemon_spawns(self, hours):
         """
         Get Pokemon Spawns for dynamic rarity
@@ -354,7 +350,6 @@ class DbWrapper:
         total = reduce(lambda x, y: x + y[1], res, 0)
 
         return {'pokemon': res, 'total': total}
-
 
     def get_to_be_encountered(self, geofence_helper, min_time_left_seconds, eligible_mon_ids: Optional[List[int]]):
         if min_time_left_seconds is None or eligible_mon_ids is None:
@@ -676,7 +671,6 @@ class DbWrapper:
 
         return stops
 
-
     def delete_stop(self, latitude: float, longitude: float):
         logger.debug('Deleting stop from db')
         query = (
@@ -684,7 +678,6 @@ class DbWrapper:
         )
         del_vars = (latitude, longitude)
         self.execute(query, del_vars, commit=True)
-
 
     def flush_levelinfo(self, origin):
         query = "DELETE FROM trs_visited WHERE origin=%s"
@@ -695,7 +688,6 @@ class DbWrapper:
         query = "INSERT IGNORE INTO trs_visited SELECT pokestop_id,'{}' " \
                 "FROM pokestop WHERE latitude={} AND longitude={}".format(origin, str(latitude), str(longitude))
         self.execute(query, commit=True)
-
 
     def get_detected_spawns(self, geofence_helper) -> List[Location]:
         logger.debug("DbWrapper::get_detected_spawns called")
@@ -766,7 +758,6 @@ class DbWrapper:
             #     to_return[i][0] = list_of_coords[i][0]
             #     to_return[i][1] = list_of_coords[i][1]
             return list_of_coords
-
 
     def download_spawns(self, neLat=None, neLon=None, swLat=None, swLon=None, oNeLat=None, oNeLon=None,
                         oSwLat=None, oSwLon=None, timestamp=None, fence=None):

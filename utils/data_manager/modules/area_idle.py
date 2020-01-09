@@ -1,5 +1,6 @@
 from . import area
 
+
 class AreaIdle(area.Area):
     area_table = 'settings_area_idle'
     area_type = 'idle'

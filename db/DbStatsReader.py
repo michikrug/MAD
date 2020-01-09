@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 
-from utils.logging import logger
 from db.PooledQueryExecutor import PooledQueryExecutor
+from utils.logging import logger
+
 
 class DbStatsReader:
 
     def __init__(self, db_exec: PooledQueryExecutor):
         self._db_exec: PooledQueryExecutor = db_exec
-
 
     def get_shiny_stats(self):
         logger.debug('Fetching shiny pokemon stats from db')
@@ -21,7 +21,6 @@ class DbStatsReader:
         )
         res = self._db_exec.execute(query)
         return res
-
 
     def get_shiny_stats_v2(self, timestamp_from: int, timestamp_to: int):
         logger.debug('Fetching shiny_stats_v2 pokemon stats from db')
@@ -50,13 +49,12 @@ class DbStatsReader:
         res = self._db_exec.execute(query, data)
         return res
 
-
     def get_shiny_stats_global_v2(self, mon_id_list: set, timestamp_from: int, timestamp_to: int):
         logger.debug('Fetching shiny_stats_global_v2')
         data = ()
 
         query = (
-                "SELECT count(*), pokemon_id, form, gender, costume FROM pokemon WHERE individual_attack IS NOT NULL "
+            "SELECT count(*), pokemon_id, form, gender, costume FROM pokemon WHERE individual_attack IS NOT NULL "
         )
         query = query + "AND pokemon_id IN(" + ",".join(map(str, mon_id_list)) + ") "
         if timestamp_from:
@@ -69,7 +67,6 @@ class DbStatsReader:
         logger.debug('Final query for shiny_stats_global_v2: {}', query)
         res = self._db_exec.execute(query, data)
         return res
-
 
     def get_detection_count(self, minutes=False, grouped=True, worker=False):
         logger.debug('Fetching group detection count from db')
@@ -99,7 +96,6 @@ class DbStatsReader:
 
         return res
 
-
     def get_shiny_stats_hour(self):
         logger.debug('Fetching shiny pokemon stats from db')
         query = (
@@ -110,7 +106,6 @@ class DbStatsReader:
         )
         res = self._db_exec.execute(query)
         return res
-
 
     def get_avg_data_time(self, minutes=False, grouped=True, worker=False):
         logger.debug('Fetching group detection count from db')
@@ -140,7 +135,6 @@ class DbStatsReader:
 
         return res
 
-
     def get_locations(self, minutes=False, grouped=True, worker=False):
         logger.debug('Fetching group locations count from db')
         grouped_query = ""
@@ -167,7 +161,6 @@ class DbStatsReader:
         res = self._db_exec.execute(query)
 
         return res
-
 
     def get_locations_dataratio(self, minutes=False, grouped=True, worker=False):
         logger.debug('Fetching group locations dataratio from db')
@@ -198,7 +191,6 @@ class DbStatsReader:
 
         return res
 
-
     def get_all_empty_scans(self):
         logger.debug('Fetching all empty locations from db')
         query = ("SELECT count(b.id) as Count, b.lat, b.lng, GROUP_CONCAT(DISTINCT b.worker order by worker asc "
@@ -209,7 +201,6 @@ class DbStatsReader:
                  )
         res = self._db_exec.execute(query)
         return res
-
 
     def get_detection_raw(self, minutes=False, worker=False):
         logger.debug('Fetching detetion raw data from db')
@@ -233,7 +224,6 @@ class DbStatsReader:
 
         res = self._db_exec.execute(query)
         return res
-
 
     def get_location_raw(self, minutes=False, worker=False):
         logger.debug('Fetching locations raw data from db')
@@ -260,7 +250,6 @@ class DbStatsReader:
         res = self._db_exec.execute(query)
         return res
 
-
     def get_location_info(self):
         logger.debug('Fetching all empty locations from db')
         query = (
@@ -271,7 +260,6 @@ class DbStatsReader:
         )
         res = self._db_exec.execute(query)
         return res
-
 
     def get_pokemon_count(self, minutes):
         logger.debug('Fetching pokemon spawns count from db')
@@ -292,7 +280,6 @@ class DbStatsReader:
         res = self._db_exec.execute(query)
         return res
 
-
     def get_best_pokemon_spawns(self):
         logger.debug('Fetching best pokemon spawns from db')
         query = (
@@ -305,7 +292,6 @@ class DbStatsReader:
         res = self._db_exec.execute(query)
         return res
 
-
     def get_gym_count(self):
         logger.debug('Fetching gym count from db')
         query = (
@@ -316,7 +302,6 @@ class DbStatsReader:
         )
         res = self._db_exec.execute(query)
         return res
-
 
     def get_stop_quest(self):
         logger.debug('Fetching gym count from db')
@@ -330,7 +315,6 @@ class DbStatsReader:
         )
         res = self._db_exec.execute(query)
         return res
-
 
     def get_quests_count(self, days):
         logger.debug('Fetching quests count from db')
@@ -347,7 +331,6 @@ class DbStatsReader:
         res = self._db_exec.execute(query)
         return res
 
-
     def get_usage_count(self, minutes=120, instance=None):
         logger.debug('Fetching usage from db')
         query_where = ''
@@ -363,7 +346,6 @@ class DbStatsReader:
         )
         res = self._db_exec.execute(query)
         return res
-
 
     def check_stop_quest_level(self, worker, latitude, longitude):
         logger.debug("DbWrapper::check_stop_quest_level called")

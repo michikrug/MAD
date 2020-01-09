@@ -1,5 +1,6 @@
-from .. import dm_exceptions
 from . import resource
+from .. import dm_exceptions
+
 
 class Auth(resource.Resource):
     table = 'settings_auth'

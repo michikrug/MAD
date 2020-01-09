@@ -1,12 +1,12 @@
 import os
 import time
-from queue import Empty, Queue
-from multiprocessing import Lock, Event, Queue
+from multiprocessing import Event, Lock, Queue
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from queue import Empty, Queue
 from threading import Thread
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from db.DbWrapper import DbWrapper
 from geofence.geofenceHelper import GeofenceHelper
@@ -169,7 +169,7 @@ class MappingManager:
             return []
         else:
             logger.warning("IV list '{}' has been used in area '{}' but does not exist. Using empty IV list instead.",
-                        listname, areaname)
+                           listname, areaname)
             return []
 
     def get_all_routemanager_names(self):
@@ -311,9 +311,9 @@ class MappingManager:
                 routemanager._start_routemanager()
                 active = False
                 successful = True
-            args=(routemanager._max_radius, routemanager._max_coords_within_radius)
+            args = (routemanager._max_radius, routemanager._max_coords_within_radius)
             kwargs = {
-                'num_procs':0,
+                'num_procs': 0,
                 'active': active
             }
             t = Thread(target=routemanager.recalc_route_adhoc, args=args, kwargs=kwargs)
@@ -360,7 +360,8 @@ class MappingManager:
             geofence_excluded_raw_path = area.get("geofence_excluded", None)
             try:
                 if geofence_excluded_raw_path is not None:
-                    geofence_excluded = self.__data_manager.get_resource('geofence', identifier=geofence_excluded_raw_path)
+                    geofence_excluded = self.__data_manager.get_resource(
+                        'geofence', identifier=geofence_excluded_raw_path)
                 else:
                     geofence_excluded = None
             except:
@@ -370,11 +371,11 @@ class MappingManager:
                     )
                 )
 
-            area_dict = {"mode":              area_true.area_type,
+            area_dict = {"mode": area_true.area_type,
                          "geofence_included": geofence_included,
                          "geofence_excluded": geofence_excluded,
-                         "routecalc":         area["routecalc"],
-                         "name":              area['name']}
+                         "routecalc": area["routecalc"],
+                         "name": area['name']}
             # also build a routemanager for each area...
 
             # grab coords
@@ -402,18 +403,21 @@ class MappingManager:
                                                                  init=area.get("init", False),
                                                                  name=area.get("name", "unknown"),
                                                                  level=area.get("level", False),
-                                                                 coords_spawns_known=area.get("coords_spawns_known", False),
+                                                                 coords_spawns_known=area.get(
+                                                                     "coords_spawns_known", False),
                                                                  routefile=route_resource,
                                                                  calctype=area.get("route_calc_algorithm", "optimized"),
                                                                  joinqueue=self.join_routes_queue,
-                                                                 S2level=mode_mapping.get(mode, {}).get("s2_cell_level", 30)
+                                                                 S2level=mode_mapping.get(
+                                                                     mode, {}).get("s2_cell_level", 30)
                                                                  )
 
             if mode not in ("iv_mitm", "idle"):
                 coords = self.__fetch_coords(mode, geofence_helper,
                                              coords_spawns_known=area.get("coords_spawns_known", False),
                                              init=area.get("init", False),
-                                             range_init=mode_mapping.get(area_true.area_type, {}).get("range_init", 630),
+                                             range_init=mode_mapping.get(
+                                                 area_true.area_type, {}).get("range_init", 630),
                                              including_stops=area.get("including_stops", False))
                 route_manager.add_coords_list(coords)
                 max_radius = mode_mapping[area_true.area_type]["range"]
@@ -421,11 +425,11 @@ class MappingManager:
                 if not area.get("init", False):
                     logger.info("Initializing area {}", area["name"])
                     proc = thread_pool.apply_async(route_manager.initial_calculation, args=(max_radius, max_count_in_radius,
-                                                                                     0, False))
+                                                                                            0, False))
                     areas_procs[area_id] = proc
                 else:
                     logger.info(
-                            "Init mode enabled. Going row-based for {}", str(area.get("name", "unknown")))
+                        "Init mode enabled. Going row-based for {}", str(area.get("name", "unknown")))
                     # we are in init, let's write the init route to file to make it visible in madmin
                     calc_coords = []
                     if area["routecalc"] is not None:
@@ -631,7 +635,7 @@ class MappingManager:
                 # File has changed in the last refresh_time_sec seconds.
                 if time_diff_sec < refresh_time_sec:
                     logger.info(
-                            'Change found in {}. Updating device mappings.', filename)
+                        'Change found in {}. Updating device mappings.', filename)
                     self.update()
                 else:
                     logger.debug('No change found in {}.', filename)
@@ -640,7 +644,7 @@ class MappingManager:
                 break
             except Exception as e:
                 logger.exception(
-                        'Exception occurred while updating device mappings: {}.', e)
+                    'Exception occurred while updating device mappings: {}.', e)
 
     def get_all_devices(self):
         devices = []

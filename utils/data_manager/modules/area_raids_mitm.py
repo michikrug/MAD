@@ -1,5 +1,6 @@
 from . import area
 
+
 class AreaRaidsMITM(area.Area):
     area_table = 'settings_area_raids_mitm'
     area_type = 'raids_mitm'

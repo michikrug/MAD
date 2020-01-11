@@ -33,7 +33,7 @@ function copyClipboard(text) {
   navigator.clipboard.writeText(text.replace("|", ",")).then(function () {
     alert('Copying to clipboard was successful!');
   }, function (err) {
-    alert('Could not copy text: ', err);
+    alert('Could not copy text: ' + err);
   });
 };
 
@@ -1101,8 +1101,8 @@ new Vue({
         </div>`;
     },
     build_gym_popup(marker) {
-      gym = this.gyms[marker.options.id];
-      raid = this.raids[marker.options.id];
+      const gym = this.gyms[marker.options.id];
+      const raid = this.raids[marker.options.id];
 
       raidContent = "";
       if (raid) {
@@ -1168,7 +1168,7 @@ new Vue({
         </div>`;
     },
     build_spawn_popup(marker) {
-      spawn = this.spawns[marker.options.id];
+      const spawn = this.spawns[marker.options.id];
 
       if (spawn['endtime'] !== null) {
         var timeformat = "YYYY-MM-DD HH:mm:ss";
@@ -1231,27 +1231,26 @@ new Vue({
         </div>`;
     },
     build_mon_popup(marker) {
-      mon = this.mons[marker.options.id];
+      const mon = this.mons[marker.options.id];
 
-      var form = mon["form"] == 0 ? "00" : mon["form"];
-      var image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(mon["mon_id"], 3, 0)}_${form}.png`;
+      const form = mon["form"] == 0 ? "00" : mon["form"];
+      const image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(mon["mon_id"], 3, 0)}_${form}.png`;
 
-      var iv = (mon["individual_attack"] + mon["individual_defense"] + mon["individual_stamina"]) * 100 / 45;
-      var end = moment(mon["disappear_time"] * 1000);
+      const iv = (mon["individual_attack"] + mon["individual_defense"] + mon["individual_stamina"]) * 100 / 45;
+      const end = moment(mon["disappear_time"] * 1000);
 
+      let ivcolor = "red";
       if (iv == 100) {
-        var ivcolor = "lime";
+        ivcolor = "lime";
       } else if (iv >= 82) {
-        var ivcolor = "green";
+        ivcolor = "green";
       } else if (iv >= 66) {
-        var ivcolor = "olive";
+        ivcolor = "olive";
       } else if (iv >= 51) {
-        var ivcolor = "orange";
-      } else {
-        var ivcolor = "red";
+        ivcolor = "orange";
       }
 
-      var ivtext = "";
+      let ivtext = "";
       if (mon["cp"] > 0) {
         ivtext = `
             <div class="iv">
@@ -1284,12 +1283,12 @@ new Vue({
       `;
     },
     getStoredSetting(name, defaultval) {
-      var val = localStorage.getItem('settings');
+      const val = localStorage.getItem('settings');
       if (val == null) {
         return defaultval;
       }
 
-      var settings = JSON.parse(val);
+      const settings = JSON.parse(val);
       if (settings[name] === undefined) {
         return defaultval;
       }
@@ -1297,8 +1296,8 @@ new Vue({
       return settings[name];
     },
     updateStoredSetting(name, value) {
-      var settings = {};
-      var storedSettings = localStorage.getItem('settings');
+      let settings = {};
+      const storedSettings = localStorage.getItem('settings');
       if (storedSettings != null) {
         settings = JSON.parse(storedSettings);
       }
@@ -1307,8 +1306,8 @@ new Vue({
       localStorage.setItem('settings', JSON.stringify(settings));
     },
     removeStoredSetting(name) {
-      var settings = {};
-      var storedSettings = localStorage.getItem('settings');
+      let settings = {};
+      const storedSettings = localStorage.getItem('settings');
       if (storedSettings != null) {
         settings = JSON.parse(storedSettings);
       }
@@ -1318,8 +1317,8 @@ new Vue({
       localStorage.setItem('settings', JSON.stringify(settings));
     },
     l_event_moveend() {
-      var $this = this;
-      var center = map.getCenter();
+      const $this = this;
+      const center = map.getCenter();
       this.updateStoredSetting('center', center.lat + ',' + center.lng);
       this.updateBounds();
 
@@ -1333,7 +1332,7 @@ new Vue({
       }, 500);
     },
     l_event_zoomed() {
-      var $this = this;
+      const $this = this;
       this.updateStoredSetting('zoomlevel', map.getZoom());
       this.updateBounds();
 
@@ -1410,7 +1409,7 @@ new Vue({
       });
     },
     convertToLonLat(coords) {
-      lonlat = []
+      const lonlat = []
       coords.forEach(function (coord) {
         lonlat.push([coord[1], coord[0]]);
       });
@@ -1458,16 +1457,16 @@ new Vue({
       return "?" + querystring;
     },
     cleanup() {
-      var $this = this;
-      var now = moment();
+      const $this = this;
+      const now = moment();
 
       if (!cleanupInterval) {
         cleanupInterval = setInterval(this.cleanup, 14000);
       }
 
       Object.keys(this["mons"]).forEach(function (key) {
-        var mon = $this.mons[key];
-        var end = moment(mon["disappear_time"] * 1000);
+        const mon = $this.mons[key];
+        const end = moment(mon["disappear_time"] * 1000);
 
         if (!now.isAfter(end))
           return;
@@ -1484,7 +1483,7 @@ new Vue({
       this.settings.routes.coordinateRadius.raids = this.getStoredSetting('settings-coordinateRadius-raids', 490);
       this.settings.routes.coordinateRadius.quests = this.getStoredSetting('settings-coordinateRadius-quests', 40);
       this.settings.routes.coordinateRadius.mons = this.getStoredSetting('settings-coordinateRadius-mons', 67);
-      for (index of Object.keys(this.layers.stat)) {
+      for (let index of Object.keys(this.layers.stat)) {
         this.layers.stat[index] = this.getStoredSetting("layer-stat-" + index, false);
       }
 
@@ -1589,17 +1588,15 @@ new Vue({
         }
       };
 
-      if (type != "polygon") {
-        return;
-      }
       var drawControl = new L.Control.Draw(options);
       map.addControl(drawControl);
       map.on(L.Draw.Event.CREATED, function (e) {
-        var type = e.layerType;
-        var layer = e.layer;
-
-
-        var fencename = prompt("Please enter name of fence", "");
+        const type = e.layerType;
+        const layer = e.layer;
+        if (type != "polygon") {
+          return;
+        }
+        const fencename = prompt("Please enter name of fence", "");
         const coords = loopCoords(layer.getLatLngs())
         newfences[layer] = fencename
         layer.bindPopup('<b>' + fencename + '</b><br><a href=savefence?name=' + encodeURI(fencename) + '&coords=' + coords + '>Save to MAD</a>');
@@ -1610,7 +1607,7 @@ new Vue({
       map.on('draw:edited', function (e) {
         var layers = e.layers;
         layers.eachLayer(function (layer) {
-          coords = loopCoords(layer.getLatLngs())
+          const coords = loopCoords(layer.getLatLngs())
           layer._popup.setContent('<b>' + newfences[layer] + '</b><br><a href=savefence?name=' + encodeURI(newfences[layer]) + '&coords=' + coords + '>Save to MAD</a>')
           layer.openPopup();
         });

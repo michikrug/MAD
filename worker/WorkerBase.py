@@ -808,7 +808,7 @@ class WorkerBase(ABC):
     def _start_pogodroid(self):
         start_result = self._communicator.startApp("com.mad.pogodroid")
         time.sleep(5)
-        self._communicator.passthrough("am startservice com.mad.pogodroid/.HookReceiverService")
+        self._communicator.passthrough("am startservice com.mad.pogodroid/.services.HookReceiverService")
         return start_result
 
     def _stopPogoDroid(self):

@@ -205,7 +205,8 @@ class DbWrapper:
         query = (
             "SELECT latitude, longitude, encounter_id, "
             "UNIX_TIMESTAMP(CONVERT_TZ(disappear_time + INTERVAL 1 HOUR, '+00:00', @@global.time_zone)), "
-            "UNIX_TIMESTAMP(CONVERT_TZ(last_modified, '+00:00', @@global.time_zone)) "
+            "UNIX_TIMESTAMP(CONVERT_TZ(last_modified, '+00:00', @@global.time_zone)), "
+            "UNIX_TIMESTAMP(last_modified)"
             "FROM pokemon "
             "WHERE "
             "latitude >= %s AND longitude >= %s AND "
@@ -219,10 +220,10 @@ class DbWrapper:
         params = params + (latest, )
         res = self.execute(query, params)
         list_of_coords = []
-        for (latitude, longitude, encounter_id, disappear_time, last_modified) in res:
+        for (latitude, longitude, encounter_id, disappear_time, last_modified, gmt_last_modified) in res:
             list_of_coords.append(
                 [latitude, longitude, encounter_id, disappear_time, last_modified])
-            latest = max(latest, last_modified)
+            latest = max(latest, gmt_last_modified)
 
         encounter_id_coords = geofence_helper.get_geofenced_coordinates(
             list_of_coords)
@@ -827,9 +828,6 @@ class DbWrapper:
             "FROM trs_spawn "
             "WHERE calc_endminsec IS NOT NULL "
             "AND (latitude >= {} AND longitude >= {} AND latitude <= {} AND longitude <= {}) "
-            "AND DATE_FORMAT(STR_TO_DATE(calc_endminsec,'%i:%s'),'%i:%s') BETWEEN DATE_FORMAT(DATE_ADD(NOW(), "
-            " INTERVAL if(spawndef=15,60,30) MINUTE),'%i:%s') "
-            "AND DATE_FORMAT(DATE_ADD(NOW(), INTERVAL if(spawndef=15,70,40) MINUTE),'%i:%s')"
         ).format(minLat, minLon, maxLat, maxLon)
 
         res = self.execute(query)

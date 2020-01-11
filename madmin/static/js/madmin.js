@@ -245,14 +245,14 @@ new Vue({
 
       this.changeStaticLayer("quests", oldVal, newVal);
     },
-    "layers.stat.stops": function(newVal, oldVal) {
+    "layers.stat.stops": function (newVal, oldVal) {
       if (newVal && !init) {
         this.map_fetch_stops(this.buildUrlFilter(true));
       }
 
       this.changeStaticLayer("stops", oldVal, newVal);
     },
-    "layers.stat.mons": function(newVal, oldVal) {
+    "layers.stat.mons": function (newVal, oldVal) {
       if (newVal && !init) {
         this.map_fetch_mons(this.buildUrlFilter(true));
       }
@@ -515,6 +515,16 @@ new Vue({
             coords.push(circle);
           });
 
+          Object.values(route.s2cells).forEach(function (cells) {
+            L.polygon(cells, {
+              pane: "routes",
+              color: color,
+              opacity: 0.3,
+              fillOpacity: 0,
+              weight: 1
+            }).addTo(group);
+          });
+
           var geojson = {
             "type": "LineString",
             "coordinates": $this.convertToLonLat(route.coordinates)
@@ -526,7 +536,7 @@ new Vue({
             style: {
               "color": color,
               "weight": 2,
-              "opacity": 0.5
+              "opacity": 0.4
             }
           }).addTo(group);
 
@@ -728,7 +738,7 @@ new Vue({
             id: quest["pokestop_id"],
             virtual: true,
             icon: $this.build_quest_small(quest['quest_reward_type_raw'], quest['item_id'], quest['pokemon_id'], quest['pokemon_form'], quest['pokemon_asset_bundle_id'], quest['pokemon_costume'])
-          }).bindPopup($this.build_quest_popup, { "className": "questpopup"});
+          }).bindPopup($this.build_quest_popup, { "className": "questpopup" });
 
           $this.addMouseEventPopup(leaflet_data["quests"][quest["pokestop_id"]]);
 
@@ -746,7 +756,7 @@ new Vue({
       }
 
       axios.get("get_stops" + urlFilter).then(function (res) {
-        res.data.forEach(function(stop) {
+        res.data.forEach(function (stop) {
           if ($this.stops[stop["id"]]) {
             return;
           }
@@ -761,7 +771,7 @@ new Vue({
             opacity: 0.7,
             fillOpacity: 0.5,
             id: stop["id"]
-          }).bindPopup($this.build_stop_popup, { "className": "stoppopup"});
+          }).bindPopup($this.build_stop_popup, { "className": "stoppopup" });
 
           $this.addMouseEventPopup(leaflet_data["stops"][stop["id"]]);
 
@@ -1060,7 +1070,7 @@ new Vue({
       return `
         <div class="content">
           ${base_popup}
-          <div id="questTimestamp"><i class="fa fa-clock"></i> Scanned: <strong>${moment(quest['timestamp']*1000).format("YYYY-MM-DD HH:mm:ss")}</strong></div>
+          <div id="questTimestamp"><i class="fa fa-clock"></i> Scanned: <strong>${moment(quest['timestamp'] * 1000).format("YYYY-MM-DD HH:mm:ss")}</strong></div>
           <br>
           ${this.build_quest(quest['quest_reward_type_raw'], quest['quest_task'], quest['pokemon_id'], quest['pokemon_form'], quest['pokemon_asset_bundle_id'], quest['pokemon_costume'], quest['item_id'], quest['item_amount'], quest['pokemon_name'], quest['item_type'])}
         </div>`;
@@ -1070,13 +1080,13 @@ new Vue({
       var base_popup = this.build_stop_base_popup(stop["id"], stop["url"], stop["name"], stop["lat"], stop["lon"])
 
       var incident = "";
-      var incident_expiration = moment(stop["incident_expiration"]*1000);
+      var incident_expiration = moment(stop["incident_expiration"] * 1000);
       if (incident_expiration.isAfter(moment())) {
         incident = `<div class="incident"><i class="fa fa-user-secret"></i> Incident ends: <strong>${incident_expiration.format("YYYY-MM-DD HH:mm:ss")}</strong></div>`
       }
 
       var lure = "";
-      var lure_expiration = moment(stop["lure_expiration"]*1000);
+      var lure_expiration = moment(stop["lure_expiration"] * 1000);
       if (lure_expiration.isAfter(moment())) {
         lure = `<div class="incident"><i class="fa fa-drumstick-bite"></i> Lure ends: <strong>${lure_expiration.format("YYYY-MM-DD HH:mm:ss")}</strong></div>`
       }
@@ -1085,7 +1095,7 @@ new Vue({
         <div class="content">
           ${base_popup}
           <br>
-          <div class="timestamp"><i class="fa fa-clock"></i> Scanned: <strong>${moment(stop["last_updated"]*1000).format("YYYY-MM-DD HH:mm:ss")}</strong></div>
+          <div class="timestamp"><i class="fa fa-clock"></i> Scanned: <strong>${moment(stop["last_updated"] * 1000).format("YYYY-MM-DD HH:mm:ss")}</strong></div>
           ${incident}
           ${lure}
         </div>`;
@@ -1242,7 +1252,7 @@ new Vue({
       }
 
       var ivtext = "";
-      if (mon["cp"]  > 0) {
+      if (mon["cp"] > 0) {
         ivtext = `
             <div class="iv">
               <i class="fas fa-award"></i> IV: <strong style="color: ${ivcolor}">${Math.round(iv * 100) / 100}%</strong>
@@ -1459,9 +1469,8 @@ new Vue({
         var mon = $this.mons[key];
         var end = moment(mon["disappear_time"] * 1000);
 
-        if (!now.isAfter(end)) {
+        if (!now.isAfter(end))
           return;
-        }
 
         map.removeLayer(leaflet_data["mons"][mon["encounter_id"]]);
         delete leaflet_data["mons"][mon["encounter_id"]];
@@ -1542,7 +1551,7 @@ new Vue({
         }).addTo(map);
 
         map.setView([setlat, setlng], 20);
-      };
+      }
 
       map.on('zoomend', this.l_event_zoomed);
       map.on('moveend', this.l_event_moveend);
@@ -1580,16 +1589,15 @@ new Vue({
         }
       };
 
+      if (type != "polygon") {
+        return;
+      }
       var drawControl = new L.Control.Draw(options);
       map.addControl(drawControl);
-
       map.on(L.Draw.Event.CREATED, function (e) {
-        var type = e.layerType,
-          layer = e.layer;
+        var type = e.layerType;
+        var layer = e.layer;
 
-        if (type != "polygon") {
-          return;
-        }
 
         var fencename = prompt("Please enter name of fence", "");
         const coords = loopCoords(layer.getLatLngs())
@@ -1602,7 +1610,7 @@ new Vue({
       map.on('draw:edited', function (e) {
         var layers = e.layers;
         layers.eachLayer(function (layer) {
-          const coords = loopCoords(layer.getLatLngs())
+          coords = loopCoords(layer.getLatLngs())
           layer._popup.setContent('<b>' + newfences[layer] + '</b><br><a href=savefence?name=' + encodeURI(newfences[layer]) + '&coords=' + coords + '>Save to MAD</a>')
           layer.openPopup();
         });
@@ -1611,7 +1619,7 @@ new Vue({
       // initial load
       this.map_fetch_everything();
 
-      // iuntervals
+      // intervals
       setInterval(this.map_fetch_everything, 6000);
       if (this.settings.cleanup) {
         this.cleanup();

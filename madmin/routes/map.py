@@ -2,19 +2,20 @@ import json
 import os
 from typing import List, Optional
 
-from flask import (jsonify, render_template, request, redirect, url_for)
-from flask_caching import Cache
+from flask import jsonify, redirect, render_template, request, url_for
 
 from db.DbWrapper import DbWrapper
-from madmin.functions import (auth_required, getCoordFloat, getBoundParameter,
-                              get_geofences, generate_coords_from_geofence, Path)
-from utils.MappingManager import MappingManager
+from flask_caching import Cache
+from madmin.functions import (Path, auth_required,
+                              generate_coords_from_geofence, get_geofences,
+                              getBoundParameter, getCoordFloat)
 from utils.collections import Location
 from utils.gamemechanicutil import get_raid_boss_cp
+from utils.language import i8ln
+from utils.logging import logger
+from utils.MappingManager import MappingManager
 from utils.questGen import generate_quest
 from utils.s2Helper import S2Helper
-from utils.logging import logger
-from utils.language import i8ln
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
@@ -237,7 +238,6 @@ class map(object):
         else:
             fence = None
 
-
         neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
 
@@ -372,7 +372,7 @@ class map(object):
         resource = self._data_manager.get_resource('geofence')
         # Enforce 128 character limit
         if len(name) > 128:
-            name = name[len(name)-128:]
+            name = name[len(name) - 128:]
         update_data = {
             'name': name,
             'fence_type': 'polygon',
@@ -385,4 +385,3 @@ class map(object):
             # TODO - present the user with an issue.  probably fence-name already exists
             pass
         return redirect(url_for('map'), code=302)
-

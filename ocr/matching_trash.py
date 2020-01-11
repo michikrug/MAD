@@ -1,12 +1,14 @@
 import os
 import sys
+from typing import List
+
 import cv2
 import imutils
 import numpy as np
-sys.path.append("..")
-from utils.logging import logger
 from utils.collections import Trash
-from typing import List
+from utils.logging import logger
+
+sys.path.append("..")
 
 
 def get_delete_quest_coords(x):
@@ -66,10 +68,10 @@ def trash_image_matching(screen_img, full_screen):
         loc = np.where(res >= threshold)
         boxcount = 0
         for pt in zip(*loc[::-1]):
-            screen_height_max = height/6*5
+            screen_height_max = height / 6 * 5
             if full_screen:
                 screen_height_max = height
-            if pt[0] > width/4*3 and pt[1] < screen_height_max:
+            if pt[0] > width / 4 * 3 and pt[1] < screen_height_max:
                 x_coord = int(pt[0] + tW / 2)
                 y_coord = int(pt[1] + tH / 2)
 
@@ -96,7 +98,8 @@ def trash_image_matching(screen_img, full_screen):
         # cv2.imshow("output", screen)
         # cv2.waitKey(0)
 
-        if boxcount >= 1: break
+        if boxcount >= 1:
+            break
 
     return clicklist
 

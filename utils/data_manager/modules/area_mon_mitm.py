@@ -1,5 +1,6 @@
 from . import area
 
+
 class AreaMonMITM(area.Area):
     area_table = 'settings_area_mon_mitm'
     area_type = 'mon_mitm'

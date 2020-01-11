@@ -1,5 +1,7 @@
-from . import global_variables
 import json
+
+from . import global_variables
+
 
 class APIException(Exception):
     def __init__(self, status_code, reason=None):
@@ -10,13 +12,16 @@ class APIException(Exception):
     def get_headers(self):
         return {}
 
+
 class AcceptException(APIException):
     def __repr__(self):
         return 'Invalid accept sent.  Allowed formats: %s' % (','.join(global_variables.SUPPORTED_FORMATS,))
 
+
 class ContentException(APIException):
     def __repr__(self):
         return 'Invalid content-type  Allowed formats: %s' % (','.join(global_variables.SUPPORTED_FORMATS,))
+
 
 class FormattingError(APIException):
     def __init__(self, invalid_data):

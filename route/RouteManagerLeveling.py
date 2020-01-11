@@ -1,13 +1,13 @@
 import collections
-
-import numpy as np
 import time
 from typing import List
+
+import numpy as np
 from db.DbWrapper import DbWrapper
 from route.RouteManagerBase import RoutePoolEntry
 from route.RouteManagerQuests import RouteManagerQuests
+from utils.collections import Location, LocationWithVisits
 from utils.logging import logger
-from utils.collections import LocationWithVisits, Location
 
 
 class RouteManagerLeveling(RouteManagerQuests):
@@ -54,7 +54,6 @@ class RouteManagerLeveling(RouteManagerQuests):
                 [entry.queue.append(i) for i in origin_local_list]
                 any_at_all = len(origin_local_list) > 0 or any_at_all
             return any_at_all
-
 
     def _local_recalc_subroute(self, unvisited_stops):
         to_be_route = np.zeros(shape=(len(unvisited_stops), 2))
@@ -227,7 +226,8 @@ class RouteManagerLeveling(RouteManagerQuests):
         if self._is_started:
             self._is_started = False
             self._round_started_time = None
-            if self.init: self._first_started = False
+            if self.init:
+                self._first_started = False
             self._restore_original_route()
             self._shutdown_route = False
 

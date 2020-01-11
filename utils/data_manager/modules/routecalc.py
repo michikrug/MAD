@@ -1,10 +1,13 @@
+import json
+
+from route.routecalc.ClusteringHelper import ClusteringHelper
+from route.routecalc.util import *
+from utils.collections import Location
+from utils.logging import logger
+
 from . import resource
 from .. import dm_exceptions
-import json
-from route.routecalc.ClusteringHelper import ClusteringHelper
-from utils.collections import Location
-from route.routecalc.util import *
-from utils.logging import logger
+
 
 class RouteCalc(resource.Resource):
     table = 'settings_routecalc'
@@ -33,7 +36,7 @@ class RouteCalc(resource.Resource):
                   'settings_area_mon_mitm',
                   'settings_area_pokestops',
                   'settings_area_raids_mitm'
-        ]
+                  ]
         columns = ['geofence_included', 'geofence_excluded']
         sql = 'SELECT `area_id` FROM `%s` WHERE `routecalc` = %%s'
         dependencies = []
@@ -119,9 +122,10 @@ class RouteCalc(resource.Resource):
         return new_route
 
     def getJsonRoute(self, coords, maxRadius, maxCoordsInRadius, in_memory, num_processes=1, algorithm='optimized',
-                     useS2: bool = False, S2level: int=15, route_name: str = 'Unknown'):
+                     useS2: bool = False, S2level: int = 15, route_name: str = 'Unknown'):
         export_data = []
-        if useS2: logger.debug("Using S2 method for calculation with S2 level: {}", S2level)
+        if useS2:
+            logger.debug("Using S2 method for calculation with S2 level: {}", S2level)
         if not in_memory and \
            (self._data['fields']['routefile'] is not None and len(self._data['fields']['routefile']) > 0):
             logger.debug('Using routefile from DB')
@@ -176,7 +180,7 @@ class RouteCalc(resource.Resource):
             self.save()
         return export_data
 
-    def getLessCoords(self, npCoordinates, maxRadius, maxCountPerCircle, useS2: bool=False, S2level: int=15):
+    def getLessCoords(self, npCoordinates, maxRadius, maxCountPerCircle, useS2: bool = False, S2level: int = 15):
         coordinates = []
         for coord in npCoordinates:
             coordinates.append(

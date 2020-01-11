@@ -1,13 +1,18 @@
-import flask
 import json
-from . import apiException, global_variables
+
+import flask
+
 from utils.data_manager.modules.resource import Resource
+
+from . import apiException, global_variables
+
 
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Resource):
             return obj.get_resource()
         return json.JSONEncoder.default(self, obj)
+
 
 class APIResponse(object):
     def __init__(self, logger, request, **kwargs):
@@ -34,7 +39,7 @@ class APIResponse(object):
     def convert_to_format(self, content):
         beautify = self.headers.get('X-Beautify')
         if self.mimetype == 'application/json':
-            try: 
+            try:
                 if beautify and beautify.isdigit() and int(beautify) == 1:
                     return json.dumps(content, indent=4, cls=MyEncoder)
                 else:

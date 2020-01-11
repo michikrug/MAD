@@ -1,17 +1,20 @@
-import json
 import datetime
-import os
-import six
 import glob
-from flask import (make_response, request)
+import json
+import os
 from functools import update_wrapper, wraps
 from math import floor
-from utils.walkerArgs import parseArgs
-from utils.functions import creation_date
-from geofence.geofenceHelper import GeofenceHelper
 from pathlib import Path
 
+import six
+from flask import make_response, request
+
+from geofence.geofenceHelper import GeofenceHelper
+from utils.functions import creation_date
+from utils.walkerArgs import parseArgs
+
 mapping_args = parseArgs()
+
 
 def auth_required(func):
     @wraps(func)
@@ -140,7 +143,7 @@ def get_geofences(mapping_manager, data_manager, fence_type=None):
                     getCoordFloat(fence['lon'])
                 ])
         for fences in area_geofences.excluded_areas:
-            exclude[fences['name']]= []
+            exclude[fences['name']] = []
             for fence in fences['polygon']:
                 exclude[fences['name']].append([
                     getCoordFloat(fence['lat']),
@@ -151,6 +154,7 @@ def get_geofences(mapping_manager, data_manager, fence_type=None):
             'exclude': exclude
         }
     return geofences
+
 
 def generate_coords_from_geofence(mapping_manager, data_manager, fence):
     fence_string = []

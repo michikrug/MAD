@@ -2,16 +2,16 @@ import os
 import sys
 from threading import Thread
 
-from db.DbWrapper import DbWrapper
+import utils.data_manager
 from db.DbFactory import DbFactory
-from utils.MappingManager import MappingManagerManager, MappingManager
+from db.DbWrapper import DbWrapper
+from utils.functions import generate_mappingjson
 from utils.logging import initLogging, logger
+from utils.MappingManager import MappingManager, MappingManagerManager
+from utils.updater import deviceUpdater
 from utils.version import MADVersion
 from utils.walkerArgs import parseArgs
-import utils.data_manager
 from websocket.WebsocketServer import WebsocketServer
-from utils.updater import deviceUpdater
-from utils.functions import generate_mappingjson
 
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language

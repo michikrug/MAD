@@ -658,7 +658,7 @@ class WorkerBase(ABC):
         self._communicator.magisk_on("com.nianticlabs.pokemongo")
         logger.info('Enable Magisk')
         time.sleep(1)
-        self._start_pogo()
+        self._communicator.startApp("com.nianticlabs.pokemongo")
         logger.info('Start PoGo')
         time.sleep(15)
         self._stop_pogo()
@@ -668,7 +668,7 @@ class WorkerBase(ABC):
         logger.info('Start PoGoDroid')
         time.sleep(1)
         logger.info('Start PoGo')
-        return self._start_pogo()
+        return self._communicator.startApp("com.nianticlabs.pokemongo")
 
     def _switch_user(self):
         logger.info('Switching User - please wait ...')

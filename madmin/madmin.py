@@ -1,32 +1,32 @@
+import logging
 import sys
 
-import logging
 from flask import Flask
 from flask.logging import default_handler
-from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 
 from db.DbWrapper import DbWrapper
-from utils.MappingManager import MappingManager
-from utils.logging import InterceptHandler, logger
-# routes
-from madmin.routes.statistics import statistics
-from madmin.routes.control import control
-from madmin.routes.map import map
-from madmin.routes.config import config
-from madmin.routes.path import path
 from madmin.api import APIEntry
 from madmin.reverseproxy import ReverseProxied
-
+from madmin.routes.config import config
+from madmin.routes.control import control
+from madmin.routes.map import map
+from madmin.routes.path import path
+# routes
+from madmin.routes.statistics import statistics
+from utils.logging import InterceptHandler, logger
+from utils.MappingManager import MappingManager
 
 sys.path.append("..")  # Adds higher directory to python modules path.
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1) 
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config['UPLOAD_FOLDER'] = 'temp'
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
 app.secret_key = "8bc96865945be733f3973ba21d3c5949"
 log = logger
+
 
 @app.errorhandler(500)
 def internal_error(exception):

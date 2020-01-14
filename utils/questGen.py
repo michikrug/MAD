@@ -200,7 +200,7 @@ def questtask(typeid, condition, target):
         match_object = re.search(r'"item": ([0-9]+)', condition)
         if match_object is not None:
             arr['type'] = items[match_object.group(
-                1)]['name'].replace(_(' Berry'), '')+" "
+                1)]['name'].replace(_(' Berry'), '') + " "
     elif typeid == 14:
         text = _('Power up Pokemon {0} times')
     elif typeid == 15:
@@ -254,7 +254,7 @@ def questtask(typeid, condition, target):
             arr['curve'] = _("Curveball ")
         match_object = re.search(r'"throw_type": ([0-9]{2})', condition)
         if match_object is not None:
-            arr['type'] = throwTypes[match_object.group(1)]+" "
+            arr['type'] = throwTypes[match_object.group(1)] + " "
         text = _("Make {0} {type}{curve}Throws{inrow}")
     elif typeid == 17:
         text = _('Earn {0} Candies walking with your buddy')
@@ -326,7 +326,7 @@ def questtask(typeid, condition, target):
             text = _('Battle against a Team Rocket Grunt')
 
         for con in condition_dict:
-            if con.get('type', 0) == 27 and con.get('with_invasion_character',{}).get('category') == 1:
+            if con.get('type', 0) == 27 and con.get('with_invasion_character', {}).get('category') == 1:
                 text = _('Battle {0} times against the Team GO Rocket Leaders')
                 # TODO Handle category for specific team leaders as well (Arlo, Cliff, Sierra)
             if con.get('type', 0) == 18:
@@ -348,7 +348,7 @@ def questtask(typeid, condition, target):
         arr['0'] = _("a")
 
     for key, val in arr.items():
-        text = text.replace('{'+key+'}', str(val))
+        text = text.replace('{' + key + '}', str(val))
 
     text = text.replace('  ', ' ').strip()
     return text

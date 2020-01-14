@@ -1,5 +1,6 @@
 from .resourceHandler import ResourceHandler
 
+
 class APIWalkerArea(ResourceHandler):
     component = 'walkerarea'
     default_sort = 'walkertext'

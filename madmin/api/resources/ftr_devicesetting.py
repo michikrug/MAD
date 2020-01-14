@@ -1,5 +1,6 @@
 from .resourceHandler import ResourceHandler
 
+
 class APIDeviceSetting(ResourceHandler):
     component = 'devicepool'
     default_sort = 'devicepool'

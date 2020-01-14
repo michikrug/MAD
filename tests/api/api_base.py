@@ -1,7 +1,10 @@
 import copy
-from utils import local_api
 from unittest import TestCase
+
+from utils import local_api
+
 from . import global_variables
+
 
 class APITestBase(TestCase):
     generated_uris = []
@@ -112,6 +115,7 @@ class APITestBase(TestCase):
     # ===========================
     # ========== Tests ==========
     # ===========================
+
     def landing_page(self, test_resource=True):
         response = self.api.get(self.uri)
         self.assertEqual(response.status_code, 200)

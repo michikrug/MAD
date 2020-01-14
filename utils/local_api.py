@@ -1,8 +1,11 @@
-import requests
 import time
+
+import requests
+
 from utils.walkerArgs import parseArgs
 
 mapping_args = parseArgs()
+
 
 class LocalAPI(requests.Session):
     def __init__(self, **kwargs):
@@ -12,7 +15,7 @@ class LocalAPI(requests.Session):
         self.__port = mapping_args.madmin_port
         self.__retries = kwargs.get('retries', 1)
         self.__timeout = kwargs.get('timeout', 1)
-        self.__protocol = 'http' # madmin only runs on http unless behind a proxy so we can force http
+        self.__protocol = 'http'  # madmin only runs on http unless behind a proxy so we can force http
         self.auth = (mapping_args.madmin_user, mapping_args.madmin_password)
 
     def prepare_request(self, request):
@@ -27,7 +30,7 @@ class LocalAPI(requests.Session):
         if self.__logger:
             self.__logger.debug("Requests data: {}", str(request.__dict__))
         return super(LocalAPI, self).prepare_request(request)
-    
+
     def send(self, request, **kwargs):
         """ Override the class function to handle retries and specific error codes """
         attempt = 0

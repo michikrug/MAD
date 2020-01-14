@@ -1,8 +1,11 @@
-from . import resource
-from .. import dm_exceptions
 import json
+
 from geofence.geofenceHelper import GeofenceHelper
 from utils.logging import logger
+
+from . import resource
+from .. import dm_exceptions
+
 
 class GeoFence(resource.Resource):
     table = 'settings_geofence'
@@ -46,7 +49,7 @@ class GeoFence(resource.Resource):
                   'settings_area_mon_mitm',
                   'settings_area_pokestops',
                   'settings_area_raids_mitm'
-        ]
+                  ]
         columns = ['geofence_included', 'geofence_excluded']
         sql = 'SELECT `area_id` FROM `%s` WHERE `%s` = %%s'
         dependencies = []

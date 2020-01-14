@@ -5,17 +5,16 @@ import os
 import os.path
 import time
 from multiprocessing.pool import ThreadPool
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
 import pytesseract
-from pytesseract import Output
-from PIL import Image
-
-from ocr.screen_type import ScreenType
-from utils.logging import logger
 from ocr.matching_trash import trash_image_matching
+from ocr.screen_type import ScreenType
+from PIL import Image
+from pytesseract import Output
+from utils.logging import logger
 
 Coordinate = collections.namedtuple("Coordinate", ['x', 'y'])
 Bounds = collections.namedtuple("Bounds", ['top', 'bottom', 'left', 'right'])
@@ -134,8 +133,8 @@ class PogoWindows:
 
         if crop:
             screenshot_read = screenshot_read[int(height) - int(int(height / 4)):int(height),
-                              int(int(width) / 2) - int(int(width) / 8):int(int(width) / 2) + int(
-                                  int(width) / 8)]
+                                              int(int(width) / 2) - int(int(width) / 8):int(int(width) / 2) + int(
+                int(width) / 8)]
 
         logger.debug("__read_circle_count: Determined screenshot scale: " +
                      str(height) + " x " + str(width))
@@ -207,7 +206,7 @@ class PogoWindows:
 
         if crop:
             screenshot_read = screenshot_read[int(height) - int(height / 5):int(height),
-                              int(width) / 2 - int(width) / 8:int(width) / 2 + int(width) / 8]
+                                              int(width) / 2 - int(width) / 8:int(width) / 2 + int(width) / 8]
 
         logger.debug("__readCircleCords: Determined screenshot scale: " +
                      str(height) + " x " + str(width))
@@ -431,7 +430,7 @@ class PogoWindows:
 
         height, width, _ = screenshot_read.shape
         screenshot_read = screenshot_read[int(height / 2) - int(height / 3):int(height / 2) + int(height / 3),
-                          int(0):int(width)]
+                                          int(0):int(width)]
         gray = cv2.cvtColor(screenshot_read, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
         logger.debug("__check_raid_line: Determined screenshot scale: " +
@@ -620,9 +619,9 @@ class PogoWindows:
         if not close_raid:
             logger.debug(
                 "__internal_check_close_except_nearby_button: Raid is not to be closed...")
-            if (not os.path.isfile(filename)
-                    or self.__check_raid_line(filename, identifier, communicator)
-                    or self.__check_raid_line(filename, identifier, communicator, True)):
+            if (not os.path.isfile(filename) or
+                    self.__check_raid_line(filename, identifier, communicator) or
+                    self.__check_raid_line(filename, identifier, communicator, True)):
                 # file not found or raid tab present
                 logger.debug(
                     "__internal_check_close_except_nearby_button: Not checking for close button (X). Input wrong "
@@ -717,7 +716,7 @@ class PogoWindows:
 
         height, width, _ = screenshot_read.shape
         gray = screenshot_read[int(height) - int(round(height / 5)):int(height),
-               0: int(int(width) / 4)]
+                               0: int(int(width) / 4)]
         height_, width_, _ = gray.shape
         radMin = int((width / float(6.8) - 3) / 2)
         radMax = int((width / float(6) + 3) / 2)

@@ -9,6 +9,7 @@ from flask_caching import Cache
 from madmin.functions import (Path, auth_required,
                               generate_coords_from_geofence, get_geofences,
                               getBoundParameter, getCoordFloat)
+from route.RouteManagerBase import RoutePoolEntry
 from utils.collections import Location
 from utils.gamemechanicutil import get_raid_boss_cp
 from utils.language import i8ln
@@ -104,29 +105,16 @@ class map(object):
         for routemanager in routemanager_names:
             mode = self._mapping_manager.routemanager_get_mode(routemanager)
             name = self._mapping_manager.routemanager_get_name(routemanager)
-            route: Optional[List[Location]] = self._mapping_manager.routemanager_get_current_route(routemanager)
+            (route, workers) = self._mapping_manager.routemanager_get_current_route(routemanager)
 
             if route is None:
                 continue
-            route_serialized = []
             s2cells = {}
-
-            for location in route:
-                route_serialized.append([
-                    getCoordFloat(location.lat), getCoordFloat(location.lng)
-                ])
-
-                if mode == "raids_mitm":
-                    cells = S2Helper.get_S2cells_from_circle(location.lat, location.lng, 490)
-                    for cell in cells:
-                        s2cells[str(cell.id())] = S2Helper.coords_of_cell(cell.id())
-
-            routeexport.append({
-                "name": name,
-                "mode": mode,
-                "coordinates": route_serialized,
-                "s2cells": s2cells
-            })
+            routeexport.append(get_routepool_route(name, mode, route))
+            if len(workers) > 1:
+                for worker, worker_route in workers.items():
+                    disp_name = '%s - %s' % (name, worker,)
+                    routeexport.append(get_routepool_route(disp_name, mode, worker_route))
 
         return jsonify(routeexport)
 
@@ -397,3 +385,30 @@ class map(object):
             # TODO - present the user with an issue.  probably fence-name already exists
             pass
         return redirect(url_for('map'), code=302)
+
+
+def get_routepool_route(name, mode, coords):
+    (parsed_coords, s2cells) = get_routepool_coords(coords, mode)
+    return {
+        "name": name,
+        "mode": mode,
+        "coordinates": parsed_coords,
+        "s2cells": s2cells
+    }
+
+
+def get_routepool_coords(coord_list, mode):
+    route_serialized = []
+    s2cells = {}
+    prepared_coords = coord_list
+    if isinstance(coord_list, RoutePoolEntry):
+        prepared_coords = coord_list.subroute
+    for location in prepared_coords:
+        route_serialized.append([
+            getCoordFloat(location.lat), getCoordFloat(location.lng)
+        ])
+        if mode == "raids_mitm":
+            cells = S2Helper.get_S2cells_from_circle(location.lat, location.lng, 490)
+            for cell in cells:
+                s2cells[str(cell.id())] = S2Helper.coords_of_cell(cell.id())
+    return (route_serialized, s2cells)

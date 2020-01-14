@@ -1,15 +1,12 @@
 import collections
 import heapq
-import json
 import math
-import os
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from operator import itemgetter
-from queue import Empty, Queue
-from threading import Event, Lock, RLock, Thread
+from threading import Event, RLock, Thread
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -48,7 +45,8 @@ class RouteManagerBase(ABC):
     def __init__(self, db_wrapper: DbWrapper, dbm: DataManager, area_id: str, coords: List[Location], max_radius: float,
                  max_coords_within_radius: int, path_to_include_geofence: GeoFence, path_to_exclude_geofence: GeoFence,
                  routefile: RouteCalc, mode=None, init: bool = False, name: str = "unknown", settings: dict = None,
-                 level: bool = False, calctype: str = "optimized", useS2: bool = False, S2level: int = 15, joinqueue=None):
+                 level: bool = False, calctype: str = "optimized", useS2: bool = False, S2level: int = 15,
+                 joinqueue=None):
         self.db_wrapper: DbWrapper = db_wrapper
         self.init: bool = init
         self.name: str = name
@@ -287,17 +285,17 @@ class RouteManagerBase(ABC):
             to_be_appended[i][1] = float(list_coords[i].lng)
         self.add_coords_numpy(to_be_appended)
 
-    def calculate_new_route(self, coords, max_radius, max_coords_within_radius, delete_old_route, num_procs=0, in_memory=False,
-                            calctype=None):
+    def calculate_new_route(self, coords, max_radius, max_coords_within_radius, delete_old_route, num_procs=0,
+                            in_memory=False, calctype=None):
         if calctype is None:
             calctype = self._calctype
         if len(coords) > 0:
             new_route = self._route_resource.calculate_new_route(coords, max_radius, max_coords_within_radius,
-                                                                 delete_old_route, calctype, self.useS2, self.S2level,
+                                                                 delete_old_route, calctype, self.useS2,
+                                                                 self.S2level,
                                                                  num_procs=0,
                                                                  overwrite_calculation=self._overwrite_calculation,
-                                                                 in_memory=in_memory,
-                                                                 route_name=self.name)
+                                                                 in_memory=in_memory, route_name=self.name)
             if self._overwrite_calculation:
                 self._overwrite_calculation = False
             return new_route
@@ -324,7 +322,7 @@ class RouteManagerBase(ABC):
             self.recalc_route(max_radius, max_coords_within_radius, num_procs=0, delete_old_route=False)
 
     def recalc_route(self, max_radius: float, max_coords_within_radius: int, num_procs: int = 1,
-                     delete_old_route: bool = False, in_memory: bool = False, calctype: bool = None):
+                     delete_old_route: bool = False, in_memory: bool = False, calctype: str = None):
         current_coords = self._coords_unstructured
         new_route = self.calculate_new_route(current_coords, max_radius, max_coords_within_radius,
                                              delete_old_route, num_procs,
@@ -524,13 +522,11 @@ class RouteManagerBase(ABC):
             delete_before = time.time() - self.remove_from_queue_backlog
         else:
             delete_before = 0
-        len_before = len(latest)
-        latest = [to_keep for to_keep in latest if not to_keep[0] < delete_before]
-        len_after = len(latest)
-        if len_after < len_before:
-            logger.warning("Dropped from {} to {} because of remove_from_queue_backlog. "
-                           "Make sure you have enough workers for your size of the area or "
-                           "adjust the size of the area itself.", len_before, len_after)
+        if self.mode == "mon_mitm":
+            delete_after = time.time() + 600
+            latest = [to_keep for to_keep in latest if not to_keep[0] < delete_before and not to_keep[0] > delete_after]
+        else:
+            latest = [to_keep for to_keep in latest if not to_keep[0] < delete_before]
         # TODO: sort latest by modified flag of event
         if cluster:
             merged = self.clustering_helper.get_clustered(latest)
@@ -763,9 +759,16 @@ class RouteManagerBase(ABC):
 
         return 0 if len(temp_worker_round_list) == 0 else min(temp_worker_round_list)
 
+    def _get_unprocessed_coords_from_worker(self) -> list:
+        unprocessed_coords: list = []
+        with self._manager_mutex:
+            for origin, entry in self._routepool.items():
+                unprocessed_coords.append(entry.queue)
+
+        return unprocessed_coords
+
     def _other_worker_closer_to_prioq(self, prioqcoord, origin):
         logger.debug('Check distances from worker to prioQ coord')
-        temp_distance: float = 0.0
         closer_worker = None
         if len(self._workers_registered) == 1:
             logger.debug('Route has only one worker - no distance check')
@@ -776,7 +779,6 @@ class RouteManagerBase(ABC):
                                                                prioqcoord.lat, prioqcoord.lng)
 
         logger.debug("Worker {} distance to PrioQ {}: {}", origin, prioqcoord, distance_worker)
-
         temp_distance = distance_worker
 
         for worker in self._routepool.keys():
@@ -809,7 +811,6 @@ class RouteManagerBase(ABC):
     # to be called regularly to remove inactive workers that used to be registered
     def _check_routepools(self, timeout: int = 300):
         while not self._stop_update_thread.is_set():
-            routepool_changed: bool = False
             logger.debug("Checking routepool for idle/dead workers")
             with self._manager_mutex:
                 for origin in list(self._routepool):
@@ -838,7 +839,6 @@ class RouteManagerBase(ABC):
         less_coords: bool = False
         if not self._is_started:
             return True
-        temp_coordplist: List[Location] = []
         if self.mode in ("iv_mitm", "idle"):
             logger.info('Not updating routepools in iv_mitm mode')
             return True
@@ -891,15 +891,17 @@ class RouteManagerBase(ABC):
 
                     i += 1
                     if len(entry.subroute) == 0:
-                        logger.debug("{}'s subroute is empty, assuming he has freshly registered and desperately needs a "
-                                     "queue", origin)
+                        logger.debug(
+                            "{}'s subroute is empty, assuming he has freshly registered and desperately needs a "
+                            "queue", origin)
                         # worker is freshly registering, pass him his fair share
                         entry.subroute = new_subroute
                         # let's clean the queue just to make sure
                         entry.queue.clear()
                     elif len(new_subroute) == len(entry.subroute):
-                        logger.debug("{}'s subroute is as long as the old one, we will assume it hasn't changed (for now)",
-                                     origin)
+                        logger.debug(
+                            "{}'s subroute is as long as the old one, we will assume it hasn't changed (for now)",
+                            origin)
                         # apparently nothing changed
                         if compare(new_subroute, entry.subroute):
                             logger.info("Apparently no changes in subroutes...")
@@ -918,8 +920,8 @@ class RouteManagerBase(ABC):
                                      "added)", origin)
                         # we apparently have added at least a worker...
                         #   1) reduce the start of the current queue to start of new route
-                        #   2) append the coords missing (check end of old routelength, add/remove from there on compared
-                        #      to new)
+                        #   2) append the coords missing (check end of old routelength,
+                        #      add/remove from there on compared to new)
                         old_queue: collections.deque = collections.deque(entry.queue)
                         while len(old_queue) > 0 and len(new_subroute) > 0 and old_queue.popleft() != new_subroute[0]:
                             pass
@@ -938,8 +940,9 @@ class RouteManagerBase(ABC):
                             if last_el_old_q in new_subroute:
                                 # we have the last element in the old subroute, we can actually append stuff with the
                                 # diff to the new route
-                                logger.debug("Last element of old queue is present in new subroute, appending the rest of "
-                                             "the new subroute to the queue")
+                                logger.debug(
+                                    "Last element of old queue is present in new subroute, appending the rest of "
+                                    "the new subroute to the queue")
                                 new_subroute_copy = collections.deque(new_subroute)
                                 while len(new_subroute_copy) > 0 and new_subroute_copy.popleft() != last_el_old_q:
                                     pass
@@ -963,9 +966,8 @@ class RouteManagerBase(ABC):
                         #   1) fetch start and end of old queue
                         #   2) we sorta ignore start/what's been visited so far
                         #   3) if the end is not part of the new route, check for the last coord of the current route
-                        #   still in
-                        #   the new route, remove the old rest of it (or just fetch the first coord of the next subroute and
-                        #   remove the coords of that coord onward)
+                        #   still in the new route, remove the old rest of it (or just fetch the first coord of the
+                        #   next subroute and remove the coords of that coord onward)
                         logger.debug("A worker has apparently been removed from the routepool")
                         last_el_old_route: Location = entry.subroute[len(entry.subroute) - 1]
                         old_queue_list: List[Location] = list(entry.queue)
@@ -1059,8 +1061,8 @@ class RouteManagerBase(ABC):
     def get_settings(self) -> Optional[dict]:
         return self.settings
 
-    def get_current_route(self) -> List[Location]:
-        return self._route
+    def get_current_route(self) -> Optional[Tuple[List[Location], Dict[str, List[Location]]]]:
+        return (self._route, self._routepool)
 
     def get_current_prioroute(self) -> List[Location]:
         return self._prio_queue

@@ -1,8 +1,9 @@
 import copy
-from collections import namedtuple
 from unittest import TestCase
 
-from . import global_variables, local_api
+from utils import local_api
+
+from . import global_variables
 
 
 class APITestBase(TestCase):
@@ -10,9 +11,7 @@ class APITestBase(TestCase):
     index = 0
 
     def setUp(self):
-        madmin_args = namedtuple('madmin_args', 'madmin_ip madmin_port madmin_user madmin_password')
-        args = madmin_args('127.0.0.1', '5000', '', '')
-        self.api = local_api.LocalAPI(None, args)
+        self.api = local_api.LocalAPI()
 
     def tearDown(self):
         self.remove_resources()

@@ -31,7 +31,7 @@ class Area(resource.Resource):
             if field in self.configuration['fields']:
                 self._data['fields'][field] = val
             elif 'settings' in self.configuration and field in self.configuration[
-                'settings'] and val is not None:
+                    'settings'] and val is not None:
                 self._data['settings'][field] = val
             else:
                 continue

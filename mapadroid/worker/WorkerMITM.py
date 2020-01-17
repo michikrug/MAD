@@ -6,13 +6,11 @@ from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.utils import MappingManager
-from mapadroid.utils.geo import (
-    get_distance_of_two_points_in_meters,
-    get_lat_lng_offsets_by_distance
-)
+from mapadroid.utils.geo import (get_distance_of_two_points_in_meters,
+                                 get_lat_lng_offsets_by_distance)
 from mapadroid.utils.logging import logger
 from mapadroid.utils.madGlobals import InternalStopWorkerException
-from mapadroid.worker.MITMBase import MITMBase, LatestReceivedType
+from mapadroid.worker.MITMBase import LatestReceivedType, MITMBase
 
 
 class WorkerMITM(MITMBase):
@@ -63,8 +61,8 @@ class WorkerMITM(MITMBase):
             max_distance = int(200)
 
         if (speed == 0 or
-                (max_distance and 0 < max_distance < distance)
-                or (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
+                (max_distance and 0 < max_distance < distance) or
+                (self.last_location.lat == 0.0 and self.last_location.lng == 0.0)):
             logger.debug("main: Teleporting...")
             self._transporttype = 0
             self._communicator.setLocation(

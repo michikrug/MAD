@@ -1,9 +1,10 @@
 import json
-import numpy as np
 
+import numpy as np
 from mapadroid.route.routecalc.ClusteringHelper import ClusteringHelper
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import logger
+
 from . import resource
 from .. import dm_exceptions
 
@@ -126,7 +127,8 @@ class RouteCalc(resource.Resource):
                      algorithm='optimized',
                      useS2: bool = False, S2level: int = 15, route_name: str = 'Unknown'):
         export_data = []
-        if useS2: logger.debug("Using S2 method for calculation with S2 level: {}", S2level)
+        if useS2:
+            logger.debug("Using S2 method for calculation with S2 level: {}", S2level)
         if not in_memory and \
                 (self._data['fields']['routefile'] is not None and len(
                     self._data['fields']['routefile']) > 0):

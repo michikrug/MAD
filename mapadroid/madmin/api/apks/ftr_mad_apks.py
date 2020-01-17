@@ -5,12 +5,10 @@ import flask
 
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils import global_variables
+from mapadroid.utils.apk_util import (AutoDownloader, chunk_generator,
+                                      get_mad_apks)
 from mapadroid.utils.authHelper import check_auth
-from mapadroid.utils.apk_util import (
-    chunk_generator, 
-    AutoDownloader,
-    get_mad_apks
-)
+
 from .apkHandler import APKHandler
 
 

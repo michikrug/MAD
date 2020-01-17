@@ -6,15 +6,12 @@ from typing import List
 import gpxdata
 import s2sphere
 from geopy import Point
-
 # from utils.collections import Location
 # from utils.geo import get_middle_of_coord_list, get_distance_of_two_points_in_meters
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.collections import Location
-from mapadroid.utils.geo import (
-    get_distance_of_two_points_in_meters,
-    get_middle_of_coord_list
-)
+from mapadroid.utils.geo import (get_distance_of_two_points_in_meters,
+                                 get_middle_of_coord_list)
 from mapadroid.utils.logging import logger
 
 
@@ -74,7 +71,7 @@ class S2Helper:
     def get_position_from_cell(cell_id):
         cell = s2sphere.CellId(id_=int(cell_id)).to_lat_lng()
         return s2sphere.math.degrees(cell.lat().radians), \
-               s2sphere.math.degrees(cell.lng().radians), 0
+            s2sphere.math.degrees(cell.lng().radians), 0
 
     @staticmethod
     def get_s2_cells_from_fence(geofence, cell_size=16):
@@ -289,8 +286,8 @@ class S2Helper:
     # Returns a set of S2 cells within circle around position
     def get_S2cells_from_circle(lat, lng, radius, level=15):
         EARTH = 6371000
-        region = s2sphere.Cap.from_axis_angle( \
-            s2sphere.LatLng.from_degrees(lat, lng).to_point(), \
+        region = s2sphere.Cap.from_axis_angle(
+            s2sphere.LatLng.from_degrees(lat, lng).to_point(),
             s2sphere.Angle.from_degrees(360 * radius / (2 * math.pi * EARTH)))
         coverer = s2sphere.RegionCoverer()
         coverer.min_level = level

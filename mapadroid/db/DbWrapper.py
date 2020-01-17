@@ -5,9 +5,9 @@ from datetime import datetime, timedelta, timezone
 from functools import reduce
 from typing import List, Optional
 
-from mapadroid.db.DbSchemaUpdater import DbSchemaUpdater
 from mapadroid.db.DbPogoProtoSubmit import DbPogoProtoSubmit
 from mapadroid.db.DbSanityCheck import DbSanityCheck
+from mapadroid.db.DbSchemaUpdater import DbSchemaUpdater
 from mapadroid.db.DbStatsReader import DbStatsReader
 from mapadroid.db.DbStatsSubmit import DbStatsSubmit
 from mapadroid.db.DbWebhookReader import DbWebhookReader
@@ -346,8 +346,8 @@ class DbWrapper:
             query_where = ' where disappear_time > \'%s\' ' % str(hours)
 
         query = (
-                "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(
-            query_where)
+            "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(
+                query_where)
         )
 
         res = self.execute(query)
@@ -640,15 +640,15 @@ class DbWrapper:
                        'ps.`incident_expiration`']
         # base query to fetch stops
         query = (
-            "SELECT ps.`pokestop_id`, ps.`enabled`, ps.`latitude`, ps.`longitude`,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "ps.`active_fort_modifier`, ps.`name`, ps.`image`, ps.`incident_grunt_type`\n" \
-            "FROM pokestop ps\n" \
-            )
+            "SELECT ps.`pokestop_id`, ps.`enabled`, ps.`latitude`, ps.`longitude`,\n"
+            "%s,\n"
+            "%s,\n"
+            "%s,\n"
+            "%s,\n"
+            "%s,\n"
+            "ps.`active_fort_modifier`, ps.`name`, ps.`image`, ps.`incident_grunt_type`\n"
+            "FROM pokestop ps\n"
+        )
         query_where = (
             "WHERE (ps.`latitude` >= %%s AND ps.`longitude` >= %%s "
             " AND ps.`latitude` <= %%s AND ps.`longitude` <= %%s) "
@@ -871,7 +871,7 @@ class DbWrapper:
             spawn_duration_minutes = 60 if spawndef == 15 else 30
 
             timestamp = time.mktime(temp_date.timetuple()) - \
-                        spawn_duration_minutes * 60
+                spawn_duration_minutes * 60
             # check if we calculated a time in the past, if so, add an hour to it...
             timestamp = timestamp + 60 * 60 if timestamp < current_time else timestamp
             # TODO: consider the following since I am not sure if the prio Q clustering handles stuff properly yet
@@ -927,7 +927,7 @@ class DbWrapper:
         }
         self.autoexec_insert('trs_status', data, literals=literals, optype='ON DUPLICATE')
 
-    #def update_trs_status_to_idle(self, dev_id):
+    # def update_trs_status_to_idle(self, dev_id):
     def save_idle_status(self, dev_id, status):
         data = {
             'instance_id': self.instance_id,

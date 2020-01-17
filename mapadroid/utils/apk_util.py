@@ -4,11 +4,11 @@ import re
 import time
 from threading import Thread
 
-import apkutils
 import requests
 import urllib3
 from werkzeug.utils import secure_filename
 
+import apkutils
 from mapadroid.utils import global_variables
 from mapadroid.utils.logging import logger
 

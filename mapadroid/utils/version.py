@@ -7,11 +7,10 @@ import sys
 from pathlib import Path
 
 from mapadroid.db import DbSchemaUpdater
+from mapadroid.utils.data_manager.dm_exceptions import UpdateIssue
 from mapadroid.utils.logging import logger
+
 from .convert_mapping import convert_mappings
-from mapadroid.utils.data_manager.dm_exceptions import (
-    UpdateIssue
-)
 
 current_version = 23
 
@@ -345,7 +344,7 @@ class MADVersion(object):
                                     for ind, area in enumerate(entry['setup']):
                                         try:
                                             area['walkerarea'] = '/api/area/%s' % (
-                                            cache['areas'][area['walkerarea']],)
+                                                cache['areas'][area['walkerarea']],)
                                         except KeyError:
                                             # The area no longer exists.  Remove from the path
                                             pass
@@ -361,7 +360,7 @@ class MADVersion(object):
                                 if 'pool' in entry:
                                     try:
                                         entry['pool'] = '/api/devicesetting/%s' % (
-                                        cache['devicesettings'][entry['pool']],)
+                                            cache['devicesettings'][entry['pool']],)
                                     except Exception:
                                         if entry['pool'] is not None:
                                             logger.error('DeviceSettings {} is not valid', entry['pool'])
@@ -458,7 +457,7 @@ class MADVersion(object):
                     config_file[section]['index'] += 1
                 if cache:
                     logger.info(
-                        'One or more resources with ID 0 found.  Converting them off 0 and updating the ' \
+                        'One or more resources with ID 0 found.  Converting them off 0 and updating the '
                         'mappings.json file.  {}', cache)
                     with open(self._application_args.mappings, 'w') as outfile:
                         json.dump(config_file, outfile, indent=4, sort_keys=True)
@@ -622,7 +621,7 @@ class MADVersion(object):
                                     config_file[section]['index'] = resource.identifier + 1
                 if conversion_issues:
                     logger.error(
-                        'The configuration was not partially moved to the database.  The following resources ' \
+                        'The configuration was not partially moved to the database.  The following resources '
                         'were not converted.')
                     for (section, identifier, issue) in conversion_issues:
                         logger.error('{} {}: {}', section, identifier, issue)
@@ -649,7 +648,7 @@ class MADVersion(object):
             sql = "SELECT `origin` FROM `trs_status` WHERE `instance` = ''"
             bad_devs = self.dbwrapper.autofetch_column(sql)
             if bad_devs:
-                logger.warning('Found devices that have no instance.  These will be removed from the table. ' \
+                logger.warning('Found devices that have no instance.  These will be removed from the table. '
                                '{}', bad_devs)
                 del_data = {
                     'instance': ''

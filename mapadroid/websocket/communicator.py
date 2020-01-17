@@ -98,8 +98,7 @@ class Communicator:
     def touchandhold(self, x1, y1, x2, y2, time: int = 3000) -> bool:
         return self.__runAndOk("touch swipe {} {} {} {} {}".format(
             str(int(round(x1))), str(int(round(y1))), str(int(round(x2))), str(int(round(y2))),
-            str(int(time)))
-            , self.__command_timeout)
+            str(int(time))), self.__command_timeout)
 
     def getscreensize(self) -> str:
         response = self.websocket_handler.send_and_wait(self.worker_id, self.worker_instance_ref,

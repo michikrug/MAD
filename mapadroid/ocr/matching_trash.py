@@ -3,9 +3,8 @@ from typing import List
 
 import cv2
 import imutils
-import numpy as np
-
 import mapadroid
+import numpy as np
 from mapadroid.utils.collections import Trash
 from mapadroid.utils.logging import logger
 
@@ -97,7 +96,8 @@ def trash_image_matching(screen_img, full_screen):
         # cv2.imshow("output", screen)
         # cv2.waitKey(0)
 
-        if boxcount >= 1: break
+        if boxcount >= 1:
+            break
 
     return clicklist
 

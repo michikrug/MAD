@@ -11,17 +11,15 @@ from typing import Optional
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
-from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.ocr.screen_type import ScreenType
+from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.utils import MappingManager
 from mapadroid.utils.hamming import hamming_distance
 from mapadroid.utils.logging import logger
-from mapadroid.utils.madGlobals import (
-    InternalStopWorkerException,
-    WebsocketWorkerRemovedException,
-    WebsocketWorkerTimeoutException,
-    ScreenshotType
-)
+from mapadroid.utils.madGlobals import (InternalStopWorkerException,
+                                        ScreenshotType,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.utils.resolution import Resocalculator
 from mapadroid.utils.routeutil import check_walker_value_type
 from mapadroid.websocket.communicator import Communicator
@@ -327,7 +325,7 @@ class WorkerBase(ABC):
         try:
             self._internal_pre_work()
         except (
-        InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
             logger.error(
                 "Failed initializing worker {}, connection terminated exceptionally", str(self._origin))
             self._internal_cleanup()
@@ -348,7 +346,7 @@ class WorkerBase(ABC):
                     self.set_devicesettings_value('finished', True)
                     break
             except (
-            InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                    InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
                     "Worker {} killed by walker settings", str(self._origin))
                 break
@@ -358,7 +356,7 @@ class WorkerBase(ABC):
                 self._internal_health_check()
                 self._health_check()
             except (
-            InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                    InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.error(
                     "Websocket connection to {} lost while running healthchecks, connection terminated "
                     "exceptionally",
@@ -370,7 +368,7 @@ class WorkerBase(ABC):
                 if settings is None:
                     continue
             except (
-            InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                    InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
                     "Worker of {} does not support mode that's to be run, connection terminated exceptionally",
                     str(self._origin))
@@ -382,7 +380,7 @@ class WorkerBase(ABC):
                 if not valid:
                     break
             except (
-            InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                    InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
                     "Worker {} get non valid coords!", str(self._origin))
                 break
@@ -390,7 +388,7 @@ class WorkerBase(ABC):
             try:
                 self._pre_location_update()
             except (
-            InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                    InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
                     "Worker of {} stopping because of stop signal in pre_location_update, connection terminated "
                     "exceptionally",
@@ -406,7 +404,7 @@ class WorkerBase(ABC):
                              self.current_location.lat, self.current_location.lng)
                 time_snapshot, process_location = self._move_to_location()
             except (
-            InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                    InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
                 logger.warning(
                     "Worker {} failed moving to new location, stopping worker, connection terminated exceptionally",
                     str(self._origin))
@@ -686,7 +684,7 @@ class WorkerBase(ABC):
         questloop: int = 0
         firstround: bool = True
         x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-               self._resocalc.get_coords_quest_menu(self)[1]
+            self._resocalc.get_coords_quest_menu(self)[1]
         self._communicator.click(int(x), int(y))
         time.sleep(10)
         returncode: ScreenType = ScreenType.UNDEFINED
@@ -703,24 +701,24 @@ class WorkerBase(ABC):
                 if firstround:
                     logger.info('First round getting research menu')
                     x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                           self._resocalc.get_close_main_button_coords(self)[1]
+                        self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
                     return ScreenType.POGO
                 elif questcounter >= 2:
                     logger.info('Getting research menu two times in row')
                     x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                           self._resocalc.get_close_main_button_coords(self)[1]
+                        self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
                     return ScreenType.POGO
 
             x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                   self._resocalc.get_close_main_button_coords(self)[1]
+                self._resocalc.get_close_main_button_coords(self)[1]
             self._communicator.click(int(x), int(y))
             time.sleep(1.5)
             x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-                   self._resocalc.get_coords_quest_menu(self)[1]
+                self._resocalc.get_coords_quest_menu(self)[1]
             self._communicator.click(int(x), int(y))
             time.sleep(3)
             self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),

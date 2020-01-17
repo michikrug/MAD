@@ -192,7 +192,7 @@ class MITMBase(WorkerBase):
         logger.debug('{_clear_quests} called')
         if openmenu:
             x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-                   self._resocalc.get_coords_quest_menu(self)[1]
+                self._resocalc.get_coords_quest_menu(self)[1]
             self._communicator.click(int(x), int(y))
             time.sleep(6 + int(delayadd))
 
@@ -203,7 +203,7 @@ class MITMBase(WorkerBase):
         logger.info("Found {} trashcan(s) on screen", len(trashcancheck))
         # get confirm box coords
         x, y = self._resocalc.get_confirm_delete_quest_coords(self)[0], \
-               self._resocalc.get_confirm_delete_quest_coords(self)[1]
+            self._resocalc.get_confirm_delete_quest_coords(self)[1]
 
         for trash in range(len(trashcancheck)):
             logger.info("Delete old quest {}", int(trash) + 1)
@@ -213,7 +213,7 @@ class MITMBase(WorkerBase):
             time.sleep(1 + int(delayadd))
 
         x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-               self._resocalc.get_close_main_button_coords(self)[1]
+            self._resocalc.get_close_main_button_coords(self)[1]
         self._communicator.click(int(x), int(y))
 
         time.sleep(1.5)
@@ -234,14 +234,14 @@ class MITMBase(WorkerBase):
     def _spin_wheel(self, delayadd):
         logger.debug('{_spin_wheel} called')
         x1, x2, y = self._resocalc.get_gym_spin_coords(self)[0], self._resocalc.get_gym_spin_coords(self)[1], \
-                    self._resocalc.get_gym_spin_coords(self)[2]
+            self._resocalc.get_gym_spin_coords(self)[2]
         self._communicator.swipe(int(x1), int(y), int(x2), int(y))
         return
 
     def _close_gym(self, delayadd):
         logger.debug('{_close_gym} called')
         x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-               self._resocalc.get_close_main_button_coords(self)[1]
+            self._resocalc.get_close_main_button_coords(self)[1]
         self._communicator.click(int(x), int(y))
         time.sleep(1 + int(delayadd))
         logger.debug('{_close_gym} called')
@@ -250,7 +250,7 @@ class MITMBase(WorkerBase):
         logger.debug('{_turn_map} called')
         logger.info('Turning map')
         x1, x2, y = self._resocalc.get_gym_spin_coords(self)[0], self._resocalc.get_gym_spin_coords(self)[1], \
-                    self._resocalc.get_gym_spin_coords(self)[2]
+            self._resocalc.get_gym_spin_coords(self)[2]
         self._communicator.swipe(int(x1), int(y), int(x2), int(y))
         time.sleep(int(delayadd))
         logger.debug('{_turn_map} called')

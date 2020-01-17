@@ -6,24 +6,21 @@ import math
 import queue
 import sys
 import time
-from threading import Event, Thread, current_thread, Lock
+from threading import Event, Lock, Thread, current_thread
 from typing import Optional
 
 import websockets
-
 from mapadroid.utils import MappingManager
 from mapadroid.utils.authHelper import check_auth
-from mapadroid.utils.logging import logger, InterceptHandler
-from mapadroid.utils.madGlobals import (
-    WebsocketWorkerRemovedException,
-    WebsocketWorkerTimeoutException,
-    WrongAreaInWalker
-)
+from mapadroid.utils.data_manager.dm_exceptions import DataManagerException
+from mapadroid.utils.logging import InterceptHandler, logger
+from mapadroid.utils.madGlobals import (WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException,
+                                        WrongAreaInWalker)
 from mapadroid.utils.routeutil import pre_check_value
 from mapadroid.worker.WorkerConfigmode import WorkerConfigmode
 from mapadroid.worker.WorkerMITM import WorkerMITM
 from mapadroid.worker.WorkerQuests import WorkerQuests
-from mapadroid.utils.data_manager.dm_exceptions import DataManagerException
 
 OutgoingMessage = collections.namedtuple('OutgoingMessage', ['id', 'message'])
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -236,7 +233,7 @@ class WebsocketServer(object):
                 self.__users_connecting.append(origin)
 
         if worker_already_connected:
-            ## todo: do this better :D
+            # todo: do this better :D
             logger.debug("Old worker thread is still alive - waiting 20 seconds")
             await asyncio.sleep(20)
             logger.info("Reconnect ...")
@@ -328,8 +325,8 @@ class WebsocketServer(object):
 
                 devicesettings = self.__mapping_manager.get_devicesettings_of(origin)
                 logger.debug("Checking walker_area_index length")
-                if (devicesettings.get("walker_area_index", None) is None
-                        or devicesettings['walker_area_index'] >= len(walker_area_array)):
+                if (devicesettings.get("walker_area_index", None) is None or
+                        devicesettings['walker_area_index'] >= len(walker_area_array)):
                     # check if array is smaller than expected - f.e. on the fly changes in mappings.json
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index', 0)
                     self.__mapping_manager.set_devicesetting_value_of(origin, 'finished', False)
@@ -343,7 +340,7 @@ class WebsocketServer(object):
                 logger.debug('Devicesettings {}: {}', str(origin), devicesettings)
                 logger.info('{} using walker area {} [{}/{}]', str(origin), str(
                     self.__mapping_manager.routemanager_get_name(walker_area_name)), str(walker_index + 1),
-                            str(len(walker_area_array)))
+                    str(len(walker_area_array)))
                 walker_routemanager_mode = self.__mapping_manager.routemanager_get_mode(walker_area_name)
                 self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index',
                                                                   walker_index + 1)
@@ -510,8 +507,8 @@ class WebsocketServer(object):
         :return:
         """
         async with self.__users_mutex:
-            if worker_id in self.__current_users.keys() and (worker_instance is None
-                                                             or self.__current_users[worker_id][
+            if worker_id in self.__current_users.keys() and (worker_instance is None or
+                                                             self.__current_users[worker_id][
                                                                  1] == worker_instance):
                 if self.__current_users[worker_id][2].open:
                     await self.__close_websocket_client_connection(worker_id,

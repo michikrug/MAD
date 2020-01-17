@@ -1,4 +1,5 @@
-from flask import (send_from_directory, render_template, request, jsonify, redirect, url_for)
+from flask import (jsonify, redirect, render_template, request,
+                   send_from_directory, url_for)
 
 from mapadroid.madmin.functions import auth_required, get_quest_areas
 from mapadroid.utils import MappingManager

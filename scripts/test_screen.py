@@ -6,8 +6,8 @@ import sys
 import cv2
 import numpy as np
 import pytesseract
+from mapadroid.utils.resolution import Resocalculator
 from PIL import Image
-from utils.resolution import Resocalculator
 
 sys.path.append("..")
 
@@ -80,7 +80,8 @@ class testimage(object):
 
     def open_close_menu(self, image):
         print('Open Close Menu')
-        x, y = self._resocalc.get_close_main_button_coords(self)[0], self._resocalc.get_close_main_button_coords(self)[
+        x, y = self._resocalc.get_close_main_button_coords(self)[0], \
+            self._resocalc.get_close_main_button_coords(self)[
             1]
         return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
 
@@ -169,12 +170,12 @@ class testimage(object):
     def get_delete_item_text(self, image):
         print('Get item Text')
         x1, x2, y1, y2 = self._resocalc.get_delete_item_text(self)
-        #y1 += self._resocalc.get_next_item_coord(self)
-        #y2 += self._resocalc.get_next_item_coord(self)
-        #y1 += self._resocalc.get_next_item_coord(self)
-        #y2 += self._resocalc.get_next_item_coord(self)
-        #y1 += self._resocalc.get_next_item_coord(self)
-        #y2 += self._resocalc.get_next_item_coord(self)
+        # y1 += self._resocalc.get_next_item_coord(self)
+        # y2 += self._resocalc.get_next_item_coord(self)
+        # y1 += self._resocalc.get_next_item_coord(self)
+        # y2 += self._resocalc.get_next_item_coord(self)
+        # y1 += self._resocalc.get_next_item_coord(self)
+        # y2 += self._resocalc.get_next_item_coord(self)
         h = x1 - x2
         w = y1 - y2
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -204,7 +205,8 @@ class testimage(object):
         gray = cv2.Canny(gray, 100, 50, apertureSize=3)
         cv2.imshow("output", gray)
         cv2.waitKey(0)
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, width / 8, param1=100, param2=15, minRadius=radMin,
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, width / 8, param1=100, param2=15,
+                                   minRadius=radMin,
                                    maxRadius=radMax)
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
@@ -265,7 +267,7 @@ class testimage(object):
             line = [line]
             for x1, y1, x2, y2 in line:
                 if y1 == y2 and x2 - x1 <= maxLineLength and x2 - x1 >= minLineLength \
-                    and y1 > height / 3 \
+                        and y1 > height / 3 \
                         and (x2 - x1) / 2 + x1 < width / 2 + 50 and (x2 - x1) / 2 + x1 > width / 2 - 50:
                     lineCount += 1
                     disToMiddleMin_temp = y1 - (height / 2)
@@ -290,7 +292,8 @@ class testimage(object):
                         _x2 = x2
 
                     print("lookForButton: Found Buttonline Nr. " + str(lineCount) + " - Line lenght: " + str(
-                        x2 - x1) + "px Coords - X: " + str(x1) + " " + str(x2) + " Y: " + str(y1) + " " + str(y2))
+                        x2 - x1) + "px Coords - X: " + str(x1) + " " + str(x2) + " Y: " + str(y1) + " " + str(
+                        y2))
 
                     cv2.line(filename, (int(x1), int(y1)),
                              (int(x2), int(y2)), (255, 0, 0), 5)

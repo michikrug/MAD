@@ -12,20 +12,20 @@ from typing import Optional
 import pkg_resources
 
 import psutil
-import utils.data_manager
-from db.DbFactory import DbFactory
-from mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
-from mitm_receiver.MITMReceiver import MITMReceiver
-from utils import local_api
-from utils.functions import generate_mappingjson
-from utils.logging import initLogging, logger
-from utils.madGlobals import terminate_mad
-from utils.MappingManager import MappingManager, MappingManagerManager
-from utils.rarity import Rarity
-from utils.updater import deviceUpdater
-from utils.version import MADVersion
-from utils.walkerArgs import parseArgs
-from websocket.WebsocketServer import WebsocketServer
+from mapadroid.db.DbFactory import DbFactory
+from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
+from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
+from mapadroid.utils.data_manager import DataManager
+from mapadroid.utils.local_api import LocalAPI
+from mapadroid.utils.logging import initLogging, logger
+from mapadroid.utils.madGlobals import terminate_mad
+from mapadroid.utils.MappingManager import (MappingManager,
+                                            MappingManagerManager)
+from mapadroid.utils.rarity import Rarity
+from mapadroid.utils.updater import deviceUpdater
+from mapadroid.utils.version import MADVersion
+from mapadroid.utils.walkerArgs import parseArgs
+from mapadroid.websocket.WebsocketServer import WebsocketServer
 
 py_version = sys.version_info
 if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
@@ -48,7 +48,6 @@ def install_thread_excepthook():
     If using psyco, call psycho.cannotcompile(threading.Thread.run)
     since this replaces a new-style class method.
     """
-    import sys
     run_thread_old = Thread.run
     run_process_old = Process.run
 
@@ -142,9 +141,10 @@ def check_dependencies():
         try:
             pkg_resources.require(deps)
         except pkg_resources.VersionConflict as version_error:
-            logger.error("Some dependencies aren't met. Required: {} (Installed: {})",
-                         version_error.req, version_error.dist)
-            logger.error("Most of the times you can fix it by running: pip3 install -r requirements.txt --upgrade")
+            logger.error("Some dependencies aren't met. Required: {} (Installed: {})", version_error.req,
+                         version_error.dist)
+            logger.error(
+                "Most of the times you can fix it by running: pip3 install -r requirements.txt --upgrade")
             sys.exit(1)
 
 
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     db_wrapper, db_pool_manager = DbFactory.get_wrapper(args)
     instance_id = db_wrapper.get_instance_id()
-    data_manager = utils.data_manager.DataManager(db_wrapper, instance_id)
+    data_manager = DataManager(db_wrapper, instance_id)
     data_manager.clear_on_boot()
     version = MADVersion(args, data_manager)
     version.get_version()
@@ -194,8 +194,9 @@ if __name__ == "__main__":
         MappingManagerManager.register('MappingManager', MappingManager)
         mapping_manager_manager = MappingManagerManager()
         mapping_manager_manager.start()
-        mapping_manager: MappingManager = mapping_manager_manager.MappingManager(
-            db_wrapper, args, data_manager, ws_server, False)
+        mapping_manager: MappingManager = mapping_manager_manager.MappingManager(db_wrapper, args,
+                                                                                 data_manager, ws_server,
+                                                                                 False)
         filename = args.mappings
         if args.only_routes:
             recalc_in_progress = True
@@ -214,7 +215,8 @@ if __name__ == "__main__":
         mitm_mapper_manager.start()
         mitm_mapper: MitmMapper = mitm_mapper_manager.MitmMapper(mapping_manager, db_wrapper.stats_submit)
 
-        from ocr.pogoWindows import PogoWindows
+        from mapadroid.ocr.pogoWindows import PogoWindows
+
         pogoWindowManager = PogoWindows(args.temp_path, args.ocr_thread_count)
 
         mitm_receiver_process = MITMReceiver(args.mitmreceiver_ip, int(args.mitmreceiver_port),
@@ -222,17 +224,18 @@ if __name__ == "__main__":
         mitm_receiver_process.start()
 
         logger.info('Starting websocket server on port {}'.format(str(args.ws_port)))
-        ws_server = WebsocketServer(args, mitm_mapper, db_wrapper, mapping_manager, pogoWindowManager, data_manager)
+        ws_server = WebsocketServer(args, mitm_mapper, db_wrapper, mapping_manager, pogoWindowManager,
+                                    data_manager)
         t_ws = Thread(name='scanner', target=ws_server.start_server)
         t_ws.daemon = False
         t_ws.start()
 
         # init jobprocessor
-        device_Updater = deviceUpdater(ws_server, args, jobstatus)
+        device_Updater = deviceUpdater(ws_server, args, jobstatus, db_wrapper)
 
         webhook_worker = None
         if args.webhook:
-            from webhook.webhookworker import WebhookWorker
+            from mapadroid.webhook.webhookworker import WebhookWorker
 
             rarity = Rarity(args, db_wrapper)
             rarity.start_dynamic_rarity()
@@ -253,11 +256,12 @@ if __name__ == "__main__":
             t_usage.start()
 
     if args.with_madmin:
-        from madmin.madmin import madmin_start
+        from mapadroid.madmin.madmin import madmin_start
 
         logger.info("Starting Madmin on port {}", str(args.madmin_port))
         t_madmin = Thread(name="madmin", target=madmin_start,
-                          args=(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater, jobstatus))
+                          args=(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater,
+                                jobstatus))
         t_madmin.daemon = True
         t_madmin.start()
 
@@ -266,7 +270,7 @@ if __name__ == "__main__":
     try:
         if args.unit_tests:
             api_ready = False
-            api = local_api.LocalAPI()
+            api = LocalAPI()
             logger.info('Checking API status')
             while not api_ready:
                 try:
@@ -276,7 +280,7 @@ if __name__ == "__main__":
                 except:
                     time.sleep(1)
             loader = unittest.TestLoader()
-            start_dir = 'tests/'
+            start_dir = 'mapadroid/tests/'
             suite = loader.discover(start_dir)
             runner = unittest.TextTestRunner()
             result = runner.run(suite)

@@ -6,8 +6,8 @@ import re
 import sys
 
 import mysql.connector
-from geofence.geofenceHelper import GeofenceHelper
-from utils.logging import initLogging, logger
+from mapadroid.geofence.geofenceHelper import GeofenceHelper
+from mapadroid.utils.logging import initLogging, logger
 
 sys.path.append("..")
 
@@ -28,11 +28,14 @@ def get_value_for(regex_string, force_exit=True):
     if res is None or len(res) != 1 or res == []:
         if force_exit:
             if res is None or res == []:
-                sys.exit("Check your config.ini for %s - this field is required!" %
-                         re.search('\\\s\+(.*):', regex_string).group(1))
+                sys.exit("Check your config.ini for %s - this field is required!" % re.search('\\\s\+(.*):',
+                                                                                              regex_string).group(
+                    1))
             else:
-                sys.exit("Found more than one value for %s in config.ini, fix that." %
-                         re.search('\\\s\+(.*):', regex_string).group(1))
+                sys.exit(
+                    "Found more than one value for %s in config.ini, fix that." % re.search('\\\s\+(.*):',
+                                                                                            regex_string).group(
+                        1))
         return None
     else:
         return res[0]
@@ -49,7 +52,7 @@ def main():
     LocationWithID = collections.namedtuple('Location', ['lat', 'lng', 'spawnpoint'])
 
     geofence_filename = sys.argv[1]
-    #print("Argument: '%s'" % (geofence_filename))
+    # print("Argument: '%s'" % (geofence_filename))
     # no .txt, add it
     if ".txt" not in geofence_filename:
         geofence_filename = geofence_filename + ".txt"
@@ -85,11 +88,11 @@ def main():
     dbpassword = get_value_for(r'\s+dbpassword:\s+([^.\s]*)')
     dbname = get_value_for(r'\s+dbname:\s+([^.\s]*)')
 
-    #print("Successfully parsed config.ini, using values:")
-    #print("dbport: %s" % dbport)
-    #print("dbusername: %s" % dbusername)
-    #print("dbname: %s" % dbname)
-    #print("dbip: %s" % dbip)
+    # print("Successfully parsed config.ini, using values:")
+    # print("dbport: %s" % dbport)
+    # print("dbusername: %s" % dbusername)
+    # print("dbname: %s" % dbname)
+    # print("dbip: %s" % dbip)
 
     connection = mysql.connector.connect(
         host=dbip,

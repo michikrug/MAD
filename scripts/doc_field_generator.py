@@ -3,7 +3,7 @@
 import os
 import sys
 
-import madmin.api
+import mapadroid.madmin.api
 
 sys.path.append(os.getcwd())
 
@@ -47,7 +47,7 @@ def safe_convert(thing):
     return thing.replace('|', '\|')
 
 
-for module_name, elem in madmin.api.valid_modules.items():
+for module_name, elem in mapadroid.madmin.api.valid_modules.items():
     print('# %s' % (module_name))
     config = elem.configuration
     if 'fields' in config:

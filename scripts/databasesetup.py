@@ -3,8 +3,6 @@
 import re
 import sys
 
-import requests
-
 import mysql.connector
 
 rm_sql = open('SQL/rocketmap.sql')
@@ -17,11 +15,14 @@ def get_value_for(regex_string, force_exit=True):
     if res is None or len(res) != 1 or res == []:
         if force_exit:
             if res is None or res == []:
-                sys.exit("Check your config.ini for %s - this field is required!" %
-                         re.search('\\\s\+(.*):', regex_string).group(1))
+                sys.exit("Check your config.ini for %s - this field is required!" % re.search('\\\s\+(.*):',
+                                                                                              regex_string).group(
+                    1))
             else:
-                sys.exit("Found more than one value for %s in config.ini, fix that." %
-                         re.search('\\\s\+(.*):', regex_string).group(1))
+                sys.exit(
+                    "Found more than one value for %s in config.ini, fix that." % re.search('\\\s\+(.*):',
+                                                                                            regex_string).group(
+                        1))
         return None
     else:
         return res[0]

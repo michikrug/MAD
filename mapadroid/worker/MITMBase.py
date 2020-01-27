@@ -92,8 +92,7 @@ class MITMBase(WorkerBase):
         position_type = self._mapping_manager.routemanager_get_position_type(self._routemanager_name,
                                                                              self._origin)
         if position_type is None:
-            logger.warning(
-                "Mappings/Routemanagers have changed, stopping worker to be created again")
+            logger.warning("Mappings/Routemanagers have changed, stopping worker to be created again")
             raise InternalStopWorkerException
         if data_requested != LatestReceivedType.UNDEFINED:
             logger.debug('Got the data requested...')
@@ -125,10 +124,8 @@ class MITMBase(WorkerBase):
             if self._mapping_manager.routemanager_get_route_stats(self._routemanager_name,
                                                                   self._origin) is not None:
                 if self._init:
-                    restart_thresh = self.get_devicesettings_value(
-                        "restart_thresh", 5) * 2
-                    reboot_thresh = self.get_devicesettings_value(
-                        "reboot_thresh", 3) * 2
+                    restart_thresh = self.get_devicesettings_value("restart_thresh", 5) * 2
+                    reboot_thresh = self.get_devicesettings_value("reboot_thresh", 3) * 2
 
             if self._restart_count > restart_thresh:
                 self._reboot_count += 1
@@ -211,8 +208,7 @@ class MITMBase(WorkerBase):
 
         for trash in range(len(trashcancheck)):
             logger.info("Delete old quest {}", int(trash) + 1)
-            self._communicator.click(
-                int(trashcancheck[0].x), int(trashcancheck[0].y))
+            self._communicator.click(int(trashcancheck[0].x), int(trashcancheck[0].y))
             time.sleep(1 + int(delayadd))
             self._communicator.click(int(x), int(y))
             time.sleep(1 + int(delayadd))

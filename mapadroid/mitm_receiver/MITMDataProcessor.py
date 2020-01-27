@@ -41,8 +41,7 @@ class MitmDataProcessor(Process):
                 self.process_data(item[0], item[1], item[2])
                 self.__queue.task_done()
             except KeyboardInterrupt as e:
-                logger.info(
-                    "MITMDataProcessor received keyboard interrupt, stopping")
+                logger.info("MITMDataProcessor received keyboard interrupt, stopping")
                 break
 
     def get_queue_items(self):
@@ -103,8 +102,7 @@ class MitmDataProcessor(Process):
                 logger.debug2("Done processing proto 104 of {}".format(origin))
             elif data_type == 4:
                 logger.debug2("Processing proto 4 of {}".format(origin))
-                self.__mitm_mapper.generate_player_stats(
-                    origin, data["payload"])
+                self.__mitm_mapper.generate_player_stats(origin, data["payload"])
                 logger.debug2("Done processing proto 4 of {}".format(origin))
             elif data_type == 156:
                 logger.debug2("Processing proto 156 of {}".format(origin))

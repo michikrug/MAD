@@ -105,8 +105,7 @@ class control(object):
                 screenshot_ending: str = ".jpg"
                 image_resize(filename, os.path.join(
                     self._args.temp_path, "madmin"), width=250)
-                screen = "screenshot/madmin/screenshot_" + \
-                    str(phonename) + screenshot_ending
+                screen = "screenshot/madmin/screenshot_" + str(phonename) + screenshot_ending
                 screens_phone.append(
                     generate_phones(phonename, add_text, adb_option,
                                     screen, filename, self._datetimeformat, dummy=False)
@@ -129,14 +128,12 @@ class control(object):
                         adb_option = True
                         add_text = '<b>ADB - no WS<img src="/static/warning.png" width="20px" ' \
                                    'alt="NO websocket connection!"></b>'
-                        filename = generate_device_screenshot_path(
-                            pho, devicemappings, self._args)
+                        filename = generate_device_screenshot_path(pho, devicemappings, self._args)
                         if os.path.isfile(filename):
                             image_resize(filename, os.path.join(mapadroid.MAD_ROOT,
                                                                 self._args.temp_path, "madmin"), width=250)
                             screenshot_ending: str = ".jpg"
-                            screen = "screenshot/madmin/screenshot_" + \
-                                str(pho) + screenshot_ending
+                            screen = "screenshot/madmin/screenshot_" + str(pho) + screenshot_ending
                             screens_phone.append(generate_phones(
                                 pho, add_text, adb_option, screen, filename, self._datetimeformat,
                                 dummy=False)
@@ -164,8 +161,7 @@ class control(object):
         filename = generate_device_screenshot_path(origin, devicemappings, self._args)
 
         if useadb == 'True' and self._adb_connect.make_screenshot(adb, origin, "jpg"):
-            self._logger.info(
-                'MADMin: ADB screenshot successfully ({})', str(origin))
+            self._logger.info('MADMin: ADB screenshot successfully ({})', str(origin))
         else:
             self.generate_screenshot(origin)
 
@@ -209,8 +205,7 @@ class control(object):
         adb = devicemappings.get(origin, {}).get('adb', False)
 
         if useadb == 'True' and self._adb_connect.make_screenclick(adb, origin, real_click_x, real_click_y):
-            self._logger.info(
-                'MADMin: ADB screenclick successfully ({})', str(origin))
+            self._logger.info('MADMin: ADB screenclick successfully ({})', str(origin))
         else:
             self._logger.info('MADMin WS Click x:{} y:{} ({})', str(
                 real_click_x), str(real_click_y), str(origin))
@@ -271,18 +266,15 @@ class control(object):
         self._logger.info('MADmin: Restart Pogo ({})', str(origin))
         if useadb == 'True' and \
                 self._adb_connect.send_shell_command(adb, origin, "am force-stop com.nianticlabs.pokemongo"):
-            self._logger.info(
-                'MADMin: ADB shell force-stop game command successfully ({})', str(origin))
+            self._logger.info('MADMin: ADB shell force-stop game command successfully ({})', str(origin))
             if restart:
                 time.sleep(1)
                 started = self._adb_connect.send_shell_command(adb, origin,
                                                                "am start com.nianticlabs.pokemongo")
                 if started:
-                    self._logger.info(
-                        'MADMin: ADB shell start game command successfully ({})', str(origin))
+                    self._logger.info('MADMin: ADB shell start game command successfully ({})', str(origin))
                 else:
-                    self._logger.error(
-                        'MADMin: ADB shell start game command failed ({})', str(origin))
+                    self._logger.error('MADMin: ADB shell start game command failed ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             if restart:
@@ -294,8 +286,7 @@ class control(object):
                 self._logger.info('MADMin: trying to stop game on {}', str(origin))
                 temp_comm.stop_app("com.nianticlabs.pokemongo")
 
-            self._logger.info(
-                'MADMin: WS command successfully ({})', str(origin))
+            self._logger.info('MADMin: WS command successfully ({})', str(origin))
         time.sleep(2)
         return self.take_screenshot(origin, useadb)
 
@@ -404,8 +395,7 @@ class control(object):
         elif command == 'back':
             cmd = "input keyevent 4"
         if useadb == 'True' and self._adb_connect.send_shell_command(adb, origin, cmd):
-            self._logger.info(
-                'MADMin: ADB shell command successfully ({})', str(origin))
+            self._logger.info('MADMin: ADB shell command successfully ({})', str(origin))
         else:
             temp_comm = self._ws_server.get_origin_communicator(origin)
             if command == 'home':
@@ -450,8 +440,7 @@ class control(object):
         origin = request.args.get('origin', False)
         useadb = request.args.get('adb', False)
         return render_template('uploaded_files.html',
-                               responsive=str(
-                                   self._args.madmin_noresponsive).lower(),
+                               responsive=str(self._args.madmin_noresponsive).lower(),
                                title="Uploaded Files", origin=origin, adb=useadb)
 
     @auth_required

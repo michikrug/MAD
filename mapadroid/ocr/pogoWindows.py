@@ -107,8 +107,7 @@ class PogoWindows:
 
         gpsError = col[0:int(math.floor(height / 7)), 0:width]
 
-        tempPathColoured = self.temp_dir_path + \
-            "/" + str(identifier) + "_gpsError.png"
+        tempPathColoured = self.temp_dir_path + "/" + str(identifier) + "_gpsError.png"
         cv2.imwrite(tempPathColoured, gpsError)
 
         try:
@@ -247,16 +246,14 @@ class PogoWindows:
 
     def get_trash_click_positions(self, filename, full_screen=False):
         if not os.path.isfile(filename):
-            logger.error(
-                "get_trash_click_positions: {} does not exist", str(filename))
+            logger.error("get_trash_click_positions: {} does not exist", str(filename))
             return None
 
         return self.__thread_pool.apply_async(trash_image_matching, (filename, full_screen,)).get()
 
     def read_amount_raid_circles(self, filename, identifier, communicator):
         if not os.path.isfile(filename):
-            logger.error(
-                "read_amount_raid_circles: {} does not exist", str(filename))
+            logger.error("read_amount_raid_circles: {} does not exist", str(filename))
             return 0
 
         return self.__thread_pool.apply_async(self.__internal_read_amount_raid_circles,
@@ -268,8 +265,7 @@ class PogoWindows:
             # no raidcount (orange circle) present...
             return 0
 
-        circle = self.__read_circle_count(
-            filename, identifier, 4.7, commuicator)
+        circle = self.__read_circle_count(filename, identifier, 4.7, commuicator)
 
         if circle > 6:
             circle = 6
@@ -328,6 +324,7 @@ class PogoWindows:
         # kernel = np.zeros(shape=(2, 2), dtype=np.uint8)
         edges = cv2.morphologyEx(edges, cv2.MORPH_GRADIENT, kernel)
 
+        maxLineGap = 50
         lineCount = 0
         lines = []
         _x = 0
@@ -593,6 +590,7 @@ class PogoWindows:
 
         try:
             image = cv2.imread(filename)
+            height, width, _ = image.shape
         except Exception as e:
             logger.error("Screenshot corrupted: {}", e)
             return False
@@ -600,14 +598,15 @@ class PogoWindows:
         cv2.imwrite(os.path.join(self.temp_dir_path,
                                  str(identifier) + '_exitcircle.jpg'), image)
 
-        return self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_exitcircle.jpg'), identifier,
-                                        float(radiusratio), communicator, xcord=False, crop=True, click=True,
-                                        canny=True) > 0
+        if self.__read_circle_count(os.path.join(self.temp_dir_path, str(identifier) + '_exitcircle.jpg'),
+                                    identifier,
+                                    float(radiusratio), communicator, xcord=False, crop=True, click=True,
+                                    canny=True) > 0:
+            return True
 
     def check_close_except_nearby_button(self, filename, identifier, communicator, close_raid=False):
         if not os.path.isfile(filename):
-            logger.error(
-                "check_close_except_nearby_button: {} does not exist", str(filename))
+            logger.error("check_close_except_nearby_button: {} does not exist", str(filename))
             return False
 
         return self.__thread_pool.apply_async(self.__internal_check_close_except_nearby_button,
@@ -680,8 +679,7 @@ class PogoWindows:
 
     def __internal_get_inventory_text(self, filename, identifier, x1, x2, y1, y2) -> Optional[str]:
         screenshot_read = cv2.imread(filename)
-        temp_path_item = self.temp_dir_path + \
-            "/" + str(identifier) + "_inventory.png"
+        temp_path_item = self.temp_dir_path + "/" + str(identifier) + "_inventory.png"
         h = x1 - x2
         w = y1 - y2
         gray = cv2.cvtColor(screenshot_read, cv2.COLOR_BGR2GRAY)
@@ -708,8 +706,7 @@ class PogoWindows:
 
     def check_pogo_mainscreen(self, filename, identifier):
         if not os.path.isfile(filename):
-            logger.error(
-                "check_pogo_mainscreen: {} does not exist", str(filename))
+            logger.error("check_pogo_mainscreen: {} does not exist", str(filename))
             return False
 
         return self.__thread_pool.apply_async(self.__internal_check_pogo_mainscreen,

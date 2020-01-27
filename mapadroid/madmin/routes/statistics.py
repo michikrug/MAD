@@ -434,8 +434,7 @@ class statistics(object):
 
         data = self._db_stats_reader.get_avg_data_time(minutes=minutes, worker=worker)
         for dat in data:
-            dtime = datetime.datetime.fromtimestamp(
-                dat[0]).strftime(self._datetimeformat)
+            dtime = datetime.datetime.fromtimestamp(dat[0]).strftime(self._datetimeformat)
             locations_avg.append({'dtime': dtime, 'ok_locations': dat[3], 'avg_datareceive': float(dat[4]),
                                   'transporttype': dat[1], 'type': dat[5]})
 
@@ -475,8 +474,7 @@ class statistics(object):
         detections_raw = []
         data = self._db_stats_reader.get_detection_raw(minutes=minutes, worker=worker)
         for dat in data:
-            detections_raw.append(
-                {'type': dat[1], 'id': dat[2], 'count': dat[3]})
+            detections_raw.append({'type': dat[1], 'id': dat[2], 'count': dat[3]})
 
         # location raw
         location_raw = []
@@ -486,8 +484,7 @@ class statistics(object):
         data = self._db_stats_reader.get_location_raw(minutes=minutes, worker=worker)
         for dat in data:
             if last_lat != 0 and last_lng != 0:
-                distance = round(get_distance_of_two_points_in_meters(
-                    last_lat, last_lng, dat[1], dat[2]), 2)
+                distance = round(get_distance_of_two_points_in_meters(last_lat, last_lng, dat[1], dat[2]), 2)
                 last_lat = dat[1]
                 last_lng = dat[2]
             if last_lat == 0 and last_lng == 0:

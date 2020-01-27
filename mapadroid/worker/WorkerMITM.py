@@ -48,8 +48,7 @@ class WorkerMITM(MITMBase):
         if not self._mapping_manager.routemanager_present(self._routemanager_name) \
                 or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
-        routemanager_settings = self._mapping_manager.routemanager_get_settings(
-            self._routemanager_name)
+        routemanager_settings = self._mapping_manager.routemanager_get_settings(self._routemanager_name)
         # get the distance from our current position (last) to the next gym (cur)
         distance = get_distance_of_two_points_in_meters(float(self.last_location.lat),
                                                         float(self.last_location.lng),
@@ -73,8 +72,7 @@ class WorkerMITM(MITMBase):
             # the time we will take as a starting point to wait for data...
             cur_time = math.floor(time.time())
 
-            delay_used = self.get_devicesettings_value(
-                'post_teleport_delay', 7)
+            delay_used = self.get_devicesettings_value('post_teleport_delay', 7)
             # Test for cooldown / teleported distance TODO: check this block...
             if self.get_devicesettings_value('cool_down_sleep', False):
                 if distance > 10000:
@@ -86,8 +84,7 @@ class WorkerMITM(MITMBase):
                 logger.debug(
                     "Need more sleep after Teleport: {} seconds!", str(delay_used))
                 # curTime = math.floor(time.time())  # the time we will take as a starting point to wait for data...
-            walk_distance_post_teleport = self.get_devicesettings_value(
-                'walk_after_teleport_distance', 0)
+            walk_distance_post_teleport = self.get_devicesettings_value('walk_after_teleport_distance', 0)
             if 0 < walk_distance_post_teleport < distance:
                 # TODO: actually use to_walk for distance
                 lat_offset, lng_offset = get_lat_lng_offsets_by_distance(
@@ -140,8 +137,7 @@ class WorkerMITM(MITMBase):
         injected_settings = {}
 
         # don't try catch here, the injection settings update is called in the main loop anyway...
-        routemanager_mode = self._mapping_manager.routemanager_get_mode(
-            self._routemanager_name)
+        routemanager_mode = self._mapping_manager.routemanager_get_mode(self._routemanager_name)
 
         ids_iv = []
         if routemanager_mode is None:
@@ -150,22 +146,19 @@ class WorkerMITM(MITMBase):
             scanmode = "nothing"
         elif routemanager_mode == "mon_mitm":
             scanmode = "mons"
-            routemanager_settings = self._mapping_manager.routemanager_get_settings(
-                self._routemanager_name)
+            routemanager_settings = self._mapping_manager.routemanager_get_settings(self._routemanager_name)
             if routemanager_settings is not None:
                 ids_iv = self._mapping_manager.get_monlist(routemanager_settings.get("mon_ids_iv", None),
                                                            self._routemanager_name)
         elif routemanager_mode == "raids_mitm":
             scanmode = "raids"
-            routemanager_settings = self._mapping_manager.routemanager_get_settings(
-                self._routemanager_name)
+            routemanager_settings = self._mapping_manager.routemanager_get_settings(self._routemanager_name)
             if routemanager_settings is not None:
                 ids_iv = self._mapping_manager.get_monlist(routemanager_settings.get("mon_ids_iv", None),
                                                            self._routemanager_name)
         elif routemanager_mode == "iv_mitm":
             scanmode = "ivs"
-            ids_iv = self._mapping_manager.routemanager_get_encounter_ids_left(
-                self._routemanager_name)
+            ids_iv = self._mapping_manager.routemanager_get_encounter_ids_left(self._routemanager_name)
         else:
             # TODO: should we throw an exception here?
             ids_iv = []
@@ -217,8 +210,7 @@ class WorkerMITM(MITMBase):
             # TODO: int vs str-key?
             latest_proto = latest.get(proto_to_wait_for, None)
 
-            mode = self._mapping_manager.routemanager_get_mode(
-                self._routemanager_name)
+            mode = self._mapping_manager.routemanager_get_mode(self._routemanager_name)
             latest_timestamp = latest_proto.get("timestamp", 0)
             logger.debug("Latest timestamp: {} vs. timestamp waited for: {}",
                          datetime.fromtimestamp(latest_timestamp), datetime.fromtimestamp(timestamp))

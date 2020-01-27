@@ -49,8 +49,7 @@ class WorkerBase(AbstractWorker):
         self.loop_tid = None
         self._async_io_looper_thread = None
         self._location_count = 0
-        self._init: bool = self._mapping_manager.routemanager_get_init(
-            self._routemanager_name)
+        self._init: bool = self._mapping_manager.routemanager_get_init(self._routemanager_name)
         self._walker = walker
 
         self._lastScreenshotTaken = 0
@@ -73,8 +72,7 @@ class WorkerBase(AbstractWorker):
         self._loginerrorcounter: int = 0
 
         self.current_location = Location(0.0, 0.0)
-        self.last_location = self.get_devicesettings_value(
-            "last_location", None)
+        self.last_location = self.get_devicesettings_value("last_location", None)
 
         if self.last_location is None:
             self.last_location = Location(0.0, 0.0)
@@ -890,8 +888,7 @@ class WorkerBase(AbstractWorker):
         if self.get_devicesettings_value("screenshot_type", "jpeg") == "png":
             screenshot_type = ScreenshotType.PNG
 
-        screenshot_quality: int = self.get_devicesettings_value(
-            "screenshot_quality", 80)
+        screenshot_quality: int = self.get_devicesettings_value("screenshot_quality", 80)
 
         take_screenshot = self._communicator.get_screenshot(self.get_screenshot_path(fileaddon=errorscreen),
                                                             screenshot_quality, screenshot_type)
@@ -961,11 +958,9 @@ class WorkerBase(AbstractWorker):
                 time.sleep(5)
                 found = True
 
-            logger.debug(
-                "_check_pogo_main_screen: Previous checks found popups: {}", str(found))
+            logger.debug("_check_pogo_main_screen: Previous checks found popups: {}", str(found))
 
-            self._takeScreenshot(delayBefore=self.get_devicesettings_value(
-                "post_screenshot_delay", 1))
+            self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1))
 
             attempts += 1
         logger.debug("_check_pogo_main_screen: done")
@@ -1010,8 +1005,7 @@ class WorkerBase(AbstractWorker):
             return False
 
         if os.path.isdir(self.get_screenshot_path()):
-            logger.error(
-                "checkPogoButton: screenshot.png is not a file/corrupted")
+            logger.error("checkPogoButton: screenshot.png is not a file/corrupted")
             return False
 
         logger.debug("checkPogoButton: checking for buttons")
@@ -1031,10 +1025,8 @@ class WorkerBase(AbstractWorker):
 
     def _wait_pogo_start_delay(self):
         delay_count: int = 0
-        pogo_start_delay: int = self.get_devicesettings_value(
-            "post_pogo_start_delay", 60)
-        logger.info('Waiting for pogo start: {} seconds',
-                    str(pogo_start_delay))
+        pogo_start_delay: int = self.get_devicesettings_value("post_pogo_start_delay", 60)
+        logger.info('Waiting for pogo start: {} seconds', str(pogo_start_delay))
 
         while delay_count <= pogo_start_delay:
             if not self._mapping_manager.routemanager_present(self._routemanager_name) \
@@ -1057,8 +1049,7 @@ class WorkerBase(AbstractWorker):
                 return False
 
         if os.path.isdir(self.get_screenshot_path()):
-            logger.error(
-                "checkPogoClose: screenshot.png is not a file/corrupted")
+            logger.error("checkPogoClose: screenshot.png is not a file/corrupted")
             return False
 
         logger.debug("checkPogoClose: checking for CloseX")

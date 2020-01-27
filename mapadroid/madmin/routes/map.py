@@ -68,10 +68,8 @@ class map(object):
         positions = []
         devicemappings = self._mapping_manager.get_all_devicemappings()
         for name, values in devicemappings.items():
-            lat = values.get("settings").get(
-                "last_location", Location(0.0, 0.0)).lat
-            lon = values.get("settings").get(
-                "last_location", Location(0.0, 0.0)).lng
+            lat = values.get("settings").get("last_location", Location(0.0, 0.0)).lat
+            lon = values.get("settings").get("last_location", Location(0.0, 0.0)).lng
 
             worker = {
                 "name": str(name),
@@ -151,8 +149,7 @@ class map(object):
 
     @auth_required
     def get_spawns(self):
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
-            request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
 
         coords = []
@@ -187,8 +184,7 @@ class map(object):
 
     @auth_required
     def get_gymcoords(self):
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
-            request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
 
         coords = []
@@ -296,8 +292,7 @@ class map(object):
 
     @auth_required
     def get_cells(self):
-        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(
-            request)
+        neLat, neLon, swLat, swLon, oNeLat, oNeLon, oSwLat, oSwLon = getBoundParameter(request)
         timestamp = request.args.get("timestamp", None)
 
         data = self._db.get_cells_in_rectangle(

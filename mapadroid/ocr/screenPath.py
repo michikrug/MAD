@@ -56,8 +56,7 @@ class WordToScreenMatching(object):
             for account in temp_accounts:
                 ptc_temp = account.split(',')
                 if 2 < len(ptc_temp) > 2:
-                    logger.warning(
-                        'Cannot use this account (Wrong format!): {}'.format(str(account)))
+                    logger.warning('Cannot use this account (Wrong format!): {}'.format(str(account)))
                 username = ptc_temp[0]
                 password = ptc_temp[1]
                 self._PTC_accounts.append(Login_PTC(username, password))
@@ -497,10 +496,8 @@ class WordToScreenMatching(object):
                     bounds = item.attrib['bounds']
                     logger.debug("Bounds {}", str(item.attrib['bounds']))
                     match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
-                    click_x = int(match.group(1)) + \
-                        ((int(match.group(3)) - int(match.group(1))) / 2)
-                    click_y = int(match.group(2)) + \
-                        ((int(match.group(4)) - int(match.group(2))) / 2)
+                    click_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
+                    click_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
                     logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                     self._communicator.click(click_x, click_y)
                     time.sleep(2)
@@ -556,8 +553,7 @@ class WordToScreenMatching(object):
         if fileaddon:
             addon: str = "_" + str(time.time())
 
-        screenshot_filename = "screenshot_{}{}{}".format(
-            str(self._id), str(addon), screenshot_ending)
+        screenshot_filename = "screenshot_{}{}{}".format(str(self._id), str(addon), screenshot_ending)
 
         if fileaddon:
             logger.info("Creating debugscreen: {}".format(screenshot_filename))

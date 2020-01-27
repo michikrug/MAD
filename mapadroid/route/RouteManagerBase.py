@@ -880,8 +880,7 @@ class RouteManagerBase(ABC):
                     logger.info('Something happens with the worker - breakup')
                     return False
             i: int = 0
-            temp_total_round: collections.deque = collections.deque(
-                self._current_route_round_coords)
+            temp_total_round: collections.deque = collections.deque(self._current_route_round_coords)
 
             logger.debug("Workers in route: {}".format(str(self._routepool)))
             logger.debug("New subroute length: {}".format(str(new_subroute_length)))
@@ -1121,8 +1120,7 @@ class RouteManagerBase(ABC):
         return self._level
 
     def redo_stop(self, worker, lat, lon):
-        logger.info('Worker {} redo a unprocessed Stop ({}, {})'.format(
-            str(worker), str(lat), str(lon)))
+        logger.info('Worker {} redo a unprocessed Stop ({}, {})'.format(str(worker), str(lat), str(lon)))
         if worker in self._routepool:
             self._routepool[worker].has_prio_event = True
             self._routepool[worker].prio_coords = Location(lat, lon)

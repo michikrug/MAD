@@ -295,8 +295,7 @@ class testimage(object):
                         x2 - x1) + "px Coords - X: " + str(x1) + " " + str(x2) + " Y: " + str(y1) + " " + str(
                         y2))
 
-                    cv2.line(filename, (int(x1), int(y1)),
-                             (int(x2), int(y2)), (255, 0, 0), 5)
+                    cv2.line(filename, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 5)
 
         if 1 < lineCount <= 6:
             click_x = int(((width - _x2) + ((_x2 - _x1) / 2)) /

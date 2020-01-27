@@ -94,8 +94,7 @@ class WebhookWorker:
                 )
                 continue
             else:
-                logger.debug(
-                    "Sending to webhook url: {} (Filter: {})", url, subTypes)
+                logger.debug("Sending to webhook url: {} (Filter: {})", url, subTypes)
 
             payload_list = self.__payload_chunk(
                 payloadToSend, self.__args.webhook_max_payload_size
@@ -103,8 +102,7 @@ class WebhookWorker:
 
             current_pl_num = 1
             for payload_chunk in payload_list:
-                logger.debug4("Python data for payload: {}",
-                              str(payload_chunk))
+                logger.debug4("Python data for payload: {}", str(payload_chunk))
                 logger.debug3("Payload: {}", str(json.dumps(payload_chunk)))
 
                 try:
@@ -139,8 +137,7 @@ class WebhookWorker:
                             "Successfully sent payload to webhook{}{}. Stats: {}",
                             whchunk_text,
                             whcount_text,
-                            json.dumps(
-                                self.__payload_type_count(payload_chunk)),
+                            json.dumps(self.__payload_type_count(payload_chunk)),
                         )
                 except Exception as e:
                     logger.warning(
@@ -194,15 +191,13 @@ class WebhookWorker:
                 "quest_task": quest["quest_task"],
                 "quest_condition": quest["quest_condition"].replace("'", '"').lower(),
                 "quest_template": quest["quest_template"],
-                "quest_reward": quest["quest_reward"],
             }
 
         # Other known type is Poracle/RDM compatible.
 
         # For some reason we aren't saving JSON in our databse, so we gotta replace ' with ".
         # Pray that we never save strings that contain ' inside them.
-        quest_conditions = json.loads(
-            quest["quest_condition"].replace("'", '"'))
+        quest_conditions = json.loads(quest["quest_condition"].replace("'", '"'))
         quest_condition = []
         quest_rewards = []
         a_quest_type = quest["quest_reward_type_raw"]
@@ -226,22 +221,19 @@ class WebhookWorker:
         for a_quest_condition in quest_conditions:
             # Quest condition for special type of pokemon.
             if "with_pokemon_type" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop(
-                    "with_pokemon_type")
+                a_quest_condition["info"] = a_quest_condition.pop("with_pokemon_type")
                 a_quest_condition["info"]["pokemon_type_ids"] = a_quest_condition[
                     "info"
                 ].pop("pokemon_type")
             # Quest condition for raid level(s).
             if "with_raid_level" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop(
-                    "with_raid_level")
+                a_quest_condition["info"] = a_quest_condition.pop("with_raid_level")
                 a_quest_condition["info"]["raid_levels"] = a_quest_condition[
                     "info"
                 ].pop("raid_level")
             # Quest condition for throw type.
             if "with_throw_type" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop(
-                    "with_throw_type")
+                a_quest_condition["info"] = a_quest_condition.pop("with_throw_type")
                 a_quest_condition["info"]["throw_type_id"] = a_quest_condition[
                     "info"
                 ].pop("throw_type")
@@ -253,8 +245,7 @@ class WebhookWorker:
                 )
             # Quest condition for catching specific mons.
             if "with_pokemon_category" in a_quest_condition:
-                a_quest_condition["info"] = a_quest_condition.pop(
-                    "with_pokemon_category")
+                a_quest_condition["info"] = a_quest_condition.pop("with_pokemon_category")
 
             quest_condition.append(a_quest_condition)
 
@@ -355,7 +346,7 @@ class WebhookWorker:
             if raid["url"] is not None and raid["url"]:
                 raid_payload["url"] = raid["url"]
 
-            if raid.get("weather_boosted_condition", None) is not None:
+            if raid["weather_boosted_condition"] is not None:
                 raid_payload["weather"] = raid["weather_boosted_condition"]
 
             if raid["form"] is not None:
@@ -407,8 +398,7 @@ class WebhookWorker:
             }
 
             # get rarity
-            pokemon_rarity = self.__rarity.rarity_by_id(
-                pokemonid=mon["pokemon_id"])
+            pokemon_rarity = self.__rarity.rarity_by_id(pokemonid=mon["pokemon_id"])
 
             if mon.get("cp_multiplier", None) is not None:
                 mon_payload["cp_multiplier"] = mon["cp_multiplier"]
@@ -535,13 +525,11 @@ class WebhookWorker:
         self.__IV_MON: List[int] = []
 
         for routemanager_name in mapping_manager.get_all_routemanager_names():
-            ids_iv_list: Optional[List[int]] = mapping_manager.routemanager_get_ids_iv(
-                routemanager_name)
+            ids_iv_list: Optional[List[int]] = mapping_manager.routemanager_get_ids_iv(routemanager_name)
 
             if ids_iv_list is not None:
                 # TODO check if area/routemanager is actually active before adding the IDs
-                self.__IV_MON = self.__IV_MON + \
-                    list(set(ids_iv_list) - set(self.__IV_MON))
+                self.__IV_MON = self.__IV_MON + list(set(ids_iv_list) - set(self.__IV_MON))
 
     def __build_excluded_areas(self, mapping_manager: MappingManager):
         self.__excluded_areas: List[GeofenceHelper] = []

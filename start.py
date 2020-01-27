@@ -120,8 +120,7 @@ def get_system_infos(db_wrapper):
         collected = None
         if args.stat_gc:
             collected = gc.collect()
-            logger.debug(
-                "Garbage collector: collected %d objects." % collected)
+            logger.debug("Garbage collector: collected %d objects." % collected)
         zero = datetime.datetime.utcnow()
         unixnow = calendar.timegm(zero.utctimetuple())
         db_wrapper.insert_usage(args.status_name, cpuUse,

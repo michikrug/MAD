@@ -298,8 +298,7 @@ class deviceUpdater(object):
                                 'Cannot start job {} on device {} - File/Job: {} - Device not connected (ID: {})'
                                 .format(str(jobtype), str(origin), str(file_), str(id_)))
                             self._globaljoblog[globalid]['laststatus'] = 'not connected'
-                            self.write_status_log(str(id_), field='laststatus',
-                                                  value='not connected')
+                            self.write_status_log(str(id_), field='laststatus', value='not connected')
                             self._globaljoblog[globalid]['lastjobid'] = id_
                             jobstatus = jobReturn.NOCONNECT
                             time.sleep(5)
@@ -328,8 +327,7 @@ class deviceUpdater(object):
                                         .format(str(jobtype), str(origin), str(file_), str(id_)))
                                     errorcount += 1
                                     self._globaljoblog[globalid]['laststatus'] = 'failure'
-                                    self.write_status_log(
-                                        str(id_), field='laststatus', value='failure')
+                                    self.write_status_log(str(id_), field='laststatus', value='failure')
                                     self._globaljoblog[globalid]['lastjobid'] = id_
                                     jobstatus = jobReturn.FAILURE
 
@@ -566,8 +564,7 @@ class deviceUpdater(object):
                 return ws_conn.start_app("com.nianticlabs.pokemongo")
             elif jobtype == jobType.PASSTHROUGH:
                 command = self._log[str(item)]['file']
-                returning = ws_conn.passthrough(command).replace(
-                    '\r', '').replace('\n', '').replace('  ', '')
+                returning = ws_conn.passthrough(command).replace('\r', '').replace('\n', '').replace('  ', '')
                 self.write_status_log(str(item), field='returning', value=returning)
                 self.set_returning(origin=self._log[str(item)]['origin'],
                                    fieldname=self._log[str(item)].get('fieldname'),
@@ -610,8 +607,7 @@ class deviceUpdater(object):
 
             logger.info("Send discord status for device {} (Job: {})".format(str(origin), str(file_)))
 
-            embed = DiscordEmbed(title='MAD Job Status',
-                                 description='Automatic Job processed', color=242424)
+            embed = DiscordEmbed(title='MAD Job Status', description='Automatic Job processed', color=242424)
             embed.set_author(name='MADBOT')
             embed.add_embed_field(name='Origin', value=origin)
             embed.add_embed_field(name='Jobname', value=file_)
@@ -655,8 +651,7 @@ class deviceUpdater(object):
                     self._globaljoblog[globalid]['algotype'] = autocommand.get('algotype', 'flex')
                     self._globaljoblog[globalid]['startwithinit'] = startwithinit
                     self._globaljoblog[globalid]['autojob'] = True
-                    self._globaljoblog[globalid]['redoonerror'] = autocommand.get(
-                        'redoonerror', False)
+                    self._globaljoblog[globalid]['redoonerror'] = autocommand.get('redoonerror', False)
 
                     self.preadd_job(origin=origin, job=job, id_=int(time.time()),
                                     type=str(jobType.CHAIN))

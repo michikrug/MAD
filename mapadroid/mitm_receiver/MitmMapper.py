@@ -49,8 +49,7 @@ class MitmMapper(object):
     def add_stats_to_process(self, client_id, stats, last_processed_timestamp):
         if self.__application_args.game_stats:
             with self.__playerstats_db_update_mutex:
-                self.__playerstats_db_update_queue.put(
-                    (client_id, stats, last_processed_timestamp))
+                self.__playerstats_db_update_queue.put((client_id, stats, last_processed_timestamp))
 
     def __internal_playerstats_db_update_consumer(self):
         try:
@@ -66,13 +65,10 @@ class MitmMapper(object):
                     continue
                 if next_item is not None:
                     client_id, stats, last_processed_timestamp = next_item
-                    logger.info(
-                        "Running stats processing on {}".format(str(client_id)))
-                    self.__process_stats(
-                        stats, client_id, last_processed_timestamp)
+                    logger.info("Running stats processing on {}".format(str(client_id)))
+                    self.__process_stats(stats, client_id, last_processed_timestamp)
         except Exception as e:
-            logger.error(
-                "Playerstats consumer stopping because of {}".format(str(e)))
+            logger.error("Playerstats consumer stopping because of {}".format(str(e)))
         logger.info("Shutting down Playerstats update consumer")
 
     def __process_stats(self, stats, client_id: int, last_processed_timestamp: float):
@@ -106,16 +102,14 @@ class MitmMapper(object):
         # self.__playerstats_db_update_queue.join()
 
     def get_mon_ids_iv(self, origin):
-        devicemapping_of_origin = self.__mapping_manager.get_devicemappings_of(
-            origin)
+        devicemapping_of_origin = self.__mapping_manager.get_devicemappings_of(origin)
         if devicemapping_of_origin is None:
             return []
         else:
             return devicemapping_of_origin.get("mon_ids_iv", [])
 
     def request_latest(self, origin, key=None):
-        logger.debug(
-            "Request latest called with origin {}".format(str(origin)))
+        logger.debug("Request latest called with origin {}".format(str(origin)))
         with self.__mapping_mutex:
             result = None
             retrieved = self.__mapping.get(origin, None)
@@ -140,8 +134,7 @@ class MitmMapper(object):
             timestamp_received_receiver = time.time()
 
         updated = False
-        logger.debug3(
-            "Trying to acquire lock and update proto {} received by {}".format(origin, key))
+        logger.debug3("Trying to acquire lock and update proto {} received by {}".format(origin, key))
         with self.__mapping_mutex:
             if origin not in self.__mapping.keys() and origin in self.__mapping_manager.get_all_devicemappings().keys():
                 logger.info("New device detected, {}.  Setting up the device configuration", origin)

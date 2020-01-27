@@ -109,8 +109,7 @@ def generate_device_screenshot_path(phone_name: str, device_mappings: dict, args
     screenshot_ending: str = ".jpg"
     if device_mappings[phone_name].get("screenshot_type", "jpeg") == "png":
         screenshot_ending = ".png"
-    screenshot_filename = "screenshot_{}{}".format(
-        phone_name, screenshot_ending)
+    screenshot_filename = "screenshot_{}{}".format(phone_name, screenshot_ending)
     return os.path.join(args.temp_path, screenshot_filename)
 
 

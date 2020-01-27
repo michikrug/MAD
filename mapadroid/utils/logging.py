@@ -102,8 +102,7 @@ def logLevel(arg_log_level, arg_debug_level):
 
     # Log level based on count(-v) verbosity arguments.
     # Limit it to allowed grades, starting at DEBUG.
-    debug_log_level_idx = next(key for key, (label, level)
-                               in enumerate(verbosity_levels) if label == 'DEBUG')
+    debug_log_level_idx = next(key for key, (label, level) in enumerate(verbosity_levels) if label == 'DEBUG')
 
     # Limit custom verbosity to existing grades.
     debug_levels = verbosity_levels[:debug_log_level_idx + 1]
@@ -145,8 +144,7 @@ class LogLevelChanger:
 # this is being used to intercept standard python logging to loguru
 class InterceptHandler(logging.Handler):
     def emit(self, record):
-        logger.opt(depth=6, exception=record.exc_info).log(
-            "DEBUG5", record.getMessage())
+        logger.opt(depth=6, exception=record.exc_info).log("DEBUG5", record.getMessage())
 
 
 logger.debug2 = lambda message, *args, **kwargs: logger.opt(depth=1).log("DEBUG2", message, *args, **kwargs)

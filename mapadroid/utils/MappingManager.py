@@ -166,8 +166,7 @@ class MappingManager:
 
     def __fetch_routemanager(self, routemanager_name: str) -> Optional[RouteManagerBase.RouteManagerBase]:
         with self.__mappings_mutex:
-            routemanager_dict: dict = self._routemanagers.get(
-                routemanager_name, None)
+            routemanager_dict: dict = self._routemanagers.get(routemanager_name, None)
             if routemanager_dict is not None:
                 return routemanager_dict.get("routemanager")
             else:
@@ -413,8 +412,7 @@ class MappingManager:
 
             if mode not in ("iv_mitm", "idle"):
                 coords = self.__fetch_coords(mode, geofence_helper,
-                                             coords_spawns_known=area.get(
-                                                 "coords_spawns_known", False),
+                                             coords_spawns_known=area.get("coords_spawns_known", False),
                                              init=area.get("init", False),
                                              range_init=mode_mapping.get(area_true.area_type, {}).get(
                                                  "range_init", 630),
@@ -513,12 +511,10 @@ class MappingManager:
             elif mode == "mon_mitm":
                 if coords_spawns_known:
                     logger.debug("Reading known Spawnpoints from DB")
-                    coords = self.__db_wrapper.get_detected_spawns(
-                        geofence_helper)
+                    coords = self.__db_wrapper.get_detected_spawns(geofence_helper)
                 else:
                     logger.debug("Reading unknown Spawnpoints from DB")
-                    coords = self.__db_wrapper.get_undetected_spawns(
-                        geofence_helper)
+                    coords = self.__db_wrapper.get_undetected_spawns(geofence_helper)
             elif mode == "pokestops":
                 coords = self.__db_wrapper.stops_from_db(geofence_helper)
             else:

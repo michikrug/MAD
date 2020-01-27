@@ -55,8 +55,7 @@ class WorkerConfigmode(AbstractWorker):
             position_type = self._mapping_manager.routemanager_get_position_type(self._routemanager_name,
                                                                                  self._origin)
             if position_type is None:
-                logger.warning(
-                    "Mappings/Routemanagers have changed, stopping worker to be created again")
+                logger.warning("Mappings/Routemanagers have changed, stopping worker to be created again")
                 self._stop_worker_event.set()
                 time.sleep(1)
             else:
@@ -220,8 +219,7 @@ class WorkerConfigmode(AbstractWorker):
 
     def _reboot(self):
         if not self.get_devicesettings_value("reboot", True):
-            logger.warning(
-                "Reboot command to be issued to device but reboot is disabled. Skipping reboot")
+            logger.warning("Reboot command to be issued to device but reboot is disabled. Skipping reboot")
             return True
         try:
             start_result = self._communicator.reboot()
@@ -236,10 +234,8 @@ class WorkerConfigmode(AbstractWorker):
 
     def _wait_pogo_start_delay(self):
         delay_count: int = 0
-        pogo_start_delay: int = self.get_devicesettings_value(
-            "post_pogo_start_delay", 60)
-        logger.info('Waiting for pogo start: {} seconds',
-                    str(pogo_start_delay))
+        pogo_start_delay: int = self.get_devicesettings_value("post_pogo_start_delay", 60)
+        logger.info('Waiting for pogo start: {} seconds', str(pogo_start_delay))
 
         while delay_count <= pogo_start_delay:
             if self._stop_worker_event.is_set():

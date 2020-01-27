@@ -125,8 +125,7 @@ class WorkerQuests(MITMBase):
                 or self._stop_worker_event.is_set():
             raise InternalStopWorkerException
 
-        routemanager_settings = self._mapping_manager.routemanager_get_settings(
-            self._routemanager_name)
+        routemanager_settings = self._mapping_manager.routemanager_get_settings(self._routemanager_name)
 
         distance = get_distance_of_two_points_in_meters(float(self.last_location.lat),
                                                         float(
@@ -150,14 +149,12 @@ class WorkerQuests(MITMBase):
             # the time we will take as a starting point to wait for data...
             cur_time = math.floor(time.time())
 
-            delay_used = self.get_devicesettings_value(
-                'post_teleport_delay', 7)
+            delay_used = self.get_devicesettings_value('post_teleport_delay', 7)
             speed = 16.67  # Speed can be 60 km/h up to distances of 3km
 
             if self.last_location.lat == 0.0 and self.last_location.lng == 0.0:
                 logger.info('Starting fresh round - using lower delay')
-                delay_used = self.get_devicesettings_value(
-                    'post_teleport_delay', 7)
+                delay_used = self.get_devicesettings_value('post_teleport_delay', 7)
             else:
                 if distance >= 1335000:
                     speed = 180.43  # Speed can be abt 650 km/h
@@ -257,8 +254,7 @@ class WorkerQuests(MITMBase):
             cur_time = math.floor(time.time())
             delay_used = self.get_devicesettings_value('post_walk_delay', 7)
 
-        walk_distance_post_teleport = self.get_devicesettings_value(
-            'walk_after_teleport_distance', 0)
+        walk_distance_post_teleport = self.get_devicesettings_value('walk_after_teleport_distance', 0)
         if 0 < walk_distance_post_teleport < distance:
             # TODO: actually use to_walk for distance
             lat_offset, lng_offset = get_lat_lng_offsets_by_distance(
@@ -284,8 +280,7 @@ class WorkerQuests(MITMBase):
                                             11)
             logger.debug("Done walking")
             time.sleep(1)
-            delay_used -= (to_walk / 3.05) - \
-                1.  # We already waited for a bit because of this walking part
+            delay_used -= (to_walk / 3.05) - 1.  # We already waited for a bit because of this walking part
             if delay_used < 0:
                 delay_used = 0
 
@@ -365,8 +360,7 @@ class WorkerQuests(MITMBase):
         position_type = self._mapping_manager.routemanager_get_position_type(self._routemanager_name,
                                                                              self._origin)
         if position_type is None:
-            logger.warning(
-                "Mappings/Routemanagers have changed, stopping worker to be created again")
+            logger.warning("Mappings/Routemanagers have changed, stopping worker to be created again")
             raise InternalStopWorkerException
 
         if self.get_devicesettings_value('rotate_on_lvl_30', False) and \
@@ -506,13 +500,11 @@ class WorkerQuests(MITMBase):
                         if self.similar(text, item_text) > 0.5:
                             match_one_item = True
                     if match_one_item:
-                        logger.info(
-                            'Could not delete this item - check next one')
+                        logger.info('Could not delete this item - check next one')
                         trash += 1
                     else:
                         logger.info('Could delete this item')
-                        self._communicator.click(
-                            int(trashcancheck[trash].x), int(trashcancheck[trash].y))
+                        self._communicator.click(int(trashcancheck[trash].x), int(trashcancheck[trash].y))
                         time.sleep(1 + int(delayadd))
 
                         self._communicator.touch_and_hold(
@@ -533,8 +525,7 @@ class WorkerQuests(MITMBase):
                                 stop_screen_clear.set()
                                 delete_allowed = True
                         else:
-                            logger.error(
-                                'Unknown error clearing out {}', str(item_text))
+                            logger.error('Unknown error clearing out {}', str(item_text))
                             stop_screen_clear.set()
                             stop_inventory_clear.set()
 
@@ -555,8 +546,7 @@ class WorkerQuests(MITMBase):
         injected_settings = {}
         scanmode = "quests"
         injected_settings["scanmode"] = scanmode
-        routemanager_settings = self._mapping_manager.routemanager_get_settings(
-            self._routemanager_name)
+        routemanager_settings = self._mapping_manager.routemanager_get_settings(self._routemanager_name)
         ids_iv: List[int] = []
         if routemanager_settings is not None:
             ids_iv = self._mapping_manager.get_monlist(routemanager_settings.get("mon_ids_iv", None),
@@ -701,8 +691,7 @@ class WorkerQuests(MITMBase):
                 self._turn_map(self._delay_add)
                 time.sleep(1)
             elif data_received == LatestReceivedType.UNDEFINED:
-                logger.info(
-                    'Getting timeout - or other unknown error. Try again')
+                logger.info('Getting timeout - or other unknown error. Try again')
                 if not self._checkPogoButton():
                     self._checkPogoClose(takescreen=True)
 
@@ -821,8 +810,7 @@ class WorkerQuests(MITMBase):
             if latest_timestamp >= timestamp:
                 # TODO: consider reseting timestamp here since we clearly received SOMETHING
                 latest_data = latest_proto.get("values", None)
-                logger.debug4(
-                    "Latest data received: {}".format(str(latest_data)))
+                logger.debug4("Latest data received: {}".format(str(latest_data)))
                 if latest_data is None:
                     time.sleep(0.5)
                     return None

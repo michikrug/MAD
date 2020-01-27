@@ -55,7 +55,8 @@ class RouteManagerMon(RouteManagerBase):
             if not self._is_started:
                 self._is_started = True
                 logger.info("Starting routemanager {}", str(self.name))
-                if not self.init: self._start_priority_queue()
+                if not self.init:
+                    self._start_priority_queue()
                 self._start_check_routepools()
                 self._init_route_queue()
                 self._first_round_finished = False

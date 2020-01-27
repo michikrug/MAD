@@ -1,4 +1,5 @@
 from mapadroid.utils.logging import logger
+
 from . import resource
 
 

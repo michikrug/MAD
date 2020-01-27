@@ -5,14 +5,13 @@ import re
 import time
 from datetime import datetime, timedelta
 from enum import Enum
-from multiprocessing import Queue, Event
+from multiprocessing import Event, Queue
 from queue import Empty
 from threading import RLock, Thread
 
 import requests
 
-from mapadroid.utils import apk_util
-from mapadroid.utils import global_variables
+from mapadroid.utils import apk_util, global_variables
 from mapadroid.utils.logging import logger
 
 
@@ -119,7 +118,7 @@ class deviceUpdater(object):
                                                                                         'flex'),
                                                algovalue=self._globaljoblog[globalid].get('algovalue',
                                                                                           0)) \
-                       + waittime
+                    + waittime
 
                 processtime = datetime.timestamp(datetime.now() + timedelta(minutes=algo))
 
@@ -198,7 +197,7 @@ class deviceUpdater(object):
                     # breakup job because last job in chain is faulty
                     logger.error(
                         'Breakup job {} on device {} - File/Job: {} - previous job in chain was broken (ID: {})'
-                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                     self.write_status_log(str(id_), field='status', value='terminated')
                     self.send_webhook(id_=id_, status=jobReturn.TERMINATED)
                     self._current_job_device.remove(origin)
@@ -210,7 +209,7 @@ class deviceUpdater(object):
                         self._globaljoblog[globalid].get('autojob', False):
                     logger.debug(
                         'Autjob (no init run) {} on device {} - File/Job: {} - queued to real starttime (ID: {})'
-                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                     # just schedule job - not process the first time
                     processtime = datetime.timestamp(
                         datetime.now() + timedelta(
@@ -266,7 +265,7 @@ class deviceUpdater(object):
                     time.sleep(1)
                     logger.debug(
                         'Job {} on device {} - File/Job: {} - queued of processtime in future (ID: {})'
-                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                     self.add_job(globalid=globalid, origin=origin, file=file_, id_=id_, type=jobtype,
                                  counter=counter,
                                  status='future', waittime=waittime, processtime=processtime, redo=redo)
@@ -297,7 +296,7 @@ class deviceUpdater(object):
                             errorcount += 1
                             logger.error(
                                 'Cannot start job {} on device {} - File/Job: {} - Device not connected (ID: {})'
-                                    .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                .format(str(jobtype), str(origin), str(file_), str(id_)))
                             self._globaljoblog[globalid]['laststatus'] = 'not connected'
                             self.write_status_log(str(id_), field='laststatus', value='not connected')
                             self._globaljoblog[globalid]['lastjobid'] = id_
@@ -312,7 +311,7 @@ class deviceUpdater(object):
                                 if self.start_job_type(item, jobtype, temp_comm):
                                     logger.info(
                                         'Job {} executed successfully - Device {} - File/Job {} (ID: {})'
-                                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                                     if self._log[str(id_)]['status'] == 'not required':
                                         jobstatus = jobReturn.NOT_REQUIRED
                                     elif self._log[str(id_)]['status'] == 'not supported':
@@ -325,7 +324,7 @@ class deviceUpdater(object):
                                 else:
                                     logger.error(
                                         'Job {} could not be executed successfully - Device {} - File/Job {} (ID: {})'
-                                            .format(str(jobtype), str(origin), str(file_), str(id_)))
+                                        .format(str(jobtype), str(origin), str(file_), str(id_)))
                                     errorcount += 1
                                     self._globaljoblog[globalid]['laststatus'] = 'failure'
                                     self.write_status_log(str(id_), field='laststatus', value='failure')
@@ -346,11 +345,11 @@ class deviceUpdater(object):
                                 jobstatus = jobReturn.FAILURE
 
                     # check jobstatus and readd if possible
-                    if jobstatus not in SUCCESS_STATES and (jobstatus == jobReturn.NOCONNECT
-                                                            and self._args.job_restart_notconnect == 0):
+                    if jobstatus not in SUCCESS_STATES and (jobstatus == jobReturn.NOCONNECT and
+                                                            self._args.job_restart_notconnect == 0):
                         logger.error(
                             "Job for {} (File/Job: {} - Type {}) failed 3 times in row - aborting (ID: {})"
-                                .format(str(origin), str(file_), str(jobtype), str(id_)))
+                            .format(str(origin), str(file_), str(jobtype), str(id_)))
                         self._globaljoblog[globalid]['laststatus'] = 'faulty'
                         self.write_status_log(str(id_), field='status', value='faulty')
 
@@ -369,7 +368,7 @@ class deviceUpdater(object):
                     elif jobstatus == jobReturn.NOCONNECT and self._args.job_restart_notconnect > 0:
                         logger.error(
                             "Job for {} (File/Job: {} - Type {}) failed 3 times in row - requeued it (ID: {})"
-                                .format(str(origin), str(file_), str(jobtype), str(id_)))
+                            .format(str(origin), str(file_), str(jobtype), str(id_)))
                         processtime = datetime.timestamp(
                             datetime.now() + timedelta(minutes=self._args.job_restart_notconnect))
                         self.write_status_log(str(id_), field='processingdate', value=processtime)
@@ -586,7 +585,8 @@ class deviceUpdater(object):
 
         else:
             for job in self._log.copy():
-                if not self._log[job].get('redo', False): self.delete_log_id(job)
+                if not self._log[job].get('redo', False):
+                    self.delete_log_id(job)
 
     def send_webhook(self, id_, status):
         if not self._log[str(id_)]['auto']:

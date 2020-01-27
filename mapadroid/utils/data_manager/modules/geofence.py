@@ -2,6 +2,7 @@ import json
 
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.logging import logger
+
 from . import resource
 from .. import dm_exceptions
 

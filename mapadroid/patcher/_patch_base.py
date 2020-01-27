@@ -1,7 +1,7 @@
 # Base class for a patch.  Handles the patch and basic error handling.
-from mapadroid.utils.data_manager import DataManager
 from mapadroid.db import DbSchemaUpdater
 from mapadroid.db.DbWrapper import DbWrapper
+from mapadroid.utils.data_manager import DataManager
 
 
 class PatchBase(object):

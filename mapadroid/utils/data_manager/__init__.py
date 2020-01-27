@@ -9,6 +9,8 @@ from mapadroid.utils.data_manager.dm_exceptions import (
 
 # This is still known as the data manager but its more of a Resource Factory.  Its sole purpose is to produce a
 # single resource or a list of resources
+
+
 class DataManager(object):
     def __init__(self, dbc, instance_id):
         self.dbc = dbc

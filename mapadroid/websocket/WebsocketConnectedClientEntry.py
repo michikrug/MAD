@@ -3,14 +3,14 @@ import math
 import queue
 import time
 from threading import Thread
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import websockets
-
 from mapadroid.utils.CustomTypes import MessageTyping
 from mapadroid.utils.logging import logger
-from mapadroid.utils.madGlobals import WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException, \
-    WebsocketWorkerConnectionClosedException
+from mapadroid.utils.madGlobals import (WebsocketWorkerConnectionClosedException,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.worker.AbstractWorker import AbstractWorker
 
 

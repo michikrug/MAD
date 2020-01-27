@@ -4,11 +4,11 @@ import re
 import time
 from threading import Thread
 
-import apkutils
 import requests
 import urllib3
 from werkzeug.utils import secure_filename
 
+import apkutils
 from mapadroid.utils import global_variables
 from mapadroid.utils.logging import logger
 
@@ -407,6 +407,7 @@ def is_newer_version(first_ver: str, second_ver: str) -> bool:
     if not solution:
         first_is_newer = True
     return first_is_newer
+
 
 def convert_to_backend(apk_type=None, apk_arch=None):
     if apk_type and isinstance(apk_type, str):

@@ -1,7 +1,6 @@
 import copy
 
-from . import api_base
-from . import global_variables
+from . import api_base, global_variables
 
 
 class APIRouteCalc(api_base.APITestBase):

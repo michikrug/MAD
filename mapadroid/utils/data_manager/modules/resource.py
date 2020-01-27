@@ -1,8 +1,8 @@
 from collections import UserDict
 
 import mysql
-
 from mapadroid.utils.logging import logger
+
 from .. import dm_exceptions
 
 USER_READABLE_ERRORS = {

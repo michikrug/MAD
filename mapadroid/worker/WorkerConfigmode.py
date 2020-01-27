@@ -8,21 +8,23 @@ from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
 from mapadroid.utils.logging import logger
 from mapadroid.utils.madGlobals import (InternalStopWorkerException,
+                                        WebsocketWorkerConnectionClosedException,
                                         WebsocketWorkerRemovedException,
                                         WebsocketWorkerTimeoutException)
 from mapadroid.utils.routeutil import check_walker_value_type
-from mapadroid.websocket.communicator import Communicator
+from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
+from mapadroid.worker.AbstractWorker import AbstractWorker
 
 
-class WorkerConfigmode(object):
-    def __init__(self, args, dev_id, id, websocket_handler, walker, mapping_manager,
+class WorkerConfigmode(AbstractWorker):
+    def __init__(self, args, dev_id, origin, communicator: AbstractCommunicator, walker, mapping_manager,
                  mitm_mapper: MitmMapper, db_wrapper: DbWrapper, area_id: int, routemanager_name: str):
+        AbstractWorker.__init__(self, origin=origin, communicator=communicator)
+
         self._args = args
-        self._communicator = Communicator(
-            websocket_handler, id, self, args.websocket_command_timeout)
         self._stop_worker_event = Event()
         self._dev_id = dev_id
-        self._origin = id
+        self._origin = origin
         self._routemanager_name = routemanager_name
         self._area_id = area_id
         self._walker = walker
@@ -62,7 +64,7 @@ class WorkerConfigmode(object):
         self.set_devicesettings_value('finished', True)
         self._mapping_manager.unregister_worker_from_routemanager(self._routemanager_name, self._origin)
         try:
-            self._communicator.cleanup_websocket()
+            self._communicator.cleanup()
         finally:
             logger.info("Internal cleanup of {} finished", str(self._origin))
         return
@@ -74,7 +76,10 @@ class WorkerConfigmode(object):
             self._stop_worker_event.set()
             logger.warning("Worker {} stop called", str(self._origin))
 
-    def set_geofix_sleeptime(self, sleeptime):
+    def is_stopping(self) -> bool:
+        return self._stop_worker_event.is_set()
+
+    def set_geofix_sleeptime(self, sleeptime: int):
         return True
 
     def set_job_activated(self):
@@ -84,6 +89,8 @@ class WorkerConfigmode(object):
         return True
 
     def check_walker(self):
+        if self._walker is None:
+            return True
         mode = self._walker['walkertype']
         if mode == "countdown":
             logger.info("Checking walker mode 'countdown'")
@@ -143,7 +150,8 @@ class WorkerConfigmode(object):
             if killpogo:
                 try:
                     self._start_pogo()
-                except (WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException):
+                except (WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException,
+                        WebsocketWorkerConnectionClosedException):
                     logger.error("Timeout during init of worker {}", str(self._origin))
             return False
         else:
@@ -152,37 +160,36 @@ class WorkerConfigmode(object):
 
     def _stop_pogo(self):
         attempts = 0
-        stop_result = self._communicator.stopApp("com.nianticlabs.pokemongo")
-        pogoTopmost = self._communicator.isPogoTopmost()
+        stop_result = self._communicator.stop_app("com.nianticlabs.pokemongo")
+        pogoTopmost = self._communicator.is_pogo_topmost()
         while pogoTopmost:
             attempts += 1
             if attempts > 10:
                 return False
-            stop_result = self._communicator.stopApp(
+            stop_result = self._communicator.stop_app(
                 "com.nianticlabs.pokemongo")
             time.sleep(1)
-            pogoTopmost = self._communicator.isPogoTopmost()
+            pogoTopmost = self._communicator.is_pogo_topmost()
         return stop_result
 
     def _start_pogo(self):
-        pogo_topmost = self._communicator.isPogoTopmost()
+        pogo_topmost = self._communicator.is_pogo_topmost()
         if pogo_topmost:
             return True
 
-        if not self._communicator.isScreenOn():
-            self._communicator.startApp("de.grennith.rgc.remotegpscontroller")
+        if not self._communicator.is_screen_on():
+            self._communicator.start_app("de.grennith.rgc.remotegpscontroller")
             logger.warning("Turning screen on")
-            self._communicator.turnScreenOn()
-            time.sleep(self.get_devicesettings_value(
-                "post_turn_screen_on_delay", 7))
+            self._communicator.turn_screen_on()
+            time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 7))
 
         start_result = False
         while not pogo_topmost:
             self._mitm_mapper.set_injection_status(self._origin, False)
-            start_result = self._communicator.startApp(
+            start_result = self._communicator.start_app(
                 "com.nianticlabs.pokemongo")
             time.sleep(1)
-            pogo_topmost = self._communicator.isPogoTopmost()
+            pogo_topmost = self._communicator.is_pogo_topmost()
 
         reached_raidtab = False
         self._wait_pogo_start_delay()
@@ -218,7 +225,7 @@ class WorkerConfigmode(object):
             return True
         try:
             start_result = self._communicator.reboot()
-        except WebsocketWorkerRemovedException:
+        except (WebsocketWorkerRemovedException, WebsocketWorkerConnectionClosedException):
             logger.error(
                 "Could not reboot due to client already having disconnected")
             start_result = False
@@ -240,3 +247,7 @@ class WorkerConfigmode(object):
                 raise InternalStopWorkerException
             time.sleep(1)
             delay_count += 1
+
+    def trigger_check_research(self):
+        # not on configmode
+        return

@@ -164,6 +164,8 @@ class MitmMapper(object):
         return updated
 
     def set_injection_status(self, origin, status=True):
+        if origin not in self.__injected or not self.__injected[origin] and status is True:
+            logger.info("Worker {} is injected now", str(origin))
         self.__injected[origin] = status
 
     def get_injection_status(self, origin):
@@ -186,7 +188,7 @@ class MitmMapper(object):
         else:
             return -1
 
-    def get_poke_stop_visits(self, origin: str):
+    def get_poke_stop_visits(self, origin: str) -> int:
         if self.__playerstats.get(origin, None) is not None:
             return self.__playerstats.get(origin).get_poke_stop_visits()
         else:

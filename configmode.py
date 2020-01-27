@@ -4,12 +4,12 @@ from threading import Thread
 
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.db.DbWrapper import DbWrapper
+from mapadroid.patcher import MADPatcher
 from mapadroid.utils.data_manager import DataManager
 from mapadroid.utils.logging import initLogging, logger
 from mapadroid.utils.MappingManager import (MappingManager,
                                             MappingManagerManager)
 from mapadroid.utils.updater import deviceUpdater
-from mapadroid.utils.version import MADVersion
 from mapadroid.utils.walkerArgs import parseArgs
 from mapadroid.websocket.WebsocketServer import WebsocketServer
 
@@ -42,12 +42,13 @@ if __name__ == "__main__":
     create_folder(args.upload_path)
 
     db_wrapper, db_pool_manager = DbFactory.get_wrapper(args)
-
-    instance_id = db_wrapper.get_instance_id()
+    try:
+        instance_id = db_wrapper.get_instance_id()
+    except:
+        instance_id = None
     data_manager = DataManager(db_wrapper, instance_id)
+    MADPatcher(args, data_manager)
     data_manager.clear_on_boot()
-    version = MADVersion(args, data_manager)
-    version.get_version()
 
     MappingManagerManager.register('MappingManager', MappingManager)
     mapping_manager_manager = MappingManagerManager()
@@ -55,7 +56,8 @@ if __name__ == "__main__":
     mapping_manager_stop_event = mapping_manager_manager.Event()
     mapping_manager: MappingManager = MappingManager(db_wrapper, args, data_manager, True)
 
-    ws_server = WebsocketServer(args, None, db_wrapper, mapping_manager, None, data_manager, configmode=True)
+    ws_server = WebsocketServer(args=args, mitm_mapper=None, db_wrapper=db_wrapper, mapping_manager=mapping_manager,
+                                pogo_window_manager=None, data_manager=data_manager, enable_configmode=True)
     t_ws = Thread(name='scanner', target=ws_server.start_server)
     t_ws.daemon = False
     t_ws.start()

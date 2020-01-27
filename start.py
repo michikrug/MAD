@@ -15,6 +15,7 @@ import psutil
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
+from mapadroid.patcher import MADPatcher
 from mapadroid.utils.data_manager import DataManager
 from mapadroid.utils.local_api import LocalAPI
 from mapadroid.utils.logging import initLogging, logger
@@ -23,7 +24,6 @@ from mapadroid.utils.MappingManager import (MappingManager,
                                             MappingManagerManager)
 from mapadroid.utils.rarity import Rarity
 from mapadroid.utils.updater import deviceUpdater
-from mapadroid.utils.version import MADVersion
 from mapadroid.utils.walkerArgs import parseArgs
 from mapadroid.websocket.WebsocketServer import WebsocketServer
 
@@ -155,23 +155,17 @@ if __name__ == "__main__":
     install_thread_excepthook()
 
     db_wrapper, db_pool_manager = DbFactory.get_wrapper(args)
-    instance_id = db_wrapper.get_instance_id()
+    try:
+        instance_id = db_wrapper.get_instance_id()
+    except:
+        instance_id = None
     data_manager = DataManager(db_wrapper, instance_id)
+    MADPatcher(args, data_manager)
     data_manager.clear_on_boot()
-    version = MADVersion(args, data_manager)
-    version.get_version()
 
     # create folders
-    create_folder(args.raidscreen_path)
     create_folder(args.file_path)
     create_folder(args.upload_path)
-
-    if args.only_ocr:
-        logger.error(
-            "OCR scanning support has been dropped. Please get PogoDroid "
-            "and scan using MITM methods."
-        )
-        sys.exit(1)
 
     if not args.only_scan and not args.only_routes:
         logger.error("No runmode selected. \nAllowed modes:\n"
@@ -184,11 +178,12 @@ if __name__ == "__main__":
 
     mapping_manager_manager = None
     mapping_manager: Optional[MappingManager] = None
-
+    pogoWindowManager = None
     ws_server = None
     t_ws = None
     t_file_watcher = None
     t_whw = None
+    device_Updater = None
 
     if args.only_scan or args.only_routes:
         MappingManagerManager.register('MappingManager', MappingManager)
@@ -208,7 +203,6 @@ if __name__ == "__main__":
             # TODO: shutdown managers properly...
             sys.exit(0)
 
-        pogoWindowManager = None
         jobstatus: dict = {}
         MitmMapperManager.register('MitmMapper', MitmMapper)
         mitm_mapper_manager = MitmMapperManager()
@@ -298,11 +292,6 @@ if __name__ == "__main__":
             terminate_mad.set()
             # now cleanup all threads...
             # TODO: check against args or init variables to None...
-            if t_whw is not None:
-                t_whw.join()
-            if ws_server is not None:
-                ws_server.stop_server()
-                t_ws.join()
             if mitm_receiver_process is not None:
                 # mitm_receiver_thread.kill()
                 logger.info("Trying to stop receiver")
@@ -312,6 +301,16 @@ if __name__ == "__main__":
                 logger.debug("Trying to join MITMReceiver")
                 mitm_receiver_process.join()
                 logger.debug("MITMReceiver joined")
+            if device_Updater is not None:
+                device_Updater.stop_updater()
+            if t_whw is not None:
+                logger.info("Waiting for webhook-thread to exit")
+                t_whw.join()
+            if ws_server is not None:
+                logger.info("Stopping websocket server")
+                ws_server.stop_server()
+                logger.info("Waiting for websocket-thread to exit")
+                t_ws.join()
             if mapping_manager_manager is not None:
                 mapping_manager_manager.shutdown()
             if mitm_mapper_manager is not None:

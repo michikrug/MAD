@@ -14,6 +14,7 @@ from mapadroid.route.RouteManagerFactory import RouteManagerFactory
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import logger
 from mapadroid.utils.s2Helper import S2Helper
+from mapadroid.worker.WorkerType import WorkerType
 
 mode_mapping = {
     "raids_mitm": {
@@ -45,7 +46,7 @@ mode_mapping = {
 class JoinQueue(object):
     def __init__(self, stop_trigger, mapping_manager):
         self._joinqueue: Queue = Queue()
-        self.__stop_file_watcher_event = stop_trigger
+        self.__shutdown_event = stop_trigger
         self._mapping_mananger = mapping_manager
         self.__route_join_thread: Thread = Thread(name='route_joiner',
                                                   target=self.__route_join, )
@@ -54,7 +55,7 @@ class JoinQueue(object):
 
     def __route_join(self):
         logger.info("Starting Route join Thread - safemode")
-        while not self.__stop_file_watcher_event.is_set():
+        while not self.__shutdown_event.is_set():
             try:
                 routejoin = self._joinqueue.get_nowait()
             except Empty:
@@ -89,18 +90,13 @@ class MappingManager:
         self._routemanagers: Optional[Dict[str, dict]] = None
         self._auths: Optional[dict] = None
         self._monlists: Optional[dict] = None
-        self.__stop_file_watcher_event: Event = Event()
-        self.join_routes_queue = JoinQueue(self.__stop_file_watcher_event, self)
+        self.__shutdown_event: Event = Event()
+        self.join_routes_queue = JoinQueue(self.__shutdown_event, self)
         self.__raw_json: Optional[dict] = None
         self.__mappings_mutex: Lock = Lock()
 
         self.update(full_lock=True)
 
-        if self.__args.auto_reload_config:
-            logger.info("Starting file watcher for mappings.json changes.")
-            self.__t_file_watcher = Thread(name='file_watcher', target=self.__file_watcher, )
-            self.__t_file_watcher.daemon = False
-            self.__t_file_watcher.start()
         self.__devicesettings_setter_queue: Queue = Queue()
         self.__devicesettings_setter_consumer_thread: Thread = Thread(name='devicesettings_setter_consumer',
                                                                       target=self.__devicesettings_setter_consumer, )
@@ -109,9 +105,6 @@ class MappingManager:
 
     def shutdown(self):
         logger.fatal("MappingManager exiting")
-        self.__stop_file_watcher_event.set()
-        self.__t_file_watcher.join()
-        self.__devicesettings_setter_consumer_thread.join()
 
     def get_auths(self) -> Optional[dict]:
         return self._auths
@@ -119,17 +112,12 @@ class MappingManager:
     def get_devicemappings_of(self, device_name: str) -> Optional[dict]:
         return self._devicemappings.get(device_name, None)
 
-    def set_devicemapping_value_of(self, device_name: str, key: str, value):
-        with self.__mappings_mutex:
-            if self._devicemappings.get(device_name, None) is not None:
-                self._devicemappings[device_name][key] = value
-
     def get_devicesettings_of(self, device_name: str) -> Optional[dict]:
         return self._devicemappings.get(device_name, None).get('settings', None)
 
     def __devicesettings_setter_consumer(self):
         logger.info("Starting Devicesettings consumer Thread")
-        while not self.__stop_file_watcher_event.is_set():
+        while not self.__shutdown_event.is_set():
             try:
                 set_settings = self.__devicesettings_setter_queue.get_nowait()
             except Empty:
@@ -267,9 +255,9 @@ class MappingManager:
         routemanager = self.__fetch_routemanager(routemanager_name)
         return routemanager.get_level_mode() if routemanager is not None else None
 
-    def routemanager_get_mode(self, routemanager_name: str) -> Optional[str]:
+    def routemanager_get_mode(self, routemanager_name: str) -> WorkerType:
         routemanager = self.__fetch_routemanager(routemanager_name)
-        return routemanager.get_mode() if routemanager is not None else None
+        return routemanager.get_mode() if routemanager is not None else WorkerType.UNDEFINED.value
 
     def routemanager_get_name(self, routemanager_name: str) -> Optional[str]:
         routemanager = self.__fetch_routemanager(routemanager_name)
@@ -308,6 +296,8 @@ class MappingManager:
         successful = False
         try:
             routemanager = self.__fetch_routemanager(routemanager_name)
+            if not routemanager:
+                return False
             active = False
             if routemanager._check_routepools_thread:
                 active = True
@@ -514,7 +504,12 @@ class MappingManager:
             if mode == "raids_mitm":
                 coords = self.__db_wrapper.gyms_from_db(geofence_helper)
                 if including_stops:
-                    coords.extend(self.__db_wrapper.stops_from_db(geofence_helper))
+                    try:
+                        stops = self.__db_wrapper.stops_from_db(geofence_helper)
+                        if stops:
+                            coords.extend(stops)
+                    except:
+                        pass
             elif mode == "mon_mitm":
                 if coords_spawns_known:
                     logger.debug("Reading known Spawnpoints from DB")
@@ -628,40 +623,6 @@ class MappingManager:
                 self._auths = self.__get_latest_auths()
 
         logger.info("Mappings have been updated")
-
-    def __file_watcher(self):
-        # We're on a 20-second timer.
-        refresh_time_sec = int(self.__args.auto_reload_delay)
-        filename = self.__args.mappings
-        logger.info('Mappings.json reload delay: {} seconds', refresh_time_sec)
-
-        while not self.__stop_file_watcher_event.is_set():
-            # Wait (x-1) seconds before refresh, min. 1s.
-            try:
-                time.sleep(max(1, refresh_time_sec - 1))
-            except KeyboardInterrupt:
-                logger.info("Mappings.json watch got interrupted, stopping")
-                break
-            try:
-                # Only refresh if the file has changed.
-                current_time_sec = time.time()
-                file_modified_time_sec = os.path.getmtime(filename)
-                time_diff_sec = current_time_sec - file_modified_time_sec
-
-                # File has changed in the last refresh_time_sec seconds.
-                if time_diff_sec < refresh_time_sec:
-                    logger.info(
-                        'Change found in {}. Updating device mappings.', filename)
-                    self.update()
-                else:
-                    logger.debug('No change found in {}.', filename)
-            except KeyboardInterrupt as e:
-                logger.info(
-                    "Got interrupt signal, stopping watching mappings.json")
-                break
-            except Exception as e:
-                logger.exception(
-                    'Exception occurred while updating device mappings: {}.', e)
 
     def get_all_devices(self):
         devices = []

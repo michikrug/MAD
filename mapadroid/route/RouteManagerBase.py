@@ -20,6 +20,7 @@ from mapadroid.utils.data_manager.modules.routecalc import RouteCalc
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.logging import logger
 from mapadroid.utils.walkerArgs import parseArgs
+from mapadroid.worker.WorkerType import WorkerType
 
 args = parseArgs()
 
@@ -65,7 +66,7 @@ class RouteManagerBase(ABC):
         self._max_radius: float = max_radius
         self._max_coords_within_radius: int = max_coords_within_radius
         self.settings: dict = settings
-        self.mode = mode
+        self.mode: WorkerType = mode
         self._is_started: bool = False
         self._first_started = False
         self._current_route_round_coords: List[Location] = []
@@ -355,7 +356,7 @@ class RouteManagerBase(ABC):
         for coord in new_route:
             calc_coords.append('%s,%s' % (coord['lat'], coord['lng']))
         self._route_resource['routefile'] = calc_coords
-        self._route_resource.save()
+        self._route_resource.save(update_time=True)
         connected_worker_count = len(self._workers_registered)
         if connected_worker_count > 0:
             for worker in self._workers_registered:
@@ -1104,7 +1105,7 @@ class RouteManagerBase(ABC):
     def get_init(self) -> bool:
         return self.init
 
-    def get_mode(self):
+    def get_mode(self) -> WorkerType:
         return self.mode
 
     def get_settings(self) -> Optional[dict]:

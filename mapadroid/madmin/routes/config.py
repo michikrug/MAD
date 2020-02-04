@@ -8,8 +8,6 @@ from flask_caching import Cache
 from mapadroid.data_manager.dm_exceptions import ModeNotSpecified, ModeUnknown
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils.adb import ADBConnect
-from mapadroid.utils.data_manager.dm_exceptions import (ModeNotSpecified,
-                                                        ModeUnknown)
 from mapadroid.utils.language import i8ln, open_json_file
 from mapadroid.utils.logging import logger
 from mapadroid.utils.MappingManager import MappingManager

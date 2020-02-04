@@ -1,13 +1,14 @@
 import json
 from typing import List, Optional
 
-from flask import (jsonify, render_template, request, redirect, url_for)
-from flask_caching import Cache
+from flask import jsonify, redirect, render_template, request, url_for
 
+from flask_caching import Cache
 from mapadroid.db.DbWrapper import DbWrapper
-from mapadroid.madmin.functions import (
-    auth_required, getCoordFloat, getBoundParameter, get_geofences, generate_coords_from_geofence
-)
+from mapadroid.madmin.functions import (auth_required,
+                                        generate_coords_from_geofence,
+                                        get_geofences, getBoundParameter,
+                                        getCoordFloat)
 from mapadroid.route.RouteManagerBase import RoutePoolEntry
 from mapadroid.utils import MappingManager
 from mapadroid.utils.collections import Location

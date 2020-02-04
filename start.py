@@ -1,38 +1,38 @@
+import calendar
+import datetime
+import gc
+import os
 import sys
+import time
+import unittest
+from multiprocessing import Process
+from threading import Thread, active_count
+from typing import Optional
+
+import pkg_resources
+
+import psutil
+from mapadroid.data_manager import DataManager
+from mapadroid.db.DbFactory import DbFactory
+from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
+from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
+from mapadroid.patcher import MADPatcher
+from mapadroid.utils.local_api import LocalAPI
+from mapadroid.utils.logging import initLogging, logger
+from mapadroid.utils.madGlobals import terminate_mad
+from mapadroid.utils.MappingManager import (MappingManager,
+                                            MappingManagerManager)
+from mapadroid.utils.rarity import Rarity
+from mapadroid.utils.updater import deviceUpdater
+from mapadroid.utils.walkerArgs import parseArgs
+from mapadroid.websocket.WebsocketServer import WebsocketServer
 
 py_version = sys.version_info
 if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
     print("MAD requires at least python 3.6! Your version: {}.{}"
           .format(py_version.major, py_version.minor))
     sys.exit(1)
-from multiprocessing import Process
-from typing import Optional
 
-import calendar
-import datetime
-import gc
-import os
-import pkg_resources
-import time
-from threading import Thread, active_count
-
-import psutil
-
-from mapadroid.utils.MappingManager import MappingManager, MappingManagerManager
-from mapadroid.utils.local_api import LocalAPI
-from mapadroid.db.DbFactory import DbFactory
-from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
-from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
-from mapadroid.utils.logging import initLogging, logger
-from mapadroid.utils.madGlobals import terminate_mad
-from mapadroid.utils.rarity import Rarity
-from mapadroid.patcher import MADPatcher
-from mapadroid.utils.walkerArgs import parseArgs
-from mapadroid.websocket.WebsocketServer import WebsocketServer
-from mapadroid.utils.updater import deviceUpdater
-from mapadroid.data_manager import DataManager
-
-import unittest
 
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language

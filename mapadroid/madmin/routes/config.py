@@ -5,6 +5,7 @@ import re
 from flask import Response, redirect, render_template, request, url_for
 
 from flask_caching import Cache
+from mapadroid.data_manager.dm_exceptions import ModeNotSpecified, ModeUnknown
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils.adb import ADBConnect
 from mapadroid.utils.data_manager.dm_exceptions import (ModeNotSpecified,

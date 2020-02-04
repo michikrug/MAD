@@ -12,11 +12,11 @@ from typing import Optional
 import pkg_resources
 
 import psutil
+from mapadroid.data_manager import DataManager
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
 from mapadroid.patcher import MADPatcher
-from mapadroid.utils.data_manager import DataManager
 from mapadroid.utils.local_api import LocalAPI
 from mapadroid.utils.logging import initLogging, logger
 from mapadroid.utils.madGlobals import terminate_mad
@@ -189,7 +189,7 @@ if __name__ == "__main__":
         mapping_manager_manager = MappingManagerManager()
         mapping_manager_manager.start()
         mapping_manager: MappingManager = mapping_manager_manager.MappingManager(db_wrapper, args,
-                                                                                 data_manager, ws_server,
+                                                                                 data_manager,
                                                                                  False)
         filename = args.mappings
         if args.only_routes:

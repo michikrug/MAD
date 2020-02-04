@@ -1,3 +1,4 @@
+var locinjectPane = null;
 var locInjectBtn = L.easyButton({
     position: "bottomright",
     states: [{
@@ -7,6 +8,8 @@ var locInjectBtn = L.easyButton({
         onClick: function (btn, map) {
             clickToScanActive = true;
             L.DomUtil.addClass(map._container, 'crosshair-cursor-enabled');
+            locInjectPane = map.createPane("locinject")
+            locInjectPane.style.pointerEvents = 'auto';
             btn.state('scanmode-deactivate');
         }
     }, {
@@ -16,6 +19,7 @@ var locInjectBtn = L.easyButton({
         onClick: function (btn, map) {
             clickToScanActive = false;
             L.DomUtil.removeClass(map._container, 'crosshair-cursor-enabled');
+            L.DomUtil.remove(locInjectPane);
             btn.state('scanmode-activate');
         }
     }]
@@ -41,6 +45,7 @@ $(document).on("hidden.bs.modal", "#injectionModal", function (e) {
     locInjectBtn.state("scanmode-activate");
     clickToScanActive = false;
     L.DomUtil.removeClass(map._container, 'crosshair-cursor-enabled');
+    L.DomUtil.remove(locInjectPane);
 });
 
 $(document).on("click", "#sendworker", function () {
@@ -148,6 +153,18 @@ new Vue({
         spawns: {},
         mons: {},
         cellupdates: {},
+        fetchers: {
+          workers: false,
+          gyms: false,
+          routes: false,
+          geofences: false,
+          spawns: false,
+          quests: false,
+          stops: false,
+          mons: false,
+          prioroutes: false,
+          cells: false
+        },
         layers: {
             stat: {
                 spawns: false,
@@ -350,7 +367,12 @@ new Vue({
         map_fetch_workers() {
             var $this = this;
 
-            axios.get("get_position").then(function (res) {
+            if (this.fetchers.workers == true) {
+              return;
+            }
+
+            this.fetchers.workers = true;
+            axios.get("get_workers").then(function (res) {
                 res.data.forEach(function (worker) {
                     var name = worker["name"];
 
@@ -379,6 +401,8 @@ new Vue({
                         }
                     }
                 });
+            }).finally(function() {
+              $this.fetchers.workers = false;
             });
         },
         map_fetch_gyms(urlFilter) {
@@ -388,6 +412,11 @@ new Vue({
                 return;
             }
 
+            if (this.fetchers.gyms == true) {
+              return;
+            }
+
+            this.fetchers.gyms = true;
             axios.get('get_gymcoords' + urlFilter).then(function (res) {
                 res.data.forEach(function (gym) {
                     switch (gym['team_id']) {
@@ -469,11 +498,18 @@ new Vue({
                         leaflet_data["raids"][gym["id"]].addTo(map);
                     }
                 });
+            }).finally(function() {
+              $this.fetchers.gyms = true;
             });
         },
         map_fetch_routes() {
             var $this = this;
 
+            if (this.fetchers.routes == true) {
+              return;
+            }
+
+            this.fetchers.routes = true;
             axios.get("get_route").then(function (res) {
                 res.data.forEach(function (route) {
                     var group = L.layerGroup();
@@ -499,6 +535,9 @@ new Vue({
                         mode = route.mode;
                     }
 
+                    let stack = []
+                    let processedCells = {};
+
                     route.coordinates.forEach(function (coord) {
                         circle = L.circle(coord, {
                             pane: "routes",
@@ -513,16 +552,59 @@ new Vue({
 
                         circle.addTo(group);
                         coords.push(circle);
-                    });
 
-                    Object.values(route.s2cells).forEach(function (cells) {
-                        L.polygon(cells, {
-                            pane: "routes",
+                        if (mode == "raids") {
+                          // super dirty workaround to get bounds
+                          // of a circle. The getbounds() function
+                          // is only available if it has been added
+                          // to the map.
+                          // See https://github.com/Leaflet/Leaflet/issues/4978
+                          circle.addTo(map);
+                          const bounds = circle.getBounds();
+                          circle.removeFrom(map);
+
+                          const centerCell = S2.S2Cell.FromLatLng(circle.getLatLng(), 15)
+                          processedCells[centerCell.toString()] = true
+                          stack.push(centerCell)
+                          L.polygon(centerCell.getCornerLatLngs(), {
                             color: color,
-                            opacity: 0.3,
+                            opacity: 0.5,
+                            weight: 1,
                             fillOpacity: 0,
-                            weight: 1
-                        }).addTo(group);
+                            interactive: false
+                          }).addTo(group);
+
+                          while (stack.length > 0) {
+                            const cell = stack.pop();
+                            const neighbors = cell.getNeighbors()
+                            neighbors.forEach(function (ncell, index) {
+                              if (processedCells[ncell.toString()] !== true) {
+                                const cornerLatLngs = ncell.getCornerLatLngs();
+
+                                for (let i = 0; i < 4; i++) {
+                                  const item = cornerLatLngs[i];
+                                  const distance = L.latLng(item.lat, item.lng).distanceTo(circle.getLatLng());
+                                  if (item.lat >= bounds.getSouthWest().lat
+                                      && item.lng >= bounds.getSouthWest().lng
+                                      && item.lat <= bounds.getNorthEast().lat
+                                      && item.lng <= bounds.getNorthEast().lng
+                                      && distance <= cradius) {
+                                    processedCells[ncell.toString()] = true;
+                                    stack.push(ncell);
+                                    L.polygon(ncell.getCornerLatLngs(), {
+                                      color: color,
+                                      opacity: 0.5,
+                                      weight: 1,
+                                      fillOpacity: 0,
+                                      interactive: false
+                                    }).addTo(group);
+                                    break
+                                  }
+                                }
+                              }
+                            })
+                          }
+                        }
                     });
 
                     var geojson = {
@@ -550,11 +632,18 @@ new Vue({
 
                     $this.$set($this.layers.dyn.routes, name, settings);
                 });
+            }).finally(function() {
+              $this.fetchers.routes = false;
             });
         },
         map_fetch_prioroutes() {
             var $this = this;
 
+            if (this.fetchers.prioroutes == true) {
+              return;
+            }
+
+            this.fetchers.prioroutes = true;
             axios.get("get_prioroute").then(function (res) {
                 res.data.forEach(function (route) {
                     var group = L.layerGroup();
@@ -638,6 +727,8 @@ new Vue({
 
                     $this.$set($this.layers.dyn.prioroutes, name, settings);
                 });
+            }).finally(function() {
+              $this.fetchers.prioroutes = false;
             });
         },
         map_fetch_spawns(urlFilter) {
@@ -647,6 +738,11 @@ new Vue({
                 return;
             }
 
+            if (this.fetchers.spawns == true) {
+              return;
+            }
+
+            this.fetchers.spawns = true;
             axios.get('get_spawns' + urlFilter).then(function (res) {
                 res.data.forEach(function (spawn) {
                     if (spawn['endtime'] !== null) {
@@ -717,6 +813,8 @@ new Vue({
                         }
                     }
                 });
+            }).finally(function() {
+              $this.fetchers.spawns = false;
             });
         },
         map_fetch_quests(urlFilter) {
@@ -726,6 +824,11 @@ new Vue({
                 return;
             }
 
+            if (this.fetchers.quests == true) {
+              return;
+            }
+
+            this.fetchers.quests = true;
             axios.get("get_quests" + urlFilter).then(function (res) {
                 res.data.forEach(function (quest) {
                     if ($this.quests[quest["pokestop_id"]]) {
@@ -746,6 +849,8 @@ new Vue({
                         leaflet_data["quests"][quest["pokestop_id"]].addTo(map);
                     }
                 });
+            }).finally(function() {
+              $this.fetchers.quests = false;
             });
         },
         map_fetch_stops(urlFilter) {
@@ -753,6 +858,12 @@ new Vue({
             if (!$this.layers.stat.stops) {
                 return;
             }
+
+            if (this.fetchers.stops == true) {
+              return;
+            }
+
+            this.fetchers.stops = true;
             axios.get("get_stops" + urlFilter).then(function (res) {
                 res.data.forEach(function (stop) {
                     var stop_id = stop["pokestop_id"];
@@ -775,10 +886,18 @@ new Vue({
                         leaflet_data["stops"][stop_id].addTo(map);
                     }
                 });
+            }).finally(function() {
+              $this.fetchers.stops = false;
             });
         },
         map_fetch_geofences() {
             var $this = this;
+
+            if (this.fetchers.geofences == true) {
+              return;
+            }
+
+            this.fetchers.geofences = true;
             axios.get('get_geofence').then(function (res) {
                 res.data.forEach(function (geofence) {
                     var group = L.layerGroup();
@@ -808,6 +927,8 @@ new Vue({
 
                     $this.$set($this.layers.dyn.geofences, name, settings);
                 });
+            }).finally(function() {
+              $this.fetchers.geofences = false;
             });
         },
         map_fetch_mons(urlFilter) {
@@ -817,6 +938,11 @@ new Vue({
                 return;
             }
 
+            if (this.fetchers.mons == true) {
+              return;
+            }
+
+            this.fetchers.mons = true;
             axios.get('get_map_mons' + urlFilter).then(function (res) {
                 res.data.forEach(function (mon) {
 
@@ -861,6 +987,8 @@ new Vue({
                         }
                     }
                 });
+            }).finally(function() {
+              $this.fetchers.mons = false;
             });
         },
         map_fetch_cells(urlFilter) {
@@ -870,6 +998,11 @@ new Vue({
                 return;
             }
 
+            if (this.fetchers.cells == true) {
+              return;
+            }
+
+            this.fetchers.cells = true;
             axios.get('get_cells' + urlFilter).then(function (res) {
                 const now = Math.round((new Date()).getTime() / 1000);
 
@@ -893,6 +1026,8 @@ new Vue({
                             .addTo(map);
                     }
                 })
+            }).finally(function() {
+              $this.fetchers.cells = false;
             });
         },
         changeDynamicLayers(type) {

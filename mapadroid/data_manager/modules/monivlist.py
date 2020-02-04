@@ -1,9 +1,12 @@
+from typing import List, Optional, Tuple
+
+import mysql.connector
 from mapadroid.utils.logging import logger
 
-from . import resource
+from .resource import Resource
 
 
-class MonIVList(resource.Resource):
+class MonIVList(Resource):
     table = 'settings_monivlist'
     name_field = 'monlist'
     primary_key = 'monlist_id'
@@ -33,7 +36,7 @@ class MonIVList(resource.Resource):
         }
     }
 
-    def get_dependencies(self):
+    def get_dependencies(self) -> List[Tuple[str, int]]:
         tables = ['settings_area_iv_mitm', 'settings_area_mon_mitm', 'settings_area_raids_mitm']
         sql = 'SELECT `area_id` FROM `%s` WHERE `monlist_id` = %%s'
         dependencies = []
@@ -43,13 +46,13 @@ class MonIVList(resource.Resource):
                 dependencies.append(('area', area_id))
         return dependencies
 
-    def _load(self):
+    def _load(self) -> None:
         super()._load()
         mon_query = "SELECT `mon_id` FROM `settings_monivlist_to_mon` WHERE `monlist_id` = %s ORDER BY `mon_order` ASC"
         mons = self._dbc.autofetch_column(mon_query, args=(self.identifier))
         self._data['fields']['mon_ids_iv'] = mons
 
-    def save(self, force_insert=False, ignore_issues=[]):
+    def save(self, force_insert: Optional[bool] = False, ignore_issues: Optional[List[str]] = []) -> int:
         self.presave_validation(ignore_issues=ignore_issues)
         core_data = {
             'monlist': self._data['fields']['monlist']
@@ -67,6 +70,6 @@ class MonIVList(resource.Resource):
             }
             try:
                 self._dbc.autoexec_insert('settings_monivlist_to_mon', mon_data)
-            except:
+            except mysql.connector.Error:
                 logger.info('Duplicate pokemon %s detected in list %s' % (mon, self.identifier,))
         return self.identifier

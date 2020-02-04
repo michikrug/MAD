@@ -1,9 +1,9 @@
 from mapadroid.utils.logging import logger
 
-from . import resource
+from .resource import Resource
 
 
-class Device(resource.Resource):
+class Device(Resource):
     table = 'settings_device'
     name_field = 'origin'
     primary_key = 'device_id'
@@ -95,7 +95,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Delay in seconds after a screenshot has been taken and about to be saved (Default: 2.0 / 7.0 - Task Dependent)",
+                    "description": "Delay in seconds after a screenshot has been taken and about to be saved (Default: "
+                                   "2.0 / 7.0 - Task Dependent)",
                     "expected": float
                 }
             },
@@ -119,7 +120,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Delay in minutes to wait before moving to the location of a hatched egg. Raidbosses do not necessarily appear immediately. (Default: 3.5)",
+                    "description": "Delay in minutes to wait before moving to the location of a hatched egg. Raidbosses"
+                                   " do not necessarily appear immediately. (Default: 3.5)",
                     "expected": float
                 }
             },
@@ -135,7 +137,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Number of seconds to tap the + button when clearing an inventory item. (Default: 3)",
+                    "description": "Number of seconds to tap the + button when clearing an inventory item. "
+                                   "(Default: 3)",
                     "expected": float
                 }
             },
@@ -143,7 +146,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Timeout in seconds while waiting for data after setting/reaching a location. (Default: 45)",
+                    "description": "Timeout in seconds while waiting for data after setting/reaching a location. "
+                                   "(Default: 45)",
                     "expected": float
                 }
             },
@@ -168,7 +172,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Restart device after restart Pogo N times. This value is doubled when init is active (Default: 3)",
+                    "description": "Restart device after restart Pogo N times. This value is doubled when init is "
+                                   "active (Default: 3)",
                     "expected": int
                 }
             },
@@ -176,7 +181,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Restart Pogo after reaching MITM Timeout N times. This value is doubled when init is active (Default: 5)",
+                    "description": "Restart Pogo after reaching MITM Timeout N times. This value is doubled when init "
+                                   "is active (Default: 5)",
                     "expected": int
                 }
             },
@@ -184,7 +190,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "The delay in seconds to wait after taking a screenshot to copy it and start the next (Default: 1)",
+                    "description": "The delay in seconds to wait after taking a screenshot to copy it and start the "
+                                   "next (Default: 1)",
                     "expected": float
                 }
             },
@@ -192,7 +199,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Adjust the x-axis click offset on devices with softbars and/or black upper bars. (+ right - left / Default: 0)",
+                    "description": "Adjust the x-axis click offset on devices with softbars and/or black upper bars. "
+                                   "(+ right - left / Default: 0)",
                     "expected": int
                 }
             },
@@ -200,7 +208,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Adjust the y-axis click offset on devices with softbars and/or black upper bars. (+ down - up / Default: 0)",
+                    "description": "Adjust the y-axis click offset on devices with softbars and/or black upper bars. "
+                                   "(+ down - up / Default: 0)",
                     "expected": int
                 }
             },
@@ -234,7 +243,8 @@ class Device(resource.Resource):
                     "type": "option",
                     "values": [None, False, True],
                     "require": False,
-                    "description": "Use this argument if there are login/logout problems with this device or you want to levelup accounts  (Default: False)",
+                    "description": "Use this argument if there are login/logout problems with this device or you want "
+                                   "to levelup accounts  (Default: False)",
                     "expected": bool
                 }
             },
@@ -243,7 +253,8 @@ class Device(resource.Resource):
                     "type": "option",
                     "values": [None, "google", "ptc"],
                     "require": False,
-                    "description": "Select login type for automatic login. If using Google make sure that account already exists on device (Default: google)",
+                    "description": "Select login type for automatic login. If using Google make sure that account "
+                                   "already exists on device (Default: google)",
                     "expected": str
                 }
             },
@@ -251,7 +262,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Declare a login address or domain from device (Empty = first @gmail.com entry).  Use | to set more the one account (address|address)",
+                    "description": "Declare a login address or domain from device (Empty = first @gmail.com entry).  "
+                                   "Use | to set more the one account (address|address)",
                     "expected": str
                 }
             },
@@ -259,7 +271,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "PTC User/Password (Format username,password).  Use | to set more the one account (username,password|username,password)",
+                    "description": "PTC User/Password (Format username,password).  Use | to set more the one account "
+                                   "(username,password|username,password)",
                     "expected": str
                 }
             },
@@ -285,7 +298,8 @@ class Device(resource.Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Rotate accounts if wait time is longer than x seconds after teleport.  Requires account_rotation to be enabled (Default: 300)",
+                    "description": "Rotate accounts if wait time is longer than x seconds after teleport.  Requires "
+                                   "account_rotation to be enabled (Default: 300)",
                     "expected": float
                 }
             },
@@ -309,11 +323,11 @@ class Device(resource.Resource):
         }
     }
 
-    def flush_level(self):
+    def flush_level(self) -> None:
         logger.info('Removing visitation status for {}...', self['origin'])
         self._dbc.flush_levelinfo(self['origin'])
 
-    def _load(self):
+    def _load(self) -> None:
         super()._load()
         self.state = 0
         if self._data_manager.is_device_active(self['origin']):

@@ -2,10 +2,10 @@ import os
 import sys
 from threading import Thread
 
+from mapadroid.data_manager import DataManager
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.patcher import MADPatcher
-from mapadroid.utils.data_manager import DataManager
 from mapadroid.utils.logging import initLogging, logger
 from mapadroid.utils.MappingManager import (MappingManager,
                                             MappingManagerManager)

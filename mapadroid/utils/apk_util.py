@@ -229,7 +229,7 @@ class MADAPKImporter(object):
                 filestore_id = None
                 # Determine if we already have this file-type uploaded.  If so, remove it once the new one is
                 # completed and update the id
-                if self.mad_apk and self.apk_type and self.architecture:
+                if self.mad_apk and self.apk_type is not None and self.architecture is not None:
                     filestore_id_sql = "SELECT `filestore_id` FROM `mad_apks` WHERE `usage` = %s AND `arch` = %s"
                     filestore_id = self.dbc.autofetch_value(filestore_id_sql,
                                                             args=(self.apk_type, self.architecture,))
@@ -367,15 +367,15 @@ def get_mad_apks(db) -> dict:
 
 def get_mad_apk(db, apk_type, architecture='noarch') -> dict:
     apks = get_mad_apks(db)
-    apk_type, architecture = convert_to_backend(apk_type=apk_type, apk_arch=architecture)
+    apk_type, apk_arch = convert_to_backend(apk_type=apk_type, apk_arch=architecture)
     try:
-        return apks[global_variables.MAD_APK_USAGE[apk_type]][architecture]
+        return apks[global_variables.MAD_APK_USAGE[apk_type]][apk_arch]
     except KeyError:
         try:
-            return apks[apk_type][architecture]
+            return apks[apk_type][apk_arch]
         except:
             pass
-        if architecture != 'noarch':
+        if apk_arch != global_variables.MAD_APK_ARCH_NOARCH:
             return get_mad_apk(db, apk_type)
         else:
             return False

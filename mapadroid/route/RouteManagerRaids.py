@@ -3,18 +3,6 @@ from mapadroid.utils.logging import logger
 
 
 class RouteManagerRaids(RouteManagerBase):
-    def _priority_queue_update_interval(self):
-        return 300
-
-    def _get_coords_after_finish_route(self):
-        self._init_route_queue()
-        return True
-
-    def _recalc_route_workertype(self):
-        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=True,
-                          in_memory=False)
-        self._init_route_queue()
-
     def __init__(self, db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius,
                  path_to_include_geofence,
                  path_to_exclude_geofence, routefile, mode=None, settings=None, init=False,
@@ -28,6 +16,18 @@ class RouteManagerRaids(RouteManagerBase):
                                   name=name, settings=settings, mode=mode, useS2=True, S2level=S2level,
                                   joinqueue=joinqueue
                                   )
+
+    def _priority_queue_update_interval(self):
+        return 300
+
+    def _get_coords_after_finish_route(self):
+        self._init_route_queue()
+        return True
+
+    def _recalc_route_workertype(self):
+        self.recalc_route(self._max_radius, self._max_coords_within_radius, 1, delete_old_route=True,
+                          in_memory=False)
+        self._init_route_queue()
 
     def _retrieve_latest_priority_queue(self):
         # TODO: pass timedelta for timeleft on raids that can be ignored.

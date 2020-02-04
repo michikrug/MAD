@@ -248,21 +248,19 @@ class WorkerBase(AbstractWorker):
                                                                                str(startcoords[1])))
             self._communicator.set_location(Location(startcoords[0], startcoords[1]), 0)
 
-        try:
-            self._work_mutex.acquire()
-            self._turn_screen_on_and_start_pogo()
-            self._get_screen_size()
-            # register worker  in routemanager
-            logger.info("Try to register {} in Routemanager {}", str(
-                self._origin), str(self._mapping_manager.routemanager_get_name(self._routemanager_name)))
-            self._mapping_manager.register_worker_to_routemanager(self._routemanager_name, self._origin)
-        except WebsocketWorkerRemovedException:
-            logger.error("Timeout during init of worker {}", str(self._origin))
-            # no cleanup required here? TODO: signal websocket server somehow
-            self._stop_worker_event.set()
-            return
-        finally:
-            self._work_mutex.release()
+        with self._work_mutex:
+            try:
+                self._turn_screen_on_and_start_pogo()
+                self._get_screen_size()
+                # register worker  in routemanager
+                logger.info("Try to register {} in Routemanager {}", str(
+                    self._origin), str(self._mapping_manager.routemanager_get_name(self._routemanager_name)))
+                self._mapping_manager.register_worker_to_routemanager(self._routemanager_name, self._origin)
+            except WebsocketWorkerRemovedException:
+                logger.error("Timeout during init of worker {}", str(self._origin))
+                # no cleanup required here? TODO: signal websocket server somehow
+                self._stop_worker_event.set()
+                return
 
         self._async_io_looper_thread = Thread(name=str(self._origin) + '_asyncio_' + self._origin,
                                               target=self._start_asyncio_loop)
@@ -276,8 +274,8 @@ class WorkerBase(AbstractWorker):
         # check if pogo is topmost and start if necessary
         logger.debug(
             "_internal_health_check: Calling _start_pogo routine to check if pogo is topmost")
-        try:
-            self._work_mutex.acquire()
+        pogo_started = False
+        with self._work_mutex:
             logger.debug("_internal_health_check: worker lock acquired")
             logger.debug("Checking if we need to restart pogo")
             # Restart pogo every now and then...
@@ -295,8 +293,7 @@ class WorkerBase(AbstractWorker):
                     pogo_started = self._start_pogo()
             else:
                 pogo_started = self._start_pogo()
-        finally:
-            self._work_mutex.release()
+
         logger.debug("_internal_health_check: worker lock released")
         return pogo_started
 
@@ -781,7 +778,7 @@ class WorkerBase(AbstractWorker):
             pogo_topmost = self._communicator.is_pogo_topmost()
 
         if start_result:
-            logger.warning("startPogo: Started pogo successfully...")
+            logger.success("startPogo: Started pogo successfully...")
             self._last_known_state["lastPogoRestart"] = cur_time
 
         self._wait_pogo_start_delay()
@@ -818,6 +815,8 @@ class WorkerBase(AbstractWorker):
                                                    self._routemanager_name),
                                                99)
         self._db_wrapper.save_last_reboot(self._dev_id)
+        self._reboot_count = 0
+        self._restart_count = 0
         self.stop_worker()
         return start_result
 
@@ -834,6 +833,7 @@ class WorkerBase(AbstractWorker):
     def _restart_pogo(self, clear_cache=False, mitm_mapper: Optional[MitmMapper] = None):
         successful_stop = self._stop_pogo()
         self._db_wrapper.save_last_restart(self._dev_id)
+        self._restart_count = 0
         logger.debug("restartPogo: stop game resulted in {}",
                      str(successful_stop))
         if successful_stop:

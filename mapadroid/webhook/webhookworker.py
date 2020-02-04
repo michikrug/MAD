@@ -180,6 +180,7 @@ class WebhookWorker:
                 "name": quest["name"].replace('"', '\\"').replace("\n", "\\n"),
                 "url": quest["url"],
                 "timestamp": quest["timestamp"],
+                "quest_reward": quest["quest_reward"],
                 "quest_reward_type": quest["quest_reward_type"],
                 "quest_reward_type_raw": quest["quest_reward_type_raw"],
                 "quest_target": quest["quest_target"],

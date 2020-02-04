@@ -911,7 +911,9 @@ class DbWrapper:
             'instance_id': self.instance_id,
             'device_id': dev_id,
             'lastPogoReboot': 'NOW()',
-            'globalrebootcount': '(globalrebootcount+1)'
+            'globalrebootcount': '(globalrebootcount+1)',
+            'restartCounter': 0,
+            'rebootCounter': 0
         }
         self.autoexec_insert('trs_status', data, literals=literals, optype='ON DUPLICATE')
 
@@ -922,7 +924,8 @@ class DbWrapper:
             'instance_id': self.instance_id,
             'device_id': dev_id,
             'lastPogoRestart': 'NOW()',
-            'globalrestartcount': '(globalrestartcount+1)'
+            'globalrestartcount': '(globalrestartcount+1)',
+            'restartCounter': 0
         }
         self.autoexec_insert('trs_status', data, literals=literals, optype='ON DUPLICATE')
 

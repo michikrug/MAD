@@ -1,5 +1,6 @@
-from .resource import Resource
 from mapadroid.utils.logging import logger
+
+from .resource import Resource
 
 
 class Device(Resource):

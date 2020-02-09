@@ -1,9 +1,11 @@
 import json
-from typing import Optional, Dict, List, Tuple
-from .resource import Resource
-from ..dm_exceptions import UnknownIdentifier
+from typing import Dict, List, Optional, Tuple
+
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.logging import logger
+
+from ..dm_exceptions import UnknownIdentifier
+from .resource import Resource
 
 
 class GeoFence(Resource):

@@ -2,12 +2,16 @@ import datetime
 import json
 import time
 
-from flask import (jsonify, render_template, request)
+from flask import jsonify, render_template, request
 
 from mapadroid.db.DbStatsReader import DbStatsReader
 from mapadroid.db.DbWrapper import DbWrapper
-from mapadroid.madmin.functions import auth_required, generate_coords_from_geofence, get_geofences
-from mapadroid.utils.gamemechanicutil import calculate_mon_level, calculate_iv, get_raid_boss_cp, form_mapper
+from mapadroid.madmin.functions import (auth_required,
+                                        generate_coords_from_geofence,
+                                        get_geofences)
+from mapadroid.utils.gamemechanicutil import (calculate_iv,
+                                              calculate_mon_level, form_mapper,
+                                              get_raid_boss_cp)
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.language import i8ln
 from mapadroid.utils.logging import logger
@@ -232,7 +236,8 @@ class statistics(object):
                 shiny_hour_temp[dat[1]] = dat[0]
 
         for dat in shiny_hour_temp:
-            if shiny_hour_temp[dat] not in shiny_hour_calc: shiny_hour_calc[shiny_hour_temp[dat]] = 0
+            if shiny_hour_temp[dat] not in shiny_hour_calc:
+                shiny_hour_calc[shiny_hour_temp[dat]] = 0
             shiny_hour_calc[shiny_hour_temp[dat]] += 1
 
         for dat in sorted(shiny_hour_calc):
@@ -256,10 +261,12 @@ class statistics(object):
                 diff = 1
 
             ratio = round(dat[1] * 100 / diff, 2)
-            if dat[3] not in shiny_worker: shiny_worker[dat[3]] = 0
+            if dat[3] not in shiny_worker:
+                shiny_worker[dat[3]] = 0
             shiny_worker[dat[3]] += dat[1]
 
-            if dat[2] not in shiny_avg: shiny_avg[dat[2]] = {}
+            if dat[2] not in shiny_avg:
+                shiny_avg[dat[2]] = {}
             if dat[5] not in shiny_avg[dat[2]]:
                 shiny_avg[dat[2]][dat[5]] = {}
                 shiny_avg[dat[2]][dat[5]]['total_shiny'] = []
@@ -323,7 +330,7 @@ class statistics(object):
         tmp_perhour_v2 = {}
 
         if data is None or len(data) == 0:
-            return jsonify({'empty': True});
+            return jsonify({'empty': True})
 
         shiny_stats_v2 = []
         for dat in data:

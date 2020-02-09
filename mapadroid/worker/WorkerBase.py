@@ -11,18 +11,17 @@ from typing import Optional, Union
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
-from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.ocr.screen_type import ScreenType
+from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.utils import MappingManager
 from mapadroid.utils.collections import Location
 from mapadroid.utils.hamming import hamming_distance
 from mapadroid.utils.logging import logger
-from mapadroid.utils.madGlobals import (
-    InternalStopWorkerException,
-    WebsocketWorkerRemovedException,
-    WebsocketWorkerTimeoutException,
-    ScreenshotType,
-    WebsocketWorkerConnectionClosedException)
+from mapadroid.utils.madGlobals import (InternalStopWorkerException,
+                                        ScreenshotType,
+                                        WebsocketWorkerConnectionClosedException,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.utils.resolution import Resocalculator
 from mapadroid.utils.routeutil import check_walker_value_type
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
@@ -675,7 +674,7 @@ class WorkerBase(AbstractWorker):
         questloop: int = 0
         firstround: bool = True
         x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-               self._resocalc.get_coords_quest_menu(self)[1]
+            self._resocalc.get_coords_quest_menu(self)[1]
         self._communicator.click(int(x), int(y))
         time.sleep(10)
         returncode: ScreenType = ScreenType.UNDEFINED
@@ -692,24 +691,24 @@ class WorkerBase(AbstractWorker):
                 if firstround:
                     logger.info('First round getting research menu')
                     x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                           self._resocalc.get_close_main_button_coords(self)[1]
+                        self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
                     return ScreenType.POGO
                 elif questcounter >= 2:
                     logger.info('Getting research menu two times in row')
                     x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                           self._resocalc.get_close_main_button_coords(self)[1]
+                        self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
                     return ScreenType.POGO
 
             x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                   self._resocalc.get_close_main_button_coords(self)[1]
+                self._resocalc.get_close_main_button_coords(self)[1]
             self._communicator.click(int(x), int(y))
             time.sleep(1.5)
             x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-                   self._resocalc.get_coords_quest_menu(self)[1]
+                self._resocalc.get_coords_quest_menu(self)[1]
             self._communicator.click(int(x), int(y))
             time.sleep(3)
             self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),
@@ -1180,4 +1179,3 @@ class WorkerBase(AbstractWorker):
             self._origin), str(self._screen_x), str(self._screen_y), str(x_offset), str(y_offset))
         self._resocalc.get_x_y_ratio(
             self, self._screen_x, self._screen_y, x_offset, y_offset)
-

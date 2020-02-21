@@ -7,11 +7,10 @@ from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
 from mapadroid.utils.logging import logger
-from mapadroid.utils.madGlobals import (
-    WebsocketWorkerRemovedException,
-    WebsocketWorkerTimeoutException,
-    InternalStopWorkerException,
-    WebsocketWorkerConnectionClosedException)
+from mapadroid.utils.madGlobals import (InternalStopWorkerException,
+                                        WebsocketWorkerConnectionClosedException,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.utils.routeutil import check_walker_value_type
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
 from mapadroid.worker.AbstractWorker import AbstractWorker

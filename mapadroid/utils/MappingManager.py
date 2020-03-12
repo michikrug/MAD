@@ -1,15 +1,15 @@
 import os
 import time
-from multiprocessing import Lock, Event, Queue
+from multiprocessing import Event, Lock, Queue
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import ThreadPool
 from queue import Empty, Queue
 from threading import Thread
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
-from mapadroid.route import RouteManagerIV, RouteManagerBase
+from mapadroid.route import RouteManagerBase, RouteManagerIV
 from mapadroid.route.RouteManagerFactory import RouteManagerFactory
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import logger
@@ -270,7 +270,7 @@ class MappingManager:
             return None
 
     def routemanager_get_current_route(self, routemanager_name: str) -> Optional[
-        Tuple[List[Location], Dict[str, List[Location]]]]:
+            Tuple[List[Location], Dict[str, List[Location]]]]:
         routemanager = self.__fetch_routemanager(routemanager_name)
         return routemanager.get_current_route() if routemanager is not None else None
 
@@ -408,8 +408,8 @@ class MappingManager:
                                                                  joinqueue=self.join_routes_queue,
                                                                  S2level=mode_mapping.get(mode, {}).get(
                                                                      "s2_cell_level", 30),
-                                                                 include_event_id=
-                                                                 area.get("settings", {}).get("include_event_id", None)
+                                                                 include_event_id=area.get("settings", {}).get(
+                                                                     "include_event_id", None)
                                                                  )
 
             if mode not in ("iv_mitm", "idle"):
@@ -498,7 +498,7 @@ class MappingManager:
 
     def __fetch_coords(self, mode: str, geofence_helper: GeofenceHelper, coords_spawns_known: bool = False,
                        init: bool = False, range_init: int = 630, including_stops: bool = False,
-                       include_event_id=None) -> List[ Location]:
+                       include_event_id=None) -> List[Location]:
         coords: List[Location] = []
         if not init:
             # grab data from DB depending on mode

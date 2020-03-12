@@ -1,6 +1,8 @@
-from typing import Optional, Dict, List, Tuple
-from .resource import Resource
+from typing import Dict, List, Optional, Tuple
+
 from mapadroid.db.DbWrapper import DbWrapper
+
+from .resource import Resource
 
 
 class Area(Resource):

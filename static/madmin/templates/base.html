@@ -14,9 +14,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" integrity="sha384-1UXhfqyOyO+W+XsGhiIFwwD3hsaHRz2XDGMle3b8bXPH5+cMsXVShDoHA3AH/y/p" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css" integrity="sha256-46qynGAkLSFpVbEBog43gvNhfrOj+BmwXdxFgVK/Kvc=" crossorigin="anonymous" />
-
     <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
-
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     {% block header %}{% endblock %}
@@ -28,16 +26,8 @@
         .brandimg {
             max-height: 20px;
         }
-
     </style>
     {% endif %}
-</head>
-
-    .brandimg {
-      max-height: 20px;
-    }
-  </style>
-  {% endif %}
 </head>
 <body>
     {% if not pub %}
@@ -46,7 +36,6 @@
           <a class="navbar-brand" href="{{ url_for('root') }}">
               <img src="{{ url_for('static', filename='mad_banner_trans.png') }}" class="brandimg">
           </a><br>
-
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
           </button>
@@ -104,10 +93,7 @@
                     </div>
                   </li>
               </ul>
-
               <button type="button" class="btn btn-success btn-sm nav-link text-uppercase font-weight-bold" id="reload">Apply settings</button>
-
-
           </div>
         </div>
     </nav>
@@ -123,17 +109,15 @@
     <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='js/dark-mode-switch.js') }}"></script>
     <script>
-
       $(document).ready(function() {
-          if (darkSwitch) {
-              initTheme();
-              darkSwitch.addEventListener('change', () => {
-                  resetTheme();
-              });
-          }
+        if (darkSwitch) {
+          initTheme();
+          darkSwitch.addEventListener('change', () => {
+            resetTheme();
+          });
+        }
 
         $("body").css("visibility","visible");
-
 
         $('[data-toggle="tooltip"]').tooltip();
 

@@ -1,6 +1,7 @@
 import flask
 
-from mapadroid.utils import global_variables, apk_util
+from mapadroid.utils import apk_util, global_variables
+
 from .. import apiHandler
 
 

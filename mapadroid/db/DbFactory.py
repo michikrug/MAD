@@ -2,7 +2,8 @@ import sys
 from multiprocessing.managers import SyncManager
 
 from mapadroid.db.DbWrapper import DbWrapper
-from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor, PooledQuerySyncManager
+from mapadroid.db.PooledQueryExecutor import (PooledQueryExecutor,
+                                              PooledQuerySyncManager)
 from mapadroid.utils.logging import logger
 
 

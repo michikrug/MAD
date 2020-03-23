@@ -2,6 +2,7 @@ import copy
 from unittest import TestCase
 
 from mapadroid.utils.local_api import LocalAPI
+
 from . import global_variables
 
 

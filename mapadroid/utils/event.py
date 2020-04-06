@@ -1,6 +1,7 @@
-import time
 import datetime
+import time
 from threading import Thread
+
 from mapadroid.utils.logging import logger
 
 

@@ -1,11 +1,12 @@
 from typing import Optional
 
-from mapadroid.route.RouteManagerMon import RouteManagerMon
 from mapadroid.route.RouteManagerIV import RouteManagerIV
 from mapadroid.route.RouteManagerLeveling import RouteManagerLeveling
+from mapadroid.route.RouteManagerMon import RouteManagerMon
 from mapadroid.route.RouteManagerQuests import RouteManagerQuests
 from mapadroid.route.RouteManagerRaids import RouteManagerRaids
 from mapadroid.worker.WorkerType import WorkerType
+
 
 class RouteManagerFactory:
     @staticmethod

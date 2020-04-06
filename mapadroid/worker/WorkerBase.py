@@ -848,7 +848,7 @@ class WorkerBase(AbstractWorker):
                                                    self._mapping_manager.routemanager_get_mode(
                                                        self._routemanager_name),
                                                    99)
-            return self._fix_magisk()
+            return self._start_pogo()
         else:
             return False
 

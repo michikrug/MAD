@@ -199,6 +199,11 @@ class MITMBase(WorkerBase):
             self._communicator.click(int(x), int(y))
             time.sleep(6 + int(delayadd))
 
+        x, y = self._resocalc.get_quest_listview(self)[0], \
+            self._resocalc.get_quest_listview(self)[1]
+        self._communicator.click(int(x), int(y))
+        time.sleep(2 + int(delayadd))
+
         trashcancheck = self._get_trash_positions(full_screen=True)
         if trashcancheck is None:
             logger.error('Could not find any trashcan - abort')
@@ -317,3 +322,26 @@ class MITMBase(WorkerBase):
             save_data['lastProtoDateTime'] = 'NOW()'
             self._rec_data_time = None
         self._db_wrapper.save_status(save_data)
+
+    def _worker_specific_setup_stop(self):
+        logger.info("Stopping pogodroid")
+        stop_result = self._communicator.stop_app("com.mad.pogodroid")
+        return stop_result
+
+    def _worker_specific_setup_start(self):
+        logger.info("Starting pogodroid")
+        start_result = self._communicator.start_app("com.mad.pogodroid")
+        time.sleep(5)
+        # won't work if PogoDroid is repackaged!
+        self._communicator.passthrough("am startservice com.mad.pogodroid/.services.HookReceiverService")
+        return start_result
+
+    def _restart_pogodroid(self):
+        successful_stop = self._worker_specific_setup_stop()
+        time.sleep(1)
+        logger.debug(
+            "restartPogoDroid: stop PogoDroid resulted in {}", str(successful_stop))
+        if successful_stop:
+            return self._worker_specific_setup_start()
+        else:
+            return False

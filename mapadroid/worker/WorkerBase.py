@@ -198,6 +198,20 @@ class WorkerBase(AbstractWorker):
         :return:
         """
 
+    @abstractmethod
+    def _worker_specific_setup_start(self):
+        """
+        Routine preparing the state to scan. E.g. starting specific apps or clearing certain files
+        Returns:
+        """
+
+    @abstractmethod
+    def _worker_specific_setup_stop(self):
+        """
+        Routine destructing the state to scan. E.g. stopping specific apps or clearing certain files
+        Returns:
+        """
+
     def _start_asyncio_loop(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
@@ -616,9 +630,8 @@ class WorkerBase(AbstractWorker):
             if screen_type in [ScreenType.GAMEDATA, ScreenType.CONSENT, ScreenType.CLOSE]:
                 logger.warning('Error getting Gamedata or strange ggl message appears')
                 self._loginerrorcounter += 1
-                if self._loginerrorcounter < 3:
-                    # self._restart_pogo(True)
-                    self._fix_magisk()
+                if self._loginerrorcounter < 2:
+                    self._restart_pogo_safe()
             elif screen_type == ScreenType.DISABLED:
                 # Screendetection is disabled
                 break
@@ -634,17 +647,18 @@ class WorkerBase(AbstractWorker):
                 logger.warning("Detected GPS error 11 - rebooting device")
                 self._reboot()
             elif screen_type == ScreenType.SN:
-                logger.warning('Getting SN Screen - reset Magisk Settings')
-                self._fix_magisk()
+                logger.warning('Getting SN Screen - restart PoGo and later PD')
+                self._restart_pogo_safe()
                 break
 
-            if self._loginerrorcounter == 2:
+            if self._loginerrorcounter > 1:
                 logger.error('Could not login again - (clearing game data + restarting device')
                 self._stop_pogo()
                 self._communicator.clear_app_cache("com.nianticlabs.pokemongo")
                 if self.get_devicesettings_value('clear_game_data', False):
                     logger.info('Clearing game data')
                     self._communicator.reset_app_data("com.nianticlabs.pokemongo")
+                self._loginerrorcounter = 0
                 self._reboot()
                 break
 
@@ -652,30 +666,24 @@ class WorkerBase(AbstractWorker):
         logger.info('Checking pogo screen is finished')
         return True
 
-    def _fix_magisk(self):
+    def _restart_pogo_safe(self):
         self._stop_pogo()
-        logger.info('Stop PoGo')
         time.sleep(1)
-        self._stop_pogodroid()
-        logger.info('Stop PoGoDroid')
-        time.sleep(1)
+        if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+            self._worker_specific_setup_stop()
+            time.sleep(1)
         self._communicator.magisk_off()
-        logger.info('Disable Magisk')
         time.sleep(1)
         self._communicator.magisk_on()
-        logger.info('Enable Magisk')
         time.sleep(1)
         self._communicator.start_app("com.nianticlabs.pokemongo")
-        logger.info('Start PoGo')
         time.sleep(25)
         self._stop_pogo()
-        logger.info('Stop PoGo')
         time.sleep(1)
-        self._start_pogodroid()
-        logger.info('Start PoGoDroid')
-        time.sleep(1)
-        logger.info('Start PoGo')
-        return self._communicator.start_app("com.nianticlabs.pokemongo")
+        if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+            self._worker_specific_setup_start()
+            time.sleep(1)
+        return self._start_pogo()
 
     def _switch_user(self):
         logger.info('Switching User - please wait ...')
@@ -825,17 +833,7 @@ class WorkerBase(AbstractWorker):
         self.stop_worker()
         return start_result
 
-    def _start_pogodroid(self):
-        start_result = self._communicator.start_app("com.mad.pogodroid")
-        time.sleep(5)
-        self._communicator.passthrough("am startservice com.mad.pogodroid/.services.HookReceiverService")
-        return start_result
-
-    def _stop_pogodroid(self):
-        stopResult = self._communicator.stop_app("com.mad.pogodroid")
-        return stopResult
-
-    def _restart_pogo(self, clear_cache=False, mitm_mapper: Optional[MitmMapper] = None):
+    def _restart_pogo(self, clear_cache=True, mitm_mapper: Optional[MitmMapper] = None):
         successful_stop = self._stop_pogo()
         self._db_wrapper.save_last_restart(self._dev_id)
         self._restart_count = 0
@@ -854,15 +852,23 @@ class WorkerBase(AbstractWorker):
         else:
             return False
 
-    def _restart_pogodroid(self):
-        successfulStop = self._stop_pogodroid()
-        time.sleep(1)
+    def _reopenRaidTab(self):
+        logger.debug("_reopenRaidTab: Taking screenshot...")
         logger.debug(
-            "restartPogoDroid: stop PogoDroid resulted in {}", str(successfulStop))
-        if successfulStop:
-            return self._start_pogodroid()
-        else:
-            return False
+            "reopenRaidTab: Attempting to retrieve screenshot before checking raidtab")
+        if not self._takeScreenshot():
+            logger.debug("_reopenRaidTab: Failed getting screenshot...")
+            logger.error(
+                "reopenRaidTab: Failed retrieving screenshot before checking for closebutton")
+            return
+        logger.debug("_reopenRaidTab: Checking close except nearby...")
+        pathToPass = self.get_screenshot_path()
+        logger.debug("Path: {}", str(pathToPass))
+        self._pogoWindowManager.check_close_except_nearby_button(
+            pathToPass, self._origin, self._communicator, 'True')
+        logger.debug("_reopenRaidTab: Getting to raidscreen...")
+        self._getToRaidscreen(3)
+        time.sleep(1)
 
     def _get_trash_positions(self, full_screen=False):
         logger.debug("_get_trash_positions: Get_trash_position.")

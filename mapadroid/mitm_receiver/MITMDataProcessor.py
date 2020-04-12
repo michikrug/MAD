@@ -1,5 +1,5 @@
 from datetime import datetime
-from multiprocessing import Queue, Process
+from multiprocessing import Process, Queue
 
 from mapadroid.db.DbPogoProtoSubmit import DbPogoProtoSubmit
 from mapadroid.db.DbWrapper import DbWrapper

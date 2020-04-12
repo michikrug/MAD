@@ -3,6 +3,7 @@ import multiprocessing
 import secrets
 
 from mapadroid.utils.logging import logger
+
 from .util import *
 
 

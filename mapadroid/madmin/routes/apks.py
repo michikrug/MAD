@@ -1,12 +1,10 @@
 import json
 
 import werkzeug.exceptions
-from flask import (render_template, request, redirect, url_for, flash, Response)
+from flask import Response, flash, redirect, render_template, request, url_for
 
 from mapadroid.madmin.functions import auth_required
-from mapadroid.utils import MappingManager
-from mapadroid.utils import apk_util
-from mapadroid.utils import global_variables
+from mapadroid.utils import MappingManager, apk_util, global_variables
 from mapadroid.utils.logging import logger
 
 

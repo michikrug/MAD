@@ -140,7 +140,7 @@ class MITMBase(WorkerBase):
                 # self._mitm_mapper.
                 self._restart_count = 0
                 logger.error("Too many timeouts - Restarting game on {}", str(self._origin))
-                self._restart_pogo(True, self._mitm_mapper)
+                self._restart_pogo_safe()
 
         self.worker_stats()
         return data_requested
@@ -338,13 +338,3 @@ class MITMBase(WorkerBase):
         # won't work if PogoDroid is repackaged!
         self._communicator.passthrough("am startservice com.mad.pogodroid/.services.HookReceiverService")
         return start_result
-
-    def _restart_pogodroid(self):
-        successful_stop = self._worker_specific_setup_stop()
-        time.sleep(1)
-        logger.debug(
-            "restartPogoDroid: stop PogoDroid resulted in {}", str(successful_stop))
-        if successful_stop:
-            return self._worker_specific_setup_start()
-        else:
-            return False

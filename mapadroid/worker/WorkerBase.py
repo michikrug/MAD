@@ -15,6 +15,7 @@ from mapadroid.ocr.screen_type import ScreenType
 from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.utils import MappingManager
 from mapadroid.utils.collections import Location
+from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.hamming import hamming_distance
 from mapadroid.utils.logging import logger
 from mapadroid.utils.madGlobals import (InternalStopWorkerException,
@@ -24,6 +25,7 @@ from mapadroid.utils.madGlobals import (InternalStopWorkerException,
                                         WebsocketWorkerTimeoutException)
 from mapadroid.utils.resolution import Resocalculator
 from mapadroid.utils.routeutil import check_walker_value_type
+from mapadroid.utils.s2Helper import S2Helper
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
 from mapadroid.worker.AbstractWorker import AbstractWorker
 
@@ -667,6 +669,7 @@ class WorkerBase(AbstractWorker):
         return True
 
     def _restart_pogo_safe(self):
+        logger.warning("WorkerBase::_restart_pogo_safe restarting pogo the long way")
         self._stop_pogo()
         time.sleep(1)
         if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:

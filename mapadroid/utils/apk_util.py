@@ -4,6 +4,7 @@ import re
 import time
 from threading import Thread
 
+import flask
 import requests
 import urllib3
 from werkzeug.utils import secure_filename
@@ -301,6 +302,32 @@ def chunk_generator(dbc, filestore_id):
         yield dbc.autofetch_value(data_sql, args=(chunk_id))
 
 
+def get_apk_list(dbc, apk_type, apk_arch):
+    apks = get_mad_apks(dbc)
+    try:
+        apks[apk_type]
+        try:
+            if apks[apk_type][apk_arch]['version'] != None:
+                return (apks[apk_type][apk_arch], 200)
+            else:
+                return ('MAD APK for %s has not been uploaded' % (apk_type,), 404)
+        except:
+            if apk_arch:
+                return ('Invalid arch_type.  Valid arch_types: %s' % apks[apk_type].keys(), 404)
+            elif len(apks[apk_type]) == 1:
+                key = list(apks[apk_type].keys())[0]
+                if apks[apk_type][key]['version'] != None:
+                    return (apks[apk_type][key], 200)
+                return ('MAD APK for %s has not been uploaded' % (apk_type,), 404)
+            else:
+                return (apks[apk_type], 200)
+    except:
+        if apk_type:
+            return ('Invalid apk_type.  Valid apk_types: %s' % apks.keys(), 404)
+        else:
+            return (apks, 200)
+
+
 def get_mad_apks(db) -> dict:
     apks = {
         global_variables.MAD_APK_USAGE_POGO: {
@@ -420,6 +447,10 @@ def convert_to_backend(apk_type=None, apk_arch=None):
         else:
             apk_type = None
     if apk_arch and isinstance(apk_arch, str):
+        try:
+            apk_arch = int(apk_arch)
+        except:
+            pass
         if apk_arch == 'armeabi-v7a':
             apk_arch = global_variables.MAD_APK_ARCH_ARMEABI_V7A
         elif apk_arch == 'arm64-v8a':
@@ -429,3 +460,18 @@ def convert_to_backend(apk_type=None, apk_arch=None):
         else:
             global_variables.MAD_APK_ARCH_NOARCH
     return (apk_type, apk_arch)
+
+
+def download_file(dbc, apk_type, apk_arch):
+    apks = get_apk_list(dbc, apk_type, apk_arch)
+    if (apks[1]) == 200:
+        mad_apk = apks[0]
+        return flask.Response(
+            flask.stream_with_context(chunk_generator(dbc, mad_apk['file_id'])),
+            content_type=mad_apk['mimetype'],
+            headers={
+                'Content-Disposition': f'attachment; filename=%s' % (mad_apk['filename'])
+            }
+        )
+    else:
+        return flask.Response(status=404)

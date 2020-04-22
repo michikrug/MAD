@@ -19,6 +19,7 @@ from mapadroid.route.routecalc.ClusteringHelper import ClusteringHelper
 from mapadroid.utils.collections import Location
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.logging import logger
+from mapadroid.utils.madGlobals import InternalStopWorkerException
 from mapadroid.utils.walkerArgs import parseArgs
 from mapadroid.worker.WorkerType import WorkerType
 
@@ -133,6 +134,9 @@ class RouteManagerBase(ABC):
             return self.settings.get("mon_ids_iv_raw", [])
         else:
             return None
+
+    def get_max_radius(self):
+        return self._max_radius
 
     def _start_check_routepools(self):
         self._check_routepools_thread = Thread(name="_check_routepools_" + self.name,
@@ -830,6 +834,7 @@ class RouteManagerBase(ABC):
                             "Worker {} has not accessed a location in {} seconds, removing from routemanager",
                             origin, timeout)
                         self.unregister_worker(origin)
+                        raise InternalStopWorkerException
 
             i = 0
             while i < 60 and not self._stop_update_thread.is_set():

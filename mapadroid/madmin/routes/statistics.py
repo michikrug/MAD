@@ -70,7 +70,7 @@ class statistics(object):
         if not minutes_usage:
             minutes_usage = 120
 
-        return render_template('statistics/statistics.html', title="MAD Statisics",
+        return render_template('statistics/statistics.html', title="MAD Statistics",
                                minutes_usage=minutes_usage,
                                time=self._args.madmin_time,
                                responsive=str(self._args.madmin_noresponsive).lower())
@@ -81,14 +81,14 @@ class statistics(object):
         if not minutes_spawn:
             minutes_spawn = 120
 
-        return render_template('statistics/mon_statistics.html', title="MAD Mon Statisics",
+        return render_template('statistics/mon_statistics.html', title="MAD Mon Statistics",
                                minutes_spawn=minutes_spawn,
                                time=self._args.madmin_time,
                                responsive=str(self._args.madmin_noresponsive).lower())
 
     @auth_required
     def statistics_shiny(self):
-        return render_template('statistics/shiny_statistics.html', title="MAD Shiny Statisics",
+        return render_template('statistics/shiny_statistics.html', title="MAD Shiny Statistics",
                                time=self._args.madmin_time,
                                responsive=str(self._args.madmin_noresponsive).lower())
 
@@ -519,7 +519,7 @@ class statistics(object):
         minutes = request.args.get('minutes', 120)
         worker = request.args.get('worker')
 
-        return render_template('statistics_worker.html', title="MAD Worker Statisics", minutes=minutes,
+        return render_template('statistics_worker.html', title="MAD Worker Statistics", minutes=minutes,
                                time=self._args.madmin_time, worker=worker,
                                responsive=str(self._args.madmin_noresponsive).lower())
 
@@ -712,7 +712,7 @@ class statistics(object):
 
     @auth_required
     def statistics_spawns(self):
-        return render_template('statistics/spawn_statistics.html', title="MAD Spawnpoint Statisics",
+        return render_template('statistics/spawn_statistics.html', title="MAD Spawnpoint Statistics",
                                time=self._args.madmin_time,
                                responsive=str(self._args.madmin_noresponsive).lower())
 

@@ -5,11 +5,11 @@ import time
 from threading import Thread
 
 import flask
-import apkutils
 import requests
 import urllib3
 from werkzeug.utils import secure_filename
 
+import apkutils
 from mapadroid.utils import global_variables
 from mapadroid.utils.logging import logger
 
@@ -301,6 +301,7 @@ def chunk_generator(dbc, filestore_id):
     for chunk_id in chunk_ids:
         yield dbc.autofetch_value(data_sql, args=(chunk_id))
 
+
 def get_apk_list(dbc, apk_type, apk_arch):
     apks = get_mad_apks(dbc)
     try:
@@ -325,6 +326,7 @@ def get_apk_list(dbc, apk_type, apk_arch):
             return ('Invalid apk_type.  Valid apk_types: %s' % apks.keys(), 404)
         else:
             return (apks, 200)
+
 
 def get_mad_apks(db) -> dict:
     apks = {
@@ -433,6 +435,7 @@ def is_newer_version(first_ver: str, second_ver: str) -> bool:
         first_is_newer = True
     return first_is_newer
 
+
 def convert_to_backend(apk_type=None, apk_arch=None):
     if apk_type and isinstance(apk_type, str):
         if apk_type == 'pogo':
@@ -457,6 +460,7 @@ def convert_to_backend(apk_type=None, apk_arch=None):
         else:
             global_variables.MAD_APK_ARCH_NOARCH
     return (apk_type, apk_arch)
+
 
 def download_file(dbc, apk_type, apk_arch):
     apks = get_apk_list(dbc, apk_type, apk_arch)

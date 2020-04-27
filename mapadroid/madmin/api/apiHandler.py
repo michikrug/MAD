@@ -1,7 +1,8 @@
 import flask
 
 from mapadroid.madmin.functions import auth_required
-from . import apiResponse, apiRequest, apiException, global_variables
+
+from . import apiException, apiRequest, apiResponse, global_variables
 
 
 class APIHandler(object):

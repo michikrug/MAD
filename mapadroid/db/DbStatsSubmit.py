@@ -66,7 +66,7 @@ class DbStatsSubmit:
 
         if self._args.raw_delete_shiny > 0:
             query = (
-                    "DELETE FROM trs_stats_detect_raw WHERE timestamp_scan < "
-                    "(UNIX_TIMESTAMP() - " + str(int(self._args.raw_delete_shiny) * 86400) + ") AND is_shiny = 1"
+                "DELETE FROM trs_stats_detect_raw WHERE timestamp_scan < "
+                "(UNIX_TIMESTAMP() - " + str(int(self._args.raw_delete_shiny) * 86400) + ") AND is_shiny = 1"
             )
             self._db_exec.execute(query, commit=True)

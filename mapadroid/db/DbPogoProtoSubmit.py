@@ -48,6 +48,9 @@ class DbPogoProtoSubmit:
                 mon_id = wild_mon["pokemon_data"]["id"]
                 encounter_id = wild_mon["encounter_id"]
 
+                if lat < 50 or lat > 52 or lon < 12 or lon > 14:
+                    continue
+
                 if encounter_id < 0:
                     encounter_id = encounter_id + 2 ** 64
 
@@ -425,6 +428,9 @@ class DbPogoProtoSubmit:
                     last_modified = datetime.utcfromtimestamp(
                         last_modified_ts).strftime("%Y-%m-%d %H:%M:%S")
                     is_ex_raid_eligible = gym["gym_details"]["is_ex_raid_eligible"]
+
+                    if latitude < 50 or latitude > 52 or longitude < 12 or longitude > 14:
+                        continue
 
                     gym_args.append(
                         (

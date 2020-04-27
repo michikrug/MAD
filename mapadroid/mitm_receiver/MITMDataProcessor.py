@@ -74,12 +74,15 @@ class MitmDataProcessor(Process):
                     self.__db_submit.weather(origin, data["payload"], received_timestamp)
 
                 self.__db_submit.stops(origin, data["payload"])
-                self.__db_submit.gyms(origin, data["payload"])
-                self.__db_submit.raids(origin, data["payload"], self.__mitm_mapper)
 
-                self.__db_submit.spawnpoints(origin, data["payload"])
-                mon_ids_iv = self.__mitm_mapper.get_mon_ids_iv(origin)
-                self.__db_submit.mons(origin, data["payload"], mon_ids_iv, self.__mitm_mapper)
+                if origin != "oneplusone":
+                    self.__db_submit.gyms(origin, data["payload"])
+                    self.__db_submit.raids(origin, data["payload"], self.__mitm_mapper)
+
+                    self.__db_submit.spawnpoints(origin, data["payload"])
+                    mon_ids_iv = self.__mitm_mapper.get_mon_ids_iv(origin)
+                    self.__db_submit.mons(origin, data["payload"], mon_ids_iv, self.__mitm_mapper)
+
                 self.__db_submit.cells(origin, data["payload"])
                 self.__mitm_mapper.submit_gmo_for_location(origin, data["payload"])
                 logger.debug2("Done processing GMO of {}".format(origin))

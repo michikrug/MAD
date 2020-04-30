@@ -106,6 +106,10 @@ class WebhookWorker:
                 logger.debug3("Payload: {}", str(json.dumps(payload_chunk)))
 
                 try:
+                    if 'latitude' in payload_chunk and 'longitude' in payload_chunk:
+                        if payload_chunk['latitude'] < 50 or payload_chunk['latitude'] > 52 or payload_chunk['longitude'] < 12 or payload_chunk['longitude'] > 14:
+                            continue
+
                     response = requests.post(
                         url,
                         data=json.dumps(payload_chunk),

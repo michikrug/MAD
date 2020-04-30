@@ -75,7 +75,7 @@ class MitmDataProcessor(Process):
 
                 self.__db_submit.stops(origin, data["payload"])
 
-                if origin != "oneplusone":
+                if origin != "oneplusone" and origin != "tvbox2":
                     self.__db_submit.gyms(origin, data["payload"])
                     self.__db_submit.raids(origin, data["payload"], self.__mitm_mapper)
 

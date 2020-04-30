@@ -223,9 +223,6 @@ class MITMBase(WorkerBase):
         return data_requested
 
     def _start_pogo(self) -> bool:
-        if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
-            self._worker_specific_setup_start()
-            time.sleep(1)
         pogo_topmost = self._communicator.is_pogo_topmost()
         if pogo_topmost:
             return True
@@ -250,6 +247,9 @@ class MITMBase(WorkerBase):
             logger.info("PogoDroid on worker {} didn't connect yet. Probably not injected? (Count: {}/{})",
                         str(self._origin), str(self._not_injected_count), str(injection_thresh_reboot))
             if self._not_injected_count in [3, 6, 9, 15, 18] and not self._stop_worker_event.is_set():
+                if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+                    self._worker_specific_setup_start()
+                    time.sleep(1)
                 logger.info("Worker {} will retry check_windows while waiting for injection at count {}",
                             str(self._origin), str(self._not_injected_count))
                 self._ensure_pogo_topmost()

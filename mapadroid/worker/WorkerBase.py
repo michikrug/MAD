@@ -788,8 +788,7 @@ class WorkerBase(AbstractWorker):
         cur_time = time.time()
         start_result = False
         while not pogo_topmost:
-            start_result = self._communicator.start_app(
-                "com.nianticlabs.pokemongo")
+            start_result = self._communicator.start_app("com.nianticlabs.pokemongo")
             time.sleep(1)
             pogo_topmost = self._communicator.is_pogo_topmost()
 

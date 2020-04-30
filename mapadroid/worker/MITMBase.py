@@ -223,6 +223,9 @@ class MITMBase(WorkerBase):
         return data_requested
 
     def _start_pogo(self) -> bool:
+        if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+            self._worker_specific_setup_start()
+            time.sleep(1)
         pogo_topmost = self._communicator.is_pogo_topmost()
         if pogo_topmost:
             return True

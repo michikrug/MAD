@@ -133,15 +133,15 @@ def get_geofences(mapping_manager, data_manager, fence_type=None, area_id_req=No
             include[fences['name']] = []
             for fence in fences['polygon']:
                 include[fences['name']].append([
-                    getCoordFloat(fence['lon']),
-                    getCoordFloat(fence['lat'])
+                    getCoordFloat(fence['lat']),
+                    getCoordFloat(fence['lon'])
                 ])
         for fences in area_geofences.excluded_areas:
             exclude[fences['name']] = []
             for fence in fences['polygon']:
                 exclude[fences['name']].append([
-                    getCoordFloat(fence['lon']),
-                    getCoordFloat(fence['lat'])
+                    getCoordFloat(fence['lat']),
+                    getCoordFloat(fence['lon'])
                 ])
         geofences[area_id] = {
             'include': include,
@@ -163,7 +163,7 @@ def generate_coords_from_geofence(mapping_manager, data_manager, fence):
             coordinates.append(coords)
 
     for coord in coordinates[0]:
-        fence_string.append(str(coord[1]) + " " + str(coord[0]))
+        fence_string.append(str(coord[0]) + " " + str(coord[1]))
 
     fence_string.append(fence_string[0])
     return ",".join(fence_string)

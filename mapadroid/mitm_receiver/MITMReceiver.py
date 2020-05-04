@@ -2,20 +2,21 @@ import json
 import sys
 import time
 from multiprocessing import JoinableQueue, Process
+from threading import RLock
 from typing import Union
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
 
+import mapadroid.data_manager
 from mapadroid.mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
+from mapadroid.utils.apk_util import (convert_to_backend, download_file,
+                                      get_apk_list)
 from mapadroid.utils.authHelper import check_auth
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import LogLevelChanger, logger
-from mapadroid.utils.apk_util import download_file, convert_to_backend, get_apk_list
-from threading import RLock
-import mapadroid.data_manager
 
 app = Flask(__name__)
 
@@ -53,8 +54,8 @@ class EndpointAction(object):
                 logger.warning("Missing Origin header in request")
                 self.response = Response(status=500, headers={})
                 abort = True
-            elif (self.mapping_manager.get_all_devicemappings().keys() is not None
-                  and (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
+            elif (self.mapping_manager.get_all_devicemappings().keys() is not None and
+                  (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
                 logger.warning("MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
                 self.response = Response(status=403, headers={})
                 abort = True
@@ -287,7 +288,7 @@ class MITMReceiver(Process):
                 last_id = 0
             walkers = self.__data_manager.get_root_resource('walker')
             if len(walkers) == 0:
-                    return Response(status=400, response='No walkers configured')
+                return Response(status=400, response='No walkers configured')
             if walker_id is not None:
                 try:
                     walker_id = int(walker_id)

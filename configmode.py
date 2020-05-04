@@ -3,17 +3,17 @@ import sys
 import time
 from threading import Thread
 
+from mapadroid.data_manager import DataManager
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.db.DbWrapper import DbWrapper
-from mapadroid.utils.MappingManager import MappingManager
-from mapadroid.utils.MappingManager import MappingManagerManager
-from mapadroid.utils.logging import initLogging, logger
-from mapadroid.utils.updater import deviceUpdater
 from mapadroid.patcher import MADPatcher
-from mapadroid.utils.walkerArgs import parseArgs
-from mapadroid.data_manager import DataManager
-from mapadroid.websocket.WebsocketServer import WebsocketServer
 from mapadroid.utils.event import Event
+from mapadroid.utils.logging import initLogging, logger
+from mapadroid.utils.MappingManager import (MappingManager,
+                                            MappingManagerManager)
+from mapadroid.utils.updater import deviceUpdater
+from mapadroid.utils.walkerArgs import parseArgs
+from mapadroid.websocket.WebsocketServer import WebsocketServer
 
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language
@@ -78,6 +78,6 @@ if __name__ == "__main__":
         int(args.madmin_port))
     t_flask = Thread(name='madmin', target=start_madmin,
                      args=(
-                     args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater, jobstatus))
+                         args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater, jobstatus))
     t_flask.daemon = False
     t_flask.start()

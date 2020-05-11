@@ -1,4 +1,5 @@
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
+
 from ..dm_exceptions import DataManagerException
 from .resource import Resource
 from .walkerarea import WalkerArea

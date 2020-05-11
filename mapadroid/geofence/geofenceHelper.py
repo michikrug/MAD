@@ -177,9 +177,9 @@ class GeofenceHelper:
                     point['lat'] <= max(lat1, lat2)):
                 if lon1 != lon2:
                     latIntersection = (
-                            (point['lon'] - lon1) *
-                            (lat2 - lat1) / (lon2 - lon1) +
-                            lat1)
+                        (point['lon'] - lon1) *
+                        (lat2 - lat1) / (lon2 - lon1) +
+                        lat1)
 
                 if lat1 == lat2 or point['lat'] <= latIntersection:
                     inside = not inside

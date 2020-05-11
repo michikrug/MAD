@@ -417,7 +417,7 @@ class DbPogoProtoSubmit:
 
         for cell in cells:
             for gym in cell["forts"]:
-                if gym["type"] == 0:
+                if gym["type"] == 0 and not (gym["latitude"] < 50 or gym["latitude"] > 52 or gym["longitude"] < 12 or gym["longitude"] > 14):
                     guard_pokemon_id = gym["gym_details"]["guard_pokemon"]
                     gymid = gym["id"]
                     team_id = gym["gym_details"]["owned_by_team"]
@@ -428,9 +428,6 @@ class DbPogoProtoSubmit:
                     last_modified = datetime.utcfromtimestamp(
                         last_modified_ts).strftime("%Y-%m-%d %H:%M:%S")
                     is_ex_raid_eligible = gym["gym_details"]["is_ex_raid_eligible"]
-
-                    if latitude < 50 or latitude > 52 or longitude < 12 or longitude > 14:
-                        continue
 
                     gym_args.append(
                         (

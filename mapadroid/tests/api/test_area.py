@@ -1,4 +1,7 @@
 import copy
+from unittest import SkipTest
+
+from mapadroid.utils.walkerArgs import parseArgs
 
 from . import api_base, global_variables
 
@@ -132,6 +135,9 @@ class APIArea(api_base.APITestBase):
         self.assertDictEqual(payload, response.json())
 
     def test_recalc(self):
+        args = parseArgs()
+        if args.config_mode:
+            raise SkipTest('Config Mode cannt recalculate a route')
         area_obj = super().create_valid_resource('area')
         self.api.get('/reload')
         recalc_payload = {

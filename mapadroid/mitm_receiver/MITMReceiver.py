@@ -1,9 +1,11 @@
+import gzip
+import io
 import json
 import sys
 import time
 from multiprocessing import JoinableQueue, Process
 from threading import RLock
-from typing import Union
+from typing import Optional, Union
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
@@ -70,11 +72,21 @@ class EndpointAction(object):
 
         if not abort:
             try:
-                # TODO: use response data
-                if len(request.data) > 0:
-                    request_data = json.loads(request.data)
+                content_encoding = request.headers.get('Content-Encoding', None)
+                if content_encoding and content_encoding == "gzip":
+                    # we need to unpack the data first
+                    # https://stackoverflow.com/questions/28304515/receiving-gzip-with-flask
+                    compressed_data = io.BytesIO(request.data)
+                    text_data = gzip.GzipFile(fileobj=compressed_data, mode='r')
+                    request_data = json.loads(text_data.read())
                 else:
-                    request_data = {}
+                    request_data = request.data
+
+                content_type = request.headers.get('Content-Type', None)
+                if content_type and content_type == "application/json":
+                    request_data = json.loads(request_data)
+                else:
+                    request_data = request_data
                 response_payload = self.action(origin, request_data, *args, **kwargs)
                 if response_payload is None:
                     response_payload = ""
@@ -92,7 +104,7 @@ class EndpointAction(object):
 
 class MITMReceiver(Process):
     def __init__(self, listen_ip, listen_port, mitm_mapper, args_passed, mapping_manager: MappingManager,
-                 db_wrapper, data_manager, name=None):
+                 db_wrapper, data_manager, name=None, enable_configmode: Optional[bool] = False):
         Process.__init__(self, name=name)
         self.__application_args = args_passed
         self.__mapping_manager = mapping_manager
@@ -101,16 +113,12 @@ class MITMReceiver(Process):
         self.__mitm_mapper: MitmMapper = mitm_mapper
         self.__data_manager = data_manager
         self.__hopper_mutex = RLock()
+        self._db_wrapper = db_wrapper
+        self._data_queue: JoinableQueue = JoinableQueue()
+        self.worker_threads = []
         self.app = Flask("MITMReceiver")
-        self.add_endpoint(endpoint='/', endpoint_name='receive_protos', handler=self.proto_endpoint,
-                          methods_passed=['POST'])
-        self.add_endpoint(endpoint='/get_latest_mitm/', endpoint_name='get_latest_mitm/',
-                          handler=self.get_latest,
-                          methods_passed=['GET'])
         self.add_endpoint(endpoint='/get_addresses/', endpoint_name='get_addresses/',
                           handler=self.get_addresses,
-                          methods_passed=['GET'])
-        self.add_endpoint(endpoint='/status/', endpoint_name='status/', handler=self.status,
                           methods_passed=['GET'])
         self.add_endpoint(endpoint='/mad_apk/<string:apk_type>',
                           endpoint_name='mad_apk/info',
@@ -132,22 +140,27 @@ class MITMReceiver(Process):
                           endpoint_name='origin_generator/',
                           handler=self.origin_generator,
                           methods_passed=['GET'])
-
-        self._data_queue: JoinableQueue = JoinableQueue()
-        self._db_wrapper = db_wrapper
-        self.worker_threads = []
-        for i in range(self.__application_args.mitmreceiver_data_workers):
-            data_processor: MitmDataProcessor = MitmDataProcessor(self._data_queue, self.__application_args,
-                                                                  self.__mitm_mapper, db_wrapper,
-                                                                  name='MITMReceiver-%s' % str(i))
-            data_processor.start()
-            self.worker_threads.append(data_processor)
+        if not enable_configmode:
+            self.add_endpoint(endpoint='/', endpoint_name='receive_protos', handler=self.proto_endpoint,
+                              methods_passed=['POST'])
+            self.add_endpoint(endpoint='/get_latest_mitm/', endpoint_name='get_latest_mitm/',
+                              handler=self.get_latest,
+                              methods_passed=['GET'])
+            self.add_endpoint(endpoint='/status/', endpoint_name='status/', handler=self.status,
+                              methods_passed=['GET'])
+            for i in range(self.__application_args.mitmreceiver_data_workers):
+                data_processor: MitmDataProcessor = MitmDataProcessor(self._data_queue, self.__application_args,
+                                                                      self.__mitm_mapper, db_wrapper,
+                                                                      name='MITMReceiver-%s' % str(i))
+                data_processor.start()
+                self.worker_threads.append(data_processor)
 
     def shutdown(self):
         logger.info("MITMReceiver stop called...")
         logger.info("Adding None to queue")
-        for i in range(self.__application_args.mitmreceiver_data_workers):
-            self._data_queue.put(None)
+        if self._data_queue:
+            for i in range(self.__application_args.mitmreceiver_data_workers):
+                self._data_queue.put(None)
         logger.info("Trying to join workers...")
         for t in self.worker_threads:
             t.terminate()
@@ -197,6 +210,10 @@ class MITMReceiver(Process):
 
         timestamp: float = data.get("timestamp", int(time.time()))
         location_of_data: Location = Location(data.get("lat", 0.0), data.get("lng", 0.0))
+        if (location_of_data.lat > 90 or location_of_data.lat < -90 or
+                location_of_data.lng > 180 or location_of_data.lng < -180):
+            logger.warning("Received invalid location in data: %s".format(str(location_of_data)))
+            location_of_data: Location = Location(0, 0)
         self.__mitm_mapper.update_latest(
             origin, timestamp_received_raw=timestamp, timestamp_received_receiver=time.time(), key=type,
             values_dict=data, location=location_of_data)
@@ -213,12 +230,14 @@ class MITMReceiver(Process):
         if ids_iv is not None:
             ids_iv = ids_iv.get("values", None)
 
+        safe_items = self.__mitm_mapper.get_safe_items(origin)
+
         ids_encountered = self.__mitm_mapper.request_latest(
             origin, "ids_encountered")
         if ids_encountered is not None:
             ids_encountered = ids_encountered.get("values", None)
         response = {"ids_iv": ids_iv, "injected_settings": injected_settings,
-                    "ids_encountered": ids_encountered}
+                    "ids_encountered": ids_encountered, "safe_items": safe_items}
         return json.dumps(response)
 
     def get_addresses(self, origin, data):

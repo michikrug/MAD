@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 
 import apkutils
 from mapadroid.utils import global_variables
+from mapadroid.utils.gplay_connector import GPlayConnector
 from mapadroid.utils.logging import logger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -23,6 +24,7 @@ APK_HEADERS = {
 class AutoDownloader(object):
     def __init__(self, dbc):
         self.dbc = dbc
+        self.gpconn = None
 
     def apk_all_actions(self):
         self.apk_all_search()
@@ -64,30 +66,46 @@ class AutoDownloader(object):
         # Determine the version and fileid
         sql = "SELECT `version` FROM `mad_apks` WHERE `usage` = %s AND `arch` = %s"
         current_ver = self.dbc.autofetch_value(sql, args=(global_variables.MAD_APK_USAGE_POGO, architecture))
-        latest_data = self.get_lastest(global_variables.MAD_APK_USAGE_POGO, architecture)
+        latest_data = self.get_latest(global_variables.MAD_APK_USAGE_POGO, architecture)
         if not latest_data or latest_data['url'] is None:
             self.find_latest_pogo(architecture)
-            latest_data = self.get_lastest(global_variables.MAD_APK_USAGE_POGO, architecture)
+            latest_data = self.get_latest(global_variables.MAD_APK_USAGE_POGO, architecture)
         if not latest_data:
             logger.warning('Unable to find latest data for PoGo')
         else:
             if current_ver is None or is_newer_version(latest_data['version'], current_ver):
-                filename = 'pogo_%s_%s.apk' % (architecture, latest_data['version'],)
-                download_url = latest_data['url']
-                apk = APKDownloader(self.dbc, download_url, architecture, global_variables.MAD_APK_USAGE_POGO,
-                                    filename=filename)
-                apk.upload_file()
+                where = {
+                    'usage': global_variables.MAD_APK_USAGE_POGO,
+                    'arch': architecture
+                }
+                try:
+                    update_data = {
+                        'download_status': 1
+                    }
+                    self.dbc.autoexec_update('mad_apk_autosearch', update_data, where_keyvals=where)
+                    self.gpconn = GPlayConnector(architecture)
+                    downloaded_file = self.gpconn.download('com.nianticlabs.pokemongo')
+                    apk = APKDownloader(self.dbc, None, architecture, global_variables.MAD_APK_USAGE_POGO,
+                                        filename='pogo_%s_%s.zip' % (architecture, latest_data['version'],),
+                                        file=downloaded_file,
+                                        content_type='application/zip')
+                    apk.upload_file(skip_check=True, version=latest_data['version'])
+                except:
+                    raise
+                finally:
+                    update_data['download_status'] = 0
+                    self.dbc.autoexec_update('mad_apk_autosearch', update_data, where_keyvals=where)
 
     def download_pd(self, architecture):
         logger.info("Downloading latest PogoDroid")
         self.__download_simple(global_variables.MAD_APK_USAGE_PD, architecture)
 
     def __download_simple(self, apk_type, architecture):
-        latest_data = self.get_lastest(apk_type, architecture)
+        latest_data = self.get_latest(apk_type, architecture)
         installed = get_mad_apk(self.dbc, apk_type, architecture)
         if not latest_data or latest_data['url'] is None:
             self.apk_search(apk_type, architecture)
-            latest_data = self.get_lastest(apk_type, architecture)
+            latest_data = self.get_latest(apk_type, architecture)
         if not latest_data:
             logger.warning('Unable to find latest data')
         elif installed and 'size' in installed and installed['size'] == int(latest_data['version']):
@@ -124,30 +142,28 @@ class AutoDownloader(object):
     def find_latest_pogo(self, architecture):
         # Determine the version and fileid
         logger.info('Searching for a new version of PoGo [{}]', architecture)
-        download_url = None
-        url = global_variables.URL_POGO_APK_ARMEABI_V7A
-        if architecture == global_variables.MAD_APK_ARCH_ARM64_V8A:
-            url = global_variables.URL_POGO_APK_ARM64_V8A
-        response = requests.get(url, verify=False, headers=APK_HEADERS)
-        parsed = str(response.content)
-        mirror_version = str(re.search(r'"infoslide-value">([0-9\.]+)', parsed).group(1))
-        mirror_id = str(re.search(r'data-postid="(\d+)"', parsed).group(1))
-        sql = "SELECT `version` FROM `mad_apks` WHERE `usage` = %s AND `arch` = %s"
-        current_ver = self.dbc.autofetch_value(sql, args=(global_variables.MAD_APK_USAGE_POGO, architecture))
-        if current_ver is None or is_newer_version(mirror_version, current_ver):
-            logger.info('Newer version found on the mirror: {}', mirror_version)
-            download_url = global_variables.URL_POGO_APK % (mirror_id,)
-        else:
-            logger.info('No newer version found')
-        self.set_last_searched(global_variables.MAD_APK_USAGE_POGO, architecture, version=mirror_version,
-                               url=download_url)
+        self.gpconn = GPlayConnector(architecture)
+        try:
+            download_url = None
+            latest = self.gpconn.get_latest_version('com.nianticlabs.pokemongo')
+            sql = "SELECT `version` FROM `mad_apks` WHERE `usage` = %s AND `arch` = %s"
+            current_ver = self.dbc.autofetch_value(sql, args=(global_variables.MAD_APK_USAGE_POGO, architecture))
+            if current_ver is None or is_newer_version(latest, current_ver):
+                logger.info('Newer version found on the Play Store: {}', latest)
+                download_url = True
+            else:
+                logger.info('No newer version found')
+            self.set_last_searched(global_variables.MAD_APK_USAGE_POGO, architecture, version=latest,
+                                   url=download_url)
+        except Exception as err:
+            logger.critical(err)
 
     def find_latest_rgc(self, architecture):
         logger.info('Searching for a new version of RGC [{}]', architecture)
         self.__find_latest_head(global_variables.MAD_APK_USAGE_RGC, architecture,
                                 global_variables.URL_RGC_APK)
 
-    def get_lastest(self, usage, arch):
+    def get_latest(self, usage, arch):
         sql = "SELECT `version`, `url` FROM `mad_apk_autosearch` WHERE `usage` = %s AND `arch` = %s"
         return self.dbc.autofetch_row(sql, args=(usage, arch))
 
@@ -165,7 +181,10 @@ class AutoDownloader(object):
 
 
 class APKDownloader(object):
-    def __init__(self, dbc, url: str, architecture: int, apk_type: int, filename: str = None, file=None):
+    def __init__(self, dbc, url: str, architecture: int, apk_type: int,
+                 filename: str = None,
+                 file: io.BytesIO = None,
+                 content_type: str = None):
         self.dbc = dbc
         self.url = url
         self.apk_type = apk_type
@@ -176,7 +195,8 @@ class APKDownloader(object):
         if not file:
             self.__download_file()
         else:
-            self.content_type = 'application/vnd.android.package-archive'
+            self.content_type = content_type
+            self.file = file
 
     def __download_file(self):
         update_data = {
@@ -202,16 +222,19 @@ class APKDownloader(object):
             update_data['download_status'] = 0
             self.dbc.autoexec_update('mad_apk_autosearch', update_data, where_keyvals=where)
 
-    def upload_file(self):
+    def upload_file(self, skip_check: bool = False, version: str = None):
         if self.content_type:
             MADAPKImporter(self.dbc, self.filename, self.file, self.content_type, apk_type=self.apk_type,
-                           architecture=self.architecture, mad_apk=True)
+                           architecture=self.architecture, mad_apk=True, skip_check=skip_check,
+                           version=version)
 
 
 class MADAPKImporter(object):
     def __init__(self, dbc, filename: str, apk_file, content_type, apk_type: int = None,
                  architecture: int = None,
-                 mad_apk: bool = False):
+                 mad_apk: bool = False,
+                 skip_check: bool = False,
+                 version: str = None):
         self.dbc = dbc
         self.filename = secure_filename(filename)
         self.apk_type = apk_type
@@ -219,9 +242,10 @@ class MADAPKImporter(object):
         self.content_type = content_type
         self.mad_apk = mad_apk
         self.package = None
-        self.version = None
+        self.version = version
         self.__valid = True
-        self.__validate_file(apk_file)
+        if not skip_check:
+            self.__validate_file(apk_file)
         self.__import_file(apk_file)
 
     def __import_file(self, apk_file):
@@ -335,6 +359,7 @@ def get_mad_apks(db) -> dict:
                 'version': None,
                 'file_id': None,
                 'filename': None,
+                'mimetype': None,
                 'arch_disp': 'armeabi-v7a',
                 'usage_disp': 'pogo'
             },
@@ -342,6 +367,7 @@ def get_mad_apks(db) -> dict:
                 'version': None,
                 'file_id': None,
                 'filename': None,
+                'mimetype': None,
                 'arch_disp': 'arm64-v8a',
                 'usage_disp': 'pogo'
             },
@@ -351,6 +377,7 @@ def get_mad_apks(db) -> dict:
                 'version': None,
                 'file_id': None,
                 'filename': None,
+                'mimetype': None,
                 'arch_disp': 'noarch',
                 'usage_disp': 'rgc'
             },
@@ -360,6 +387,7 @@ def get_mad_apks(db) -> dict:
                 'version': None,
                 'file_id': None,
                 'filename': None,
+                'mimetype': None,
                 'arch_disp': 'noarch',
                 'usage_disp': 'pogodroid'
             },

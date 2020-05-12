@@ -5,7 +5,7 @@ import os
 from functools import update_wrapper, wraps
 from math import floor
 
-from flask import (make_response, request)
+from flask import make_response, request
 
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.functions import creation_date
@@ -45,7 +45,7 @@ def uploaded_files(datetimeformat, jobs):
         creationdate = datetime.datetime.fromtimestamp(
             creation_date(file)).strftime(datetimeformat)
         fileJson = (
-        {'jobname': os.path.basename(file), 'creation': creationdate, 'type': 'jobType.INSTALLATION'})
+            {'jobname': os.path.basename(file), 'creation': creationdate, 'type': 'jobType.INSTALLATION'})
         files.append(fileJson)
 
     for command in jobs:

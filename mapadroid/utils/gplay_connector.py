@@ -3,8 +3,8 @@ import io
 import json
 import os
 import re
-from typing import List
 import zipfile
+from typing import List
 
 from gpapi.googleplay import GooglePlayAPI, LoginError
 from mapadroid.utils import global_variables

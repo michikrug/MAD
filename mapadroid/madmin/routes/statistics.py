@@ -2,12 +2,17 @@ import datetime
 import json
 import time
 
-from flask import (jsonify, render_template, request, redirect, url_for, flash, Response)
+from flask import (Response, flash, jsonify, redirect, render_template,
+                   request, url_for)
 
 from mapadroid.db.DbStatsReader import DbStatsReader
 from mapadroid.db.DbWrapper import DbWrapper
-from mapadroid.madmin.functions import auth_required, generate_coords_from_geofence, get_geofences
-from mapadroid.utils.gamemechanicutil import calculate_mon_level, calculate_iv, get_raid_boss_cp, form_mapper
+from mapadroid.madmin.functions import (auth_required,
+                                        generate_coords_from_geofence,
+                                        get_geofences)
+from mapadroid.utils.gamemechanicutil import (calculate_iv,
+                                              calculate_mon_level, form_mapper,
+                                              get_raid_boss_cp)
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.language import i8ln
 from mapadroid.utils.logging import logger
@@ -237,7 +242,8 @@ class statistics(object):
                 shiny_hour_temp[dat[1]] = dat[0]
 
         for dat in shiny_hour_temp:
-            if shiny_hour_temp[dat] not in shiny_hour_calc: shiny_hour_calc[shiny_hour_temp[dat]] = 0
+            if shiny_hour_temp[dat] not in shiny_hour_calc:
+                shiny_hour_calc[shiny_hour_temp[dat]] = 0
             shiny_hour_calc[shiny_hour_temp[dat]] += 1
 
         for dat in sorted(shiny_hour_calc):
@@ -261,10 +267,12 @@ class statistics(object):
                 diff = 1
 
             ratio = round(dat[1] * 100 / diff, 2)
-            if dat[3] not in shiny_worker: shiny_worker[dat[3]] = 0
+            if dat[3] not in shiny_worker:
+                shiny_worker[dat[3]] = 0
             shiny_worker[dat[3]] += dat[1]
 
-            if dat[2] not in shiny_avg: shiny_avg[dat[2]] = {}
+            if dat[2] not in shiny_avg:
+                shiny_avg[dat[2]] = {}
             if dat[5] not in shiny_avg[dat[2]]:
                 shiny_avg[dat[2]][dat[5]] = {}
                 shiny_avg[dat[2]][dat[5]]['total_shiny'] = []
@@ -328,7 +336,7 @@ class statistics(object):
         tmp_perhour_v2 = {}
 
         if data is None or len(data) == 0:
-            return jsonify({'empty': True});
+            return jsonify({'empty': True})
 
         shiny_stats_v2 = []
         for dat in data:
@@ -530,7 +538,6 @@ class statistics(object):
         events = []
         eventidhelper = {}
 
-
         possible_fences = get_geofences(self._mapping_manager, self._data_manager)
         for possible_fence in possible_fences:
             mode = possible_fences[possible_fence]['mode']
@@ -555,8 +562,10 @@ class statistics(object):
                 for spawnid in data:
                     eventname: str = data[str(spawnid)]["event"]
                     eventid: str = data[str(spawnid)]["eventid"]
-                    if not eventname in known: known[eventname] = []
-                    if not eventname in unknown: unknown[eventname] = []
+                    if not eventname in known:
+                        known[eventname] = []
+                    if not eventname in unknown:
+                        unknown[eventname] = []
                     if eventname not in events:
                         events.append(eventname)
                         eventidhelper[eventname] = eventid
@@ -571,13 +580,11 @@ class statistics(object):
                     outdate: int = 0
 
                     if event == "DEFAULT":
-                        outdate = self.get_spawn_details_helper\
-                            (areaid=area_id, eventid=eventidhelper[event], olderthanxdays=self.outdatedays,
-                             sumonly=True, index=subfenceindex)
+                        outdate = self.get_spawn_details_helper(areaid=area_id, eventid=eventidhelper[event], olderthanxdays=self.outdatedays,
+                                                                sumonly=True, index=subfenceindex)
                     else:
-                        today = self.get_spawn_details_helper\
-                            (areaid=area_id, eventid=eventidhelper[event], todayonly=True,
-                             sumonly=True, index=subfenceindex)
+                        today = self.get_spawn_details_helper(areaid=area_id, eventid=eventidhelper[event], todayonly=True,
+                                                              sumonly=True, index=subfenceindex)
 
                     coords.append({'fence': subfence, 'known': len(known[event]), 'unknown': len(unknown[event]),
                                    'sum': len(known[event]) + len(unknown[event]), 'event': event, 'mode': mode,
@@ -617,18 +624,18 @@ class statistics(object):
                 fence = generate_coords_from_geofence(self._mapping_manager, self._data_manager, subfence)
 
                 stops = len(self._db.stops_from_db(
-                        fence=fence
-                    ))
+                    fence=fence
+                ))
                 quests = len(self._db.quests_from_db(
-                        fence=fence
-                    ))
+                    fence=fence
+                ))
 
                 processed: int = 0
                 if int(stops) > 0:
                     processed: int = int(quests) * 100 / int(stops)
 
                 stats_process.append({"fence": str(subfence), 'stops': int(stops), 'quests': int(quests),
-                              'processed': str(int(processed)) + " %"})
+                                      'processed': str(int(processed)) + " %"})
 
                 subfenceindex += 1
 
@@ -778,7 +785,7 @@ class statistics(object):
             olderthanxdays = None
             todayonly = False
         else:
-            todayonly=True
+            todayonly = True
 
         return jsonify(self.get_spawn_details_helper(areaid=area_id, eventid=event_id, olderthanxdays=olderthanxdays,
                                                      todayonly=todayonly, index=index))
@@ -842,5 +849,3 @@ class statistics(object):
         self._db.delete_spawnpoints([x for x in self._db.get_all_spawnpoints() if x not in spawns])
 
         return jsonify({'status': 'success'})
-
-

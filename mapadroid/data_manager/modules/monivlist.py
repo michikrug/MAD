@@ -1,7 +1,9 @@
+from typing import List, Optional, Tuple
+
 import mysql.connector
-from typing import Optional, List, Tuple
-from .resource import Resource
 from mapadroid.utils.logging import logger
+
+from .resource import Resource
 
 
 class MonIVList(Resource):

@@ -1,12 +1,13 @@
 import asyncio
-from typing import Optional, NamedTuple
+from typing import NamedTuple, Optional
 
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
-from mapadroid.utils.MappingManager import MappingManager
 from mapadroid.utils.collections import Location
+from mapadroid.utils.logging import logger
 from mapadroid.utils.madGlobals import WrongAreaInWalker
+from mapadroid.utils.MappingManager import MappingManager
 from mapadroid.utils.routeutil import pre_check_value
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
 from mapadroid.worker.AbstractWorker import AbstractWorker
@@ -14,7 +15,6 @@ from mapadroid.worker.WorkerConfigmode import WorkerConfigmode
 from mapadroid.worker.WorkerMITM import WorkerMITM
 from mapadroid.worker.WorkerQuests import WorkerQuests
 from mapadroid.worker.WorkerType import WorkerType
-from mapadroid.utils.logging import logger
 
 
 class WalkerConfiguration(NamedTuple):
@@ -121,8 +121,8 @@ class WorkerFactory:
         logger.debug('Devicesettings {}: {}', str(origin), devicesettings)
         logger.info('{} using walker area {} [{}/{}]', str(origin), str(
             self.__mapping_manager.routemanager_get_name(walker_configuration.walker_area_name)),
-                    str(walker_configuration.walker_index + 1),
-                    str(walker_configuration.total_walkers_allowed_for_assigned_area))
+            str(walker_configuration.walker_index + 1),
+            str(walker_configuration.total_walkers_allowed_for_assigned_area))
         return walker_configuration
 
     async def __update_settings_of_origin(self, origin: str, walker_configuration: WalkerConfiguration):
@@ -209,4 +209,3 @@ class WorkerFactory:
                                   routemanager_name=None,
                                   event=self.__event)
         return worker
-

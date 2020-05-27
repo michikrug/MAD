@@ -5,15 +5,14 @@ import time
 from threading import Thread
 
 import flask
-import apkutils
 import requests
 import urllib3
 from werkzeug.utils import secure_filename
 
+import apkutils
 from mapadroid.utils import global_variables
-from mapadroid.utils.logging import logger
 from mapadroid.utils.gplay_connector import GPlayConnector
-
+from mapadroid.utils.logging import logger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -87,10 +86,10 @@ class AutoDownloader(object):
                     self.gpconn = GPlayConnector(architecture)
                     downloaded_file = self.gpconn.download('com.nianticlabs.pokemongo')
                     apk = APKDownloader(self.dbc, None, architecture, global_variables.MAD_APK_USAGE_POGO,
-                                        filename = 'pogo_%s_%s.zip' % (architecture, latest_data['version'],),
-                                        file = downloaded_file,
-                                        content_type = 'application/zip')
-                    apk.upload_file(skip_check = True, version = latest_data['version'])
+                                        filename='pogo_%s_%s.zip' % (architecture, latest_data['version'],),
+                                        file=downloaded_file,
+                                        content_type='application/zip')
+                    apk.upload_file(skip_check=True, version=latest_data['version'])
                 except:
                     raise
                 finally:
@@ -226,8 +225,8 @@ class APKDownloader(object):
     def upload_file(self, skip_check: bool = False, version: str = None):
         if self.content_type:
             MADAPKImporter(self.dbc, self.filename, self.file, self.content_type, apk_type=self.apk_type,
-                           architecture=self.architecture, mad_apk=True, skip_check = skip_check,
-                           version = version)
+                           architecture=self.architecture, mad_apk=True, skip_check=skip_check,
+                           version=version)
 
 
 class MADAPKImporter(object):
@@ -326,6 +325,7 @@ def chunk_generator(dbc, filestore_id):
     for chunk_id in chunk_ids:
         yield dbc.autofetch_value(data_sql, args=(chunk_id))
 
+
 def get_apk_list(dbc, apk_type, apk_arch):
     apks = get_mad_apks(dbc)
     try:
@@ -350,6 +350,7 @@ def get_apk_list(dbc, apk_type, apk_arch):
             return ('Invalid apk_type.  Valid apk_types: %s' % apks.keys(), 404)
         else:
             return (apks, 200)
+
 
 def get_mad_apks(db) -> dict:
     apks = {
@@ -462,6 +463,7 @@ def is_newer_version(first_ver: str, second_ver: str) -> bool:
         first_is_newer = True
     return first_is_newer
 
+
 def convert_to_backend(apk_type=None, apk_arch=None):
     if apk_type and isinstance(apk_type, str):
         try:
@@ -488,6 +490,7 @@ def convert_to_backend(apk_type=None, apk_arch=None):
             else:
                 global_variables.MAD_APK_ARCH_NOARCH
     return (apk_type, apk_arch)
+
 
 def download_file(dbc, apk_type, apk_arch):
     apks = get_apk_list(dbc, apk_type, apk_arch)

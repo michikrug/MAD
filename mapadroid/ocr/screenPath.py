@@ -55,8 +55,9 @@ class WordToScreenMatching(object):
             temp_accounts = temp_accounts.replace(' ', '').split('|')
             for account in temp_accounts:
                 ptc_temp = account.split(',')
-                if 2 < len(ptc_temp) > 2:
+                if len(ptc_temp) != 2:
                     logger.warning('Cannot use this account (Wrong format!): {}'.format(str(account)))
+                    continue
                 username = ptc_temp[0]
                 password = ptc_temp[1]
                 self._PTC_accounts.append(Login_PTC(username, password))
@@ -137,6 +138,7 @@ class WordToScreenMatching(object):
         elif "ConsentActivity" in topmost_app:
             return ScreenType.CONSENT, global_dict, diff
         elif "com.nianticlabs.pokemongo" not in topmost_app:
+            logger.warning("PoGo ist not opened! Current topmost app: {}", topmost_app)
             return ScreenType.CLOSE, global_dict, diff
         elif self._nextscreen != ScreenType.UNDEFINED:
             # TODO: how can the nextscreen be known in the current? o.O
@@ -187,41 +189,67 @@ class WordToScreenMatching(object):
             # french ...
             if 'DRESSEURS' in (global_dict['text'][i]):
                 temp_dict['CLUB'] = global_dict['top'][i] / diff
+            if 'Google' in (global_dict['text'][i]):
+                temp_dict['Google'] = global_dict['top'][i] / diff
 
             if self.get_devicesettings_value('logintype', 'google') == 'ptc':
                 self._nextscreen = ScreenType.PTC
                 if 'CLUB' in (global_dict['text'][i]):
                     self._click_center_button(diff, global_dict, i)
                     time.sleep(5)
+                    return
+
+                # alternative select - calculate down from Facebook button
+                elif 'Facebook' in temp_dict:
+                    click_x = self._width / 2
+                    click_y = (temp_dict['Facebook'] + 2 * self._height / 10.11)
+                    logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                    self._communicator.click(click_x, click_y)
+                    time.sleep(5)
+                    return
+
+                # alternative select - calculate down from Google button
+                elif 'Google' in temp_dict:
+                    click_x = self._width / 2
+                    click_y = (temp_dict['Google'] + self._height / 10.11)
+                    logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
+                    self._communicator.click(click_x, click_y)
+                    time.sleep(5)
+                    return
+
             else:
                 self._nextscreen = ScreenType.UNDEFINED
                 if 'Google' in (global_dict['text'][i]):
                     self._click_center_button(diff, global_dict, i)
                     time.sleep(5)
+                    return
 
                 # alternative select
-                if 'Facebook' in temp_dict and 'TRAINER' in temp_dict:
+                elif 'Facebook' in temp_dict and 'CLUB' in temp_dict:
                     click_x = self._width / 2
-                    click_y = (temp_dict['Facebook'] + ((temp_dict['TRAINER'] - temp_dict['Facebook']) / 2))
+                    click_y = (temp_dict['Facebook'] + ((temp_dict['CLUB'] - temp_dict['Facebook']) / 2))
                     logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
+                    return
 
                 # alternative select
-                if 'Facebook' in temp_dict:
+                elif 'Facebook' in temp_dict:
                     click_x = self._width / 2
                     click_y = (temp_dict['Facebook'] + self._height / 10.11)
                     logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
+                    return
 
                 # alternative select
-                if 'CLUB' in temp_dict:
+                elif 'CLUB' in temp_dict:
                     click_x = self._width / 2
                     click_y = (temp_dict['CLUB'] - self._height / 10.11)
                     logger.debug('Click ' + str(click_x) + ' / ' + str(click_y))
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
+                    return
 
     def _click_center_button(self, diff, global_dict, i) -> None:
         (x, y, w, h) = (global_dict['left'][i], global_dict['top'][i],
@@ -267,6 +295,8 @@ class WordToScreenMatching(object):
             self._nextscreen = ScreenType.UNDEFINED
         elif screentype == ScreenType.UPDATE:
             self._nextscreen = ScreenType.UNDEFINED
+        elif screentype == ScreenType.NOGGL:
+            self._nextscreen = ScreenType.UNDEFINED
         elif screentype == ScreenType.STRIKE:
             self.__handle_strike_screen(diff, global_dict)
         elif screentype == ScreenType.SUSPENDED:
@@ -289,7 +319,7 @@ class WordToScreenMatching(object):
         elif screentype == ScreenType.BLACK:
             logger.warning("Screen is black, sleeping a couple seconds for another check...")
         elif screentype == ScreenType.CLOSE:
-            logger.warning("Detected pogo not open")
+            logger.debug("Detected pogo not open")
         elif screentype == ScreenType.DISABLED:
             logger.warning("Screendetection disabled")
         elif screentype == ScreenType.ERROR:
@@ -426,6 +456,7 @@ class WordToScreenMatching(object):
     def detect_screentype(self) -> ScreenType:
         topmostapp = self._communicator.topmost_app()
         if not topmostapp:
+            logger.warning("Failed getting the topmost app!")
             return ScreenType.ERROR
 
         screentype, global_dict, diff = self.__evaluate_topmost_app(topmost_app=topmostapp)

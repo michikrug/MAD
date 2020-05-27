@@ -132,7 +132,7 @@ class MITMReceiver(Process):
                           endpoint_name='mad_apk/download',
                           handler=self.mad_apk_download,
                           methods_passed=['GET'])
-        self.add_endpoint(endpoint='/mad_apk/<string:apk_type>/download',
+        self.add_endpoint(endpoint='/mad_apk/<string:apk_type>/<string:apk_arch>/download',
                           endpoint_name='mad_apk/arch/download',
                           handler=self.mad_apk_download,
                           methods_passed=['GET'])
@@ -212,7 +212,7 @@ class MITMReceiver(Process):
         location_of_data: Location = Location(data.get("lat", 0.0), data.get("lng", 0.0))
         if (location_of_data.lat > 90 or location_of_data.lat < -90 or
                 location_of_data.lng > 180 or location_of_data.lng < -180):
-            logger.warning("Received invalid location in data: %s".format(str(location_of_data)))
+            logger.warning("Received invalid location from {} in data: {}".format(origin, str(location_of_data)))
             location_of_data: Location = Location(0, 0)
         self.__mitm_mapper.update_latest(
             origin, timestamp_received_raw=timestamp, timestamp_received_receiver=time.time(), key=type,
@@ -231,13 +231,15 @@ class MITMReceiver(Process):
             ids_iv = ids_iv.get("values", None)
 
         safe_items = self.__mitm_mapper.get_safe_items(origin)
+        level_mode = self.__mitm_mapper.get_levelmode(origin)
 
         ids_encountered = self.__mitm_mapper.request_latest(
             origin, "ids_encountered")
         if ids_encountered is not None:
             ids_encountered = ids_encountered.get("values", None)
         response = {"ids_iv": ids_iv, "injected_settings": injected_settings,
-                    "ids_encountered": ids_encountered, "safe_items": safe_items}
+                    "ids_encountered": ids_encountered, "safe_items": safe_items,
+                    "lvl_mode": level_mode}
         return json.dumps(response)
 
     def get_addresses(self, origin, data):

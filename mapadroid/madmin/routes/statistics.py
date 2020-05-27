@@ -11,10 +11,9 @@ from mapadroid.madmin.functions import (auth_required,
                                         generate_coords_from_geofence,
                                         get_geofences)
 from mapadroid.utils.gamemechanicutil import (calculate_iv,
-                                              calculate_mon_level, form_mapper,
-                                              get_raid_boss_cp)
+                                              calculate_mon_level, form_mapper)
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
-from mapadroid.utils.language import i8ln
+from mapadroid.utils.language import get_mon_name, i8ln
 from mapadroid.utils.logging import logger
 
 
@@ -48,6 +47,7 @@ class statistics(object):
             ("/status", self.status),
             ("/get_status", self.get_status),
             ("/get_spawnpoints_stats", self.get_spawnpoints_stats),
+            ("/get_spawnpoints_stats_summary", self.get_spawnpoints_stats_summary),
             ("/statistics_spawns", self.statistics_spawns),
             ("/shiny_stats", self.statistics_shiny),
             ("/shiny_stats_data", self.shiny_stats_data),
@@ -214,8 +214,7 @@ class statistics(object):
             for dat in data:
                 mon = "%03d" % dat[1]
                 monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_00.png'
-                monName_raw = (get_raid_boss_cp(dat[1]))
-                monName = i8ln(monName_raw['name'])
+                monName = get_mon_name(dat[1])
                 if self._args.db_method == "rm":
                     lvl = calculate_mon_level(dat[6])
                 else:
@@ -258,8 +257,7 @@ class statistics(object):
             form_suffix = "%02d" % form_mapper(dat[2], dat[5])
             mon = "%03d" % dat[2]
             monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
-            monName_raw = (get_raid_boss_cp(dat[2]))
-            monName = i8ln(monName_raw['name'])
+            monName = get_mon_name(dat[2])
             diff: int = dat[0]
             if diff == 0:
                 logger.warning('No deeper mon stats are possible - not enought data '
@@ -293,8 +291,7 @@ class statistics(object):
                 form_suffix = "%02d" % form_mapper(dat, form_dat)
                 mon = "%03d" % dat
                 monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
-                monName_raw = (get_raid_boss_cp(dat))
-                monName = i8ln(monName_raw['name'])
+                monName = get_mon_name(dat)
 
                 total_shiny_encounters = sum(shiny_avg[dat][form_dat]['total_shiny'])
                 total_nonshiny_encounters = sum(shiny_avg[dat][form_dat]['total_nonshiny'])
@@ -343,8 +340,7 @@ class statistics(object):
             form_suffix = "%02d" % form_mapper(dat[0], dat[1])
             mon = "%03d" % dat[0]
             monPic = 'asset/pokemon_icons/pokemon_icon_' + mon + '_' + form_suffix + '_shiny.png'
-            monName_raw = (get_raid_boss_cp(dat[0]))
-            monName = i8ln(monName_raw['name'])
+            monName = get_mon_name(dat[0])
             mon_names[dat[0]] = monName
             found_shiny_mon_id.append(
                 mon)  # append everything now, we will set() it later to remove duplicates
@@ -531,6 +527,12 @@ class statistics(object):
     @logger.catch()
     def get_spawnpoints_stats(self):
 
+        geofence_type = request.args.get('type', 'mon_mitm')
+        geofence_id = int(request.args.get('fence', -1))
+        if geofence_type not in ['idle', 'iv_mitm', 'mon_mitm', 'pokestops', 'raids_mitm']:
+            stats = {'spawnpoints': []}
+            return jsonify(stats)
+
         coords = []
         known = {}
         unknown = {}
@@ -538,7 +540,11 @@ class statistics(object):
         events = []
         eventidhelper = {}
 
-        possible_fences = get_geofences(self._mapping_manager, self._data_manager)
+        if geofence_id != -1:
+            possible_fences = get_geofences(self._mapping_manager, self._data_manager, area_id_req=geofence_id)
+        else:
+            possible_fences = get_geofences(self._mapping_manager, self._data_manager, fence_type=geofence_type)
+
         for possible_fence in possible_fences:
             mode = possible_fences[possible_fence]['mode']
             area_id = possible_fences[possible_fence]['area_id']
@@ -606,7 +612,7 @@ class statistics(object):
         possible_fences = get_geofences(self._mapping_manager, self._data_manager, fence_type="pokestops")
         wanted_fences = []
         if self._args.quest_stats_fences != "":
-            wanted_fences = [item.lower() for item in self._args.quest_stats_fences.split(",")]
+            wanted_fences = [item.lower().replace(" ", "") for item in self._args.quest_stats_fences.split(",")]
         for possible_fence in possible_fences:
             mode = possible_fences[possible_fence]['mode']
             area_id = possible_fences[possible_fence]['area_id']
@@ -643,7 +649,7 @@ class statistics(object):
         quest: list = []
         quest_db = self._db_stats_reader.get_quests_count(1)
         for ts, count in quest_db:
-            quest_raw = (ts * 1000, count)
+            quest_raw = (int(ts * 1000), count)
             quest.append(quest_raw)
 
         # Stop
@@ -849,3 +855,12 @@ class statistics(object):
         self._db.delete_spawnpoints([x for x in self._db.get_all_spawnpoints() if x not in spawns])
 
         return jsonify({'status': 'success'})
+
+    @auth_required
+    @logger.catch()
+    def get_spawnpoints_stats_summary(self):
+        possible_fences = get_geofences(self._mapping_manager, self._data_manager)
+        events = self._db.get_events()
+        spawnpoints_total = self._db_stats_reader.get_all_spawnpoints_count()
+        stats = {'fences': possible_fences, 'events': events, 'spawnpoints_count': spawnpoints_total}
+        return jsonify(stats)

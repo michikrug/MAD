@@ -137,7 +137,10 @@ class MITMBase(WorkerBase):
                     datetime.fromtimestamp(timestamp))
         data_requested = LatestReceivedType.UNDEFINED
 
-        while data_requested == LatestReceivedType.UNDEFINED and timestamp + timeout >= int(time.time()) \
+        failover_timestamp: int = time.time()
+
+        while data_requested == LatestReceivedType.UNDEFINED and \
+                (timestamp + timeout >= int(time.time()) and int(failover_timestamp + timeout) >= int(time.time())) \
                 and not self._stop_worker_event.is_set():
             latest = self._mitm_mapper.request_latest(self._origin)
             latest_location: Optional[Location] = latest.get("location", None)
@@ -322,7 +325,7 @@ class MITMBase(WorkerBase):
             self.set_devicesettings_value('last_questclear_time', time.time())
             logger.info("Delete old quest {}", int(trash) + 1)
             self._communicator.click(int(trashcancheck[0].x), int(trashcancheck[0].y))
-            time.sleep(1 + int(delayadd))
+            time.sleep(2.5 + int(delayadd))
             self._communicator.click(int(x), int(y))
             time.sleep(1 + int(delayadd))
 

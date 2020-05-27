@@ -16,15 +16,6 @@ def calculate_mon_level(cp_multiplier):
     return round(pokemon_level) * 2 / 2
 
 
-def get_raid_boss_cp(mon_id):
-    cp = 0
-
-    if int(mon_id) > 0:
-        pokemon_file = open_json_file("pokemon")
-        cp = pokemon_file.get(str(mon_id), 0)
-    return cp
-
-
 def gen_despawn_timestamp(known_despawn):
     despawn_time = datetime.now() + timedelta(seconds=300)
     despawn_time = datetime.utcfromtimestamp(

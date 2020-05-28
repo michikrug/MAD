@@ -1,10 +1,12 @@
-from flask import (render_template, request, redirect, url_for, Response, jsonify, flash)
-from flask_caching import Cache
 from datetime import datetime
 
+from flask import (Response, flash, jsonify, redirect, render_template,
+                   request, url_for)
+
+from flask_caching import Cache
 from mapadroid.madmin.functions import auth_required
-from mapadroid.utils.MappingManager import MappingManager
 from mapadroid.utils.logging import logger
+from mapadroid.utils.MappingManager import MappingManager
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
@@ -44,8 +46,8 @@ class event(object):
         events = []
         for dat in data:
             events.append({'id': str(dat['id']), 'event_name': str(dat['event_name']),
-                           'event_start': str(dat['event_start']),  'event_end': str(dat['event_end']),
-                            'event_lure_duration': str(dat['event_lure_duration']), 'locked': str(dat['locked'])})
+                           'event_start': str(dat['event_start']), 'event_end': str(dat['event_end']),
+                           'event_lure_duration': str(dat['event_lure_duration']), 'locked': str(dat['locked'])})
 
         return jsonify(events)
 
@@ -68,7 +70,7 @@ class event(object):
         if id is not None:
             data = self._db.get_events(event_id=id)
             event_name = data[0]['event_name']
-            event_lure_duration  = data[0]['event_lure_duration']
+            event_lure_duration = data[0]['event_lure_duration']
             event_start_date = datetime.strftime(data[0]['event_start'], '%Y-%m-%d')
             event_start_time = datetime.strftime(data[0]['event_start'], '%H:%M')
             event_end_date = datetime.strftime(data[0]['event_end'], '%Y-%m-%d')
@@ -94,9 +96,10 @@ class event(object):
         event_end_time = request.form.get("event_end_time", None)
         event_lure_duration = request.form.get("event_lure_duration", None)
         # default lure duration = 30 (min)
-        if event_lure_duration == "": event_lure_duration = 30
+        if event_lure_duration == "":
+            event_lure_duration = 30
         if event_name == "" or event_start_date == "" or event_start_time == "" or event_end_date == "" \
-            or event_end_time == "":
+                or event_end_time == "":
             flash('Error while adding this event')
             return redirect(url_for('events'), code=302)
 
@@ -117,6 +120,3 @@ class event(object):
             else:
                 flash('Could not delete this event')
                 return redirect(url_for('events'), code=302)
-
-
-

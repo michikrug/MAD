@@ -22,7 +22,7 @@ class DbPogoProtoSubmit:
     def __init__(self, db_exec: PooledQueryExecutor):
         self._db_exec: PooledQueryExecutor = db_exec
 
-    def mons(self, origin: str, map_proto: dict, mon_ids_iv: Optional[List[int]], mitm_mapper):
+    def mons(self, origin: str, map_proto: dict, mitm_mapper):
         """
         Update/Insert mons from a map_proto dict
         """
@@ -128,7 +128,7 @@ class DbPogoProtoSubmit:
             # initialize to not run into nullpointer
 
         # ditto detector
-        if pokemon_data.get("id") in (13, 46, 48, 163, 165, 167, 187, 223, 273, 293, 300, 316, 322, 399) and \
+        if pokemon_data.get("id") in (13, 46, 163, 165, 167, 187, 223, 293, 316, 322, 399, 590) and \
                 ((pokemon_display.get("weather_boosted_value", None) is not None and
                   pokemon_display.get("weather_boosted_value", None) > 0) and
                  (pokemon_data.get("individual_attack") < 4 or pokemon_data.get(

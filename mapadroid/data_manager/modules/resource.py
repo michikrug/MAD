@@ -1,9 +1,11 @@
 import copy
 from collections import UserDict
+
 import mysql
-from ..dm_exceptions import DependencyError, SaveIssue, UnknownIdentifier, UpdateIssue
 from mapadroid.utils.logging import logger
 
+from ..dm_exceptions import (DependencyError, SaveIssue, UnknownIdentifier,
+                             UpdateIssue)
 
 USER_READABLE_ERRORS = {
     str: 'string (MapADroid)',

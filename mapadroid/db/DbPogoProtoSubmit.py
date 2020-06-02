@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from bitstring import BitArray
-
 from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
 from mapadroid.utils.gamemechanicutil import gen_despawn_timestamp
 from mapadroid.utils.logging import logger
@@ -135,14 +134,14 @@ class DbPogoProtoSubmit:
 
         # ditto detector
         if pokemon_data.get("id") in (13, 46, 163, 165, 167, 187, 223, 293, 316, 322, 399, 590) and \
-                ((pokemon_display.get("weather_boosted_value", None) is not None
-                  and pokemon_display.get("weather_boosted_value", None) > 0) \
-                 and (pokemon_data.get("individual_attack") < 4 or pokemon_data.get(
-                            "individual_defense") < 4 or
-                      pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or \
-                 (pokemon_display.get("weather_boosted_value", None) is not None
-                  and pokemon_display.get("weather_boosted_value", None) == 0) \
-                 and pokemon_data.get("cp_multiplier") > .733):
+                ((pokemon_display.get("weather_boosted_value", None) is not None and
+                  pokemon_display.get("weather_boosted_value", None) > 0) and
+                 (pokemon_data.get("individual_attack") < 4 or pokemon_data.get(
+                     "individual_defense") < 4 or
+                    pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or
+                 (pokemon_display.get("weather_boosted_value", None) is not None and
+                  pokemon_display.get("weather_boosted_value", None) == 0) and
+                 pokemon_data.get("cp_multiplier") > .733):
             # mon must be a ditto :D
             mon_id = 132
             gender = 3
@@ -765,8 +764,8 @@ class DbPogoProtoSubmit:
         spawnret = {}
 
         query = (
-                "SELECT spawnpoint, spawndef "
-                "FROM trs_spawn where spawnpoint in (%s)" % (spawnids)
+            "SELECT spawnpoint, spawndef "
+            "FROM trs_spawn where spawnpoint in (%s)" % (spawnids)
         )
         # vals = (spawn_id,)
 

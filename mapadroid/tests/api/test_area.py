@@ -1,9 +1,9 @@
 import copy
-
-from . import api_base
-from . import global_variables
-from mapadroid.utils.walkerArgs import parseArgs
 from unittest import SkipTest
+
+from mapadroid.utils.walkerArgs import parseArgs
+
+from . import api_base, global_variables
 
 
 class APIArea(api_base.APITestBase):

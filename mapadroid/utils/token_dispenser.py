@@ -1,5 +1,7 @@
-import requests
 import time
+
+import requests
+
 from mapadroid.utils.logging import logger
 
 

@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Optional, List
+from typing import List, Optional
 
 import requests
 
@@ -310,7 +310,7 @@ class WebhookWorker:
 
             # skip ex raid mon if disabled
             is_exclusive = (
-                    raid["is_exclusive"] is not None and raid["is_exclusive"] != 0
+                raid["is_exclusive"] is not None and raid["is_exclusive"] != 0
             )
             if not self.__args.webhook_submit_exraids and is_exclusive:
                 continue
@@ -376,9 +376,9 @@ class WebhookWorker:
                 continue
 
             if (
-                    not self.__args.pokemon_webhook_nonivs
-                    and mon["pokemon_id"] in self.__IV_MON
-                    and (mon["individual_attack"] is None)
+                    not self.__args.pokemon_webhook_nonivs and
+                    mon["pokemon_id"] in self.__IV_MON and
+                    (mon["individual_attack"] is None)
             ):
                 # skipping this mon since IV has not been scanned yet
                 continue
@@ -442,8 +442,8 @@ class WebhookWorker:
                 mon_payload["ultra_catch"] = mon["ultra_catch"]
 
             if (
-                    mon["weather_boosted_condition"] is not None
-                    and mon["weather_boosted_condition"] > 0
+                    mon["weather_boosted_condition"] is not None and
+                    mon["weather_boosted_condition"] > 0
             ):
                 if self.__args.quest_webhook_flavor == "default":
                     mon_payload["boosted_weather"] = mon["weather_boosted_condition"]

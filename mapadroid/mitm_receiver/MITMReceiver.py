@@ -1,23 +1,24 @@
 import gzip
+import io
 import json
 import sys
 import time
-import io
 from multiprocessing import JoinableQueue, Process
-from typing import Union, Optional
+from threading import RLock
+from typing import Optional, Union
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
 
+import mapadroid.data_manager
 from mapadroid.mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
+from mapadroid.utils.apk_util import (convert_to_backend, download_file,
+                                      get_apk_list)
 from mapadroid.utils.authHelper import check_auth
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import LogLevelChanger, logger
-from mapadroid.utils.apk_util import download_file, convert_to_backend, get_apk_list
-from threading import RLock
-import mapadroid.data_manager
 
 app = Flask(__name__)
 
@@ -55,8 +56,8 @@ class EndpointAction(object):
                 logger.warning("Missing Origin header in request")
                 self.response = Response(status=500, headers={})
                 abort = True
-            elif (self.mapping_manager.get_all_devicemappings().keys() is not None
-                  and (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
+            elif (self.mapping_manager.get_all_devicemappings().keys() is not None and
+                  (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
                 logger.warning("MITMReceiver request without Origin or disallowed Origin: {}".format(origin))
                 self.response = Response(status=403, headers={})
                 abort = True
@@ -146,7 +147,7 @@ class MITMReceiver(Process):
                               handler=self.get_latest,
                               methods_passed=['GET'])
             self.add_endpoint(endpoint='/status/', endpoint_name='status/', handler=self.status,
-                                      methods_passed=['GET'])
+                              methods_passed=['GET'])
             for i in range(self.__application_args.mitmreceiver_data_workers):
                 data_processor: MitmDataProcessor = MitmDataProcessor(self._data_queue, self.__application_args,
                                                                       self.__mitm_mapper, db_wrapper,
@@ -209,8 +210,8 @@ class MITMReceiver(Process):
 
         timestamp: float = data.get("timestamp", int(time.time()))
         location_of_data: Location = Location(data.get("lat", 0.0), data.get("lng", 0.0))
-        if (location_of_data.lat > 90 or location_of_data.lat < -90
-                or location_of_data.lng > 180 or location_of_data.lng < -180):
+        if (location_of_data.lat > 90 or location_of_data.lat < -90 or
+                location_of_data.lng > 180 or location_of_data.lng < -180):
             logger.warning("Received invalid location from {} in data: {}".format(origin, str(location_of_data)))
             location_of_data: Location = Location(0, 0)
         self.__mitm_mapper.update_latest(
@@ -308,7 +309,7 @@ class MITMReceiver(Process):
                 last_id = 0
             walkers = self.__data_manager.get_root_resource('walker')
             if len(walkers) == 0:
-                    return Response(status=400, response='No walkers configured')
+                return Response(status=400, response='No walkers configured')
             if walker_id is not None:
                 try:
                     walker_id = int(walker_id)

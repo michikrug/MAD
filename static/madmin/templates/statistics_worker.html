@@ -137,14 +137,14 @@
                             noColumns: 0
                         },
                         series: {
-                             lines: {
-                                 show: true,
-                                 color: '#ffa500'
-                             },
-                             points: {
-                                 show: true
-                             }
-                         }
+                            lines: {
+                                show: true,
+                                color: '#ffa500'
+                            },
+                            points: {
+                                show: true
+                            }
+                        }
                     }
                 );
                 $("#flot_usage").UseTooltipFull();
@@ -170,17 +170,17 @@
                             noColumns: 0
                         },
                         series: {
-                             lines: {
-                                 show: true,
-                                 color: '#ffa500'
-                             },
-                             points: {
-                                 show: true
-                             }
-                         }}
+                            lines: {
+                                show: true,
+                                color: '#ffa500'
+                            },
+                            points: {
+                                show: true
+                            }
+                        }
+                    }
                 );
                 $("#flot_locations").UseTooltipFull();
-
 
                 setGrid('#show-data', avg, [
                     { data: 'dtime', title: 'Time' },
@@ -206,54 +206,49 @@
                     { data: 'fix_ts', title: 'Geofix- / Datatime' },
                     { data: 'transporttype', title: 'Transport Type' }
                 ], [
-                {
-                    "targets": [0],
-                    "render": function (data, type, row) {
-                        return "<a href=map?lat=" + row.lat + "&lng=" + row.lng + " target=_new>[MAP]</a>";
+                    {
+                        "targets": [0],
+                        "render": function (data, type, row) {
+                            return "<a href=map?lat=" + row.lat + "&lng=" + row.lng + " target=_new>[MAP]</a>";
+                        },
                     },
-                },
-                {
-                    "targets": [1],
-                    "render": function (data, type, row) {
-                        return row.lat + "<br>" + row.lng;
+                    {
+                        "targets": [1],
+                        "render": function (data, type, row) {
+                            return row.lat + "<br>" + row.lng;
+                        }
+                    },
+                    {
+                        "targets": [3],
+                        "render": function (data, type, row) {
+                            return row.type + "<br>" + row.data;
+                        }
+                    },
+                    {
+                        "targets": [4],
+                        "render": function (data, type, row) {
+                            return row.fix_ts + "<br>" + row.data_ts;
+                        }
                     }
-                },
-                {
-                    "targets": [3],
-                    "render": function (data, type, row) {
-                        return row.type + "<br>" + row.data;
-                    }
-                },
-                {
-                    "targets": [4],
-                    "render": function (data, type, row) {
-                        return row.fix_ts + "<br>" + row.data_ts;
-                    }
-                }
                 ]);
                 $.plot($("#flot_ratio"), location_ratio, options_pie);
-
-
-
             },
             complete: function () {
                 setTimeout($.unblockUI, 100);
             }
-
         });
-
 
         function setGrid(tableGridHtmlId, gridData, columns, defs) {
-        $(tableGridHtmlId).DataTable({
-            "data": gridData,
-            "searching": true,
-            "paging": true,
-            "columns": columns,
-            "ordering": false,
-            "columnDefs": defs,
-            "responsive": {{ responsive }}
-        });
-	}
+            $(tableGridHtmlId).DataTable({
+                "data": gridData,
+                "searching": true,
+                "paging": true,
+                "columns": columns,
+                "ordering": false,
+                "columnDefs": defs,
+                "responsive": {{ responsive }}
+            });
+        }
 
         var previousPoint = null, previousLabel = null;
 
@@ -350,7 +345,6 @@
             }).appendTo("body").fadeIn(200);
         }
     });
-
 </script>
 
 <style type="text/css">
@@ -363,6 +357,7 @@
         width: 100%;
         height: 300px;
     }
+
     #flot_ratio {
         width: 100%;
         height: 300px;
@@ -387,8 +382,6 @@
         margin: 10px;
     }
 </style>
-
-
 {% endblock %}
 
 {% block content %}
@@ -406,7 +399,7 @@
     <a href="statistics_detection_worker?worker={{ worker }}&amp;minutes=480">480</a>
     <a href="statistics_detection_worker?worker={{ worker }}&amp;minutes=1440">1440</a>
     <a href="statistics_detection_worker?worker={{ worker }}&amp;minutes=10080">One Week</a>
-    </div>
+</div>
 <h2>Worker Detection</h2>
 <div id="legendContainer_usage"></div>
 <div id="flot_usage"></div>
@@ -427,5 +420,4 @@
 <br>
 <h2>Raw location data</h2>
 <table id="show-data-location_raw" class="table" style="width:100%;"></table>
-
 {% endblock %}

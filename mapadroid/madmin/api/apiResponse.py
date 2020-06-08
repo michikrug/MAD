@@ -2,16 +2,9 @@ import json
 
 import flask
 
-from mapadroid.data_manager.modules.resource import Resource
+from mapadroid.utils.json_encoder import MAD_Encoder
 
 from . import apiException
-
-
-class MyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Resource):
-            return obj.get_resource()
-        return json.JSONEncoder.default(self, obj)
 
 
 class APIResponse(object):
@@ -40,9 +33,9 @@ class APIResponse(object):
         beautify = self.headers.get('X-Beautify')
         if self.mimetype == 'application/json':
             try:
+                indent = None
                 if beautify and beautify.isdigit() and int(beautify) == 1:
-                    return json.dumps(content, indent=4, cls=MyEncoder)
-                else:
-                    return json.dumps(content, cls=MyEncoder)
+                    indent = 4
+                return json.dumps(content, indent=indent, cls=MAD_Encoder)
             except Exception as err:
                 raise apiException.FormattingError(500, err)

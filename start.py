@@ -14,13 +14,14 @@ import pkg_resources
 import psutil
 from mapadroid.data_manager import DataManager
 from mapadroid.db.DbFactory import DbFactory
+from mapadroid.mad_apk import (AbstractAPKStorage, StorageSyncManager,
+                               get_storage_obj)
 from mapadroid.madmin.madmin import madmin_start
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.patcher import MADPatcher
 from mapadroid.utils.event import Event
-from mapadroid.utils.local_api import LocalAPI
 from mapadroid.utils.logging import initLogging, logger
 from mapadroid.utils.madGlobals import terminate_mad
 from mapadroid.utils.MappingManager import (MappingManager,
@@ -138,7 +139,6 @@ def create_folder(folder):
         os.makedirs(folder)
 
 
-
 def check_dependencies():
     with open("requirements.txt", "r") as f:
         deps = f.readlines()
@@ -163,6 +163,8 @@ if __name__ == "__main__":
     mitm_mapper_manager: Optional[MitmMapperManager] = None
     mitm_mapper: Optional[MitmMapper] = None
     pogoWindowManager: Optional[PogoWindows] = None
+    storage_elem: Optional[AbstractAPKStorage] = None
+    storage_manager: Optional[StorageSyncManager] = None
     t_whw: Thread = None  # Thread for WebHooks
     t_ws: Thread = None  # Thread - WebSocket Server
     webhook_worker: Optional[WebhookWorker] = None
@@ -176,6 +178,7 @@ if __name__ == "__main__":
     install_thread_excepthook()
     create_folder(args.file_path)
     create_folder(args.upload_path)
+    create_folder(args.temp_path)
     if args.config_mode and args.only_routes:
         logger.error('Unable to run with config_mode and only_routes.  Only use one option')
         sys.exit(1)
@@ -214,6 +217,7 @@ if __name__ == "__main__":
         logger.info("Done calculating routes!")
         # TODO: shutdown managers properly...
         sys.exit(0)
+    (storage_manager, storage_elem) = get_storage_obj(args, db_wrapper)
     if not args.config_mode:
         pogoWindowManager = PogoWindows(args.temp_path, args.ocr_thread_count)
         MitmMapperManager.register('MitmMapper', MitmMapper)
@@ -224,6 +228,7 @@ if __name__ == "__main__":
     mitm_receiver_process = MITMReceiver(args.mitmreceiver_ip, int(args.mitmreceiver_port),
                                          mitm_mapper, args, mapping_manager, db_wrapper,
                                          data_manager,
+                                         storage_elem,
                                          enable_configmode=args.config_mode)
     mitm_receiver_process.start()
     logger.info('Starting websocket server on port {}'.format(str(args.ws_port)))
@@ -238,7 +243,7 @@ if __name__ == "__main__":
     t_ws = Thread(name='scanner', target=ws_server.start_server)
     t_ws.daemon = False
     t_ws.start()
-    device_Updater = deviceUpdater(ws_server, args, jobstatus, db_wrapper)
+    device_Updater = deviceUpdater(ws_server, args, jobstatus, db_wrapper, storage_elem)
     if not args.config_mode:
         if args.webhook:
             rarity = Rarity(args, db_wrapper)
@@ -259,16 +264,24 @@ if __name__ == "__main__":
         logger.info("Starting Madmin on port {}", str(args.madmin_port))
         t_madmin = Thread(name="madmin", target=madmin_start,
                           args=(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater,
-                                jobstatus))
+                                jobstatus, storage_elem))
         t_madmin.daemon = True
         t_madmin.start()
     logger.info("MAD is now running.....")
     exit_code = 0
+    device_creator = None
     try:
         if args.unit_tests:
+            from mapadroid.tests.local_api import LocalAPI
             api_ready = False
             api = LocalAPI()
             logger.info('Checking API status')
+            if not data_manager.get_root_resource('device').keys():
+                from mapadroid.tests.test_utils import ResourceCreator
+                logger.info('Creating a device')
+                device_creator = ResourceCreator(api, prefix='MADCore')
+                res = device_creator.create_valid_resource('device')[0]
+                mapping_manager.update()
             while not api_ready:
                 try:
                     api.get('/api')
@@ -292,6 +305,8 @@ if __name__ == "__main__":
         try:
             db_wrapper = None
             logger.success("Stop called")
+            if device_creator:
+                device_creator.remove_resources()
             terminate_mad.set()
             # now cleanup all threads...
             # TODO: check against args or init variables to None...
@@ -319,6 +334,9 @@ if __name__ == "__main__":
             if mitm_mapper_manager is not None:
                 logger.debug("Calling mitm_mapper shutdown")
                 mitm_mapper_manager.shutdown()
+            if storage_manager is not None:
+                logger.debug('Stopping storage manager')
+                storage_manager.shutdown()
             if db_pool_manager is not None:
                 logger.debug("Calling db_pool_manager shutdown")
                 db_pool_manager.shutdown()

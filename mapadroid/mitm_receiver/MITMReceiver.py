@@ -7,10 +7,12 @@ from multiprocessing import JoinableQueue, Process
 from threading import RLock
 from typing import Optional, Union
 
-from flask import Flask, Response, request
+from flask import Flask, Response, request, stream_with_context
 from gevent.pywsgi import WSGIServer
 
 import mapadroid.data_manager
+from mapadroid.mad_apk import (APK_Type, lookup_package_info, parse_frontend,
+                               stream_package, supported_pogo_version)
 from mapadroid.mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
@@ -99,12 +101,14 @@ class EndpointAction(object):
                 logger.warning(
                     "Could not get JSON data from request: {}", str(e))
                 self.response = Response(status=500, headers={})
+                import traceback
+                traceback.print_exc()
         return self.response
 
 
 class MITMReceiver(Process):
     def __init__(self, listen_ip, listen_port, mitm_mapper, args_passed, mapping_manager: MappingManager,
-                 db_wrapper, data_manager, name=None, enable_configmode: Optional[bool] = False):
+                 db_wrapper, data_manager, storage_obj, name=None, enable_configmode: Optional[bool] = False):
         Process.__init__(self, name=name)
         self.__application_args = args_passed
         self.__mapping_manager = mapping_manager
@@ -114,6 +118,7 @@ class MITMReceiver(Process):
         self.__data_manager = data_manager
         self.__hopper_mutex = RLock()
         self._db_wrapper = db_wrapper
+        self.__storage_obj = storage_obj
         self._data_queue: JoinableQueue = JoinableQueue()
         self.worker_threads = []
         self.app = Flask("MITMReceiver")
@@ -273,27 +278,24 @@ class MITMReceiver(Process):
         return json.dumps(data_return)
 
     def mad_apk_download(self, *args, **kwargs):
-        apk_type = kwargs.get('apk_type', None)
-        apk_arch = kwargs.get('apk_arch', None)
-        apk_type, apk_arch = convert_to_backend(apk_type, apk_arch)
-        return download_file(self._db_wrapper, apk_type, apk_arch)
+        parsed = parse_frontend(**kwargs)
+        if type(parsed) == Response:
+            return parsed
+        apk_type, apk_arch = parsed
+        return stream_package(self._db_wrapper, self.__storage_obj, apk_type, apk_arch)
 
-    def mad_apk_info(self, *args, **kwargs):
-        apk_type = kwargs.get('apk_type', None)
-        apk_arch = kwargs.get('apk_arch', None)
-        apk_type, apk_arch = convert_to_backend(apk_type, apk_arch)
-        versions = {}
-        (apks, status_code) = get_apk_list(self._db_wrapper, apk_type, apk_arch)
-        if status_code == 200:
-            if 'filename' in apks:
-                versions = apks['version']
-            else:
-                return Response(status=400, response='Version not specified or invalid')
-        elif status_code == 404:
-            return Response(status=400, response='APK has not been downloaded')
+    def mad_apk_info(self, *args, **kwargs) -> Response:
+        parsed = parse_frontend(**kwargs)
+        if type(parsed) == Response:
+            return parsed
+        apk_type, apk_arch = parsed
+        (msg, status_code) = lookup_package_info(self.__storage_obj, apk_type, apk_arch)
+        if msg:
+            if apk_type == APK_Type.pogo and not supported_pogo_version(apk_arch, msg.version):
+                return Response(status=406, response='Supported version not installed')
+            return Response(status=status_code, response=msg.version)
         else:
-            return Response(status=400, response='Please specify APK and Architecture')
-        return versions
+            return Response(status=status_code)
 
     def origin_generator(self, *args, **kwargs):
         origin = request.headers.get('OriginBase', None)

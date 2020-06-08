@@ -1,6 +1,7 @@
 import copy
 
-from . import api_base, global_variables
+from mapadroid.tests import api_base
+from mapadroid.tests import test_variables as global_variables
 
 
 class APIWalkerArea(api_base.APITestBase):

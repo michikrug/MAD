@@ -98,7 +98,7 @@
             }
         };
 
-        $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px" /><br /><h2>Load...</h2>' });
+        $.blockUI({message: '<img src="{{ url_for('static', filename='loading.gif').lstrip('/') }}" width="100px" /><br /><h2>Load...</h2>' });
 
         $.ajax({
             "url": "get_game_stats_mon?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
@@ -109,22 +109,23 @@
                 spawn = result.spawn
                 good_spawns = result.good_spawns
                 detection = result.detection
+
                 setGrid('#show-data-good-pokemon', good_spawns, [
                     { data: 'id', title: 'Mon-ID' },
-                    { data: 'name', title: 'Name' },
-                    { data: null, title: 'Pic' },
-                    { data: 'iv', title: 'IV' },
+                    { data: null, title: 'Mon' },
                     { data: 'lvl', title: 'Level' },
                     { data: 'cp', title: 'CP' },
                     { data: 'periode', title: 'Scantime' }
-                ], [
-                    {
-                        "targets": [2],
-                        "render": function (data, type, row) {
-                            return "<img src=" + row.img + " width=100>";
+                ],
+                    [
+                        {
+                            "targets": [1],
+                            "render": function (data, type, row) {
+                                return `<div class="media"><img class="mr-3" src="${row.img}" width="50"><div class="media-body">${row.name}</div></div>`
+                            }
                         }
-                    }
-                ]);
+                    ]);
+
                 $.plot($("#flot_spawn"), [
                     {
                         data: spawn.iv,
@@ -245,18 +246,17 @@
                 "searching": true,
                 "paging": true,
                 "columns": columns,
-                "ordering": true,
-                "order": [],
+                "ordering": true, "order": [],
                 "columnDefs": defs,
                 "responsive": {{ responsive }},
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                "dom": 'Blfrtip',
-                "buttons": [
+                dom: 'Blfrtip',
+                buttons: [
                     'copy', 'csv', 'excel', 'pdf'
                 ],
                 "stripeClasses": ['odd', 'even'],
-                "sorting": true,
-                "stateSave": true,
+                sorting: true,
+                stateSave: true,
                 stateSaveCallback: function (settings, data) {
                     localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data))
                 },
@@ -264,7 +264,7 @@
                     return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance))
                 }
             });
-	    }
+        }
     });
 </script>
 
@@ -339,6 +339,6 @@
 <div id="legendContainer_spawn"></div>
 <div id="flot_spawn"></div>
 <br>
-<h2>Last 300 Perfect Pokemon</h2>
+<h2>Recent IV 100 mon</h2>
 <table id="show-data-good-pokemon" class="table" style="width:100%;"></table>
 {% endblock %}

@@ -4,22 +4,18 @@
 {% endblock %}
 
 {% block scripts %}
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.lazyload/1.9.1/jquery.lazyload.js"></script>
-<script type="text/javascript" src="static/js/jquery.Aplus.min.js"></script>
-
 <script>
     function setGrid(tableGridHtmlId, gridData) {
         $(tableGridHtmlId).DataTable({
             "data": gridData,
             "columns": [
-                { data: 'fence', title: 'Fence' },
-                { data: 'event', title: 'Type/Event' },
-                { data: 'mode', title: 'Mode' },
-                { data: 'sum', title: 'Spawnpoints' },
-                { data: 'known', title: 'known' },
-                { data: 'unknown', title: 'unknown' },
-                { data: '', title: 'Actions' }
+                    { data: 'fence', title: 'Fence' },
+                    { data: 'event', title: 'Type/Event' },
+                    { data: 'mode', title: 'Mode' },
+                    { data: 'sum', title: 'Spawnpoints' },
+                    { data: 'known', title: 'known' },
+                    { data: 'unknown', title: 'unknown' },
+                    { data: null, title: 'Actions', orderable: false }
             ],
             "columnDefs": [
                 {
@@ -53,8 +49,7 @@
                 $("img.lazy").lazyload();
             },
             "responsive": {{ responsive }},
-            "order": [[0, "asc"]],
-            "ordering": false,
+            "order": [[ 0, "asc" ]],
             "stateSave": true,
             "stateDuration": 0,
             "stateSaveCallback": function(settings,data) {

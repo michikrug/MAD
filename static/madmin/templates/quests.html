@@ -106,19 +106,19 @@
     function build_quest_small(quest_reward_type, quest_item_id, quest_pokemon_id, quest_pokemon_form_id, quest_pokemon_asset_bundle_id, quest_pokemon_costume_id) {
         switch (quest_reward_type) {
             case 2:
-                var image = '<img class="mr-3" src="static/quest/reward_' + quest_item_id + '_1.png" width="50">';
+                let image = '<img class="mr-3" src="static/quest/reward_' + quest_item_id + '_1.png" width="50">';
                 break;
             case 3:
-                var image = '<img class="mr-3" src="static/quest/reward_stardust.png" width="50">';
+                let image = '<img class="mr-3" src="static/quest/reward_stardust.png" width="50">';
                 break;
             case 7:
-                var costume = ''
+                let costume = ''
                 if (quest_pokemon_costume_id != '00') {
                     costume = `_${quest_pokemon_costume_id}`
                 }
 
                 var iconBasePath = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/no_border'
-                var url = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id}${costume}.png`;
+                var url = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id || '00'}${costume}.png`;
                 var image = `<img class="mr-3" src="${url}" width="50">`;
                 break;
         }

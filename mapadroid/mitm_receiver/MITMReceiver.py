@@ -16,8 +16,6 @@ from mapadroid.mad_apk import (APK_Type, lookup_package_info, parse_frontend,
 from mapadroid.mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
-from mapadroid.utils.apk_util import (convert_to_backend, download_file,
-                                      get_apk_list)
 from mapadroid.utils.authHelper import check_auth
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import LogLevelChanger, logger

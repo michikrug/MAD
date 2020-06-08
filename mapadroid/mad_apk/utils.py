@@ -1,13 +1,16 @@
-from distutils.version import LooseVersion
-from flask import Response, stream_with_context
 import json
+from distutils.version import LooseVersion
+from typing import Generator, Tuple, Union
+
 import requests
-from typing import Tuple, Union, Generator
-from .apk_enums import APK_Arch, APK_Type, APK_Package
-from .abstract_apk_storage import AbstractAPKStorage
-from .custom_types import MAD_APKS, MAD_Package, MAD_Packages
-from mapadroid.utils.global_variables import CHUNK_MAX_SIZE, ADDRESSES_GITHUB
+from flask import Response, stream_with_context
+
+from mapadroid.utils.global_variables import ADDRESSES_GITHUB, CHUNK_MAX_SIZE
 from mapadroid.utils.logging import logger
+
+from .abstract_apk_storage import AbstractAPKStorage
+from .apk_enums import APK_Arch, APK_Package, APK_Type
+from .custom_types import MAD_APKS, MAD_Package, MAD_Packages
 
 
 def convert_to_backend(req_type: str, req_arch: str) -> Tuple[APK_Type, APK_Arch]:

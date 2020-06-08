@@ -3,9 +3,8 @@ from typing import List
 
 import cv2
 import imutils
-import numpy as np
-
 import mapadroid
+import numpy as np
 from mapadroid.utils.collections import Trash
 from mapadroid.utils.logging import logger
 

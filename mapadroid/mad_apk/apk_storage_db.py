@@ -1,12 +1,14 @@
 from io import BytesIO
+from threading import RLock
 from typing import NoReturn, Optional
-from .abstract_apk_storage import AbstractAPKStorage
-from .custom_types import MAD_Package, MAD_Packages
-from .apk_enums import APK_Arch, APK_Type
-from .utils import generate_filename
+
 from mapadroid.utils import global_variables
 from mapadroid.utils.logging import logger
-from threading import RLock
+
+from .abstract_apk_storage import AbstractAPKStorage
+from .apk_enums import APK_Arch, APK_Type
+from .custom_types import MAD_Package, MAD_Packages
+from .utils import generate_filename
 
 
 class APKStorageDatabase(AbstractAPKStorage):
@@ -20,6 +22,7 @@ class APKStorageDatabase(AbstractAPKStorage):
         dbc: Database wrapper
         file_lock (RLock): RLock to allow updates to be thread-safe
     """
+
     def __init__(self, dbc):
         logger.debug('Initializing Database storage')
         self.file_lock: RLock = RLock()

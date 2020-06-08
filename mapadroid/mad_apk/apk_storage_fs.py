@@ -1,18 +1,21 @@
-from copy import copy
-from flask import Response
-from functools import wraps
-from io import BytesIO
 import json
 import os
 import re
+from copy import copy
+from functools import wraps
+from io import BytesIO
+from threading import RLock
 from typing import Any, ClassVar, NamedTuple, NoReturn, Optional
-from .abstract_apk_storage import AbstractAPKStorage
-from .apk_enums import APK_Arch, APK_Type
-from .utils import lookup_apk_enum, lookup_arch_enum, generate_filename
-from .custom_types import MAD_APKS, MAD_Package, MAD_Packages
+
+from flask import Response
+
 from mapadroid.utils.json_encoder import MAD_Encoder
 from mapadroid.utils.logging import logger
-from threading import RLock
+
+from .abstract_apk_storage import AbstractAPKStorage
+from .apk_enums import APK_Arch, APK_Type
+from .custom_types import MAD_APKS, MAD_Package, MAD_Packages
+from .utils import generate_filename, lookup_apk_enum, lookup_arch_enum
 
 
 def ensure_exists(func) -> Any:

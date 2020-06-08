@@ -2,7 +2,6 @@ import time
 from typing import List
 
 import numpy as np
-
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.route.RouteManagerBase import RoutePoolEntry
 from mapadroid.route.RouteManagerQuests import RouteManagerQuests
@@ -230,7 +229,8 @@ class RouteManagerLeveling(RouteManagerQuests):
         if self._is_started:
             self._is_started = False
             self._round_started_time = None
-            if self.init: self._first_started = False
+            if self.init:
+                self._first_started = False
             self._restore_original_route()
             self._shutdown_route = False
 

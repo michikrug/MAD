@@ -1,9 +1,10 @@
-from enum import IntEnum
 import logging
 import os
 import sys
-from loguru import logger
+from enum import IntEnum
 from functools import wraps
+
+from loguru import logger
 
 
 def initLogging(args):
@@ -14,13 +15,13 @@ def initLogging(args):
     log_file_trace = log_file_level <= 10
     colorize = not args.no_log_colors
 
-    log_fmt_time_c  = "[<cyan>{time:HH:mm:ss.SS}</cyan>]"
+    log_fmt_time_c = "[<cyan>{time:HH:mm:ss.SS}</cyan>]"
     log_fmt_time_fs = "[<cyan>{time:MM-DD HH:mm:ss.SS}</cyan>]"
-    log_fmt_id      = "[<cyan>{extra[name]: >17}</cyan>]"
-    log_fmt_mod_c   = "[<cyan>{module: >19.19}:{line: <4}</cyan>]"
-    log_fmt_mod_fs  = "[<cyan>{module: >19}:{line: <4}</cyan>]"
-    log_fmt_level   = "[<lvl>{level: >1.1}</lvl>]"
-    log_fmt_msg     = "<level>{message}</level>"
+    log_fmt_id = "[<cyan>{extra[name]: >17}</cyan>]"
+    log_fmt_mod_c = "[<cyan>{module: >19.19}:{line: <4}</cyan>]"
+    log_fmt_mod_fs = "[<cyan>{module: >19}:{line: <4}</cyan>]"
+    log_fmt_level = "[<lvl>{level: >1.1}</lvl>]"
+    log_fmt_msg = "<level>{message}</level>"
 
     log_format_c = [log_fmt_time_c, log_fmt_id, log_fmt_mod_c, log_fmt_level, log_fmt_msg]
     log_format_fs = [log_fmt_time_fs, log_fmt_id, log_fmt_mod_fs, log_fmt_level, log_fmt_msg]
@@ -176,8 +177,8 @@ def init_custom(log_out):
 
 class LoggerEnums(IntEnum):
     unknown: int = 0
-    system: int =  1
-    database: int =  2
+    system: int = 1
+    database: int = 2
     madmin: int = 3
     data_manager: int = 4
     patcher: int = 5
@@ -224,6 +225,7 @@ def get_bind_name(logger_type: LoggerEnums, name: str) -> str:
 # this is being used to change log level for gevent/Flask/Werkzeug
 class LogLevelChanger:
     logger = get_logger(LoggerEnums.mitm)
+
     def log(level, msg):
         if level >= 40:
             LogLevelChanger.logger.log(level, msg)

@@ -6,16 +6,14 @@ from typing import Optional
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
-from mapadroid.utils.madGlobals import (
-    WebsocketWorkerRemovedException,
-    WebsocketWorkerTimeoutException,
-    InternalStopWorkerException,
-    WebsocketWorkerConnectionClosedException)
+from mapadroid.utils.logging import LoggerEnums, get_logger
+from mapadroid.utils.madGlobals import (InternalStopWorkerException,
+                                        WebsocketWorkerConnectionClosedException,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.utils.routeutil import check_walker_value_type
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
 from mapadroid.worker.AbstractWorker import AbstractWorker
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.worker)
 
@@ -98,7 +96,8 @@ class WorkerConfigmode(AbstractWorker):
         if self._walker is None:
             return True
         walkereventid = self._walker.get('eventid', None)
-        if walkereventid is None: walkereventid = 1
+        if walkereventid is None:
+            walkereventid = 1
         if walkereventid != self._event.get_current_event_id():
             self.logger.warning("A other Event has started - leaving now")
             return False
@@ -215,7 +214,7 @@ class WorkerConfigmode(AbstractWorker):
                 self._reboot()
                 return False
             self.logger.info("PogoDroid on worker {} didn't connect yet. Probably not injected? (Count: {})",
-                        str(self._origin), str(self._not_injected_count))
+                             str(self._origin), str(self._not_injected_count))
             if self._stop_worker_event.isSet():
                 self.logger.error("Worker {} get killed while waiting for injection", str(self._origin))
                 return False

@@ -1,9 +1,11 @@
 import copy
 from collections import UserDict
-import mysql
-from ..dm_exceptions import DependencyError, SaveIssue, UnknownIdentifier, UpdateIssue
-from mapadroid.utils.logging import  get_logger, LoggerEnums
 
+import mysql
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+from ..dm_exceptions import (DependencyError, SaveIssue, UnknownIdentifier,
+                             UpdateIssue)
 
 logger = get_logger(LoggerEnums.data_manager)
 

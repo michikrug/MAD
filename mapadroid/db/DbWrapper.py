@@ -4,17 +4,17 @@ import time
 from datetime import datetime, timedelta, timezone
 from functools import reduce
 from typing import List, Optional
-from mapadroid.db.DbSchemaUpdater import DbSchemaUpdater
+
 from mapadroid.db.DbPogoProtoSubmit import DbPogoProtoSubmit
 from mapadroid.db.DbSanityCheck import DbSanityCheck
+from mapadroid.db.DbSchemaUpdater import DbSchemaUpdater
 from mapadroid.db.DbStatsReader import DbStatsReader
 from mapadroid.db.DbStatsSubmit import DbStatsSubmit
 from mapadroid.db.DbWebhookReader import DbWebhookReader
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.collections import Location
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.s2Helper import S2Helper
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.database)
 
@@ -366,8 +366,8 @@ class DbWrapper:
             query_where = ' where disappear_time > \'%s\' ' % str(hours)
 
         query = (
-                "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(
-            query_where)
+            "SELECT pokemon_id, count(pokemon_id) from pokemon %s group by pokemon_id" % str(
+                query_where)
         )
 
         res = self.execute(query)
@@ -661,15 +661,15 @@ class DbWrapper:
                        'ps.`incident_expiration`']
         # base query to fetch stops
         query = (
-            "SELECT ps.`pokestop_id`, ps.`enabled`, ps.`latitude`, ps.`longitude`,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "%s,\n" \
-            "ps.`active_fort_modifier`, ps.`name`, ps.`image`, ps.`incident_grunt_type`\n" \
-            "FROM pokestop ps\n" \
-            )
+            "SELECT ps.`pokestop_id`, ps.`enabled`, ps.`latitude`, ps.`longitude`,\n"
+            "%s,\n"
+            "%s,\n"
+            "%s,\n"
+            "%s,\n"
+            "%s,\n"
+            "ps.`active_fort_modifier`, ps.`name`, ps.`image`, ps.`incident_grunt_type`\n"
+            "FROM pokestop ps\n"
+        )
         query_where = (
             "WHERE (ps.`latitude` >= %%s AND ps.`longitude` >= %%s "
             " AND ps.`latitude` <= %%s AND ps.`longitude` <= %%s) "
@@ -731,7 +731,7 @@ class DbWrapper:
 
         minLat, minLon, maxLat, maxLon = geofence_helper.get_polygon_from_fence()
         event_ids: list = []
-        #adding default spawns
+        # adding default spawns
         event_ids.append(1)
 
         if include_event_id is not None:
@@ -997,7 +997,7 @@ class DbWrapper:
             spawn_duration_minutes = 60 if spawndef == 15 else 30
 
             timestamp = time.mktime(temp_date.timetuple()) - \
-                        spawn_duration_minutes * 60
+                spawn_duration_minutes * 60
             # check if we calculated a time in the past, if so, add an hour to it...
             timestamp = timestamp + 60 * 60 if timestamp < current_time else timestamp
             # TODO: consider the following since I am not sure if the prio Q clustering handles stuff properly yet
@@ -1304,6 +1304,7 @@ class DbWrapper:
             'val': version
         }
         return self.autoexec_insert('versions', update_data, optype="ON DUPLICATE")
+
 
 def adjust_tz_to_utc(column: str, as_name: str = None) -> str:
     # I would like to use convert_tz but this may not be populated.  Use offsets instead

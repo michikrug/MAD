@@ -1,23 +1,25 @@
-import functools
-import queue
-import time
-from threading import Thread, current_thread, Lock, Event
-from typing import Dict, Optional, Set, KeysView, Coroutine, List
-import random as rand
-import websockets
 import asyncio
+import functools
+import logging
+import queue
+import random as rand
+import time
+from threading import Event, Lock, Thread, current_thread
+from typing import Coroutine, Dict, KeysView, List, Optional, Set
+
+import websockets
+from mapadroid.data_manager import DataManager
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
-from mapadroid.utils.CustomTypes import MessageTyping
-from mapadroid.utils.MappingManager import MappingManager
 from mapadroid.utils.authHelper import check_auth
-from mapadroid.data_manager import DataManager
-from mapadroid.utils.logging import InterceptHandler, get_logger, LoggerEnums
-import logging
+from mapadroid.utils.CustomTypes import MessageTyping
+from mapadroid.utils.logging import InterceptHandler, LoggerEnums, get_logger
+from mapadroid.utils.MappingManager import MappingManager
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
-from mapadroid.websocket.WebsocketConnectedClientEntry import WebsocketConnectedClientEntry
 from mapadroid.websocket.communicator import Communicator
+from mapadroid.websocket.WebsocketConnectedClientEntry import \
+    WebsocketConnectedClientEntry
 from mapadroid.worker.AbstractWorker import AbstractWorker
 from mapadroid.worker.WorkerFactory import WorkerFactory
 

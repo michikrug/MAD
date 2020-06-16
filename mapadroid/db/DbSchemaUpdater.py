@@ -1,8 +1,9 @@
 import sys
-from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
-from . import madmin_conversion
-from mapadroid.utils.logging import get_logger, LoggerEnums
 
+from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+from . import madmin_conversion
 
 logger = get_logger(LoggerEnums.database)
 
@@ -278,7 +279,7 @@ class DbSchemaUpdater:
         alter_query = (
             "ALTER TABLE {} "
             "ADD COLUMN {} {}"
-                .format(column_mod["table"], column_mod["column"], column_mod["ctype"])
+            .format(column_mod["table"], column_mod["column"], column_mod["ctype"])
         )
         if "modify_key" in column_mod:
             alter_query = alter_query + ", " + column_mod["modify_key"]

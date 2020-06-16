@@ -7,13 +7,14 @@ from mapadroid.utils.language import open_json_file
 def calculate_mon_level(cp_multiplier):
     if cp_multiplier < 0.734:
         pokemon_level = (
-                58.35178527 * cp_multiplier * cp_multiplier
-                - 2.838007664 * cp_multiplier
-                + 0.8539209906
+            58.35178527 * cp_multiplier * cp_multiplier -
+            2.838007664 * cp_multiplier +
+            0.8539209906
         )
     else:
         pokemon_level = 171.0112688 * cp_multiplier - 95.20425243
     return round(pokemon_level) * 2 / 2
+
 
 def gen_despawn_timestamp(known_despawn):
     despawn_time = datetime.now() + timedelta(seconds=300)
@@ -42,12 +43,12 @@ def gen_despawn_timestamp(known_despawn):
         )
     elif now.minute > known_despawn.minute:
         despawn = (
-                now
-                + timedelta(hours=1)
-                - timedelta(
-            minutes=(now.minute - known_despawn.minute),
-            seconds=now.second - known_despawn.second,
-        )
+            now +
+            timedelta(hours=1) -
+            timedelta(
+                minutes=(now.minute - known_despawn.minute),
+                seconds=now.second - known_despawn.second,
+            )
         )
 
     despawn_uts = int(time.mktime(despawn.timetuple()))

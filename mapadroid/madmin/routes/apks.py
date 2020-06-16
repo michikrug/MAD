@@ -1,12 +1,16 @@
-from flask import (render_template, request, redirect, url_for, flash, Response)
 import io
 import json
+
 import werkzeug.exceptions
-from mapadroid.mad_apk import AbstractAPKStorage, get_apk_status, PackageImporter, parse_frontend, is_newer_version, \
-     MAD_APKS, MAD_Package, MAD_Packages, APK_Type, APK_Arch, lookup_arch_enum, lookup_apk_enum
+from flask import Response, flash, redirect, render_template, request, url_for
+
+from mapadroid.mad_apk import (MAD_APKS, AbstractAPKStorage, APK_Arch,
+                               APK_Type, MAD_Package, MAD_Packages,
+                               PackageImporter, get_apk_status,
+                               is_newer_version, lookup_apk_enum,
+                               lookup_arch_enum, parse_frontend)
 from mapadroid.madmin.functions import auth_required
-from mapadroid.utils import MappingManager
-from mapadroid.utils import global_variables
+from mapadroid.utils import MappingManager, global_variables
 
 
 class apk_manager(object):

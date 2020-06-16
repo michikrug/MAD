@@ -3,12 +3,14 @@ from threading import RLock
 from typing import NoReturn, Optional
 
 from mapadroid.utils import global_variables
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from .abstract_apk_storage import AbstractAPKStorage
 from .apk_enums import APK_Arch, APK_Type
 from .custom_types import MAD_Package, MAD_Packages
 from .utils import generate_filename
+
+logger = get_logger(LoggerEnums.storage)
 
 
 class APKStorageDatabase(AbstractAPKStorage):

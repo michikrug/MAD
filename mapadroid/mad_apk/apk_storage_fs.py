@@ -10,12 +10,14 @@ from typing import Any, ClassVar, NamedTuple, NoReturn, Optional
 from flask import Response
 
 from mapadroid.utils.json_encoder import MAD_Encoder
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from .abstract_apk_storage import AbstractAPKStorage
 from .apk_enums import APK_Arch, APK_Type
 from .custom_types import MAD_APKS, MAD_Package, MAD_Packages
 from .utils import generate_filename, lookup_apk_enum, lookup_arch_enum
+
+logger = get_logger(LoggerEnums.storage)
 
 
 def ensure_exists(func) -> Any:

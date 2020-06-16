@@ -22,7 +22,7 @@ from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.patcher import MADPatcher
 from mapadroid.utils.event import Event
-from mapadroid.utils.logging import initLogging, logger
+from mapadroid.utils.logging import LoggerEnums, get_logger, initLogging
 from mapadroid.utils.madGlobals import terminate_mad
 from mapadroid.utils.MappingManager import (MappingManager,
                                             MappingManagerManager)
@@ -42,6 +42,7 @@ if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
 args = parseArgs()
 os.environ['LANGUAGE'] = args.language
 initLogging(args)
+logger = get_logger(LoggerEnums.database)
 
 
 # Patch to make exceptions in threads cause an exception.
@@ -120,8 +121,8 @@ def get_system_infos(db_wrapper):
 
         memoryUse = py.memory_info()[0] / 2. ** 30
         cpuUse = py.cpu_percent()
-        logger.info('Instance Name: "{}" - Memory usage: {} - CPU usage: {}',
-                    str(args.status_name), str(memoryUse), str(cpuUse))
+        logger.info('Instance name: "{}" - Memory usage: {:.3f} GB - CPU usage: {}',
+                    str(args.status_name), memoryUse, str(cpuUse))
         collected = None
         if args.stat_gc:
             collected = gc.collect()
@@ -196,6 +197,7 @@ if __name__ == "__main__":
     data_manager = DataManager(db_wrapper, instance_id)
     MADPatcher(args, data_manager)
     data_manager.clear_on_boot()
+    data_manager.fix_routecalc_on_boot()
     event = Event(args, db_wrapper)
     event.start_event_checker()
     # Do not remove this sleep unless you have solved the race condition on boot with the logger
@@ -240,7 +242,7 @@ if __name__ == "__main__":
                                 data_manager=data_manager,
                                 event=event,
                                 enable_configmode=args.config_mode)
-    t_ws = Thread(name='scanner', target=ws_server.start_server)
+    t_ws = Thread(name='system', target=ws_server.start_server)
     t_ws.daemon = False
     t_ws.start()
     device_Updater = deviceUpdater(ws_server, args, jobstatus, db_wrapper, storage_elem)
@@ -250,7 +252,7 @@ if __name__ == "__main__":
             rarity.start_dynamic_rarity()
             webhook_worker = WebhookWorker(
                 args, data_manager, mapping_manager, rarity, db_wrapper.webhook_reader)
-            t_whw = Thread(name="webhook_worker",
+            t_whw = Thread(name="system",
                            target=webhook_worker.run_worker)
             t_whw.daemon = True
             t_whw.start()
@@ -262,7 +264,7 @@ if __name__ == "__main__":
             t_usage.start()
     if args.with_madmin or args.config_mode:
         logger.info("Starting Madmin on port {}", str(args.madmin_port))
-        t_madmin = Thread(name="madmin", target=madmin_start,
+        t_madmin = Thread(name="system", target=madmin_start,
                           args=(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater,
                                 jobstatus, storage_elem))
         t_madmin.daemon = True

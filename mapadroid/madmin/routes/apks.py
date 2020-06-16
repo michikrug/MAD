@@ -11,7 +11,6 @@ from mapadroid.mad_apk import (MAD_APKS, AbstractAPKStorage, APK_Arch,
                                lookup_arch_enum, parse_frontend)
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils import MappingManager, global_variables
-from mapadroid.utils.logging import logger
 
 
 class apk_manager(object):

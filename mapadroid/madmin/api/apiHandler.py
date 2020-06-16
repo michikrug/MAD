@@ -1,3 +1,5 @@
+from threading import current_thread
+
 import flask
 
 from mapadroid.mad_apk import AbstractAPKStorage
@@ -64,6 +66,7 @@ class APIHandler(object):
         """
         # Begin processing the request
         self.api_req = apiRequest.APIRequest(self._logger, flask.request)
+        current_thread().name = 'madmin-api'
         try:
             self.api_req()
             processed_data = self.process_request(*args, **kwargs)

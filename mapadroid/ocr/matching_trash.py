@@ -6,7 +6,9 @@ import imutils
 import mapadroid
 import numpy as np
 from mapadroid.utils.collections import Trash
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+logger = get_logger(LoggerEnums.ocr)
 
 
 def get_delete_quest_coords(x):

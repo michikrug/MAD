@@ -18,8 +18,10 @@ from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
 from mapadroid.utils.authHelper import check_auth
 from mapadroid.utils.collections import Location
-from mapadroid.utils.logging import LogLevelChanger, logger
+from mapadroid.utils.logging import (LoggerEnums, LogLevelChanger, get_logger,
+                                     logger)
 
+logger = get_logger(LoggerEnums.mitm)
 app = Flask(__name__)
 
 

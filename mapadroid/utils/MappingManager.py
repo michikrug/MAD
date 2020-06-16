@@ -12,9 +12,11 @@ from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.route import RouteManagerBase, RouteManagerIV
 from mapadroid.route.RouteManagerFactory import RouteManagerFactory
 from mapadroid.utils.collections import Location
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.s2Helper import S2Helper
 from mapadroid.worker.WorkerType import WorkerType
+
+logger = get_logger(LoggerEnums.utils)
 
 mode_mapping = {
     "raids_mitm": {
@@ -48,8 +50,7 @@ class JoinQueue(object):
         self._joinqueue: Queue = Queue()
         self.__shutdown_event = stop_trigger
         self._mapping_mananger = mapping_manager
-        self.__route_join_thread: Thread = Thread(name='route_joiner',
-                                                  target=self.__route_join, )
+        self.__route_join_thread: Thread = Thread(name='system', target=self.__route_join)
         self.__route_join_thread.daemon = True
         self.__route_join_thread.start()
 
@@ -98,7 +99,7 @@ class MappingManager:
         self.update(full_lock=True)
 
         self.__devicesettings_setter_queue: Queue = Queue()
-        self.__devicesettings_setter_consumer_thread: Thread = Thread(name='devicesettings_setter_consumer',
+        self.__devicesettings_setter_consumer_thread: Thread = Thread(name='system',
                                                                       target=self.__devicesettings_setter_consumer, )
         self.__devicesettings_setter_consumer_thread.daemon = True
         self.__devicesettings_setter_consumer_thread.start()
@@ -323,7 +324,10 @@ class MappingManager:
                 'num_procs': 0,
                 'active': active
             }
-            t = Thread(target=routemanager.recalc_route_adhoc, args=args, kwargs=kwargs)
+            t = Thread(name=routemanager.name,
+                       target=routemanager.recalc_route_adhoc,
+                       args=args,
+                       kwargs=kwargs)
             t.start()
         except Exception as e:
             import traceback
@@ -401,6 +405,7 @@ class MappingManager:
                     self.get_monlist(area['settings'].get('mon_ids_iv', None), area.get("name", "unknown"))
             route_resource = self.__data_manager.get_resource('routecalc', identifier=area["routecalc"])
 
+            calc_type: str = area.get("route_calc_algorithm", "route")
             route_manager = RouteManagerFactory.get_routemanager(self.__db_wrapper, self.__data_manager,
                                                                  area_id, None,
                                                                  mode_mapping.get(mode, {}).get("range", 0),
@@ -416,22 +421,19 @@ class MappingManager:
                                                                  coords_spawns_known=area.get(
                                                                      "coords_spawns_known", False),
                                                                  routefile=route_resource,
-                                                                 calctype=area.get("route_calc_algorithm",
-                                                                                   "optimized"),
+                                                                 calctype=calc_type,
                                                                  joinqueue=self.join_routes_queue,
                                                                  S2level=mode_mapping.get(mode, {}).get(
                                                                      "s2_cell_level", 30),
-                                                                 include_event_id=area.get("settings", {}).get(
-                                                                     "include_event_id", None)
+                                                                 include_event_id=area.get(
+                                                                     "settings", {}).get("include_event_id", None)
                                                                  )
             logger.info("Initializing area {}", area["name"])
-            if mode not in ("iv_mitm", "idle") and str(area.get("route_calc_algorithm", "optimized"))\
-                    not in "routefree":
+            if mode not in ("iv_mitm", "idle") and calc_type != "routefree":
                 coords = self.__fetch_coords(mode, geofence_helper,
                                              coords_spawns_known=area.get("coords_spawns_known", False),
                                              init=area.get("init", False),
-                                             range_init=mode_mapping.get(mode, {}).get(
-                                                 "range_init", 630),
+                                             range_init=mode_mapping.get(mode, {}).get("range_init", 630),
                                              including_stops=area.get("including_stops", False),
                                              include_event_id=area.get("settings", {}).get("include_event_id", None))
 

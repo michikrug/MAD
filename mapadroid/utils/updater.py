@@ -16,7 +16,9 @@ from mapadroid.mad_apk import (AbstractAPKStorage, APK_Arch, APK_Package,
                                lookup_apk_enum, lookup_arch_enum,
                                supported_pogo_version)
 from mapadroid.utils import global_variables
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+logger = get_logger(LoggerEnums.utils)
 
 
 class jobType(Enum):
@@ -160,7 +162,7 @@ class deviceUpdater(object):
 
     @logger.catch()
     def process_update_queue(self, threadnumber):
-        logger.info("Starting Device Job processor thread No {}".format(str(threadnumber)))
+        logger.info("Starting device job processor thread No {}".format(str(threadnumber)))
         time.sleep(10)
         while not self._stop_updater_threads.is_set():
             try:

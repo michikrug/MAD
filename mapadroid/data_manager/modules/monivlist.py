@@ -1,9 +1,11 @@
 from typing import List, Optional, Tuple
 
 import mysql.connector
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from .resource import Resource
+
+logger = get_logger(LoggerEnums.data_manager)
 
 
 class MonIVList(Resource):

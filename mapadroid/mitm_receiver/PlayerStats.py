@@ -7,7 +7,9 @@ from multiprocessing import Lock
 from pathlib import Path
 
 from mapadroid.mitm_receiver import MitmMapper
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+logger = get_logger(LoggerEnums.mitm)
 
 
 class PlayerStats(object):

@@ -2,7 +2,9 @@ import time
 from threading import Thread
 from timeit import default_timer
 
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+logger = get_logger(LoggerEnums.utils)
 
 
 class Rarity(object):
@@ -32,8 +34,8 @@ class Rarity(object):
 
     def start_dynamic_rarity(self):
 
-        t = Thread(target=self.dynamic_rarity_refresher,
-                   name='dynamic_rarity')
+        t = Thread(name='system',
+                   target=self.dynamic_rarity_refresher)
         t.daemon = True
         t.start()
 

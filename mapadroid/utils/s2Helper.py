@@ -11,7 +11,9 @@ from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.collections import Location
 from mapadroid.utils.geo import (get_distance_of_two_points_in_meters,
                                  get_middle_of_coord_list)
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+logger = get_logger(LoggerEnums.utils)
 
 
 class S2Helper:

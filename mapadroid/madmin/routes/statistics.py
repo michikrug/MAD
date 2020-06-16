@@ -14,7 +14,9 @@ from mapadroid.utils.gamemechanicutil import (calculate_iv,
                                               calculate_mon_level, form_mapper)
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.language import get_mon_name, i8ln
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+logger = get_logger(LoggerEnums.madmin)
 
 
 class statistics(object):
@@ -490,8 +492,10 @@ class statistics(object):
 
         # raw detection data
         detections_raw = []
-        data = self._db_stats_reader.get_detection_raw(minutes=minutes, worker=worker)
+        data, data2 = self._db_stats_reader.get_detection_raw(minutes=minutes, worker=worker)
         for dat in data:
+            detections_raw.append({'type': dat[1], 'id': dat[2], 'count': dat[3]})
+        for dat in data2:
             detections_raw.append({'type': dat[1], 'id': dat[2], 'count': dat[3]})
 
         # location raw

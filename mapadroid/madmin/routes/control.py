@@ -15,11 +15,13 @@ from mapadroid.utils.adb import ADBConnect
 from mapadroid.utils.collections import Location
 from mapadroid.utils.functions import (creation_date, generate_phones,
                                        image_resize)
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.madGlobals import ScreenshotType
 from mapadroid.utils.updater import jobType
 from mapadroid.websocket.WebsocketServer import WebsocketServer
 from PIL import Image
+
+logger = get_logger(LoggerEnums.madmin)
 
 
 class control(object):

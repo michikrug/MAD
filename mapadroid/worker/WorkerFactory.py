@@ -5,7 +5,7 @@ from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.utils.collections import Location
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.madGlobals import WrongAreaInWalker
 from mapadroid.utils.MappingManager import MappingManager
 from mapadroid.utils.routeutil import pre_check_value
@@ -15,6 +15,8 @@ from mapadroid.worker.WorkerConfigmode import WorkerConfigmode
 from mapadroid.worker.WorkerMITM import WorkerMITM
 from mapadroid.worker.WorkerQuests import WorkerQuests
 from mapadroid.worker.WorkerType import WorkerType
+
+logger = get_logger(LoggerEnums.worker)
 
 
 class WalkerConfiguration(NamedTuple):
@@ -79,7 +81,7 @@ class WorkerFactory:
                 str(self.__mapping_manager.routemanager_get_name(walker_area_name)))
             if walker_index >= len(walker_area_array) - 1:
                 logger.error(
-                    'Could not find any working area at this time - check your mappings for device: {}',
+                    'Can NOT find any active area defined for current time. Check Walker entries for device: {}',
                     str(origin))
                 walker_index = 0
                 self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index',

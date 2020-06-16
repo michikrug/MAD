@@ -5,7 +5,6 @@ from flask import (Response, flash, jsonify, redirect, render_template,
 
 from flask_caching import Cache
 from mapadroid.madmin.functions import auth_required
-from mapadroid.utils.logging import logger
 from mapadroid.utils.MappingManager import MappingManager
 
 cache = Cache(config={'CACHE_TYPE': 'simple'})
@@ -20,7 +19,6 @@ class event(object):
         else:
             self._datetimeformat = '%Y-%m-%d %H:%M:%S'
         self._ws_connected_phones: list = []
-        self._logger = logger
         self._data_manager = data_manager
         self._app = app
         self._app.config["TEMPLATES_AUTO_RELOAD"] = True

@@ -1,7 +1,9 @@
 import cv2
 from imagehash import dhash
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from PIL import Image
+
+logger = get_logger(LoggerEnums.utils)
 
 
 def getImageHash(image, hashSize=8):

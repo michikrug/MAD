@@ -2,10 +2,12 @@ import json
 from typing import Dict, List, Optional, Tuple
 
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from ..dm_exceptions import UnknownIdentifier
 from .resource import Resource
+
+logger = get_logger(LoggerEnums.data_manager)
 
 
 class GeoFence(Resource):

@@ -3,9 +3,9 @@ import sys
 import time
 
 from mapadroid.utils.functions import pngtojpg
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
-log = logger
+logger = get_logger(LoggerEnums.utils)
 
 
 class ADBConnect(object):

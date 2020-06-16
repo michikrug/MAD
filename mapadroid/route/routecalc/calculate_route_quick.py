@@ -1,7 +1,9 @@
 import numpy as np
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from .util import *
+
+logger = get_logger(LoggerEnums.routemanager)
 
 
 def route_calc_impl(coords, route_name, num_processes=1):

@@ -10,15 +10,15 @@ import apkutils
 from apkutils.apkfile import BadZipFile, LargeZipFile
 from mapadroid.utils import global_variables
 from mapadroid.utils.gplay_connector import GPlayConnector
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from .abstract_apk_storage import AbstractAPKStorage
 from .apk_enums import APK_Arch, APK_Package, APK_Type
 from .utils import (is_newer_version, lookup_arch_enum, lookup_package_info,
                     supported_pogo_version)
 
+logger = get_logger(LoggerEnums.package_mgr)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 APK_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3',
 }

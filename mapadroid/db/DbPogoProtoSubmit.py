@@ -6,9 +6,11 @@ from typing import List, Optional
 from bitstring import BitArray
 from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
 from mapadroid.utils.gamemechanicutil import gen_despawn_timestamp
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.questGen import questtask
 from mapadroid.utils.s2Helper import S2Helper
+
+logger = get_logger(LoggerEnums.database)
 
 
 class DbPogoProtoSubmit:

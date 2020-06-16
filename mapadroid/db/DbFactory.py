@@ -4,7 +4,9 @@ from multiprocessing.managers import SyncManager
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.db.PooledQueryExecutor import (PooledQueryExecutor,
                                               PooledQuerySyncManager)
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+logger = get_logger(LoggerEnums.database)
 
 
 class DbFactory:

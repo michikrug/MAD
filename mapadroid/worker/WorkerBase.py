@@ -722,6 +722,7 @@ class WorkerBase(AbstractWorker):
     def _restart_pogo_safe(self):
         self.logger.warning("WorkerBase::_restart_pogo_safe restarting pogo the long way")
         self._stop_pogo()
+        self._communicator.clear_app_cache("com.nianticlabs.pokemongo")
         time.sleep(1)
         if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
             self._worker_specific_setup_stop()
@@ -729,10 +730,6 @@ class WorkerBase(AbstractWorker):
         self._communicator.magisk_off()
         time.sleep(1)
         self._communicator.magisk_on()
-        time.sleep(1)
-        self._communicator.start_app("com.nianticlabs.pokemongo")
-        time.sleep(25)
-        self._stop_pogo()
         time.sleep(1)
         if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
             self._worker_specific_setup_start()

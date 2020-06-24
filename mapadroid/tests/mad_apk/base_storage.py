@@ -1,14 +1,16 @@
-from flask import Response
 import io
 import os
 from unittest import TestCase
-from mapadroid.db.DbFactory import DbFactory
-from mapadroid.tests.test_utils import upload_rgc, mimetype, filepath_rgc
-from mapadroid.utils.logging import initLogging
-from mapadroid.mad_apk import get_storage_obj, APK_Arch, APK_Type, MAD_Package, MAD_Packages, MAD_APKS, get_apk_status,\
-    file_generator
-from mapadroid.utils.walkerArgs import parseArgs
 
+from flask import Response
+
+from mapadroid.db.DbFactory import DbFactory
+from mapadroid.mad_apk import (MAD_APKS, APK_Arch, APK_Type, MAD_Package,
+                               MAD_Packages, file_generator, get_apk_status,
+                               get_storage_obj)
+from mapadroid.tests.test_utils import filepath_rgc, mimetype, upload_rgc
+from mapadroid.utils.logging import initLogging
+from mapadroid.utils.walkerArgs import parseArgs
 
 args = parseArgs()
 initLogging(args)

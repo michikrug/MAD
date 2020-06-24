@@ -1,12 +1,13 @@
 import copy
 import io
 from typing import List, NoReturn
-from mapadroid.db.DbFactory import DbFactory
-from mapadroid.mad_apk import APK_Arch, APK_Type, get_storage_obj, PackageImporter
-from mapadroid.tests.local_api import LocalAPI
-import mapadroid.tests.test_variables as global_variables
-from mapadroid.utils.walkerArgs import parseArgs
 
+import mapadroid.tests.test_variables as global_variables
+from mapadroid.db.DbFactory import DbFactory
+from mapadroid.mad_apk import (APK_Arch, APK_Type, PackageImporter,
+                               get_storage_obj)
+from mapadroid.tests.local_api import LocalAPI
+from mapadroid.utils.walkerArgs import parseArgs
 
 filepath_rgc = 'APK/RemoteGpsController.apk'
 mimetype = 'application/vnd.android.package-archive'

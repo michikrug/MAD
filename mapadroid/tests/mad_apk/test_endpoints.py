@@ -1,4 +1,5 @@
 import os
+
 from mapadroid.mad_apk import APK_Arch, APK_Type
 from mapadroid.tests.apk_base import APKTestBase
 from mapadroid.tests.test_utils import filepath_rgc, get_rgc_bytes

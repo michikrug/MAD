@@ -1,20 +1,20 @@
 import os
 import time
-from multiprocessing import Lock, Event, Queue
+from multiprocessing import Event, Lock, Queue
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import ThreadPool
 from queue import Empty, Queue
 from threading import Thread
-from typing import Optional, List, Dict, Tuple, Set
+from typing import Dict, List, Optional, Set, Tuple
+
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
-from mapadroid.route import RouteManagerIV, RouteManagerBase
+from mapadroid.route import RouteManagerBase, RouteManagerIV
 from mapadroid.route.RouteManagerFactory import RouteManagerFactory
 from mapadroid.utils.collections import Location
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.s2Helper import S2Helper
 from mapadroid.worker.WorkerType import WorkerType
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.utils)
 
@@ -275,7 +275,7 @@ class MappingManager:
             return None
 
     def routemanager_get_current_route(self, routemanager_name: str) -> Optional[
-        Tuple[List[Location], Dict[str, List[Location]]]]:
+            Tuple[List[Location], Dict[str, List[Location]]]]:
         routemanager = self.__fetch_routemanager(routemanager_name)
         return routemanager.get_current_route() if routemanager is not None else None
 
@@ -514,7 +514,7 @@ class MappingManager:
 
     def __fetch_coords(self, mode: str, geofence_helper: GeofenceHelper, coords_spawns_known: bool = False,
                        init: bool = False, range_init: int = 630, including_stops: bool = False,
-                       include_event_id=None) -> List[ Location]:
+                       include_event_id=None) -> List[Location]:
         coords: List[Location] = []
         if not init:
             # grab data from DB depending on mode

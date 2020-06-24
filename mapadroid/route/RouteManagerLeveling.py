@@ -1,12 +1,12 @@
 import time
 from typing import List
+
 import numpy as np
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.route.RouteManagerBase import RoutePoolEntry
 from mapadroid.route.RouteManagerQuests import RouteManagerQuests
 from mapadroid.utils.collections import Location
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.routemanager)
 
@@ -43,7 +43,7 @@ class RouteManagerLeveling(RouteManagerQuests):
                 unvisited_stops = self.db_wrapper.stops_from_db_unvisited(self.geofence_helper, origin)
                 if len(unvisited_stops) == 0:
                     self.logger.info("There are no unvisited stops left in DB for {} - nothing more to do!",
-                                origin)
+                                     origin)
                     continue
                 if len(self._route) > 0:
                     self.logger.info("Making a subroute of unvisited stops..")
@@ -201,8 +201,8 @@ class RouteManagerLeveling(RouteManagerQuests):
                     self._recalc_stop_route(stops)
                 elif len(self._route) == 0 and len(stops) > 0:
                     self.logger.warning("Something wrong with area {}: it have many new stops "
-                                   "- you should delete routefile!!",
-                                   str(self.name))
+                                        "- you should delete routefile!!",
+                                        str(self.name))
                     self.logger.info("Recalc new route for area {}", str(self.name))
                     self._recalc_stop_route(stops)
                 else:
@@ -231,7 +231,8 @@ class RouteManagerLeveling(RouteManagerQuests):
         if self._is_started:
             self._is_started = False
             self._round_started_time = None
-            if self.init: self._first_started = False
+            if self.init:
+                self._first_started = False
             self._restore_original_route()
             self._shutdown_route = False
 

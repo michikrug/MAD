@@ -1,6 +1,7 @@
 import math
 
 from mapadroid.utils.logging import logger
+
 from .util import *
 
 try:

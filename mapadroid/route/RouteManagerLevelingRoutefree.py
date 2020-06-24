@@ -1,12 +1,12 @@
 import time
 from typing import List
+
 import numpy as np
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.route.RouteManagerBase import RoutePoolEntry
 from mapadroid.route.RouteManagerQuests import RouteManagerQuests
 from mapadroid.utils.collections import Location
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.routemanager)
 
@@ -46,11 +46,12 @@ class RouteManagerLevelingRoutefree(RouteManagerQuests):
                                                                                   lat=current_worker_pos.lat,
                                                                                   lon=current_worker_pos.lng,
                                                                                   limit=30,
-                                                                                  ignore_spinned=self.settings.get("ignore_spinned_stops", True),
+                                                                                  ignore_spinned=self.settings.get(
+                                                                                      "ignore_spinned_stops", True),
                                                                                   maxdistance=5)
                 if len(unvisited_stops) == 0:
                     self.logger.info("There are no unvisited stops left in DB for {} - nothing more to do!",
-                                origin)
+                                     origin)
                     continue
 
                 for coord in unvisited_stops:
@@ -172,7 +173,8 @@ class RouteManagerLevelingRoutefree(RouteManagerQuests):
         if self._is_started:
             self._is_started = False
             self._round_started_time = None
-            if self.init: self._first_started = False
+            if self.init:
+                self._first_started = False
             self._shutdown_route = False
 
         # clear not processed stops

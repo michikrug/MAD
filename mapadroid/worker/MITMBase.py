@@ -9,12 +9,11 @@ from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.utils import MappingManager
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.madGlobals import InternalStopWorkerException
 from mapadroid.utils.s2Helper import S2Helper
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
 from mapadroid.worker.WorkerBase import WorkerBase
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.worker)
 Location = collections.namedtuple('Location', ['lat', 'lng'])
@@ -96,19 +95,19 @@ class MITMBase(WorkerBase):
                                                         float(self.current_location.lng))
         if distance > max_radius:
             self.logger.debug2("Data is too far away!! avg location {}, {} from "
-                "data with self.current_location location {}, {} - that's a "
-                "{}m distance with max_radius {} for mode {}", avg_lat, avg_lng,
-                                                self.current_location.lat,
-                                                self.current_location.lng,
-                                                distance, max_radius, mode)
+                               "data with self.current_location location {}, {} - that's a "
+                               "{}m distance with max_radius {} for mode {}", avg_lat, avg_lng,
+                               self.current_location.lat,
+                               self.current_location.lng,
+                               distance, max_radius, mode)
             return False
         else:
             self.logger.debug("Data distance is ok! found avg location {}, {} "
-                "from data with self.current_location location {}, {} - that's "
-                "a {}m distance with max_radius {} for mode {}", avg_lat, avg_lng,
-                                                  self.current_location.lat,
-                                                  self.current_location.lng,
-                                                  distance, max_radius, mode)
+                              "from data with self.current_location location {}, {} - that's "
+                              "a {}m distance with max_radius {} for mode {}", avg_lat, avg_lng,
+                              self.current_location.lat,
+                              self.current_location.lng,
+                              distance, max_radius, mode)
             return True
 
     def _wait_for_data(self, timestamp: float = None, proto_to_wait_for=106, timeout=None):
@@ -135,7 +134,7 @@ class MITMBase(WorkerBase):
         timestamp = timestamp - (timestamp_last_received - timestamp_last_data)
 
         self.logger.info('Waiting for data after {}',
-                    datetime.fromtimestamp(timestamp))
+                         datetime.fromtimestamp(timestamp))
         data_requested = LatestReceivedType.UNDEFINED
 
         failover_timestamp: int = time.time()
@@ -146,10 +145,10 @@ class MITMBase(WorkerBase):
             latest = self._mitm_mapper.request_latest(self._origin)
             latest_location: Optional[Location] = latest.get("location", None)
             check_data = True
-            if (proto_to_wait_for == 106 and latest_location is not None
-                    and latest_location.lat != 0.0 and latest_location.lng != 0.0):
+            if (proto_to_wait_for == 106 and latest_location is not None and
+                    latest_location.lat != 0.0 and latest_location.lng != 0.0):
                 self.logger.debug("Checking worker location {} against real data location {}", self.current_location,
-                             latest_location)
+                                  latest_location)
                 distance_to_data = get_distance_of_two_points_in_meters(float(latest_location.lat),
                                                                         float(latest_location.lng),
                                                                         float(self.current_location.lat),
@@ -157,7 +156,8 @@ class MITMBase(WorkerBase):
                 max_distance_of_mode = self._mapping_manager.routemanager_get_max_radius(self._routemanager_name)
                 max_distance_for_worker: int = self._applicationArgs.maximum_valid_distance \
                     if max_distance_of_mode < self._applicationArgs.maximum_valid_distance else max_distance_of_mode
-                self.logger.debug("Distance of worker {} to data location: {}", str(self._origin), str(distance_to_data))
+                self.logger.debug("Distance of worker {} to data location: {}",
+                                  str(self._origin), str(distance_to_data))
                 if max_distance_for_worker and distance_to_data > max_distance_for_worker:
                     self.logger.debug("Real data too far from worker position, waiting...")
                     check_data = False
@@ -252,11 +252,11 @@ class MITMBase(WorkerBase):
                 self._reboot(self._mitm_mapper)
                 return False
             self.logger.info("Didn't receive any data from worker {} yet. (Retry count: {}/{})",
-                        str(self._origin), str(self._not_injected_count), str(injection_thresh_reboot))
+                             str(self._origin), str(self._not_injected_count), str(injection_thresh_reboot))
             if (self._not_injected_count != 0 and self._not_injected_count % window_check_frequency == 0) \
-                and not self._stop_worker_event.is_set():
+                    and not self._stop_worker_event.is_set():
                 self.logger.info("Worker {} will retry check_windows while waiting for injection at count {}",
-                            str(self._origin), str(self._not_injected_count))
+                                 str(self._origin), str(self._not_injected_count))
                 self._ensure_pogo_topmost()
             self._not_injected_count += 1
             wait_time = 0
@@ -280,19 +280,19 @@ class MITMBase(WorkerBase):
         self.logger.debug('{_clear_quests} called')
         if openmenu:
             x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-                   self._resocalc.get_coords_quest_menu(self)[1]
+                self._resocalc.get_coords_quest_menu(self)[1]
             self._communicator.click(int(x), int(y))
             self.logger.debug("_clear_quests Open menu: {}, {}", str(int(x)), str(int(y)))
             time.sleep(6 + int(delayadd))
 
         if self._enhanced_mode:
             x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                   self._resocalc.get_close_main_button_coords(self)[1]
+                self._resocalc.get_close_main_button_coords(self)[1]
             self._communicator.click(int(x), int(y))
             return
 
         x, y = self._resocalc.get_quest_listview(self)[0], \
-               self._resocalc.get_quest_listview(self)[1]
+            self._resocalc.get_quest_listview(self)[1]
         self._communicator.click(int(x), int(y))
         self.logger.debug("_clear_quests Open field: {}, {}", str(int(x)), str(int(y)))
         time.sleep(4 + int(delayadd))
@@ -306,11 +306,11 @@ class MITMBase(WorkerBase):
             self._clear_quests_failcount += 1
             if self._clear_quests_failcount < 3:
                 self.logger.warning("Could not find any trashcan on a valid screen"
-                    "shot {} time(s) in a row!", self._clear_quests_failcount)
+                                    "shot {} time(s) in a row!", self._clear_quests_failcount)
             else:
                 self._clear_quests_failcount = 0
                 self.logger.error("Unable to clear quests 3 times in a row. Restart "
-                        "pogo ...")
+                                  "pogo ...")
                 if not self._restart_pogo(mitm_mapper=self._mitm_mapper):
                     # TODO: put in loop, count up for a reboot ;)
                     raise InternalStopWorkerException
@@ -319,7 +319,7 @@ class MITMBase(WorkerBase):
             self.logger.info("Found {} trashcan(s) on screen", len(trashcancheck))
         # get confirm box coords
         x, y = self._resocalc.get_confirm_delete_quest_coords(self)[0], \
-               self._resocalc.get_confirm_delete_quest_coords(self)[1]
+            self._resocalc.get_confirm_delete_quest_coords(self)[1]
 
         for trash in range(len(trashcancheck)):
             self._clear_quests_failcount = 0
@@ -336,7 +336,7 @@ class MITMBase(WorkerBase):
             time.sleep(1 + int(delayadd))
 
         x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-               self._resocalc.get_close_main_button_coords(self)[1]
+            self._resocalc.get_close_main_button_coords(self)[1]
         self._communicator.click(int(x), int(y))
 
         time.sleep(1.5)
@@ -357,14 +357,14 @@ class MITMBase(WorkerBase):
     def _spin_wheel(self, delayadd):
         self.logger.debug('{_spin_wheel} called')
         x1, x2, y = self._resocalc.get_gym_spin_coords(self)[0], self._resocalc.get_gym_spin_coords(self)[1], \
-                    self._resocalc.get_gym_spin_coords(self)[2]
+            self._resocalc.get_gym_spin_coords(self)[2]
         self._communicator.swipe(int(x1), int(y), int(x2), int(y))
         return
 
     def _close_gym(self, delayadd):
         self.logger.debug('{_close_gym} called')
         x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-               self._resocalc.get_close_main_button_coords(self)[1]
+            self._resocalc.get_close_main_button_coords(self)[1]
         self._communicator.click(int(x), int(y))
         time.sleep(1 + int(delayadd))
         self.logger.debug('{_close_gym} called')
@@ -373,7 +373,7 @@ class MITMBase(WorkerBase):
         self.logger.debug('{_turn_map} called')
         self.logger.info('Turning map')
         x1, x2, y = self._resocalc.get_gym_spin_coords(self)[0], self._resocalc.get_gym_spin_coords(self)[1], \
-                    self._resocalc.get_gym_spin_coords(self)[2]
+            self._resocalc.get_gym_spin_coords(self)[2]
         self._communicator.swipe(int(x1), int(y), int(x2), int(y))
         time.sleep(int(delayadd))
         self.logger.debug('{_turn_map} called')
@@ -399,7 +399,7 @@ class MITMBase(WorkerBase):
             routemanager_status = [None, None]
         else:
             self.logger.debug('Route Pos: {} - Route Length: {}', str(routemanager_status[0]),
-                         str(routemanager_status[1]))
+                              str(routemanager_status[1]))
         routemanager_init: bool = self._mapping_manager.routemanager_get_init(self._routemanager_name)
         self.logger.debug('Init Mode: {}', str(routemanager_init))
         self.logger.debug('Last Date/Time of Data: {}', str(self._rec_data_time))

@@ -3,13 +3,15 @@ import math
 import queue
 import time
 from threading import Thread
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 import websockets
 from mapadroid.utils.CustomTypes import MessageTyping
-from mapadroid.utils.madGlobals import WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException, \
-    WebsocketWorkerConnectionClosedException
+from mapadroid.utils.logging import LoggerEnums, get_logger
+from mapadroid.utils.madGlobals import (WebsocketWorkerConnectionClosedException,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.worker.AbstractWorker import AbstractWorker
-from mapadroid.utils.logging import  get_logger, LoggerEnums
 
 
 class ReceivedMessageEntry:
@@ -84,17 +86,17 @@ class WebsocketConnectedClientEntry:
                 self.fail_counter = 0
                 if isinstance(new_entry.message, str):
                     self.logger.debug("Response to {}: {}",
-                                 self.origin, str(new_entry.message.strip()))
+                                      self.origin, str(new_entry.message.strip()))
                 else:
                     self.logger.debug("Received binary data to {}, starting with {}", self.origin,
-                                 str(new_entry.message[:10]))
+                                      str(new_entry.message[:10]))
                 response = new_entry.message
         except asyncio.TimeoutError:
             self.logger.warning("Timeout, increasing timeout-counter of {}", self.origin)
             self.fail_counter += 1
             if self.fail_counter > 5:
                 self.logger.error("5 consecutive timeouts to {} or origin is not longer connected, cleanup",
-                             self.origin)
+                                  self.origin)
                 raise WebsocketWorkerTimeoutException
         finally:
             self.logger.debug("Cleaning up received messaged of {}.", self.origin)

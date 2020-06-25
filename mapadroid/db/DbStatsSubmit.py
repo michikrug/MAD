@@ -1,6 +1,5 @@
 from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.database)
 
@@ -81,7 +80,7 @@ class DbStatsSubmit:
 
         if int(self._args.raw_delete_shiny) > 0:
             query = (
-                    "DELETE FROM trs_stats_detect_mon_raw WHERE timestamp_scan < "
-                    "(UNIX_TIMESTAMP() - " + str(int(self._args.raw_delete_shiny) * 86400) + ") AND is_shiny = 1"
+                "DELETE FROM trs_stats_detect_mon_raw WHERE timestamp_scan < "
+                "(UNIX_TIMESTAMP() - " + str(int(self._args.raw_delete_shiny) * 86400) + ") AND is_shiny = 1"
             )
             self._db_exec.execute(query, commit=True)

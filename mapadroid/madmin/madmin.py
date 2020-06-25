@@ -13,13 +13,12 @@ from mapadroid.madmin.reverseproxy import ReverseProxied
 from mapadroid.madmin.routes.apks import apk_manager
 from mapadroid.madmin.routes.config import config
 from mapadroid.madmin.routes.control import control
+from mapadroid.madmin.routes.event import event
 from mapadroid.madmin.routes.map import map
 from mapadroid.madmin.routes.path import path
 from mapadroid.madmin.routes.statistics import statistics
-from mapadroid.madmin.routes.event import event
 from mapadroid.utils import MappingManager
-from mapadroid.utils.logging import InterceptHandler, get_logger, LoggerEnums
-
+from mapadroid.utils.logging import InterceptHandler, LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.madmin)
 app = Flask(__name__,

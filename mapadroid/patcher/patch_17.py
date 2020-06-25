@@ -1,12 +1,12 @@
-from ._patch_base import PatchBase
 import copy
 import json
 import os
 from pathlib import Path
+
 import mapadroid.data_manager.modules
-from mapadroid.data_manager.dm_exceptions import (
-    UpdateIssue
-)
+from mapadroid.data_manager.dm_exceptions import UpdateIssue
+
+from ._patch_base import PatchBase
 
 
 class Patch(PatchBase):

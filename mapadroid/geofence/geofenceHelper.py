@@ -1,6 +1,6 @@
 import sys
-from mapadroid.utils.logging import  get_logger, LoggerEnums
 
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.system)
 
@@ -90,7 +90,7 @@ class GeofenceHelper:
         return self.geofenced_areas or self.excluded_areas
 
     @staticmethod
-    def parse_geofences_file(geo_resource, excluded, fence_fallback = None):
+    def parse_geofences_file(geo_resource, excluded, fence_fallback=None):
         geofences = []
         # Read coordinates of excluded areas from file.
         if geo_resource:
@@ -182,9 +182,9 @@ class GeofenceHelper:
                     point['lat'] <= max(lat1, lat2)):
                 if lon1 != lon2:
                     latIntersection = (
-                            (point['lon'] - lon1) *
-                            (lat2 - lat1) / (lon2 - lon1) +
-                            lat1)
+                        (point['lon'] - lon1) *
+                        (lat2 - lat1) / (lon2 - lon1) +
+                        lat1)
 
                 if lat1 == lat2 or point['lat'] <= latIntersection:
                     inside = not inside

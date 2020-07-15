@@ -1,12 +1,12 @@
 import os
 from typing import List
+
 import cv2
 import imutils
-import numpy as np
 import mapadroid
+import numpy as np
 from mapadroid.utils.collections import Trash
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
-
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 
 logger = get_logger(LoggerEnums.ocr)
 

@@ -1,12 +1,13 @@
 import json
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
-from typing import Optional, Dict, List, Tuple
-from .resource import Resource
-from ..dm_exceptions import UnknownIdentifier
 from mapadroid.route.routecalc.ClusteringHelper import ClusteringHelper
 from mapadroid.utils.collections import Location
-from mapadroid.utils.logging import  get_logger, LoggerEnums
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
+from ..dm_exceptions import UnknownIdentifier
+from .resource import Resource
 
 logger = get_logger(LoggerEnums.data_manager)
 

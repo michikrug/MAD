@@ -1,16 +1,17 @@
 import json
 import time
-from typing import Optional, List
+from typing import List, Optional
+
 import requests
+
 from mapadroid.db.DbWebhookReader import DbWebhookReader
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils import MappingManager
 from mapadroid.utils.gamemechanicutil import calculate_mon_level
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.madGlobals import terminate_mad
 from mapadroid.utils.questGen import generate_quest
 from mapadroid.utils.s2Helper import S2Helper
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.webhook)
 
@@ -113,7 +114,7 @@ class WebhookWorker:
 
                     if response.status_code != 200:
                         logger.warning("Got status code other than 200 OK from webhook destination: {}",
-                                     response.status_code)
+                                       response.status_code)
                     else:
                         if webhook_count > 1:
                             whcount_text = " [wh {}/{}]".format(
@@ -131,7 +132,7 @@ class WebhookWorker:
 
                         logger.success("Successfully sent payload to webhook{}{}. Stats: {}", whchunk_text,
                                        whcount_text, json.dumps(self.__payload_type_count(payload_chunk)),
-                        )
+                                       )
                 except Exception as e:
                     logger.warning("Exception occured while sending webhook: {}", e)
 
@@ -300,7 +301,7 @@ class WebhookWorker:
 
             # skip ex raid mon if disabled
             is_exclusive = (
-                    raid["is_exclusive"] is not None and raid["is_exclusive"] != 0
+                raid["is_exclusive"] is not None and raid["is_exclusive"] != 0
             )
             if not self.__args.webhook_submit_exraids and is_exclusive:
                 continue
@@ -366,9 +367,9 @@ class WebhookWorker:
                 continue
 
             if (
-                    not self.__args.pokemon_webhook_nonivs
-                    and mon["pokemon_id"] in self.__IV_MON
-                    and (mon["individual_attack"] is None)
+                    not self.__args.pokemon_webhook_nonivs and
+                    mon["pokemon_id"] in self.__IV_MON and
+                    (mon["individual_attack"] is None)
             ):
                 # skipping this mon since IV has not been scanned yet
                 continue
@@ -432,8 +433,8 @@ class WebhookWorker:
                 mon_payload["ultra_catch"] = mon["ultra_catch"]
 
             if (
-                    mon["weather_boosted_condition"] is not None
-                    and mon["weather_boosted_condition"] > 0
+                    mon["weather_boosted_condition"] is not None and
+                    mon["weather_boosted_condition"] > 0
             ):
                 if self.__args.quest_webhook_flavor == "default":
                     mon_payload["boosted_weather"] = mon["weather_boosted_condition"]

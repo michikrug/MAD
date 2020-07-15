@@ -1,8 +1,9 @@
 import copy
 import time
-import requests
-from mapadroid.utils.walkerArgs import parseArgs
 
+import requests
+
+from mapadroid.utils.walkerArgs import parseArgs
 
 mapping_args = parseArgs()
 

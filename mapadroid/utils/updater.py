@@ -5,15 +5,18 @@ import re
 import time
 from datetime import datetime, timedelta
 from enum import Enum
-from multiprocessing import Queue, Event
+from multiprocessing import Event, Queue
 from queue import Empty
 from threading import RLock, Thread
-import requests
-from mapadroid.utils import global_variables
-from mapadroid.utils.logging import get_logger, LoggerEnums
-from mapadroid.mad_apk import AbstractAPKStorage, is_newer_version, APK_Type, file_generator, lookup_apk_enum, \
-     lookup_arch_enum, APK_Package, APK_Arch, supported_pogo_version, MAD_Packages
 
+import requests
+
+from mapadroid.mad_apk import (AbstractAPKStorage, APK_Arch, APK_Package,
+                               APK_Type, MAD_Packages, file_generator,
+                               is_newer_version, lookup_apk_enum,
+                               lookup_arch_enum, supported_pogo_version)
+from mapadroid.utils import global_variables
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.utils)
 
@@ -128,7 +131,7 @@ class deviceUpdater(object):
                                                                                         'flex'),
                                                algovalue=self._globaljoblog[globalid].get('algovalue',
                                                                                           0)) \
-                       + waittime
+                    + waittime
 
                 processtime = datetime.timestamp(datetime.now() + timedelta(minutes=algo))
 
@@ -313,7 +316,7 @@ class deviceUpdater(object):
                             try:
                                 if self.start_job_type(item, jobtype, temp_comm):
                                     logger.info('Job {} executed successfully - Device {} - File/Job {} (ID: {})',
-                                                 jobtype, origin, file_, id_)
+                                                jobtype, origin, file_, id_)
                                     if self._log[str(id_)]['status'] == 'not required':
                                         jobstatus = jobReturn.NOT_REQUIRED
                                     elif self._log[str(id_)]['status'] == 'not supported':
@@ -345,8 +348,8 @@ class deviceUpdater(object):
                                 jobstatus = jobReturn.FAILURE
 
                     # check jobstatus and readd if possible
-                    if jobstatus not in SUCCESS_STATES and (jobstatus == jobReturn.NOCONNECT
-                                                            and self._args.job_restart_notconnect == 0):
+                    if jobstatus not in SUCCESS_STATES and (jobstatus == jobReturn.NOCONNECT and
+                                                            self._args.job_restart_notconnect == 0):
                         logger.error("Job for {} (File/Job: {} - Type {}) failed 3 times in row - aborting (ID: {})",
                                      origin, file_, jobtype, id_)
                         self._globaljoblog[globalid]['laststatus'] = 'faulty'
@@ -520,8 +523,8 @@ class deviceUpdater(object):
                 architecture = lookup_arch_enum(architecture_raw)
                 package_all: MAD_Packages = self._storage_obj.get_current_package_info(package)
                 if package_all is None:
-                        logger.warning('No MAD APK for {} [{}]', package, architecture.name)
-                        return False
+                    logger.warning('No MAD APK for {} [{}]', package, architecture.name)
+                    return False
                 try:
                     mad_apk = package_all[architecture]
                 except KeyError:
@@ -583,7 +586,8 @@ class deviceUpdater(object):
 
         else:
             for job in self._log.copy():
-                if not self._log[job].get('redo', False): self.delete_log_id(job)
+                if not self._log[job].get('redo', False):
+                    self.delete_log_id(job)
 
     def send_webhook(self, id_, status):
         if not self._log[str(id_)]['auto']:

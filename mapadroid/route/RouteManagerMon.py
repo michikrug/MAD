@@ -1,8 +1,8 @@
 from mapadroid.route.RouteManagerBase import RouteManagerBase
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.routemanager)
+
 
 class RouteManagerMon(RouteManagerBase):
     def __init__(self, db_wrapper, dbm, area_id, coords, max_radius, max_coords_within_radius,
@@ -59,7 +59,8 @@ class RouteManagerMon(RouteManagerBase):
             if not self._is_started:
                 self._is_started = True
                 self.logger.info("Starting routemanager {}", self.name)
-                if not self.init: self._start_priority_queue()
+                if not self.init:
+                    self._start_priority_queue()
                 self._start_check_routepools()
                 self._init_route_queue()
                 self._first_round_finished = False

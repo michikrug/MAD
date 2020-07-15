@@ -1,7 +1,10 @@
-import flask
 import json
-from . import apiException
+
+import flask
+
 from mapadroid.utils.json_encoder import MAD_Encoder
+
+from . import apiException
 
 
 class APIResponse(object):
@@ -30,7 +33,7 @@ class APIResponse(object):
         beautify = self.headers.get('X-Beautify')
         if self.mimetype == 'application/json':
             try:
-                indent=None
+                indent = None
                 if beautify and beautify.isdigit() and int(beautify) == 1:
                     indent = 4
                 return json.dumps(content, indent=indent, cls=MAD_Encoder)

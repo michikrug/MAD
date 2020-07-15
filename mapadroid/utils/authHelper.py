@@ -1,6 +1,7 @@
 import base64
 import re
 
+
 def check_auth(logger, authHeader, args, auths):
     valid = False
     if auths is None:

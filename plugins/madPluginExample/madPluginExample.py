@@ -1,12 +1,15 @@
-import mapadroid.utils.pluginBase
-from flask import render_template, Blueprint
-from mapadroid.madmin.functions import auth_required
 import os
+
+from flask import Blueprint, render_template
+
+import mapadroid.utils.pluginBase
+from mapadroid.madmin.functions import auth_required
 
 
 class MadPluginExample(mapadroid.utils.pluginBase.Plugin):
     """This plugin is just the identity function: it returns the argument
     """
+
     def __init__(self, mad):
         super().__init__(mad)
 
@@ -42,7 +45,7 @@ class MadPluginExample(mapadroid.utils.pluginBase.Plugin):
                 self._plugin.add_url_rule(route, route.replace("/", ""), view_func=view_func)
 
             for name, link, description in self._hotlink:
-                self._mad['madmin'].add_plugin_hotlink(name, self._plugin.name+"."+link.replace("/", ""),
+                self._mad['madmin'].add_plugin_hotlink(name, self._plugin.name + "." + link.replace("/", ""),
                                                        self.pluginname, self.description, self.author, self.url,
                                                        description, self.version)
 

@@ -2,13 +2,13 @@ import json
 import time
 from datetime import datetime, timedelta
 from typing import List, Optional
+
 from bitstring import BitArray
 from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
 from mapadroid.utils.gamemechanicutil import gen_despawn_timestamp
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 from mapadroid.utils.questGen import questtask
 from mapadroid.utils.s2Helper import S2Helper
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
-
 
 logger = get_logger(LoggerEnums.database)
 
@@ -67,10 +67,10 @@ class DbPogoProtoSubmit:
 
                 if getdetspawntime is None:
                     origin_logger.debug3("adding mon (#{}) at {}, {}. Despawns at {} (init) ({})", mon_id, lat, lon,
-                                        despawn_time, spawnid)
+                                         despawn_time, spawnid)
                 else:
                     origin_logger.debug3("adding mon (#{}) at {}, {}. Despawns at {} (non-init) ({})", mon_id, lat, lon,
-                                        despawn_time, spawnid)
+                                         despawn_time, spawnid)
 
                 mon_args.append(
                     (
@@ -121,10 +121,10 @@ class DbPogoProtoSubmit:
 
         if getdetspawntime is None:
             origin_logger.debug3("updating IV mon #{} at {}, {}. Despawning at {} (init)", pokemon_data["id"], latitude,
-                                longitude, despawn_time)
+                                 longitude, despawn_time)
         else:
             origin_logger.debug3("updating IV mon #{} at {}, {}. Despawning at {} (non-init)", pokemon_data["id"],
-                                latitude, longitude, despawn_time)
+                                 latitude, longitude, despawn_time)
 
         capture_probability = encounter_proto.get("capture_probability")
         capture_probability_list = capture_probability.get("capture_probability_list")
@@ -138,14 +138,14 @@ class DbPogoProtoSubmit:
 
         # ditto detector
         if pokemon_data.get("id") in (46, 163, 165, 167, 187, 223, 293, 316, 322, 399, 590) and \
-                ((pokemon_display.get("weather_boosted_value", None) is not None
-                  and pokemon_display.get("weather_boosted_value", None) > 0) \
-                 and (pokemon_data.get("individual_attack") < 4 or pokemon_data.get(
-                            "individual_defense") < 4 or
-                      pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or \
-                 (pokemon_display.get("weather_boosted_value", None) is not None
-                  and pokemon_display.get("weather_boosted_value", None) == 0) \
-                 and pokemon_data.get("cp_multiplier") > .733):
+                ((pokemon_display.get("weather_boosted_value", None) is not None and
+                  pokemon_display.get("weather_boosted_value", None) > 0) and
+                 (pokemon_data.get("individual_attack") < 4 or pokemon_data.get(
+                     "individual_defense") < 4 or
+                    pokemon_data.get("individual_stamina") < 4 or pokemon_data.get("cp_multiplier") < .3) or
+                 (pokemon_display.get("weather_boosted_value", None) is not None and
+                  pokemon_display.get("weather_boosted_value", None) == 0) and
+                 pokemon_data.get("cp_multiplier") > .733):
             # mon must be a ditto :D
             mon_id = 132
             gender = 3
@@ -771,8 +771,8 @@ class DbPogoProtoSubmit:
         spawnret = {}
 
         query = (
-                "SELECT spawnpoint, spawndef "
-                "FROM trs_spawn where spawnpoint in (%s)" % (spawnids)
+            "SELECT spawnpoint, spawndef "
+            "FROM trs_spawn where spawnpoint in (%s)" % (spawnids)
         )
         # vals = (spawn_id,)
 

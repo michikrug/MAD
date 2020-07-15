@@ -3,16 +3,16 @@ import io
 import json
 import os
 import re
-from typing import List
 import warnings
 import zipfile
+from typing import List
+
 from gpapi.googleplay import GooglePlayAPI, LoginError
 from mapadroid.mad_apk import APK_Arch, Device_Codename
 from mapadroid.utils import global_variables
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.token_dispenser import TokenDispenser
 from mapadroid.utils.walkerArgs import parseArgs
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.utils)
 

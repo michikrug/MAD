@@ -1,9 +1,8 @@
-from typing import Optional, List
-
 from datetime import datetime, timedelta
-from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
+from typing import List, Optional
 
+from mapadroid.db.PooledQueryExecutor import PooledQueryExecutor
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 
 logger = get_logger(LoggerEnums.database)
 
@@ -88,10 +87,10 @@ class DbStatsReader:
             query_where = ' where (timestamp_scan) >= unix_timestamp(\'%s\') ' % str(minutes)
 
         query = (
-                "SELECT  %s, worker, sum(mon) as Mon, sum(mon_iv) as MonIV, sum(raid) as Raids, sum(quest) as Quests "
-                "FROM trs_stats_detect %s %s "
-                "GROUP BY worker %s "
-                "ORDER BY timestamp_scan" %
+            "SELECT  %s, worker, sum(mon) as Mon, sum(mon_iv) as MonIV, sum(raid) as Raids, sum(quest) as Quests "
+            "FROM trs_stats_detect %s %s "
+            "GROUP BY worker %s "
+            "ORDER BY timestamp_scan" %
                 (str(query_date), str(query_where), str(worker_where), str(grouped_query))
         )
         res = self._db_exec.execute(query)
@@ -127,10 +126,10 @@ class DbStatsReader:
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
         query = (
-                "SELECT %s, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
-                "'other')), worker, count(fix_ts), avg(data_ts-fix_ts) as data_time, walker from trs_stats_location_raw "
-                "where success=1 and type in (0,1) and (walker='mon_mitm' or walker='iv_mitm' or walker='pokestops') "
-                "%s %s group by worker %s" %
+            "SELECT %s, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
+            "'other')), worker, count(fix_ts), avg(data_ts-fix_ts) as data_time, walker from trs_stats_location_raw "
+            "where success=1 and type in (0,1) and (walker='mon_mitm' or walker='iv_mitm' or walker='pokestops') "
+            "%s %s group by worker %s" %
                 (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
 
@@ -158,8 +157,8 @@ class DbStatsReader:
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
 
         query = (
-                "SELECT %s, worker, sum(location_count), sum(location_ok), sum(location_nok) from trs_stats_location "
-                " %s %s group by worker %s" %
+            "SELECT %s, worker, sum(location_count), sum(location_ok), sum(location_nok) from trs_stats_location "
+            " %s %s group by worker %s" %
                 (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
         res = self._db_exec.execute(query)
@@ -186,9 +185,9 @@ class DbStatsReader:
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
         query = (
-                "SELECT %s, worker, count(period), if(type=0,if(success=1,'OK-Normal','NOK-Normal'),"
-                "if(success=1,'OK-PrioQ','NOK-PrioQ')) from trs_stats_location_raw "
-                " %s %s and type in(0,1) group by worker %s" %
+            "SELECT %s, worker, count(period), if(type=0,if(success=1,'OK-Normal','NOK-Normal'),"
+            "if(success=1,'OK-PrioQ','NOK-PrioQ')) from trs_stats_location_raw "
+            " %s %s and type in(0,1) group by worker %s" %
                 (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
 
@@ -225,12 +224,12 @@ class DbStatsReader:
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(timestamp_scan), '%y-%m-%d %k:00:00'))"
 
         query = (
-                "SELECT %s, type, encounter_id as type_id, count FROM trs_stats_detect_mon_raw %s %s order by id asc" %
+            "SELECT %s, type, encounter_id as type_id, count FROM trs_stats_detect_mon_raw %s %s order by id asc" %
                 (str(query_date), (query_where), str(worker_where))
         )
         query2 = (
-                "SELECT %s, type, guid as type_id, count FROM trs_stats_detect_fort_raw %s %s order by id asc" %
-                (str(query_date), (query_where), str(worker_where))
+            "SELECT %s, type, guid as type_id, count FROM trs_stats_detect_fort_raw %s %s order by id asc" %
+            (str(query_date), (query_where), str(worker_where))
         )
 
         res = self._db_exec.execute(query)
@@ -284,11 +283,11 @@ class DbStatsReader:
             query_where = ' where last_modified > \'%s\' ' % str(minutes)
 
         query = (
-                "SELECT %s, count(DISTINCT encounter_id) as Count, if(CP is NULL, 0, 1) as IV "
-                "FROM pokemon "
-                " %s "
-                "GROUP BY IV, day(TIMESTAMP(last_modified)), hour(TIMESTAMP(last_modified)) "
-                "ORDER BY timestamp" % (str(query_date), str(query_where))
+            "SELECT %s, count(DISTINCT encounter_id) as Count, if(CP is NULL, 0, 1) as IV "
+            "FROM pokemon "
+            " %s "
+            "GROUP BY IV, day(TIMESTAMP(last_modified)), hour(TIMESTAMP(last_modified)) "
+            "ORDER BY timestamp" % (str(query_date), str(query_where))
         )
         res = self._db_exec.execute(query)
         return res
@@ -338,9 +337,9 @@ class DbStatsReader:
             days = datetime.utcnow() - timedelta(days=days)
             query_where = "WHERE FROM_UNIXTIME(quest_timestamp) > '%s' " % str(days)
         query = (
-                "SELECT %s, count(GUID) as Count FROM trs_quest %s "
-                "GROUP BY day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp)) "
-                "ORDER BY quest_timestamp" % (str(query_date), str(query_where))
+            "SELECT %s, count(GUID) as Count FROM trs_quest %s "
+            "GROUP BY day(FROM_UNIXTIME(quest_timestamp)), hour(FROM_UNIXTIME(quest_timestamp)) "
+            "ORDER BY quest_timestamp" % (str(query_date), str(query_where))
         )
         res = self._db_exec.execute(query)
         return res
@@ -354,9 +353,9 @@ class DbStatsReader:
         if instance is not None:
             query_where = query_where + " AND instance = '%s' " % str(instance)
         query = (
-                "SELECT cpu, memory, garbage, timestamp, instance "
-                "FROM trs_usage %s "
-                "ORDER BY timestamp" % (str(query_where))
+            "SELECT cpu, memory, garbage, timestamp, instance "
+            "FROM trs_usage %s "
+            "ORDER BY timestamp" % (str(query_where))
         )
         res = self._db_exec.execute(query)
         return res

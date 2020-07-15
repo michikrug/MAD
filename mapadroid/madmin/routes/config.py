@@ -9,9 +9,10 @@ from mapadroid.data_manager.dm_exceptions import ModeNotSpecified, ModeUnknown
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils.adb import ADBConnect
 from mapadroid.utils.language import i8ln, open_json_file
-from mapadroid.utils.logging import logger
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.MappingManager import MappingManager
 
+logger = get_logger(LoggerEnums.madmin)
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 
 
@@ -32,8 +33,6 @@ class config(object):
         cache.init_app(self._app)
         self._mapping_mananger = mapping_manager
 
-        self.add_route()
-
     def add_route(self):
         routes = [
             ("/settings", self.settings),
@@ -52,6 +51,9 @@ class config(object):
         ]
         for route, view_func in routes:
             self._app.route(route, methods=['GET', 'POST'])(view_func)
+
+    def start_modul(self):
+        self.add_route()
 
     def get_pokemon(self):
         mondata = open_json_file('pokemon')

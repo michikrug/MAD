@@ -16,7 +16,7 @@ from mapadroid.data_manager import DataManager
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.mad_apk import (AbstractAPKStorage, StorageSyncManager,
                                get_storage_obj)
-from mapadroid.madmin.madmin import madmin_start
+from mapadroid.madmin.madmin import madmin
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
 from mapadroid.ocr.pogoWindows import PogoWindows
@@ -26,6 +26,7 @@ from mapadroid.utils.logging import LoggerEnums, get_logger, initLogging
 from mapadroid.utils.madGlobals import terminate_mad
 from mapadroid.utils.MappingManager import (MappingManager,
                                             MappingManagerManager)
+from mapadroid.utils.pluginBase import PluginCollection
 from mapadroid.utils.rarity import Rarity
 from mapadroid.utils.updater import deviceUpdater
 from mapadroid.utils.walkerArgs import parseArgs
@@ -262,13 +263,26 @@ if __name__ == "__main__":
                              target=get_system_infos, args=(db_wrapper,))
             t_usage.daemon = True
             t_usage.start()
+
+    madmin = madmin(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater,
+                    jobstatus, storage_elem)
+
+    # starting plugin system
+    plugin_parts = {'db_wrapper': db_wrapper, 'args': args, 'madmin': madmin, 'data_manager': data_manager,
+                    'mapping_manager': mapping_manager, 'jobstatus': jobstatus, 'device_Updater': device_Updater,
+                    'ws_server': ws_server, 'webhook_worker': webhook_worker,
+                    'mitm_receiver_process': mitm_receiver_process, 'mitm_mapper': mitm_mapper, 'event': event,
+                    'logger': logger, 'storage_elem': storage_elem
+                    }
+    mad_plugins = PluginCollection('plugins', plugin_parts)
+    mad_plugins.apply_all_plugins_on_value()
+
     if args.with_madmin or args.config_mode:
         logger.info("Starting Madmin on port {}", str(args.madmin_port))
-        t_madmin = Thread(name="system", target=madmin_start,
-                          args=(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater,
-                                jobstatus, storage_elem))
+        t_madmin = Thread(name="madmin", target=madmin.madmin_start)
         t_madmin.daemon = True
         t_madmin.start()
+
     logger.info("MAD is now running.....")
     exit_code = 0
     device_creator = None

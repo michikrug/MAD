@@ -1,4 +1,4 @@
-from mapadroid.utils.logging import LoggerEnums, get_logger
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 
 from .resource import Resource
 
@@ -344,7 +344,8 @@ class Device(Resource):
     }
 
     def flush_level(self) -> None:
-        logger.info('Removing visitation status for {}...', self['origin'])
+        origin_logger = get_origin_logger(logger, origin=self['origin'])
+        origin_logger.info('Removing visitation status')
         self._dbc.flush_levelinfo(self['origin'])
 
     def _load(self) -> None:

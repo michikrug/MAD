@@ -58,7 +58,7 @@ class RouteManagerMon(RouteManagerBase):
         try:
             if not self._is_started:
                 self._is_started = True
-                self.logger.info("Starting routemanager {}", str(self.name))
+                self.logger.info("Starting routemanager {}", self.name)
                 if not self.init:
                     self._start_priority_queue()
                 self._start_check_routepools()
@@ -72,7 +72,7 @@ class RouteManagerMon(RouteManagerBase):
         return False
 
     def _quit_route(self):
-        self.logger.info('Shutdown Route {}', str(self.name))
+        self.logger.info('Shutdown Route {}', self.name)
         self._is_started = False
         self._round_started_time = None
 

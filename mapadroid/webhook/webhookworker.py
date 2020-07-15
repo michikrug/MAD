@@ -63,7 +63,7 @@ class WebhookWorker:
 
     def __send_webhook(self, payload):
         if len(payload) == 0:
-            logger.debug("Payload empty. Skip sending to webhook.")
+            logger.debug2("Payload empty. Skip sending to webhook.")
             return
 
         # get list of urls
@@ -90,12 +90,10 @@ class WebhookWorker:
                 payloadToSend = payload
 
             if len(payloadToSend) == 0:
-                logger.debug(
-                    "Payload empty. Skip sending to: {} (Filter: {})", url, subTypes
-                )
+                logger.debug2("Payload empty. Skip sending to: {} (Filter: {})", url, subTypes)
                 continue
             else:
-                logger.debug("Sending to webhook url: {} (Filter: {})", url, subTypes)
+                logger.debug2("Sending to webhook url: {} (Filter: {})", url, subTypes)
 
             payload_list = self.__payload_chunk(
                 payloadToSend, self.__args.webhook_max_payload_size
@@ -103,8 +101,8 @@ class WebhookWorker:
 
             current_pl_num = 1
             for payload_chunk in payload_list:
-                logger.debug4("Python data for payload: {}", str(payload_chunk))
-                logger.debug3("Payload: {}", str(json.dumps(payload_chunk)))
+                logger.debug4("Python data for payload: {}", payload_chunk)
+                logger.debug4("Payload: {}", json.dumps(payload_chunk))
 
                 try:
                     if 'latitude' in payload_chunk and 'longitude' in payload_chunk:
@@ -119,10 +117,8 @@ class WebhookWorker:
                     )
 
                     if response.status_code != 200:
-                        logger.warning(
-                            "Got status code other than 200 OK from webhook destination: {}",
-                            str(response.status_code),
-                        )
+                        logger.warning("Got status code other than 200 OK from webhook destination: {}",
+                                       response.status_code)
                     else:
                         if webhook_count > 1:
                             whcount_text = " [wh {}/{}]".format(
@@ -138,16 +134,11 @@ class WebhookWorker:
                         else:
                             whchunk_text = ""
 
-                        logger.success(
-                            "Successfully sent payload to webhook{}{}. Stats: {}",
-                            whchunk_text,
-                            whcount_text,
-                            json.dumps(self.__payload_type_count(payload_chunk)),
-                        )
+                        logger.success("Successfully sent payload to webhook{}{}. Stats: {}", whchunk_text,
+                                       whcount_text, json.dumps(self.__payload_type_count(payload_chunk)),
+                                       )
                 except Exception as e:
-                    logger.warning(
-                        "Exception occured while sending webhook: {}", str(e)
-                    )
+                    logger.warning("Exception occured while sending webhook: {}", e)
 
                 current_pl_num += 1
             current_wh_num += 1
@@ -167,9 +158,7 @@ class WebhookWorker:
                 entire_payload = {"type": "quest", "message": quest_payload}
                 ret.append(entire_payload)
             except Exception as e:
-                logger.error(
-                    "Exception occured while generating quest webhook: {}", str(e)
-                )
+                logger.error("Exception occured while generating quest webhook: {}", e)
 
         return ret
 
@@ -605,7 +594,7 @@ class WebhookWorker:
         except Exception:
             logger.exception("Error while creating webhook payload")
 
-        logger.debug2("Done fetching data + building payload")
+        logger.debug("Done fetching data + building payload")
 
         return full_payload
 

@@ -31,17 +31,14 @@ class statistics(object):
             self._datetimeformat = '%Y-%m-%d %I:%M:%S %p'
         else:
             self._datetimeformat = '%Y-%m-%d %H:%M:%S'
-        self.add_route()
         self.outdatedays = self._args.outdated_spawnpoints
 
     def add_route(self):
         routes = [
             ("/statistics", self.statistics),
             ("/statistics_mon", self.statistics_mon),
-
             ("/statistics_shiny", self.statistics_shiny),
             ("/get_game_stats_shiny", self.game_stats_shiny_v2),
-
             ("/get_game_stats", self.game_stats),
             ("/get_game_stats_mon", self.game_stats_mon),
             ("/statistics_detection_worker_data", self.statistics_detection_worker_data),
@@ -67,6 +64,9 @@ class statistics(object):
         ]
         for route, view_func in routes:
             self._app.route(route)(view_func)
+
+    def start_modul(self):
+        self.add_route()
 
     def generate_mon_icon_url(self, id, form=None, costume=None, shiny=False):
         base_path = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/no_border'
@@ -279,8 +279,8 @@ class statistics(object):
             monName = get_mon_name(dat[2])
             diff: int = dat[0]
             if diff == 0:
-                logger.warning('No deeper mon stats are possible - not enought data '
-                               '(check config.ini // game_stats_raw)')
+                logger.warning('No deeper pokemon stats are possible - not enough data (check config.ini // '
+                               'game_stats_raw)')
                 diff = 1
 
             ratio = round(dat[1] * 100 / diff, 2)
@@ -332,16 +332,16 @@ class statistics(object):
     @logger.catch
     @auth_required
     def game_stats_shiny_v2(self):
-        logger.debug('game_stats_shiny_v2')
+        logger.debug2('game_stats_shiny_v2')
         timestamp_from = request.args.get('from', None)
         if (timestamp_from):
             timestamp_from = self.local2utc(int(timestamp_from))
-            logger.debug('using timestamp_from: {}', timestamp_from)
+            logger.debug2('using timestamp_from: {}', timestamp_from)
 
         timestamp_to = request.args.get('to', None)
         if (timestamp_to):
             timestamp_to = self.local2utc(int(timestamp_to))
-            logger.debug('using timestamp_to: {}', timestamp_to)
+            logger.debug2('using timestamp_to: {}', timestamp_to)
 
         tmp_perworker_v2 = {}
         data = self._db_stats_reader.get_shiny_stats_v2(timestamp_from, timestamp_to)

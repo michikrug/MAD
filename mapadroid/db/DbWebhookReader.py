@@ -16,7 +16,7 @@ class DbWebhookReader:
         self._db_wrapper = db_wrapper  # type: db.DbWrapper
 
     def get_raids_changed_since(self, timestamp):
-        logger.debug("DbWebhookReader::get_raids_changed_since called")
+        logger.debug2("DbWebhookReader::get_raids_changed_since called")
         query = (
             "SELECT raid.gym_id, raid.level, raid.spawn, raid.start, raid.end, raid.pokemon_id, "
             "raid.cp, raid.move_1, raid.move_2, raid.last_scanned, raid.form, raid.is_exclusive, raid.gender, "
@@ -59,7 +59,7 @@ class DbWebhookReader:
         return ret
 
     def get_weather_changed_since(self, timestamp):
-        logger.debug("DbWebhookReader::get_weather_changed_since called")
+        logger.debug2("DbWebhookReader::get_weather_changed_since called")
         query = (
             "SELECT * "
             "FROM weather "
@@ -91,11 +91,11 @@ class DbWebhookReader:
         return ret
 
     def get_quests_changed_since(self, timestamp):
-        logger.debug("DbWebhookReader::get_quests_changed_since called")
+        logger.debug2("DbWebhookReader::get_quests_changed_since called")
         return self._db_wrapper.quests_from_db(timestamp=timestamp)
 
     def get_gyms_changed_since(self, timestamp):
-        logger.debug("DbWebhookReader::get_gyms_changed_since called")
+        logger.debug2("DbWebhookReader::get_gyms_changed_since called")
         query = (
             "SELECT name, description, url, gym.gym_id, team_id, guard_pokemon_id, slots_available, "
             "latitude, longitude, total_cp, is_in_battle, "
@@ -130,7 +130,7 @@ class DbWebhookReader:
         return ret
 
     def get_stops_changed_since(self, timestamp):
-        logger.debug("DbWebhookReader::get_stops_changed_since called")
+        logger.debug2("DbWebhookReader::get_stops_changed_since called")
         query = (
             "SELECT pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier, "
             "last_modified, last_updated, incident_start, incident_expiration, incident_grunt_type "
@@ -167,7 +167,7 @@ class DbWebhookReader:
         return ret
 
     def get_mon_changed_since(self, timestamp):
-        logger.debug("DbWebhookReader::get_mon_changed_since called")
+        logger.debug2("DbWebhookReader::get_mon_changed_since called")
         query = (
             "SELECT encounter_id, spawnpoint_id, pokemon_id, pokemon.latitude, pokemon.longitude, "
             "disappear_time, individual_attack, individual_defense, individual_stamina, "

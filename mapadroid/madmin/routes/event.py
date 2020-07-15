@@ -25,8 +25,6 @@ class event(object):
         cache.init_app(self._app)
         self._mapping_mananger = mapping_manager
 
-        self.add_route()
-
     def add_route(self):
         routes = [
             ("/events", self.events),
@@ -37,6 +35,9 @@ class event(object):
         ]
         for route, view_func in routes:
             self._app.route(route, methods=['GET', 'POST'])(view_func)
+
+    def start_modul(self):
+        self.add_route()
 
     @auth_required
     def get_events(self):

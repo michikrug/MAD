@@ -1,8 +1,6 @@
 import base64
 import re
 
-from mapadroid.utils.logging import LoggerEnums, get_logger
-
 
 def check_auth(logger, authHeader, args, auths):
     valid = False

@@ -7,28 +7,27 @@ import time
 from abc import abstractmethod
 from threading import Event, Lock, Thread, current_thread
 from typing import Optional, Union
+
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
-from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.ocr.screen_type import ScreenType
+from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.utils import MappingManager
 from mapadroid.utils.collections import Location
+from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.hamming import hamming_distance
-from mapadroid.utils.madGlobals import (
-    InternalStopWorkerException,
-    WebsocketWorkerRemovedException,
-    WebsocketWorkerTimeoutException,
-    ScreenshotType,
-    WebsocketWorkerConnectionClosedException)
+from mapadroid.utils.logging import LoggerEnums, get_logger
+from mapadroid.utils.madGlobals import (InternalStopWorkerException,
+                                        ScreenshotType,
+                                        WebsocketWorkerConnectionClosedException,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.utils.resolution import Resocalculator
 from mapadroid.utils.routeutil import check_walker_value_type
+from mapadroid.utils.s2Helper import S2Helper
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
 from mapadroid.worker.AbstractWorker import AbstractWorker
-from mapadroid.utils.geo import get_distance_of_two_points_in_meters
-from mapadroid.utils.s2Helper import S2Helper
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.worker)
 
@@ -238,8 +237,8 @@ class WorkerBase(AbstractWorker):
     def start_worker(self):
         # async_result = self.thread_pool.apply_async(self._main_work_thread, ())
         t_main_work = Thread(
-                             name=self._origin,
-                             target=self._main_work_thread)
+            name=self._origin,
+            target=self._main_work_thread)
         t_main_work.daemon = True
         t_main_work.start()
         # do some other stuff in the main process
@@ -354,7 +353,7 @@ class WorkerBase(AbstractWorker):
             self._mapping_manager.unregister_worker_from_routemanager(self._routemanager_name, self._origin)
         except ConnectionResetError as e:
             self.logger.warning("Failed unregistering from routemanager, routemanager may have stopped running already."
-                           "Exception: {}", e)
+                                "Exception: {}", e)
         self.logger.info("Internal cleanup of started")
         self._cleanup()
         self.logger.info("Internal cleanup signaling end to websocketserver")
@@ -437,9 +436,9 @@ class WorkerBase(AbstractWorker):
 
             try:
                 self.logger.debug2('LastLat: {}, LastLng: {}, CurLat: {}, CurLng: {}',
-                             self.get_devicesettings_value("last_location", Location(0, 0)).lat,
-                             self.get_devicesettings_value("last_location", Location(0, 0)).lng,
-                             self.current_location.lat, self.current_location.lng)
+                                   self.get_devicesettings_value("last_location", Location(0, 0)).lat,
+                                   self.get_devicesettings_value("last_location", Location(0, 0)).lng,
+                                   self.current_location.lat, self.current_location.lng)
                 time_snapshot, process_location = self._move_to_location()
             except (InternalStopWorkerException, WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException,
                     WebsocketWorkerConnectionClosedException):
@@ -620,7 +619,7 @@ class WorkerBase(AbstractWorker):
             if screen_type != ScreenType.ERROR and self._last_screen_type == screen_type:
                 self._same_screen_count += 1
                 self.logger.warning("Found {} multiple times in a row ({})",
-                        screen_type, self._same_screen_count)
+                                    screen_type, self._same_screen_count)
                 if self._same_screen_count > 3:
                     self.logger.warning("Screen is frozen!")
                     if self._same_screen_count > 4 or not self._restart_pogo():
@@ -659,7 +658,7 @@ class WorkerBase(AbstractWorker):
                 self._loginerrorcounter += 1
             elif screen_type == ScreenType.NOGGL:
                 self.logger.warning('Detected login select screen missing the Google'
-                    ' button - likely entered an invalid birthdate previously')
+                                    ' button - likely entered an invalid birthdate previously')
                 self._loginerrorcounter += 1
             elif screen_type == ScreenType.GPS:
                 self.logger.error("Detected GPS error - reboot device")
@@ -734,7 +733,7 @@ class WorkerBase(AbstractWorker):
         questloop: int = 0
         firstround: bool = True
         x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-               self._resocalc.get_coords_quest_menu(self)[1]
+            self._resocalc.get_coords_quest_menu(self)[1]
         self._communicator.click(int(x), int(y))
         time.sleep(10)
         returncode: ScreenType = ScreenType.UNDEFINED
@@ -751,24 +750,24 @@ class WorkerBase(AbstractWorker):
                 if firstround:
                     self.logger.info('First round getting research menu')
                     x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                           self._resocalc.get_close_main_button_coords(self)[1]
+                        self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
                     return ScreenType.POGO
                 elif questcounter >= 2:
                     self.logger.info('Getting research menu two times in row')
                     x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                           self._resocalc.get_close_main_button_coords(self)[1]
+                        self._resocalc.get_close_main_button_coords(self)[1]
                     self._communicator.click(int(x), int(y))
                     time.sleep(1.5)
                     return ScreenType.POGO
 
             x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-                   self._resocalc.get_close_main_button_coords(self)[1]
+                self._resocalc.get_close_main_button_coords(self)[1]
             self._communicator.click(int(x), int(y))
             time.sleep(1.5)
             x, y = self._resocalc.get_coords_quest_menu(self)[0], \
-                   self._resocalc.get_coords_quest_menu(self)[1]
+                self._resocalc.get_coords_quest_menu(self)[1]
             self._communicator.click(int(x), int(y))
             time.sleep(3)
             self._takeScreenshot(delayBefore=self.get_devicesettings_value("post_screenshot_delay", 1),

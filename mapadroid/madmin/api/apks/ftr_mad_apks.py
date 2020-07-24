@@ -1,12 +1,16 @@
-from apkutils.apkfile import BadZipFile, LargeZipFile
-import flask
 import io
 from threading import Thread
-from .apkHandler import APKHandler
-from mapadroid.mad_apk import APK_Arch, APK_Type, stream_package, APKWizard, get_apk_status, MAD_APKS, \
-    PackageImporter, WizardError
+
+import flask
+
+from apkutils.apkfile import BadZipFile, LargeZipFile
+from mapadroid.mad_apk import (MAD_APKS, APK_Arch, APK_Type, APKWizard,
+                               PackageImporter, WizardError, get_apk_status,
+                               stream_package)
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils import global_variables
+
+from .apkHandler import APKHandler
 
 
 class APIMadAPK(APKHandler):

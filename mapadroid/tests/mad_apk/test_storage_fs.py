@@ -1,10 +1,11 @@
 import os
 import shutil
-from mapadroid.mad_apk import APKStorageFilesystem, APK_Type, APK_Arch, generate_filename
+
+from mapadroid.mad_apk import (APK_Arch, APK_Type, APKStorageFilesystem,
+                               generate_filename)
 from mapadroid.tests.mad_apk.base_storage import StorageBase
 from mapadroid.tests.test_utils import mimetype
 from mapadroid.utils.walkerArgs import parseArgs
-
 
 args = parseArgs()
 

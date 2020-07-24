@@ -13,12 +13,12 @@ from mapadroid.madmin.reverseproxy import ReverseProxied
 from mapadroid.madmin.routes.apks import apk_manager
 from mapadroid.madmin.routes.config import config
 from mapadroid.madmin.routes.control import control
+from mapadroid.madmin.routes.event import event
 from mapadroid.madmin.routes.map import map
 from mapadroid.madmin.routes.path import path
 from mapadroid.madmin.routes.statistics import statistics
-from mapadroid.madmin.routes.event import event
 from mapadroid.utils import MappingManager
-from mapadroid.utils.logging import InterceptHandler, get_logger, LoggerEnums
+from mapadroid.utils.logging import InterceptHandler, LoggerEnums, get_logger
 from mapadroid.websocket.WebsocketServer import WebsocketServer
 
 logger = get_logger(LoggerEnums.madmin)
@@ -30,6 +30,7 @@ app.config['UPLOAD_FOLDER'] = 'temp'
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
 app.secret_key = "8bc96865945be733f3973ba21d3c5949"
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
 
 @app.after_request
 def after_request(response):
@@ -49,7 +50,7 @@ def internal_error(self, exception):
 
 class madmin(object):
     def __init__(self, args, db_wrapper: DbWrapper, ws_server, mapping_manager: MappingManager, data_manager,
-                     deviceUpdater, jobstatus, storage_obj):
+                 deviceUpdater, jobstatus, storage_obj):
 
         self._db_wrapper: DbWrapper = db_wrapper
         self._args = args

@@ -1,24 +1,27 @@
 import datetime
 import os
 import time
-from PIL import Image
-from flask import (render_template, request, redirect, flash, jsonify, url_for, send_file)
+
+from flask import (flash, jsonify, redirect, render_template, request,
+                   send_file, url_for)
 from werkzeug.utils import secure_filename
+
 import mapadroid
 from mapadroid.db.DbWrapper import DbWrapper
-from mapadroid.madmin.functions import (
-    auth_required, generate_device_screenshot_path, nocache, allowed_file, uploaded_files,
-    generate_device_logcat_zip_path
-)
+from mapadroid.madmin.functions import (allowed_file, auth_required,
+                                        generate_device_logcat_zip_path,
+                                        generate_device_screenshot_path,
+                                        nocache, uploaded_files)
 from mapadroid.utils import MappingManager
 from mapadroid.utils.adb import ADBConnect
 from mapadroid.utils.collections import Location
-from mapadroid.utils.functions import (creation_date, generate_phones, image_resize, generate_path)
+from mapadroid.utils.functions import (creation_date, generate_path,
+                                       generate_phones, image_resize)
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 from mapadroid.utils.madGlobals import ScreenshotType
 from mapadroid.utils.updater import jobType
 from mapadroid.websocket.WebsocketServer import WebsocketServer
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
-
+from PIL import Image
 
 logger = get_logger(LoggerEnums.madmin)
 
@@ -136,7 +139,7 @@ class control(object):
                         filename = generate_device_screenshot_path(pho, devicemappings, self._args)
                         if os.path.isfile(filename):
                             image_resize(filename, os.path.join(mapadroid.MAD_ROOT,
-                                self._args.temp_path, "madmin"), width=250)
+                                                                self._args.temp_path, "madmin"), width=250)
                             screenshot_ending: str = ".jpg"
                             screen = "screenshot/madmin/screenshot_" + str(pho) + screenshot_ending
                             screens_phone.append(generate_phones(
@@ -424,7 +427,6 @@ class control(object):
             pass
             successfull = True
         origin_logger.info('MADmin: Command "{}" {}', command, successfull)
-
 
         time.sleep(2)
         return self.take_screenshot(origin, useadb)

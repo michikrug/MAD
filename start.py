@@ -1,39 +1,43 @@
+import calendar
+import datetime
+import gc
+import os
 import sys
+import time
+import unittest
+from multiprocessing import Process
+from threading import Thread, active_count
+from typing import Optional
+
+import pkg_resources
+
+import psutil
+from mapadroid.data_manager import DataManager
+from mapadroid.db.DbFactory import DbFactory
+from mapadroid.mad_apk import (AbstractAPKStorage, StorageSyncManager,
+                               get_storage_obj)
+from mapadroid.madmin.madmin import madmin
+from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
+from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
+from mapadroid.ocr.pogoWindows import PogoWindows
+from mapadroid.patcher import MADPatcher
+from mapadroid.utils.event import Event
+from mapadroid.utils.logging import LoggerEnums, get_logger, initLogging
+from mapadroid.utils.madGlobals import terminate_mad
+from mapadroid.utils.MappingManager import (MappingManager,
+                                            MappingManagerManager)
+from mapadroid.utils.pluginBase import PluginCollection
+from mapadroid.utils.rarity import Rarity
+from mapadroid.utils.updater import deviceUpdater
+from mapadroid.utils.walkerArgs import parseArgs
+from mapadroid.webhook.webhookworker import WebhookWorker
+from mapadroid.websocket.WebsocketServer import WebsocketServer
 
 py_version = sys.version_info
 if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
     print("MAD requires at least python 3.6! Your version: {}.{}"
           .format(py_version.major, py_version.minor))
     sys.exit(1)
-from multiprocessing import Process
-from typing import Optional
-import calendar
-import datetime
-import gc
-import os
-import pkg_resources
-import time
-from threading import Thread, active_count
-import psutil
-from mapadroid.utils.MappingManager import MappingManager, MappingManagerManager
-from mapadroid.db.DbFactory import DbFactory
-from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
-from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
-from mapadroid.utils.madGlobals import terminate_mad
-from mapadroid.utils.rarity import Rarity
-from mapadroid.utils.event import Event
-from mapadroid.patcher import MADPatcher
-from mapadroid.utils.walkerArgs import parseArgs
-from mapadroid.websocket.WebsocketServer import WebsocketServer
-from mapadroid.utils.updater import deviceUpdater
-from mapadroid.data_manager import DataManager
-from mapadroid.ocr.pogoWindows import PogoWindows
-from mapadroid.webhook.webhookworker import WebhookWorker
-from mapadroid.mad_apk import get_storage_obj, StorageSyncManager, AbstractAPKStorage
-from mapadroid.madmin.madmin import madmin
-from mapadroid.utils.pluginBase import PluginCollection
-import unittest
-from mapadroid.utils.logging import initLogging, get_logger, LoggerEnums
 
 
 args = parseArgs()
@@ -163,8 +167,8 @@ if __name__ == "__main__":
     pogoWindowManager: Optional[PogoWindows] = None
     storage_elem: Optional[AbstractAPKStorage] = None
     storage_manager: Optional[StorageSyncManager] = None
-    t_whw: Thread = None # Thread for WebHooks
-    t_ws: Thread = None # Thread - WebSocket Server
+    t_whw: Thread = None  # Thread for WebHooks
+    t_ws: Thread = None  # Thread - WebSocket Server
     webhook_worker: Optional[WebhookWorker] = None
     ws_server: WebsocketServer = None
     if args.config_mode:
@@ -261,15 +265,15 @@ if __name__ == "__main__":
             t_usage.start()
 
     madmin = madmin(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater,
-                          jobstatus, storage_elem)
+                    jobstatus, storage_elem)
 
     # starting plugin system
-    plugin_parts={'db_wrapper': db_wrapper, 'args': args, 'madmin': madmin, 'data_manager': data_manager,
-                  'mapping_manager': mapping_manager, 'jobstatus': jobstatus, 'device_Updater': device_Updater,
-                  'ws_server': ws_server, 'webhook_worker': webhook_worker,
-                  'mitm_receiver_process': mitm_receiver_process, 'mitm_mapper': mitm_mapper, 'event': event,
-                  'logger': logger, 'storage_elem': storage_elem
-                  }
+    plugin_parts = {'db_wrapper': db_wrapper, 'args': args, 'madmin': madmin, 'data_manager': data_manager,
+                    'mapping_manager': mapping_manager, 'jobstatus': jobstatus, 'device_Updater': device_Updater,
+                    'ws_server': ws_server, 'webhook_worker': webhook_worker,
+                    'mitm_receiver_process': mitm_receiver_process, 'mitm_mapper': mitm_mapper, 'event': event,
+                    'logger': logger, 'storage_elem': storage_elem
+                    }
     mad_plugins = PluginCollection('plugins', plugin_parts)
     mad_plugins.apply_all_plugins_on_value()
 

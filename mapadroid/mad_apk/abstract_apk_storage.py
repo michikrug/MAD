@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from io import BytesIO
-from typing import Optional, NoReturn
+from typing import NoReturn, Optional
+
 from .apk_enums import APK_Arch, APK_Type
 from .custom_types import MAD_Packages
 

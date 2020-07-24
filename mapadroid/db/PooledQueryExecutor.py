@@ -1,12 +1,13 @@
 from multiprocessing import Lock, Semaphore
 from multiprocessing.managers import SyncManager
+
 import mysql
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mysql.connector import ProgrammingError
 from mysql.connector.pooling import MySQLConnectionPool
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.database)
+
 
 class PooledQuerySyncManager(SyncManager):
     pass
@@ -311,7 +312,7 @@ class PooledQueryExecutor:
         optype = optype.upper()
         if optype not in ["INSERT", "REPLACE", "INSERT IGNORE", "ON DUPLICATE"]:
             raise ProgrammingError(
-                "MySQL operation must be 'INSERT', 'REPLACE', 'INSERT IGNORE', 'ON DUPLICATE'," \
+                "MySQL operation must be 'INSERT', 'REPLACE', 'INSERT IGNORE', 'ON DUPLICATE',"
                 "got '%s'" % optype)
         if type(keyvals) is not dict:
             raise Exception("Data must be a dictionary")

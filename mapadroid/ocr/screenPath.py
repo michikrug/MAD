@@ -3,14 +3,14 @@ import re
 import time
 import xml.etree.ElementTree as ET
 from enum import Enum
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
+
 import numpy as np
 from mapadroid.ocr.screen_type import ScreenType
 from mapadroid.utils import MappingManager
-from mapadroid.utils.collections import Login_PTC, Login_GGL
+from mapadroid.utils.collections import Login_GGL, Login_PTC
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 from mapadroid.utils.madGlobals import ScreenshotType
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
-
 
 logger = get_logger(LoggerEnums.ocr)
 

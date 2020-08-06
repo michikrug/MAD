@@ -1,7 +1,9 @@
 import logging
 import os
+
 from flask import Flask, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
+
 import mapadroid
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.madmin.api import APIEntry
@@ -9,14 +11,13 @@ from mapadroid.madmin.reverseproxy import ReverseProxied
 from mapadroid.madmin.routes.apks import APKManager
 from mapadroid.madmin.routes.config import MADminConfig
 from mapadroid.madmin.routes.control import MADminControl
+from mapadroid.madmin.routes.event import MADminEvent
 from mapadroid.madmin.routes.map import MADminMap
 from mapadroid.madmin.routes.path import MADminPath
 from mapadroid.madmin.routes.statistics import MADminStatistics
-from mapadroid.madmin.routes.event import MADminEvent
 from mapadroid.utils import MappingManager
-from mapadroid.utils.logging import InterceptHandler, get_logger, LoggerEnums
+from mapadroid.utils.logging import InterceptHandler, LoggerEnums, get_logger
 from mapadroid.websocket.WebsocketServer import WebsocketServer
-
 
 logger = get_logger(LoggerEnums.madmin)
 app = Flask(__name__,

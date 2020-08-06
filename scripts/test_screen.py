@@ -6,10 +6,10 @@ import sys
 import cv2
 import numpy as np
 import pytesseract
+from mapadroid.utils.resolution import Resocalculator
 from PIL import Image
 
 sys.path.append("..")
-from mapadroid.utils.resolution import Resocalculator
 
 
 class testimage(object):

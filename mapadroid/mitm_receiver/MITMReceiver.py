@@ -1,24 +1,25 @@
 import gzip
+import io
 import json
 import sys
 import time
-import io
 from multiprocessing import JoinableQueue, Process
-from typing import Union, Optional
+from threading import RLock
+from typing import Optional, Union
 
 from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
 
+import mapadroid.data_manager
+from mapadroid.mad_apk import (APKType, lookup_package_info, parse_frontend,
+                               stream_package, supported_pogo_version)
 from mapadroid.mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
 from mapadroid.utils.authHelper import check_auth
 from mapadroid.utils.collections import Location
-from mapadroid.utils.logging import LogLevelChanger, get_logger, LoggerEnums, get_origin_logger
-from mapadroid.mad_apk import stream_package, parse_frontend, lookup_package_info, supported_pogo_version, APKType
-from threading import RLock
-import mapadroid.data_manager
-
+from mapadroid.utils.logging import (LoggerEnums, LogLevelChanger, get_logger,
+                                     get_origin_logger)
 
 logger = get_logger(LoggerEnums.mitm)
 app = Flask(__name__)

@@ -16,20 +16,20 @@ from mapadroid.data_manager import DataManager
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.mad_apk import (AbstractAPKStorage, StorageSyncManager,
                                get_storage_obj)
-from mapadroid.madmin.madmin import madmin
+from mapadroid.madmin.madmin import MADmin
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.patcher import MADPatcher
 from mapadroid.utils.event import Event
-from mapadroid.utils.logging import LoggerEnums, get_logger, initLogging
+from mapadroid.utils.logging import LoggerEnums, get_logger, init_logging
 from mapadroid.utils.madGlobals import terminate_mad
 from mapadroid.utils.MappingManager import (MappingManager,
                                             MappingManagerManager)
 from mapadroid.utils.pluginBase import PluginCollection
 from mapadroid.utils.rarity import Rarity
-from mapadroid.utils.updater import deviceUpdater
-from mapadroid.utils.walkerArgs import parseArgs
+from mapadroid.utils.updater import DeviceUpdater
+from mapadroid.utils.walkerArgs import parse_args
 from mapadroid.webhook.webhookworker import WebhookWorker
 from mapadroid.websocket.WebsocketServer import WebsocketServer
 
@@ -40,10 +40,10 @@ if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
     sys.exit(1)
 
 
-args = parseArgs()
+args = parse_args()
 os.environ['LANGUAGE'] = args.language
-initLogging(args)
-logger = get_logger(LoggerEnums.database)
+init_logging(args)
+logger = get_logger(LoggerEnums.system)
 
 
 # Patch to make exceptions in threads cause an exception.
@@ -83,12 +83,12 @@ def install_thread_excepthook():
 
 
 def find_referring_graphs(obj):
-    REFERRERS_TO_IGNORE = [locals(), globals(), gc.garbage]
+    ignore_elems = [locals(), globals(), gc.garbage]
 
-    referrers = (r for r in gc.get_referrers(obj)
-                 if r not in REFERRERS_TO_IGNORE)
+    referrers = (r for r in gc.get_referrers(obj) if r not in ignore_elems)
     for ref in referrers:
-        if isinstance(ref, Graph):
+        print(type(ref))
+        if isinstance(ref, Graph):  # noqa: F821
             # A graph node
             yield ref
         elif isinstance(ref, dict):
@@ -106,9 +106,9 @@ def get_system_infos(db_wrapper):
     while not terminate_mad.is_set():
         logger.debug('Starting internal Cleanup')
         logger.debug('Collecting...')
-        n = gc.collect()
+        unreachable_objs = gc.collect()
         logger.debug('Unreachable objects: {} - Remaining garbage: {} - Running threads: {}',
-                     str(n), str(gc.garbage), str(active_count()))
+                     str(unreachable_objs), str(gc.garbage), str(active_count()))
 
         for obj in gc.garbage:
             for ref in find_referring_graphs(obj):
@@ -120,18 +120,17 @@ def get_system_infos(db_wrapper):
         logger.debug('Clearing gc garbage')
         del gc.garbage[:]
 
-        memoryUse = py.memory_info()[0] / 2. ** 30
-        cpuUse = py.cpu_percent()
+        mem_usage = py.memory_info()[0] / 2. ** 30
+        cpu_usage = py.cpu_percent()
         logger.info('Instance name: "{}" - Memory usage: {:.3f} GB - CPU usage: {}',
-                    str(args.status_name), memoryUse, str(cpuUse))
+                    str(args.status_name), mem_usage, str(cpu_usage))
         collected = None
         if args.stat_gc:
             collected = gc.collect()
             logger.debug("Garbage collector: collected %d objects." % collected)
         zero = datetime.datetime.utcnow()
         unixnow = calendar.timegm(zero.utctimetuple())
-        db_wrapper.insert_usage(args.status_name, cpuUse,
-                                memoryUse, collected, unixnow)
+        db_wrapper.insert_usage(args.status_name, cpu_usage, mem_usage, collected, unixnow)
         time.sleep(args.statistic_interval)
 
 
@@ -156,7 +155,7 @@ def check_dependencies():
 
 if __name__ == "__main__":
     data_manager: DataManager = None
-    device_Updater: deviceUpdater = None
+    device_updater: DeviceUpdater = None
     event: Event = None
     jobstatus: dict = {}
     mapping_manager_manager: MappingManagerManager = None
@@ -164,7 +163,7 @@ if __name__ == "__main__":
     mitm_receiver_process: MITMReceiver = None
     mitm_mapper_manager: Optional[MitmMapperManager] = None
     mitm_mapper: Optional[MitmMapper] = None
-    pogoWindowManager: Optional[PogoWindows] = None
+    pogo_win_manager: Optional[PogoWindows] = None
     storage_elem: Optional[AbstractAPKStorage] = None
     storage_manager: Optional[StorageSyncManager] = None
     t_whw: Thread = None  # Thread for WebHooks
@@ -193,7 +192,7 @@ if __name__ == "__main__":
     db_wrapper, db_pool_manager = DbFactory.get_wrapper(args)
     try:
         instance_id = db_wrapper.get_instance_id()
-    except:
+    except Exception:
         instance_id = None
     data_manager = DataManager(db_wrapper, instance_id)
     MADPatcher(args, data_manager)
@@ -222,7 +221,7 @@ if __name__ == "__main__":
         sys.exit(0)
     (storage_manager, storage_elem) = get_storage_obj(args, db_wrapper)
     if not args.config_mode:
-        pogoWindowManager = PogoWindows(args.temp_path, args.ocr_thread_count)
+        pogo_win_manager = PogoWindows(args.temp_path, args.ocr_thread_count)
         MitmMapperManager.register('MitmMapper', MitmMapper)
         mitm_mapper_manager = MitmMapperManager()
         mitm_mapper_manager.start()
@@ -239,20 +238,19 @@ if __name__ == "__main__":
                                 mitm_mapper=mitm_mapper,
                                 db_wrapper=db_wrapper,
                                 mapping_manager=mapping_manager,
-                                pogo_window_manager=pogoWindowManager,
+                                pogo_window_manager=pogo_win_manager,
                                 data_manager=data_manager,
                                 event=event,
                                 enable_configmode=args.config_mode)
     t_ws = Thread(name='system', target=ws_server.start_server)
     t_ws.daemon = False
     t_ws.start()
-    device_Updater = deviceUpdater(ws_server, args, jobstatus, db_wrapper, storage_elem)
+    device_updater = DeviceUpdater(ws_server, args, jobstatus, db_wrapper, storage_elem)
     if not args.config_mode:
         if args.webhook:
             rarity = Rarity(args, db_wrapper)
             rarity.start_dynamic_rarity()
-            webhook_worker = WebhookWorker(
-                args, data_manager, mapping_manager, rarity, db_wrapper.webhook_reader)
+            webhook_worker = WebhookWorker(args, data_manager, mapping_manager, rarity, db_wrapper.webhook_reader)
             t_whw = Thread(name="system",
                            target=webhook_worker.run_worker)
             t_whw.daemon = True
@@ -264,16 +262,25 @@ if __name__ == "__main__":
             t_usage.daemon = True
             t_usage.start()
 
-    madmin = madmin(args, db_wrapper, ws_server, mapping_manager, data_manager, device_Updater,
-                    jobstatus, storage_elem)
+    madmin = MADmin(args, db_wrapper, ws_server, mapping_manager, data_manager, device_updater, jobstatus, storage_elem)
 
     # starting plugin system
-    plugin_parts = {'db_wrapper': db_wrapper, 'args': args, 'madmin': madmin, 'data_manager': data_manager,
-                    'mapping_manager': mapping_manager, 'jobstatus': jobstatus, 'device_Updater': device_Updater,
-                    'ws_server': ws_server, 'webhook_worker': webhook_worker,
-                    'mitm_receiver_process': mitm_receiver_process, 'mitm_mapper': mitm_mapper, 'event': event,
-                    'logger': logger, 'storage_elem': storage_elem
-                    }
+    plugin_parts = {
+        'args': args,
+        'data_manager': data_manager,
+        'db_wrapper': db_wrapper,
+        'device_Updater': device_updater,
+        'event': event,
+        'jobstatus': jobstatus,
+        'logger': get_logger(LoggerEnums.plugin),
+        'madmin': madmin,
+        'mapping_manager': mapping_manager,
+        'mitm_mapper': mitm_mapper,
+        'mitm_receiver_process': mitm_receiver_process,
+        'storage_elem': storage_elem,
+        'webhook_worker': webhook_worker,
+        'ws_server': ws_server,
+    }
     mad_plugins = PluginCollection('plugins', plugin_parts)
     mad_plugins.apply_all_plugins_on_value()
 
@@ -303,7 +310,7 @@ if __name__ == "__main__":
                     api.get('/api')
                     api_ready = True
                     logger.info('API is ready for unit testing')
-                except:
+                except Exception:
                     time.sleep(1)
             loader = unittest.TestLoader()
             start_dir = 'mapadroid/tests/'
@@ -327,7 +334,6 @@ if __name__ == "__main__":
             # now cleanup all threads...
             # TODO: check against args or init variables to None...
             if mitm_receiver_process is not None:
-                # mitm_receiver_thread.kill()
                 logger.info("Trying to stop receiver")
                 mitm_receiver_process.shutdown()
                 logger.debug("MITM child threads successfully shutdown.  Terminating parent thread")
@@ -335,8 +341,8 @@ if __name__ == "__main__":
                 logger.debug("Trying to join MITMReceiver")
                 mitm_receiver_process.join()
                 logger.debug("MITMReceiver joined")
-            if device_Updater is not None:
-                device_Updater.stop_updater()
+            if device_updater is not None:
+                device_updater.stop_updater()
             if t_whw is not None:
                 logger.info("Waiting for webhook-thread to exit")
                 t_whw.join()
@@ -357,7 +363,7 @@ if __name__ == "__main__":
                 logger.debug("Calling db_pool_manager shutdown")
                 db_pool_manager.shutdown()
                 logger.debug("Done shutting down db_pool_manager")
-        except:
+        except Exception:
             logger.opt(exception=True).critical("An unhanded exception occurred during shutdown!")
         logger.info("Done shutting down")
         logger.debug(str(sys.exc_info()))

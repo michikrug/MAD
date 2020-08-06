@@ -63,7 +63,6 @@ class RouteManagerMon(RouteManagerBase):
                     self._start_priority_queue()
                 self._start_check_routepools()
                 self._init_route_queue()
-                self._first_round_finished = False
         finally:
             self._manager_mutex.release()
         return True

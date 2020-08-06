@@ -7,11 +7,11 @@ from multiprocessing import JoinableQueue, Process
 from threading import RLock
 from typing import Optional, Union
 
-from flask import Flask, Response, request, stream_with_context
+from flask import Flask, Response, request
 from gevent.pywsgi import WSGIServer
 
 import mapadroid.data_manager
-from mapadroid.mad_apk import (APK_Type, lookup_package_info, parse_frontend,
+from mapadroid.mad_apk import (APKType, lookup_package_info, parse_frontend,
                                stream_package, supported_pogo_version)
 from mapadroid.mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
@@ -19,7 +19,7 @@ from mapadroid.utils import MappingManager
 from mapadroid.utils.authHelper import check_auth
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import (LoggerEnums, LogLevelChanger, get_logger,
-                                     get_origin_logger, logger)
+                                     get_origin_logger)
 
 logger = get_logger(LoggerEnums.mitm)
 app = Flask(__name__)
@@ -54,12 +54,12 @@ class EndpointAction(object):
                 self.response = Response(status=403, headers={})
                 abort = True
         else:
-            if not origin:
+            if origin is None:
                 origin_logger.warning("Missing Origin header in request")
                 self.response = Response(status=500, headers={})
                 abort = True
-            elif (self.mapping_manager.get_all_devicemappings().keys() is not None and
-                  (origin is None or origin not in self.mapping_manager.get_all_devicemappings().keys())):
+            elif self.mapping_manager.get_all_devicemappings().keys() is not None and \
+                    origin not in self.mapping_manager.get_all_devicemappings().keys():
                 origin_logger.warning("MITMReceiver request without Origin or disallowed Origin")
                 self.response = Response(status=403, headers={})
                 abort = True
@@ -165,9 +165,9 @@ class MITMReceiver(Process):
             for i in range(self.__application_args.mitmreceiver_data_workers):
                 self._data_queue.put(None)
         logger.info("Trying to join workers...")
-        for t in self.worker_threads:
-            t.terminate()
-            t.join()
+        for worker_thread in self.worker_threads:
+            worker_thread.terminate()
+            worker_thread.join()
         self._data_queue.close()
         logger.info("Workers stopped...")
 
@@ -180,8 +180,7 @@ class MITMReceiver(Process):
             httpsrv.close()
             logger.info("Received STOP signal in MITMReceiver")
 
-    def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, options=None,
-                     methods_passed=None):
+    def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, methods_passed=None):
         if methods_passed is None:
             logger.error("Invalid REST method specified")
             sys.exit(1)
@@ -207,8 +206,8 @@ class MITMReceiver(Process):
 
     def __handle_proto_data_dict(self, origin: str, data: dict) -> None:
         origin_logger = get_origin_logger(logger, origin=origin)
-        type = data.get("type", None)
-        if type is None or type == 0:
+        proto_type = data.get("type", None)
+        if proto_type is None or proto_type == 0:
             origin_logger.warning("Could not read method ID. Stopping processing of proto")
             return
 
@@ -219,7 +218,7 @@ class MITMReceiver(Process):
             origin_logger.warning("Received invalid location in data: {}", location_of_data)
             location_of_data: Location = Location(0, 0)
         self.__mitm_mapper.update_latest(origin, timestamp_received_raw=timestamp,
-                                         timestamp_received_receiver=time.time(), key=type, values_dict=data,
+                                         timestamp_received_receiver=time.time(), key=proto_type, values_dict=data,
                                          location=location_of_data)
         origin_logger.debug2("Placing data received to data_queue")
         self._data_queue.put((timestamp, data, origin))
@@ -288,7 +287,7 @@ class MITMReceiver(Process):
         apk_type, apk_arch = parsed
         (msg, status_code) = lookup_package_info(self.__storage_obj, apk_type, apk_arch)
         if msg:
-            if apk_type == APK_Type.pogo and not supported_pogo_version(apk_arch, msg.version):
+            if apk_type == APKType.pogo and not supported_pogo_version(apk_arch, msg.version):
                 return Response(status=406, response='Supported version not installed')
             return Response(status=status_code, response=msg.version)
         else:

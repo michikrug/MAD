@@ -109,7 +109,6 @@ class WorkerFactory:
 
     async def __prep_settings(self, origin: str) -> Optional[WalkerConfiguration]:
         origin_logger = get_origin_logger(logger, origin=origin)
-        last_known_state = {}
         client_mapping = self.__mapping_manager.get_devicemappings_of(origin)
         devicesettings = self.__mapping_manager.get_devicesettings_of(origin)
         origin_logger.info("Setting up routemanagers")
@@ -178,8 +177,8 @@ class WorkerFactory:
         if origin is None or worker_type is None or worker_type == WorkerType.UNDEFINED:
             return None
         elif worker_type in [WorkerType.CONFIGMODE, WorkerType.CONFIGMODE.value]:
-            origin_logger.error(
-                "WorkerFactory::get_worker called with configmode arg, use get_configmode_worker instead")
+            origin_logger.error("WorkerFactory::get_worker called with configmode arg, use get_configmode_worker"
+                                "instead")
             return None
         # TODO: validate all values
         elif worker_type in [WorkerType.IV_MITM, WorkerType.IV_MITM.value,

@@ -29,7 +29,6 @@ class APIHandler(object):
         self.dbc = self._data_manager.dbc
         self._mapping_manager = mapping_manager
         self._ws_server = ws_server
-        self._instance = self._data_manager.instance_id
         self._config_mode = config_mode
         self.api_req = None
         self.storage_obj = storage_obj
@@ -79,7 +78,7 @@ class APIHandler(object):
                 return processed_data
             try:
                 resp_args = processed_data[2]
-            except:
+            except IndexError:
                 resp_args = {}
             return apiResponse.APIResponse(self._logger, self.api_req)(response_data, status_code,
                                                                        **resp_args)

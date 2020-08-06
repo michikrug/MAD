@@ -4,8 +4,8 @@ import logging
 import queue
 import random as rand
 import time
-from threading import Event, Lock, Thread, current_thread
-from typing import Coroutine, Dict, KeysView, List, Optional, Set
+from threading import Event, Thread, current_thread
+from typing import Coroutine, Dict, List, Optional, Set
 
 import websockets
 from mapadroid.data_manager import DataManager
@@ -60,22 +60,21 @@ class WebsocketServer(object):
         # asyncio loop for the entire server
         self.__loop: Optional[asyncio.AbstractEventLoop] = asyncio.new_event_loop()
         self.__loop_tid: int = -1
-        self.__loop_mutex = Lock()
         self.__worker_shutdown_queue: queue.Queue[Thread] = queue.Queue()
         self.__internal_worker_join_thread: Thread = Thread(name='system',
                                                             target=self.__internal_worker_join)
         self.__internal_worker_join_thread.daemon = True
 
     def _add_task_to_loop(self, coro: Coroutine):
-        f = functools.partial(self.__loop.create_task, coro)
+        create_task = functools.partial(self.__loop.create_task, coro)
         if current_thread() == self.__loop_tid:
             # We can call directly if we're not going between threads.
-            return f()
+            return create_task()
         else:
             # We're in a non-event loop thread so we use a Future
             # to get the task from the event loop thread once
             # it's ready.
-            return self.__loop.call_soon_threadsafe(f)
+            return self.__loop.call_soon_threadsafe(create_task)
 
     async def __setup_first_loop(self):
         self.__current_users_mutex: asyncio.Lock = asyncio.Lock()
@@ -253,11 +252,6 @@ class WebsocketServer(object):
         entry.worker_instance = worker
         return True
 
-    async def __get_new_worker(self, origin: str):
-        # fetch worker from factory...
-        # TODO: determine which to use....
-        pass
-
     async def __authenticate_connection(self, websocket_client_connection: websockets.WebSocketClientProtocol) \
             -> Optional[str]:
         """
@@ -377,13 +371,6 @@ class WebsocketServer(object):
         return (entry.worker_instance.set_geofix_sleeptime(sleeptime)
                 if entry is not None and entry.worker_instance is not None
                 else False)
-
-    def trigger_worker_check_research(self, origin: str) -> bool:
-        entry: Optional[WebsocketConnectedClientEntry] = self.__current_users.get(origin, None)
-        trigger_research: bool = entry is not None and entry.worker_instance is not None
-        if trigger_research:
-            entry.worker_instance.trigger_check_research()
-        return trigger_research
 
     def set_job_activated(self, origin) -> None:
         self.__mapping_manager.set_devicesetting_value_of(origin, 'job', True)

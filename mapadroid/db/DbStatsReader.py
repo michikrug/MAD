@@ -91,7 +91,7 @@ class DbStatsReader:
             "FROM trs_stats_detect %s %s "
             "GROUP BY worker %s "
             "ORDER BY timestamp_scan" %
-                (str(query_date), str(query_where), str(worker_where), str(grouped_query))
+            (str(query_date), str(query_where), str(worker_where), str(grouped_query))
         )
         res = self._db_exec.execute(query)
 
@@ -130,7 +130,7 @@ class DbStatsReader:
             "'other')), worker, count(fix_ts), avg(data_ts-fix_ts) as data_time, walker from trs_stats_location_raw "
             "where success=1 and type in (0,1) and (walker='mon_mitm' or walker='iv_mitm' or walker='pokestops') "
             "%s %s group by worker %s" %
-                (str(query_date), (query_where), str(worker_where), str(grouped_query))
+            (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
 
         res = self._db_exec.execute(query)
@@ -159,7 +159,7 @@ class DbStatsReader:
         query = (
             "SELECT %s, worker, sum(location_count), sum(location_ok), sum(location_nok) from trs_stats_location "
             " %s %s group by worker %s" %
-                (str(query_date), (query_where), str(worker_where), str(grouped_query))
+            (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
         res = self._db_exec.execute(query)
 
@@ -188,7 +188,7 @@ class DbStatsReader:
             "SELECT %s, worker, count(period), if(type=0,if(success=1,'OK-Normal','NOK-Normal'),"
             "if(success=1,'OK-PrioQ','NOK-PrioQ')) from trs_stats_location_raw "
             " %s %s and type in(0,1) group by worker %s" %
-                (str(query_date), (query_where), str(worker_where), str(grouped_query))
+            (str(query_date), (query_where), str(worker_where), str(grouped_query))
         )
 
         res = self._db_exec.execute(query)
@@ -225,7 +225,7 @@ class DbStatsReader:
 
         query = (
             "SELECT %s, type, encounter_id as type_id, count FROM trs_stats_detect_mon_raw %s %s order by id asc" %
-                (str(query_date), (query_where), str(worker_where))
+            (str(query_date), (query_where), str(worker_where))
         )
         query2 = (
             "SELECT %s, type, guid as type_id, count FROM trs_stats_detect_fort_raw %s %s order by id asc" %
@@ -252,12 +252,13 @@ class DbStatsReader:
 
         query_date = "unix_timestamp(DATE_FORMAT(FROM_UNIXTIME(period), '%y-%m-%d %k:00:00'))"
 
-        query = ("SELECT %s, lat, lng, if(type=0,'Normal',if(type=1,'PrioQ', if(type=2,'Startup',"
-                 "if(type=3,'Reboot','Restart')))), if(success=1,'OK','NOK'), fix_ts, "
-                 "if(data_ts=0,fix_ts,data_ts), count, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
-                 "'other')) from trs_stats_location_raw %s %s order by id asc" %
-                 (str(query_date), (query_where), str(worker_where))
-                 )
+        query = (
+            "SELECT %s, lat, lng, if(type=0,'Normal',if(type=1,'PrioQ', if(type=2,'Startup',"
+            "if(type=3,'Reboot','Restart')))), if(success=1,'OK','NOK'), fix_ts, "
+            "if(data_ts=0,fix_ts,data_ts), count, if(transporttype=0,'Teleport',if(transporttype=1,'Walk', "
+            "'other')) from trs_stats_location_raw %s %s order by id asc" %
+            (str(query_date), (query_where), str(worker_where))
+        )
 
         res = self._db_exec.execute(query)
         return res
@@ -360,29 +361,8 @@ class DbStatsReader:
         res = self._db_exec.execute(query)
         return res
 
-    def check_stop_quest_level(self, worker, latitude, longitude):
-        tmp_logger = get_origin_logger(logger, origin=worker)
-        tmp_logger.debug3("DbWrapper::check_stop_quest_level called")
-        query = (
-            "SELECT trs_stats_detect_fort_raw.guid "
-            "FROM trs_stats_detect_fort_raw "
-            "INNER JOIN pokestop ON pokestop.pokestop_id = trs_stats_detect_fort_raw.guid "
-            "WHERE pokestop.latitude=%s AND pokestop.longitude=%s AND trs_stats_detect_fort_raw.worker=%s LIMIT 1"
-        )
-        data = (latitude, longitude, worker)
-
-        res = self._db_exec.execute(query, data)
-        number_of_rows = len(res)
-        if number_of_rows > 0:
-            logger.debug('Pokestop already visited')
-            return True
-        else:
-            logger.debug('Pokestop not visited till now')
-            return False
-
     def get_all_spawnpoints_count(self):
         logger.debug4("dbWrapper::get_all_spawnpoints_count")
-        spawn = []
         query = (
             "SELECT count(*) "
             "FROM `trs_spawn`"

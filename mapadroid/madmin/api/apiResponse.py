@@ -6,8 +6,6 @@ from mapadroid.utils.json_encoder import MADEncoder
 
 from . import apiException
 
-from . import apiException
-
 
 class APIResponse(object):
     def __init__(self, logger, request, **kwargs):

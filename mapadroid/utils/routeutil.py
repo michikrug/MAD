@@ -26,7 +26,6 @@ def check_time_till_end(exittime):
     return tm_now < tm_til
 
 
-
 def check_time_period(period):
     timer = period.split('-')
     sts1 = timer[0].replace(' ', '').split(':')
@@ -42,7 +41,6 @@ def check_time_period(period):
             tm_til = tm_til + datetime.timedelta(days=+1)
 
     return tm_from <= tm_now <= tm_til
-
 
 
 def pre_check_value(walker_settings, eventid):

@@ -416,11 +416,6 @@ class WebhookWorker:
             if pokemon_rarity is not None:
                 mon_payload["rarity"] = pokemon_rarity
 
-            if mon["base_catch"] is not None:
-                mon_payload["base_catch"] = mon["base_catch"]
-                mon_payload["great_catch"] = mon["great_catch"]
-                mon_payload["ultra_catch"] = mon["ultra_catch"]
-
             if mon["weather_boosted_condition"] is not None \
                and mon["weather_boosted_condition"] > 0:
                 if self.__args.quest_webhook_flavor == "default":

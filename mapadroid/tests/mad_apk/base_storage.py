@@ -8,7 +8,7 @@ from mapadroid.db.DbFactory import DbFactory
 from mapadroid.mad_apk import (APKArch, APKType, MADapks, MADPackage,
                                MADPackages, file_generator, get_apk_status,
                                get_storage_obj)
-from mapadroid.tests.test_utils import filepath_rgc, mimetype, upload_rgc
+from mapadroid.tests.test_utils import filepath_rgc, mimetype, upload_package
 from mapadroid.utils.logging import init_logging
 from mapadroid.utils.walkerArgs import parse_args
 
@@ -69,7 +69,7 @@ class StorageBase(TestCase):
 
     def upload_check(self):
         self.assertIsNone(self.storage_elem.get_current_package_info(APKType.rgc))
-        upload_rgc(self.storage_elem)
+        upload_package(self.storage_elem)
         packages_data: MADPackages = self.storage_elem.get_current_package_info(APKType.rgc)
         self.assertIsInstance(packages_data, MADPackages)
         self.assertTrue(APKArch.noarch in packages_data)
@@ -87,7 +87,7 @@ class StorageBase(TestCase):
         self.assertIsInstance(package_data['usage_disp'], str)
 
     def download_check(self):
-        upload_rgc(self.storage_elem)
+        upload_package(self.storage_elem)
         gen = file_generator(self.db_wrapper, self.storage_elem, APKType.rgc, APKArch.noarch)
         data = io.BytesIO()
         for chunk in gen:
@@ -95,17 +95,17 @@ class StorageBase(TestCase):
         self.assertTrue(data.getbuffer().nbytes == os.stat(filepath_rgc).st_size)
 
     def delete_check(self):
-        upload_rgc(self.storage_elem)
+        upload_package(self.storage_elem)
         self.assertTrue(self.storage_elem.delete_file(APKType.rgc, APKArch.noarch))
         self.assertIsNone(self.storage_elem.get_current_package_info(APKType.rgc))
 
     def package_upgrade_check(self, version: str):
-        upload_rgc(self.storage_elem, version=version)
-        upload_rgc(self.storage_elem)
+        upload_package(self.storage_elem, version=version)
+        upload_package(self.storage_elem)
 
     def version_check(self):
         version = '0.1'
-        upload_rgc(self.storage_elem, version=version)
+        upload_package(self.storage_elem, version=version)
         self.assertTrue(self.storage_elem.get_current_version(APKType.rgc, APKArch.noarch) == version)
 
     def test_check_invalid(self):

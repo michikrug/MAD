@@ -254,7 +254,7 @@ class WorkerQuests(MITMBase):
             self.logger.debug(
                 "Need more sleep after Teleport: {} seconds!", int(delay_used))
         else:
-            delay_used = distance / speed
+            delay_used = distance / speed / 3.6  # speed is in kmph , delay_used need mps
             self.logger.info("main: Walking {} m, this will take {} seconds", distance, delay_used)
             self._transporttype = 1
             self._communicator.walk_from_to(self.last_location, self.current_location, speed)
@@ -527,10 +527,10 @@ class WorkerQuests(MITMBase):
                         delx, dely = self._resocalc.get_confirm_delete_item_coords(self)
                         cur_time = time.time()
                         self._communicator.click(int(delx), int(dely))
-
+                        cur_time = time.time()
                         deletion_timeout = 35
-                        data_received = self._wait_for_data(
-                            timestamp=cur_time, proto_to_wait_for=4, timeout=deletion_timeout)
+                        data_received = self._wait_for_data(timestamp=cur_time, proto_to_wait_for=4,
+                                                            timeout=deletion_timeout)
 
                         if data_received != LatestReceivedType.UNDEFINED:
                             if data_received == LatestReceivedType.CLEAR:

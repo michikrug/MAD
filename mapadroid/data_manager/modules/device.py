@@ -1,3 +1,6 @@
+import re
+from typing import Optional
+
 from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 
 from .resource import Resource
@@ -55,6 +58,35 @@ class Device(Resource):
                     "require": False,
                     "empty": None,
                     "description": "ADB devicename",
+                    "expected": str
+                }
+            },
+            "account_id": {
+                "settings": {
+                    "type": "emailselect_google",
+                    "require": False,
+                    "empty": None,
+                    "description": "Assigned Google address",
+                    "expected": int,
+                    "uri": True,
+                    "data_source": "pogoauth",
+                    "uri_source": "api_pogoauth"
+                }
+            },
+            "interface_type": {
+                "settings": {
+                    "type": "option",
+                    "values": ["lan", "wlan"],
+                    "require": False,
+                    "description": "Interface type to use",
+                    "expected": str
+                }
+            },
+            "mac_address": {
+                "settings": {
+                    "type": "text",
+                    "require": False,
+                    "description": "MAC address of the device",
                     "expected": str
                 }
             }
@@ -347,6 +379,31 @@ class Device(Resource):
         origin_logger = get_origin_logger(logger, origin=self['origin'])
         origin_logger.info('Removing visitation status')
         self._dbc.flush_levelinfo(self['origin'])
+
+    def validate_custom(self) -> Optional[dict]:
+        data = self.get_resource(backend=True)
+        issues = {}
+        bad_macs = []
+        mac_fields = ['mac_address', 'wifi_mac_address']
+        for field in mac_fields:
+            if field not in data:
+                continue
+            if data[field] is None:
+                continue
+            if not re.match("[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", data[field].lower()):
+                bad_macs.append((field, 'Invalid MAC address'))
+        if bad_macs:
+            issues['issues'] = bad_macs
+        if 'account_id' in self._data['fields'] and self._data['fields']['account_id'] is not None:
+            sql = "SELECT COUNT(*)\n" \
+                  "FROM `settings_device`\n" \
+                  "WHERE `account_id` = %s AND `device_id` != %s"
+            if self._dbc.autofetch_value(sql, (self._data['fields']['account_id'], self.identifier)) > 0:
+                if 'invalid' not in issues:
+                    issues['invalid'] = []
+                issues['invalid'].append(('account_id', 'Account already in use'))
+        if issues:
+            return issues
 
     def _load(self) -> None:
         super()._load()

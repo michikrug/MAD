@@ -1,6 +1,9 @@
-from .autoconfHandler import AutoConfHandler
-from mapadroid.utils.autoconfig import origin_generator, RGCConfig, PDConfig, AutoConfIssue, generate_autoconf_issues
 from mapadroid.data_manager.dm_exceptions import UnknownIdentifier
+from mapadroid.utils.autoconfig import (AutoConfIssue, PDConfig, RGCConfig,
+                                        generate_autoconf_issues,
+                                        origin_generator)
+
+from .autoconfHandler import AutoConfHandler
 
 
 class APIAutoConf(AutoConfHandler):

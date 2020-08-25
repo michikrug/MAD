@@ -1,8 +1,9 @@
 import re
 from typing import Optional
-from .resource import Resource
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
 
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
+
+from .resource import Resource
 
 logger = get_logger(LoggerEnums.data_manager)
 

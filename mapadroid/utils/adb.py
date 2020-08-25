@@ -1,9 +1,9 @@
 import os
 import sys
 import time
-from mapadroid.utils.functions import pngtojpg
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
 
+from mapadroid.utils.functions import pngtojpg
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 
 logger = get_logger(LoggerEnums.utils)
 

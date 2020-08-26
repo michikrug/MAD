@@ -1,8 +1,9 @@
-import mysql.connector
-from typing import Optional, List, Tuple
-from .resource import Resource
-from mapadroid.utils.logging import get_logger, LoggerEnums
+from typing import List, Optional, Tuple
 
+import mysql.connector
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+from .resource import Resource
 
 logger = get_logger(LoggerEnums.data_manager)
 

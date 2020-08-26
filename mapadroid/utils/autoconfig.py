@@ -1,12 +1,14 @@
-from flask import Response, url_for
 import copy
 import json
 from io import BytesIO
 from typing import Any, List, NoReturn, Tuple
 from xml.sax.saxutils import escape
+
+from flask import Response, url_for
+
 from mapadroid.data_manager.modules import MAPPINGS
-from mapadroid.mad_apk import get_apk_status
 from mapadroid.data_manager.modules.resource import USER_READABLE_ERRORS
+from mapadroid.mad_apk import get_apk_status
 
 
 def generate_autoconf_issues(db, data_manager, args, storage_obj) -> Tuple[List[str], List[str]]:

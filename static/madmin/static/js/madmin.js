@@ -250,7 +250,7 @@ new Vue({
     computed: {
         sortedGeofences() {
             return Object.values(this.layers.dyn.geofences).sort(function (x, y) {
-                return x.name.localeCompare(y.name, "en", {sensitivity: "base"});
+                return x.name.localeCompare(y.name, "en", { sensitivity: "base" });
             });
         }
     },
@@ -637,9 +637,7 @@ new Vue({
                         weight: 2,
                         opacity: 0.4,
                         pane: layerOrders.routes.pane
-                    })
-                    .bindPopup(this.build_route_popup(route), { className: "routepopup" })
-                    .addTo(group);
+                    }).bindPopup(this.build_route_popup(route), { className: "routepopup" }).addTo(group);
 
                     // add layergroup to management object
                     leaflet_data.routes[name] = group;
@@ -651,7 +649,6 @@ new Vue({
 
                     this.$set(this.layers.dyn.routes, name, settings);
 
-                    var name = route.name;
                 }, this);
             });
         },
@@ -712,9 +709,7 @@ new Vue({
                             interactive: false,
                             pmIgnore: true,
                             pane: layerOrders.routes.pane,
-                        })
-                        .bindPopup(this.build_prioq_popup)
-                        .addTo(group);
+                        }).bindPopup(this.build_prioq_popup).addTo(group);
 
                         linecoords.push([coord.latitude, coord.longitude]);
                     });
@@ -738,29 +733,12 @@ new Vue({
 
                     this.$set(this.layers.dyn.prioroutes, name, settings);
 
-            this.fetchers.spawns = true;
-            axios.get('get_spawns' + urlFilter).then(function (res) {
                 }, this);
             });
         },
         map_fetch_spawns(urlFilter) {
             this.mapGuardedFetch("spawns", "get_spawns" + urlFilter, function (res) {
                 res.data.forEach(function (spawns) {
-                    spawns['Coords'].forEach(function (spawn) {
-                        var eventname = spawns['EVENT'];
-
-                        if (spawn['endtime'] !== null) {
-                            var endsplit = spawn['endtime'].split(':');
-                            var endMinute = parseInt(endsplit[0]);
-                            var endSecond = parseInt(endsplit[1]);
-                            var despawntime = moment();
-                            var now = moment();
-
-                            if (spawn['spawndef'] == 15) {
-                                var timeshift = 60;
-                            } else {
-                                var timeshift = 30;
-                            }
                     const eventName = spawns["EVENT"];
 
                     spawns["Coords"].forEach(function (spawn) {
@@ -892,8 +870,8 @@ new Vue({
                 return;
             }
 
-            this.mapGuardedFetch("stops", "get_stops" + urlFilter, function(res) {
-                res.data.forEach(function(stop) {
+            this.mapGuardedFetch("stops", "get_stops" + urlFilter, function (res) {
+                res.data.forEach(function (stop) {
                     const id = stop["pokestop_id"];
 
                     if (this.stops[id]) {
@@ -919,20 +897,19 @@ new Vue({
                         this.mapAddLayer(leaflet_data.stops[id], layerOrders.stops.bringTo);
                     }
 
-                    if ($this.layers.dyn.geofences[name]) {
                 }, this);
             });
         },
         map_fetch_geofences() {
             this.mapGuardedFetch("geofences", "get_geofences", function (res) {
-                res.data.forEach(function(geofence) {
+                res.data.forEach(function (geofence) {
                     this.mapAddGeofence(geofence, this.getStoredSetting("layers-dyn-geofences-" + geofence.id, false));
                 }, this);
             });
         },
         map_fetch_areas() {
             this.mapGuardedFetch("areas", "get_areas", function (res) {
-                res.data.forEach(function(area) {
+                res.data.forEach(function (area) {
                     const name = area.name;
 
                     if (this.layers.dyn.areas[name]) {
@@ -1000,7 +977,7 @@ new Vue({
                         icon: icon,
                         pane: layerOrders.mons.pane,
                         pmIgnore: true
-                    }).bindPopup(this.build_mon_popup, {"className": "monpopup"});
+                    }).bindPopup(this.build_mon_popup, { "className": "monpopup" });
 
                     this.addMouseEventPopup(leaflet_data.mons[id]);
 
@@ -1040,8 +1017,8 @@ new Vue({
                             pane: layerOrders.cells.pane,
                             pmIgnore: true
                         })
-                        .setStyle(this.getCellStyle(now, cell["updated"]))
-                        .bindPopup(this.build_cell_popup, { className: "cellpopup" });
+                            .setStyle(this.getCellStyle(now, cell["updated"]))
+                            .bindPopup(this.build_cell_popup, { className: "cellpopup" });
 
                     this.mapAddLayer(leaflet_data.cellupdates[id], layerOrders.cells.bringTo);
 
@@ -1585,11 +1562,11 @@ new Vue({
                 layer.setStyle({ opacity: 1.0 });
                 layer.pm.enable({ snappable: false, allowSelfIntersection: false });
 
-                layer.on("pm:markerdragstart", function() {
+                layer.on("pm:markerdragstart", function () {
                     mouseEventsIgnore.enableIgnore();
                 });
 
-                layer.on("pm:markerdragend", function() {
+                layer.on("pm:markerdragend", function () {
                     mouseEventsIgnore.disableIgnore();
                 });
             }
@@ -1975,7 +1952,7 @@ new Vue({
 
             // create panes
             let zIndex = 390;
-            const createdPanes = { };
+            const createdPanes = {};
             for (const key in layerOrders) {
                 const paneName = layerOrders[key].pane;
                 if (!paneName || createdPanes[paneName]) {

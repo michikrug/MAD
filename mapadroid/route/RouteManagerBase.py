@@ -3,24 +3,25 @@ import heapq
 import math
 import time
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
 from operator import itemgetter
 from threading import Event, RLock, Thread
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Optional, Set, Tuple
+
 import numpy as np
-from dataclasses import dataclass
+from mapadroid.data_manager import DataManager
+from mapadroid.data_manager.modules.geofence import GeoFence
+from mapadroid.data_manager.modules.routecalc import RouteCalc
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.route.routecalc.ClusteringHelper import ClusteringHelper
 from mapadroid.utils.collections import Location
-from mapadroid.data_manager import DataManager
-from mapadroid.data_manager.modules.geofence import GeoFence
-from mapadroid.data_manager.modules.routecalc import RouteCalc
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
+from mapadroid.utils.logging import (LoggerEnums, get_logger,
+                                     routelogger_set_origin)
 from mapadroid.utils.walkerArgs import parse_args
 from mapadroid.worker.WorkerType import WorkerType
-from mapadroid.utils.logging import get_logger, LoggerEnums, routelogger_set_origin
-
 
 logger = get_logger(LoggerEnums.routemanager)
 args = parse_args()
@@ -845,7 +846,8 @@ class RouteManagerBase(ABC):
                 sorted_routepools = sorted(reduced_routepools, key=itemgetter(1))
 
                 self.logger.debug("Checking routepools in the following order: {}", sorted_routepools)
-                compare = lambda x, y: collections.Counter(x) == collections.Counter(y)  # noqa: E731
+
+                def compare(x, y): return collections.Counter(x) == collections.Counter(y)  # noqa: E731
                 for origin, time_added in sorted_routepools:
                     if origin not in self._routepool:
                         # TODO probably should restart this job or something

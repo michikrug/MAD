@@ -1,13 +1,15 @@
 import copy
-from functools import wraps
 import json
+from functools import wraps
 from typing import Any
 from unittest import TestCase
-import mapadroid.tests.test_variables as global_variables
-from mapadroid.tests.test_utils import get_connection_api, get_connection_mitm, ResourceCreator, GetStorage
-from mapadroid.utils.walkerArgs import parse_args
-from mapadroid.utils.autoconfig import AutoConfIssues
 
+import mapadroid.tests.test_variables as global_variables
+from mapadroid.tests.test_utils import (GetStorage, ResourceCreator,
+                                        get_connection_api,
+                                        get_connection_mitm)
+from mapadroid.utils.autoconfig import AutoConfIssues
+from mapadroid.utils.walkerArgs import parse_args
 
 args = parse_args()
 email_base: str = "UnitTest@UnitTest.com"

@@ -1,7 +1,6 @@
 from mapadroid.data_manager.dm_exceptions import UnknownIdentifier
-from mapadroid.utils.autoconfig import (AutoConfIssue, PDConfig, RGCConfig,
-                                        generate_autoconf_issues,
-                                        origin_generator)
+from mapadroid.utils.autoconfig import (AutoConfIssue, AutoConfIssueGenerator,
+                                        PDConfig, RGCConfig, origin_generator)
 
 from .autoconfHandler import AutoConfHandler
 
@@ -71,9 +70,9 @@ class APIAutoConf(AutoConfHandler):
         }
         device = None
         if status == 1:
-            autoconf_issues = generate_autoconf_issues(self.dbc, self._data_manager, self._args, self.storage_obj)
-            if autoconf_issues[1]:
-                return (autoconf_issues, 406)
+            ac_issues = AutoConfIssueGenerator(self.dbc, self._data_manager, self._args, self.storage_obj)
+            if ac_issues.has_blockers():
+                return ac_issues.get_issues(), 406, {"headers": ac_issues.get_headers()}
             # Set the device id.  If it was not requested use the origin hopper to create one
             try:
                 dev_id = self.api_req.data['device_id'].split('/')[-1]
@@ -111,3 +110,13 @@ class APIAutoConf(AutoConfHandler):
         }
         self.dbc.autoexec_update('autoconfig_registration', update, where_keyvals=where)
         return (None, 200)
+
+    def get_config(self, conf_type: str):
+        data: dict = {}
+        if conf_type == 'rgc':
+            data = RGCConfig(self.dbc, self._args, self._data_manager).contents
+        elif conf_type == 'pd':
+            data = PDConfig(self.dbc, self._args, self._data_manager).contents
+        else:
+            return (None, 404)
+        return (data, 200)

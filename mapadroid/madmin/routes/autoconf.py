@@ -4,8 +4,8 @@ from flask import (Response, jsonify, redirect, render_template, send_file,
                    url_for)
 
 from mapadroid.madmin.functions import auth_required
-from mapadroid.utils.autoconfig import (PDConfig, RGCConfig,
-                                        generate_autoconf_issues)
+from mapadroid.utils.autoconfig import (AutoConfIssueGenerator, PDConfig,
+                                        RGCConfig)
 
 
 class AutoConfigManager(object):
@@ -40,9 +40,9 @@ class AutoConfigManager(object):
 
     @auth_required
     def autoconfig_download_file(self):
-        (_, issues_critical) = generate_autoconf_issues(self._db, self._data_manager, self._args, self._storage_obj)
-        if issues_critical:
-            return Response('Basic requirements not met', status=406)
+        ac_issues = AutoConfIssueGenerator(self._db, self._data_manager, self._args, self._storage_obj)
+        if ac_issues.has_blockers():
+            return Response('Basic requirements not met', status=406, headers=ac_issues.get_headers())
         pd_conf = PDConfig(self._db, self._args, self._data_manager)
         config_file = BytesIO()
         info = [pd_conf.contents['post_destination']]
@@ -106,8 +106,8 @@ class AutoConfigManager(object):
               "FROM `settings_pogoauth` ag\n"\
               "LEFT JOIN `settings_device` sd ON sd.`account_id` = ag.`account_id`\n"\
               "WHERE ag.`instance_id` = %s AND sd.`device_id` IS NULL"
-        (issues_warning, issues_critical) = generate_autoconf_issues(self._db, self._data_manager, self._args,
-                                                                     self._storage_obj)
+        ac_issues = AutoConfIssueGenerator(self._db, self._data_manager, self._args, self._storage_obj)
+        issues_warning, issues_critical = ac_issues.get_issues()
         pending = {}
         sql = "SELECT ar.`session_id`, ar.`ip`, sd.`device_id`, sd.`name` AS 'origin', ar.`status`"\
               "FROM `autoconfig_registration` ar\n"\
@@ -145,7 +145,8 @@ class AutoConfigManager(object):
               "FROM `settings_pogoauth` ag\n"\
               "LEFT JOIN `settings_device` sd ON sd.`account_id` = ag.`account_id`\n"\
               "WHERE ag.`instance_id` = %s AND (sd.`device_id` IS NULL OR sd.`device_id` = %s)"
-        (_, issues_critical) = generate_autoconf_issues(self._db, self._data_manager, self._args, self._storage_obj)
+        ac_issues = AutoConfIssueGenerator(self._db, self._data_manager, self._args, self._storage_obj)
+        _, issues_critical = ac_issues.get_issues()
         if issues_critical:
             redirect(url_for('autoconfig_pending'), code=302)
         google_addresses = self._db.autofetch_all(sql, (self._db.instance_id, session['device_id']))

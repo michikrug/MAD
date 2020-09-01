@@ -1,4 +1,5 @@
 import copy
+import json
 from functools import wraps
 from typing import Any
 from unittest import TestCase
@@ -7,6 +8,7 @@ import mapadroid.tests.test_variables as global_variables
 from mapadroid.tests.test_utils import (GetStorage, ResourceCreator,
                                         get_connection_api,
                                         get_connection_mitm)
+from mapadroid.utils.autoconfig import AutoConfIssues
 from mapadroid.utils.walkerArgs import parse_args
 
 args = parse_args()
@@ -125,21 +127,18 @@ class MITMAutoConf(TestCase):
                 storage.upload_all()
                 res = self.api.post('/api/autoconf/{}'.format(session_id), json=accept_info)
                 self.assertTrue(res.status_code == 406)
-                expected_issues = [
-                    [
-                        'No available Google logins for auto creation of devices. Configure through '
-                        '<a href="/settings/pogoauth">PogoAuth</a>',
-                        'No auth configured which is a potential security risk. Configure through '
-                        '<a href="/settings/auth">Auth</a>'
+                expected_issues = {
+                    'X-Critical': [
+                        AutoConfIssues.pd_not_configured.value,
+                        AutoConfIssues.rgc_not_configured.value,
                     ],
-                    [
-                        'PogoDroid is not configured. Configure through '
-                        '<a href="/autoconfig/pd">PogoDroid Configuration</a>',
-                        'RGC is not configured. Configure through '
-                        '<a href="/autoconfig/rgc">RemoteGPSController Configuration</a>',
+                    'X-Warnings': [
+                        AutoConfIssues.no_ggl_login.value,
+                        AutoConfIssues.auth_not_configured.value,
                     ]
-                ]
-                self.assertListEqual(expected_issues, res.json())
+                }
+                self.assertListEqual(expected_issues['X-Critical'], json.loads(res.headers['X-Critical']))
+                self.assertListEqual(expected_issues['X-Warnings'], json.loads(res.headers['X-Warnings']))
         finally:
             api_creator.remove_resources()
             if session_id is not None:
@@ -160,81 +159,66 @@ class MITMAutoConf(TestCase):
             with GetStorage(self.api) as storage:
                 res = self.api.post('/api/autoconf/{}'.format(session_id), json=accept_info)
                 self.assertTrue(res.status_code == 406)
-                expected_issues = [
-                    [
-                        'No available Google logins for auto creation of devices. Configure through '
-                        '<a href="/settings/pogoauth">PogoAuth</a>',
-                        'No auth configured which is a potential security risk. Configure through '
-                        '<a href="/settings/auth">Auth</a>'
+                expected_issues = {
+                    'X-Critical': [
+                        AutoConfIssues.pd_not_configured.value,
+                        AutoConfIssues.rgc_not_configured.value,
+                        AutoConfIssues.package_missing.value,
                     ],
-                    [
-                        'PogoDroid is not configured. Configure through '
-                        '<a href="/autoconfig/pd">PogoDroid Configuration</a>',
-                        'RGC is not configured. Configure through '
-                        '<a href="/autoconfig/rgc">RemoteGPSController Configuration</a>',
-                        'Missing one or more required packages. Configure through '
-                        '<a href="/apk">MADmin Packages</a>'
+                    'X-Warnings': [
+                        AutoConfIssues.no_ggl_login.value,
+                        AutoConfIssues.auth_not_configured.value,
                     ]
-                ]
-                self.assertListEqual(expected_issues, res.json())
+                }
+                self.assertListEqual(expected_issues['X-Critical'], json.loads(res.headers['X-Critical']))
+                self.assertListEqual(expected_issues['X-Warnings'], json.loads(res.headers['X-Warnings']))
                 storage.upload_rgc()
                 res = self.api.post('/api/autoconf/{}'.format(session_id), json=accept_info)
                 self.assertTrue(res.status_code == 406)
-                expected_issues = [
-                    [
-                        'No available Google logins for auto creation of devices. Configure through '
-                        '<a href="/settings/pogoauth">PogoAuth</a>',
-                        'No auth configured which is a potential security risk. Configure through '
-                        '<a href="/settings/auth">Auth</a>'
+                expected_issues = {
+                    'X-Critical': [
+                        AutoConfIssues.pd_not_configured.value,
+                        AutoConfIssues.rgc_not_configured.value,
+                        AutoConfIssues.package_missing.value,
                     ],
-                    [
-                        'PogoDroid is not configured. Configure through '
-                        '<a href="/autoconfig/pd">PogoDroid Configuration</a>',
-                        'RGC is not configured. Configure through '
-                        '<a href="/autoconfig/rgc">RemoteGPSController Configuration</a>',
-                        'Missing one or more required packages. Configure through '
-                        '<a href="/apk">MADmin Packages</a>'
+                    'X-Warnings': [
+                        AutoConfIssues.no_ggl_login.value,
+                        AutoConfIssues.auth_not_configured.value,
                     ]
-                ]
-                self.assertListEqual(expected_issues, res.json())
+                }
+                self.assertListEqual(expected_issues['X-Critical'], json.loads(res.headers['X-Critical']))
+                self.assertListEqual(expected_issues['X-Warnings'], json.loads(res.headers['X-Warnings']))
                 storage.upload_pd()
                 res = self.api.post('/api/autoconf/{}'.format(session_id), json=accept_info)
                 self.assertTrue(res.status_code == 406)
-                expected_issues = [
-                    [
-                        'No available Google logins for auto creation of devices. Configure through '
-                        '<a href="/settings/pogoauth">PogoAuth</a>',
-                        'No auth configured which is a potential security risk. Configure through '
-                        '<a href="/settings/auth">Auth</a>'
+                expected_issues = {
+                    'X-Critical': [
+                        AutoConfIssues.pd_not_configured.value,
+                        AutoConfIssues.rgc_not_configured.value,
+                        AutoConfIssues.package_missing.value,
                     ],
-                    [
-                        'PogoDroid is not configured. Configure through '
-                        '<a href="/autoconfig/pd">PogoDroid Configuration</a>',
-                        'RGC is not configured. Configure through '
-                        '<a href="/autoconfig/rgc">RemoteGPSController Configuration</a>',
-                        'Missing one or more required packages. Configure through '
-                        '<a href="/apk">MADmin Packages</a>'
+                    'X-Warnings': [
+                        AutoConfIssues.no_ggl_login.value,
+                        AutoConfIssues.auth_not_configured.value,
                     ]
-                ]
-                self.assertListEqual(expected_issues, res.json())
+                }
+                self.assertListEqual(expected_issues['X-Critical'], json.loads(res.headers['X-Critical']))
+                self.assertListEqual(expected_issues['X-Warnings'], json.loads(res.headers['X-Warnings']))
                 storage.upload_pogo()
                 res = self.api.post('/api/autoconf/{}'.format(session_id), json=accept_info)
                 self.assertTrue(res.status_code == 406)
-                expected_issues = [
-                    [
-                        'No available Google logins for auto creation of devices. Configure through '
-                        '<a href="/settings/pogoauth">PogoAuth</a>',
-                        'No auth configured which is a potential security risk. Configure through '
-                        '<a href="/settings/auth">Auth</a>'
+                expected_issues = {
+                    'X-Critical': [
+                        AutoConfIssues.pd_not_configured.value,
+                        AutoConfIssues.rgc_not_configured.value,
                     ],
-                    [
-                        'PogoDroid is not configured. Configure through '
-                        '<a href="/autoconfig/pd">PogoDroid Configuration</a>',
-                        'RGC is not configured. Configure through '
-                        '<a href="/autoconfig/rgc">RemoteGPSController Configuration</a>'
+                    'X-Warnings': [
+                        AutoConfIssues.no_ggl_login.value,
+                        AutoConfIssues.auth_not_configured.value,
                     ]
-                ]
-                self.assertListEqual(expected_issues, res.json())
+                }
+                self.assertListEqual(expected_issues['X-Critical'], json.loads(res.headers['X-Critical']))
+                self.assertListEqual(expected_issues['X-Warnings'], json.loads(res.headers['X-Warnings']))
         finally:
             api_creator.remove_resources()
             if session_id is not None:
@@ -284,3 +268,24 @@ class MITMAutoConf(TestCase):
         self.assertTrue(res.content == b'Unit\nTest')
         res = self.mitm.delete('/autoconfig/{}/complete'.format(session_id))
         self.assertTrue(res.status_code == 200)
+
+    def test_lower_case(self):
+        api_creator = ResourceCreator(self.api)
+        with GetStorage(self.api):
+            try:
+                pd_email = 'UPPERcase'
+                pd_update = {
+                    'user_id': pd_email
+                }
+                create_valid_configs(self, api_creator)
+                res = self.api.patch('/api/autoconf/pd', json=pd_update)
+                self.assertTrue(res.status_code == 200)
+                res = self.api.get('/api/autoconf/pd')
+                self.assertTrue(res.status_code == 200)
+                self.assertTrue(res.json()['user_id'] == pd_email.lower())
+            except Exception:
+                raise
+            finally:
+                self.api.delete('/api/autoconf/rgc')
+                self.api.delete('/api/autoconf/pd')
+                api_creator.remove_resources()

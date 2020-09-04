@@ -6,10 +6,10 @@ import re
 import sys
 
 import mysql.connector
-
-sys.path.append("..")
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.logging import initLogging, logger
+
+sys.path.append("..")
 
 configfile = open("../configs/config.ini", "r")
 config = configfile.read()

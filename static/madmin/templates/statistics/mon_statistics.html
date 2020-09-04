@@ -17,6 +17,7 @@
 <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
 <script>
     $(function () {
+
         var options_dots = {
             xaxis: {
                 mode: "time",
@@ -98,13 +99,10 @@
             }
         };
 
-        $.blockUI({message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px" /><br /><h2>Load...</h2>' });
+        loadingBlockUI("Loading");
 
-        $.ajax({
+        $.getJSON({
             "url": "get_game_stats_mon?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
-            "type": "GET",
-            "cache": false,
-            "dataType": "json",
             success: function (result) {
                 spawn = result.spawn
                 good_spawns = result.good_spawns
@@ -145,6 +143,7 @@
             complete: function () {
                 setTimeout($.unblockUI, 100);
             }
+
         });
 
         var previousPoint = null, previousLabel = null;
@@ -156,6 +155,7 @@
                         previousPoint = item.dataIndex;
                         previousLabel = item.series.label;
                         $("#tooltip").remove();
+
                         var x = item.datapoint[0];
                         var y = item.datapoint[1];
                         var color = item.series.color;
@@ -178,6 +178,7 @@
                         previousPoint = item.dataIndex;
                         previousLabel = item.series.label;
                         $("#tooltip").remove();
+
                         var x = item.datapoint[0];
                         var y = item.datapoint[1];
                         var color = item.series.color;
@@ -212,7 +213,7 @@
             hour = hour ? hour : 12;
             hour_till = hour_till % 12;
             hour_till = hour_till ? hour_till : 12;
-            hour_till += ' ' + ampm;
+            hour_till + ' ' + ampm;
             sec = sec + ' ' + ampm;
             {% endif %}
 

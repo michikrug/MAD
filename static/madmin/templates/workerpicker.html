@@ -51,8 +51,7 @@
     $(document).ready(function () {
         $('body').Aplus();
         $("#navgyms").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_all_workers",
             success: function (result) {
                 setGrid('#show-data', result);
@@ -89,13 +88,13 @@
 {% block content %}
 <h2>Select Worker</h2>
 <p>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    {% for message in messages %}
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
     <div class="p-3 mb-2 bg-secondary text-white">{{ message }}</div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+{% endfor %}
+{% endif %}
+{% endwith %}
 </p>
 <form name="workerselect" id="workerselect" action="job_for_worker">
     <input type="hidden" name="jobname" value="{{jobname}}">

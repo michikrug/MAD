@@ -32,15 +32,15 @@
         },
         "columns": [
             {
-                data: 'name', title: 'Origin',
+                responsivePriority: 1, data: 'name', title: 'Origin',
                 "render": function (data, type, oData) {
                     return "<a href='{{ url_for('settings_devices') }}?id=" + oData.device_id + "'>" + oData.name + "</a>";
                 }
             },
-            { data: 'lastProtoDateTime', title: 'Last Update' },
+            { responsivePriority: 2, data: 'lastProtoDateTime', title: 'Last Update' },
             { data: 'currentSleepTime', title: 'Next Action' },
             {
-                data: 'rmname', title: 'Route',
+                responsivePriority: 3, data: 'rmname', title: 'Route',
                 "render": function (data, type, oData) {
                     if (oData.rmname != 'Idle') {
                         return "<a href='{{ url_for('settings_areas') }}?id=" + oData.area_id + "&mode=" + oData.mode + "'>" + oData.rmname + "</a>";
@@ -59,7 +59,7 @@
             { data: 'globalrebootcount', title: 'Total Reboots' },
             { data: 'lastPogoReboot', title: 'Last Reboot' },
             {
-                data: null, orderable: false, className: "text-nowrap",
+                responsivePriority: 4, data: null, orderable: false, className: "text-nowrap",
                 "render": function (data, type, oData) {
                     return "<center><button data-toggle='tooltip' title='Delete worker stats from database' type='button' class='delete btn btn-danger btn-sm confirm' data-deviceid='" + oData.device_id + "'><div class='delete_div' style='display:inline;'><i class='fa fa-trash'></i></div></button> <button type='button' data-toggle='tooltip' title='Reset workers stats' class=' reset btn btn-info btn-sm' data-deviceid='" + oData.device_id + "'><div class='delete_div' style='display:inline;'><i class='fas fa-undo'></i></i></div></button></center>";
                 }
@@ -80,7 +80,9 @@
             {
                 "targets": [1],
                 "render": function (data, type, row) {
-                    if (type == "sort") { return data; }
+                    if (type == "sort") {
+                        return data;
+                    }
                     var dateToShow = moment.utc(data * 1000);
                     if (dateToShow.isValid() && data != null && data != undefined) {
                         return toHHMMSS_mark(Math.abs(dateToShow.diff(moment.utc()) / 1000));
@@ -91,7 +93,9 @@
             {
                 "targets": [8, 12],
                 "render": function (data, type, row) {
-                    if (type == "sort") { return data; }
+                    if (type == "sort") {
+                        return data;
+                    }
                     var dateToShow = moment.utc(data * 1000);
                     if (dateToShow.isValid() && data != null && data != undefined && data > 0) {
                         return toHHMMSS(Math.abs(dateToShow.diff(moment.utc()) / 1000));
@@ -107,10 +111,29 @@
             }
         ],
         "order": [[0, "asc"]],
-        "responsive": {{ responsive }},
+        "responsive": {
+            details: {
+                details: {
+                    display: $.fn.dataTable.Responsive.display.childRowImmediate,
+                    type: ''
+                }
+            }
+        },
         "autoWidth": false,
         "stateSave": true,
         "stateDuration": 0
+    });
+
+    // Handle click on "Expand All" button
+    $('#btn-show-all-children').on('click', function () {
+        // Expand row details
+        dataTable.rows(':not(.parent)').nodes().to$().find('td:first-child').trigger('click');
+    });
+
+    // Handle click on "Collapse All" button
+    $('#btn-hide-all-children').on('click', function () {
+        // Collapse row details
+        dataTable.rows('.parent').nodes().to$().find('td:first-child').trigger('click');
     });
 
     var toHHMMSS_mark = (secs) => {
@@ -163,8 +186,7 @@
         delete_div.append(elem);
         var deviceid = $(this).data('deviceid');
 
-        $.ajax({
-            type: 'GET',
+        $.getJSON({
             url: 'delete_status_entry',
             data: 'deviceid=' + deviceid,
             success: function (msg) {
@@ -181,6 +203,7 @@
                 delete_div.append(elem);
             }
         });
+
     });
 
     $("#show-data-status").on("click", 'button.reset', function (e) {
@@ -201,8 +224,7 @@
         delete_div.append(elem);
         var deviceid = $(this).data('deviceid');
 
-        $.ajax({
-            type: 'GET',
+        $.getJSON({
             url: 'reset_status_entry',
             data: 'deviceid=' + deviceid,
             success: function (msg) {
@@ -219,7 +241,9 @@
                 delete_div.append(elem);
             }
         });
+
     });
+
 </script>
 <style>
     table.dataTable tr.odd {
@@ -236,19 +260,27 @@
 <h2>Worker Status</h2>
 
 <div class="row">
-  <div class="col">
-    <div class="alert alert-primary">
-      View workers and their current status. Times are displayed as (HH):MM:SS.
+    <div class="col">
+        <div class="alert alert-primary">
+            View workers and their current status. Times are displayed as (HH):MM:SS.
+        </div>
     </div>
 </div>
 
+<div style="text-align: right;">
+    <button id="btn-show-all-children" class="btn btn-success btn-sm" type="button">Expand All</button>
+    <button id="btn-hide-all-children" class="btn btn-success btn-sm" type="button">Collapse All</button>
+</div>
+<br>
 <div class="row">
     <div class="col">
         <table id="show-data-status" class="table"></table>
     </div>
 </div>
-
+<br>
 <div class="row">
-    <div class="col">Set maximum time in seconds to display "Last update" as <i class="fas fa-check" style="color: green !important;"></i> for an easier overview <input type="number" id="maxSeconds" /></div>
+    <div class="col">
+        Set maximum time in seconds to display "Last update" as <i class="fas fa-check" style="color: green !important;"></i> for an easier overview <input type="number" id="maxSeconds" />
+    </div>
 </div>
 {% endblock %}

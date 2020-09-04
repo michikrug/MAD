@@ -14,7 +14,7 @@ $.urlParam = function(name){
 }
 $(document).ready(function () {
     $("#submit").click(function() {
-        $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px" /><br /><h2>Saving {{ subtab }}...</h2>' });
+        loadingBlockUI('Saving {{ subtab }}' );
         save_data = get_save_data();
         if(isEmptyObj(save_data) != false) {
             alert('No changes have been made');
@@ -51,7 +51,7 @@ $(document).ready(function () {
                       alert('One or more fields failed validation');
                   } else {
                       $.unblockUI();
-                      alert('Unable to save the {{ subtab }}.  An unknown error occurred');
+                      alert('Unable to save the {{ subtab }}. An unknown error occurred');
                   }
               }
           });
@@ -128,7 +128,6 @@ $(document).ready(function () {
         <option value="{{ url_for('api_geofence') + '/'+ uri|string }}" {{ 'selected="selected"' if uri|string == element[key]|string }}>{{ data|lower }}</option>
         {% endfor %}
       </select>
-      -->
       {% else %}
       <input type="{{ field.type }}" name="{{ key }}" data-default="{{ element[key] }}" class="form-control" id="{{ key }}" value="{% if element[key] is not none and element[key] != 'None' %}{{ element[key] }}{% endif %}">
       {% endif %}

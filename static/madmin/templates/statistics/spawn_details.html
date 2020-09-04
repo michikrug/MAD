@@ -55,16 +55,14 @@
             "stateLoadCallback": function (settings) {
                 return JSON.parse(localStorage.getItem('MAD_SP_' + settings.sInstance))
             }
-
         });
     }
 
     $(document).ready(function () {
-        $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px" /><br /><h2>Load...</h2>' });
+        loadingBlockUI("Loading");
         $('body').Aplus();
         $("#navgyms").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_spawn_details?area_id={{areaid}}&event_id={{eventid}}&mode={{mode}}&index={{index}}",
             success: function (result) {
                 setTimeout($.unblockUI, 100);
@@ -75,14 +73,6 @@
     });
 </script>
 <style type="text/css">
-    table.dataTable tr.odd {
-        background-color: #F8F8F8;
-    }
-
-    table.dataTable tr.even {
-        background-color: white;
-    }
-
     #flot_usage {
         width: 100%;
         height: 300px;

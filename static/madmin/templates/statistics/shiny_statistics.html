@@ -37,9 +37,9 @@
         'format': 'yyyy-mm-dd',
         'autoclose': true
     });
-</script>
-<script>
+
     $(function () {
+
         // get madmin map stored center coords. Do NOT overwrite them.
         // Don't really want to include whole madmin.js, copy-paste.
         const storedCenter = getStoredCenter();
@@ -128,21 +128,21 @@
             }
         };
 
-       var yesterday = new Date();
-       // set it to yesterday
-       yesterday.setDate(yesterday.getDate()-1);
-       // force midnight
-       yesterday.setHours(0);
-       yesterday.setMinutes(0);
-       yesterday.setSeconds(0);
-       yesterday.setMilliseconds(0);
-       // force input format
-       $("input.date.start").val(yesterday.getFullYear()+ "-" + (yesterday.getMonth()+1) + "-" + yesterday.getDate());
-       // generate timestamp using timezoneoffset
-       yesterday_timestamp = ((yesterday.getTime() - yesterday.getTimezoneOffset()*60000)/1000);
-       loadData(yesterday_timestamp, "");
-	
-       var previousPoint = null, previousLabel = null;
+        var yesterday = new Date();
+        // set it to yesterday
+        yesterday.setDate(yesterday.getDate() - 1);
+        // force midnight
+        yesterday.setHours(0);
+        yesterday.setMinutes(0);
+        yesterday.setSeconds(0);
+        yesterday.setMilliseconds(0);
+        // force input format
+        $("input.date.start").val(yesterday.getFullYear() + "-" + (yesterday.getMonth() + 1) + "-" + yesterday.getDate());
+        // generate timestamp using timezoneoffset
+        yesterday_timestamp = ((yesterday.getTime() - yesterday.getTimezoneOffset() * 60000) / 1000);
+        loadData(yesterday_timestamp, "");
+
+        var previousPoint = null, previousLabel = null;
         $.fn.UseTooltip = function () {
             $(this).bind("plothover", function (event, pos, item) {
                 if (item) {
@@ -228,12 +228,9 @@
 
         function loadData(timestamp_from, timestamp_to) {
             console.log("Loading data for from: " + timestamp_from + " to: " + timestamp_to);
-            $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px" /><br /><h2>Loading...</h2>' });
-            $.ajax({
+            loadingBlockUI("Loading");
+            $.getJSON({
                 "url": "get_game_stats_shiny?from=" + timestamp_from + "&to=" + timestamp_to,
-                "type": "GET",
-                "cache": false,
-                "dataType": "json",
                 success: function (result) {
                     empty = result.empty
                     if (empty) {
@@ -307,7 +304,6 @@
                 complete: function () {
                     setTimeout($.unblockUI, 100);
                 }
-
             });
         }
 
@@ -337,17 +333,16 @@
                 "searching": true,
                 "paging": true,
                 "columns": columns,
-                "ordering": true,
-                "order": [],
+                "ordering": true, "order": [],
                 "columnDefs": defs,
                 "responsive": {{ responsive }},
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                "dom": 'Blfrtip',
-                "buttons": [
+                dom: 'Blfrtip',
+                buttons: [
                     'copy', 'csv', 'excel', 'pdf'
                 ],
-                "sorting": true,
-                "stateSave": true,
+                sorting: true,
+                stateSave: true,
                 stateSaveCallback: function (settings, data) {
                     localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data))
                 },

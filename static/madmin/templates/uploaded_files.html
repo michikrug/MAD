@@ -60,8 +60,7 @@
     $(document).ready(function () {
         $('body').Aplus();
         $("#navgyms").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_uploaded_files",
             success: function (result) {
                 setGrid('#show-data-jobs', result);
@@ -83,13 +82,13 @@
 {% block content %}
 <h2>Jobs</h2>
 <p>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    {% for message in messages %}
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
     <div class="p-3 mb-2 bg-secondary text-white">{{ message }}</div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+{% endfor %}
+{% endif %}
+{% endwith %}
 </p>
 <table id="show-data-jobs" class="table" style="width:100%;"></table>
 {% endblock %}

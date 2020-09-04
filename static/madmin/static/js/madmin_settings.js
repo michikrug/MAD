@@ -228,7 +228,7 @@ function process_api_request(uri, method, redirect) {
                 alert('One or more fields failed validation');
             } else {
                 $.unblockUI();
-                alert('Unable to save the {{ subtab }}.  An unknown error occurred');
+                alert('Unable to save the {{ subtab }}. An unknown error occurred');
             }
         }
     });

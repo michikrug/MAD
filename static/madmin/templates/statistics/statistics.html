@@ -17,6 +17,7 @@
 <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
 <script>
     $(function () {
+
         var options_dots = {
             xaxis: {
                 mode: "time",
@@ -103,13 +104,10 @@
             }
         };
 
-        $.blockUI({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px" /><br /><h2>Load...</h2>' });
+        loadingBlockUI("Loading");
 
-        $.ajax({
+        $.getJSON({
             "url": "get_game_stats?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
-            "type": "GET",
-            "cache": false,
-            "dataType": "json",
             success: function (result) {
                 gym = result.gym
                 usage = result.usage
@@ -146,7 +144,6 @@
                             return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
                         }
                     }
-
                 ]);
 
                 setGrid('#show-data-detection_empty', detection_empty, [
@@ -165,7 +162,6 @@
                             return "<a href=map?lat=" + row.lat + "&lng=" + row.lng + " target=_new>[MAP]</a>";
                         }
                     }
-
                 ]);
 
                 $.plot($("#flot_usage"), usage,
@@ -176,11 +172,11 @@
                         },
                         xaxis: {
                             mode: "time",
-                            //{% if time == "12" %}
+                            {% if time == "12" %}
                             timeformat: "%d.%m<br>%I:%M %p",
-                            //{% else %}
+                            {% else %}
                             timeformat: "%d.%m<br>%H:%M",
-                            //{% endif %}
+                            {% endif %}
                             tickSize: [3, "hour"],
                             timezone: "browser"
                         },
@@ -212,7 +208,6 @@
                                 min: 1
                             }
                         ],
-
                         legend: {
                             container: $("#legendContainer_usage"),
                             noColumns: 0
@@ -227,7 +222,6 @@
             complete: function () {
                 setTimeout($.unblockUI, 100);
             }
-
         });
 
         var previousPoint = null, previousLabel = null;
@@ -331,8 +325,7 @@
                 "searching": true,
                 "paging": true,
                 "columns": columns,
-                "ordering": true,
-                "order": [],
+                "ordering": true, "order": [],
                 "columnDefs": defs,
                 "responsive": {{ responsive }},
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],

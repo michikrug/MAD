@@ -6,10 +6,13 @@ function loadingBlockUI(message) {
         return this;
     }
 
-$.blockUI({css: {
+    $.blockUI({
+        css: {
             height: 'auto',
             textAlign: 'center',
             width: 'auto'
-		}, message: '<img src="/static/loading.gif" width="100px" /><br/><h2  style="margin-left: 20px;margin-right: 20px;">' + message + '</h2>' })
-            $('.blockUI.blockMsg').center();
+        }, message: '<img src="static/loading.gif" width="100px" /><br/><h2  style="margin-left: 20px;margin-right: 20px;">' + message + '</h2>'
+    });
+
+    $('.blockUI.blockMsg').center();
 }

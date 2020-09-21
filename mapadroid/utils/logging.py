@@ -1,9 +1,10 @@
-from enum import IntEnum
 import logging
 import os
 import sys
-from loguru import logger
+from enum import IntEnum
 from functools import wraps
+
+from loguru import logger
 
 
 class LoggerEnums(IntEnum):

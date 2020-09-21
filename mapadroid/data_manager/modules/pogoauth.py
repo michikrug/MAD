@@ -1,6 +1,8 @@
 from typing import Dict, List, Tuple
-from .resource import Resource
+
 from mapadroid.data_manager.dm_exceptions import UnknownIdentifier
+
+from .resource import Resource
 
 
 class PogoAuth(Resource):

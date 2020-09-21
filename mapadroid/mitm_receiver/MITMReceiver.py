@@ -14,7 +14,6 @@ from gevent.pywsgi import WSGIServer
 
 from mapadroid.mad_apk import (APKType, lookup_package_info, parse_frontend,
                                stream_package, supported_pogo_version)
-from mapadroid.mitm_receiver.MITMDataProcessor import MitmDataProcessor
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.utils import MappingManager
 from mapadroid.utils.authHelper import check_auth
@@ -162,7 +161,8 @@ class EndpointAction(object):
 
 class MITMReceiver(Process):
     def __init__(self, listen_ip, listen_port, mitm_mapper, args_passed, mapping_manager: MappingManager,
-                 db_wrapper, data_manager, storage_obj, name=None, enable_configmode: Optional[bool] = False):
+                 db_wrapper, data_manager, storage_obj, data_queue: JoinableQueue,
+                 name=None, enable_configmode: Optional[bool] = False):
         Process.__init__(self, name=name)
         self.__application_args = args_passed
         self.__mapping_manager = mapping_manager
@@ -173,8 +173,7 @@ class MITMReceiver(Process):
         self.__hopper_mutex = RLock()
         self._db_wrapper = db_wrapper
         self.__storage_obj = storage_obj
-        self._data_queue: JoinableQueue = JoinableQueue()
-        self.worker_threads = []
+        self._data_queue: JoinableQueue = data_queue
         self.app = Flask("MITMReceiver")
         self.add_endpoint(endpoint='/get_addresses/', endpoint_name='get_addresses/',
                           handler=self.get_addresses,
@@ -219,27 +218,13 @@ class MITMReceiver(Process):
                               methods_passed=['GET'])
             self.add_endpoint(endpoint='/status/', endpoint_name='status/', handler=self.status,
                               methods_passed=['GET'])
-            for i in range(self.__application_args.mitmreceiver_data_workers):
-                data_processor: MitmDataProcessor = MitmDataProcessor(self._data_queue, self.__application_args,
-                                                                      self.__mitm_mapper, db_wrapper,
-                                                                      name='MITMReceiver-%s' % str(i))
-                data_processor.start()
-                self.worker_threads.append(data_processor)
 
         self.__mitmreceiver_startup_time: float = time.time()
 
     def shutdown(self):
         logger.info("MITMReceiver stop called...")
-        logger.info("Adding None to queue")
-        if self._data_queue:
-            for i in range(self.__application_args.mitmreceiver_data_workers):
-                self._data_queue.put(None)
-        logger.info("Trying to join workers...")
-        for worker_thread in self.worker_threads:
-            worker_thread.terminate()
-            worker_thread.join()
-        self._data_queue.close()
-        logger.info("Workers stopped...")
+        for i in range(self.__application_args.mitmreceiver_data_workers):
+            self._add_to_queue(None)
 
     def run(self):
         httpsrv = WSGIServer((self.__listen_ip, int(
@@ -299,7 +284,11 @@ class MITMReceiver(Process):
                                          timestamp_received_receiver=time.time(), key=proto_type, values_dict=data,
                                          location=location_of_data)
         origin_logger.debug2("Placing data received to data_queue")
-        self._data_queue.put((timestamp, data, origin))
+        self._add_to_queue((timestamp, data, origin))
+
+    def _add_to_queue(self, data):
+        if self._data_queue:
+            self._data_queue.put(data)
 
     def get_latest(self, origin, data):
         injected_settings = self.__mitm_mapper.request_latest(
@@ -328,9 +317,7 @@ class MITMReceiver(Process):
 
     def status(self, origin, data):
         origin_return: dict = {}
-        process_return: dict = {}
         data_return: dict = {}
-        process_count: int = 0
         for origin in self.__mapping_manager.get_all_devicemappings().keys():
             origin_return[origin] = {}
             origin_return[origin]['injection_status'] = self.__mitm_mapper.get_injection_status(origin)
@@ -341,13 +328,7 @@ class MITMReceiver(Process):
             origin_return[origin][
                 'last_possibly_moved'] = self.__mitm_mapper.get_last_timestamp_possible_moved(origin)
 
-        for process in self.worker_threads:
-            process_return['MITMReceiver-' + str(process_count)] = {}
-            process_return['MITMReceiver-' + str(process_count)]['queue_length'] = process.get_queue_items()
-            process_count += 1
-
         data_return['origin_status'] = origin_return
-        data_return['process_status'] = process_return
 
         return json.dumps(data_return)
 
@@ -426,10 +407,9 @@ class MITMReceiver(Process):
             elif operation in ['google']:
                 sql = "SELECT ag.`username`, ag.`password`\n"\
                       "FROM `settings_pogoauth` ag\n"\
-                      "INNER JOIN `settings_device` sd ON sd.`account_id` = ag.`account_id`\n"\
-                      "INNER JOIN `autoconfig_registration` ar ON ar.`device_id` = sd.`device_id`\n"\
-                      "WHERE ar.`session_id` = %s and ag.`instance_id` = %s"
-                login = self._db_wrapper.autofetch_row(sql, (session_id, self._db_wrapper.instance_id))
+                      "INNER JOIN `autoconfig_registration` ar ON ar.`device_id` = ag.`device_id`\n"\
+                      "WHERE ar.`session_id` = %s and ag.`instance_id` = %s and ag.`login_type` = %s"
+                login = self._db_wrapper.autofetch_row(sql, (session_id, self._db_wrapper.instance_id, 'google'))
                 if login:
                     return Response(status=200, response='\n'.join([login['username'], login['password']]))
                 else:

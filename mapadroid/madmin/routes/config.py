@@ -1,12 +1,14 @@
 import json
 import os
 import re
+from typing import List, Tuple
 
 from flask import Response, redirect, render_template, request, url_for
 
 from flask_caching import Cache
 from mapadroid.data_manager import DataManagerException
 from mapadroid.data_manager.dm_exceptions import ModeNotSpecified, ModeUnknown
+from mapadroid.data_manager.modules.pogoauth import PogoAuth
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils.adb import ADBConnect
 from mapadroid.utils.language import i8ln, open_json_file
@@ -236,20 +238,22 @@ class MADminConfig(object):
     @logger.catch
     @auth_required
     def settings_devices(self):
-        sql = "SELECT ag.`account_id`, ag.`username`\n"\
-              "FROM `settings_pogoauth` ag\n"\
-              "LEFT JOIN `settings_device` sd ON sd.`account_id` = ag.`account_id`\n"\
-              "WHERE ag.`instance_id` = %%s AND ag.`login_type` = %%s AND (%s)"
-        where = ["sd.`device_id` IS NULL"]
-        args = [self._db.instance_id, 'google']
         try:
             identifier = request.args.get('id')
             int(identifier)
-            where.append("sd.`device_id` = %s")
-            args.append(identifier)
         except (TypeError, ValueError):
             pass
-        accounts = self._db.autofetch_all(sql % ' OR '.join(where), tuple(args))
+        ggl_accounts = PogoAuth.get_avail_accounts(self._data_manager,
+                                                   'google',
+                                                   device_id=identifier)
+        ptc_accounts = []
+        for account_id, account in PogoAuth.get_avail_accounts(self._data_manager,
+                                                               'ptc',
+                                                               device_id=identifier).items():
+            ptc_accounts.append({
+                'text': account['username'],
+                'id': account_id
+            })
         required_data = {
             'identifier': 'id',
             'base_uri': 'api_device',
@@ -263,8 +267,10 @@ class MADminConfig(object):
                 'pools': 'devicepool'
             },
             'passthrough': {
-                'accounts': accounts,
-                'requires_auth': not self._args.autoconfig_no_auth
+                'ggl_accounts': ggl_accounts,
+                'ptc_accounts': ptc_accounts,
+                'requires_auth': not self._args.autoconfig_no_auth,
+                'responsive': str(self._args.madmin_noresponsive).lower()
             }
         }
         return self.process_element(**required_data)
@@ -317,19 +323,20 @@ class MADminConfig(object):
     @logger.catch
     @auth_required
     def settings_pogoauth(self):
-        device_links = {}
-        available_devices = {}
-        for device_id, device in self._data_manager.get_root_resource('device').items():
-            if device['account_id'] is None:
-                available_devices[device_id] = device
-                continue
-            try:
-                current_id = request.args.get('id', None)
-                if current_id is not None and int(current_id) == device['account_id']:
-                    available_devices[device_id] = device
-            except ValueError:
-                pass
-            device_links[device['account_id']] = device
+        devices = self._data_manager.get_root_resource('device')
+        devs_google: List[Tuple[int, str]] = []
+        devs_ptc: List[Tuple[int, str]] = []
+        current_id = request.args.get('id', None)
+        try:
+            identifier = int(current_id)
+        except (TypeError, ValueError):
+            identifier = None
+        for dev_id, dev in PogoAuth.get_avail_devices(self._data_manager,
+                                                      auth_id=identifier).items():
+            devs_google.append((dev_id, dev['origin']))
+        for dev_id, dev in PogoAuth.get_avail_devices(self._data_manager,
+                                                      auth_id=identifier).items():
+            devs_ptc.append((dev_id, dev['origin']))
         required_data = {
             'identifier': 'id',
             'base_uri': 'api_pogoauth',
@@ -339,8 +346,9 @@ class MADminConfig(object):
             'html_all': 'settings_pogoauth.html',
             'subtab': 'pogoauth',
             'passthrough': {
-                'devices': available_devices,
-                'device_links': device_links
+                'devices': devices,
+                'devs_google': devs_google,
+                'devs_ptc': devs_ptc
             },
         }
         return self.process_element(**required_data)

@@ -10,10 +10,8 @@ from mapadroid.mitm_receiver.PlayerStats import PlayerStats
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 from mapadroid.utils.MappingManager import MappingManager
-from mapadroid.utils.walkerArgs import parse_args
 
 logger = get_logger(LoggerEnums.mitm)
-args = parse_args()
 
 
 class MitmMapperManager(SyncManager):
@@ -21,7 +19,7 @@ class MitmMapperManager(SyncManager):
 
 
 class MitmMapper(object):
-    def __init__(self, mapping_manager: MappingManager, db_stats_submit: DbStatsSubmit):
+    def __init__(self, args, mapping_manager: MappingManager, db_stats_submit: DbStatsSubmit):
         self.__mapping = {}
         self.__playerstats: Dict[str, PlayerStats] = {}
         self.__mapping_mutex = Lock()
@@ -187,6 +185,11 @@ class MitmMapper(object):
         return self.__injected.get(origin, False)
 
     def run_stats_collector(self, origin: str):
+        if not self.__application_args.game_stats:
+            pass
+
+        origin_logger = get_origin_logger(logger, origin=origin)
+        origin_logger.debug2("Running stats collector")
         if self.__playerstats.get(origin, None) is not None:
             self.__playerstats.get(origin).stats_collector()
 

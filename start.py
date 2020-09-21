@@ -17,6 +17,8 @@ from mapadroid.db.DbFactory import DbFactory
 from mapadroid.mad_apk import (AbstractAPKStorage, StorageSyncManager,
                                get_storage_obj)
 from mapadroid.madmin.madmin import MADmin
+from mapadroid.mitm_receiver.MitmDataProcessorManager import \
+    MitmDataProcessorManager
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper, MitmMapperManager
 from mapadroid.mitm_receiver.MITMReceiver import MITMReceiver
 from mapadroid.ocr.pogoWindows import PogoWindows
@@ -210,7 +212,7 @@ if __name__ == "__main__":
                                                                              data_manager,
                                                                              configmode=args.config_mode)
     if args.only_routes:
-        logger.info('Running in route recalculation mode.  MAD will exit once complete')
+        logger.info('Running in route recalculation mode. MAD will exit once complete')
         recalc_in_progress = True
         while recalc_in_progress:
             time.sleep(5)
@@ -225,14 +227,20 @@ if __name__ == "__main__":
         MitmMapperManager.register('MitmMapper', MitmMapper)
         mitm_mapper_manager = MitmMapperManager()
         mitm_mapper_manager.start()
-        mitm_mapper = mitm_mapper_manager.MitmMapper(mapping_manager, db_wrapper.stats_submit)
+        mitm_mapper = mitm_mapper_manager.MitmMapper(args, mapping_manager, db_wrapper.stats_submit)
+
     logger.info('Starting PogoDroid Receiver server on port {}'.format(str(args.mitmreceiver_port)))
+
+    mitm_data_processor_manager = MitmDataProcessorManager(args, mitm_mapper, db_wrapper)
+    mitm_data_processor_manager.launch_processors()
+
     mitm_receiver_process = MITMReceiver(args.mitmreceiver_ip, int(args.mitmreceiver_port),
                                          mitm_mapper, args, mapping_manager, db_wrapper,
-                                         data_manager,
-                                         storage_elem,
+                                         data_manager, storage_elem,
+                                         mitm_data_processor_manager.get_queue(),
                                          enable_configmode=args.config_mode)
     mitm_receiver_process.start()
+
     logger.info('Starting websocket server on port {}'.format(str(args.ws_port)))
     ws_server = WebsocketServer(args=args,
                                 mitm_mapper=mitm_mapper,
@@ -280,6 +288,7 @@ if __name__ == "__main__":
         'storage_elem': storage_elem,
         'webhook_worker': webhook_worker,
         'ws_server': ws_server,
+        'mitm_data_processor_manager': mitm_data_processor_manager
     }
     mad_plugins = PluginCollection('plugins', plugin_parts)
     mad_plugins.apply_all_plugins_on_value()
@@ -342,11 +351,13 @@ if __name__ == "__main__":
             if mitm_receiver_process is not None:
                 logger.info("Trying to stop receiver")
                 mitm_receiver_process.shutdown()
-                logger.debug("MITM child threads successfully shutdown.  Terminating parent thread")
+                logger.debug("MITM child threads successfully shutdown. Terminating parent thread")
                 mitm_receiver_process.terminate()
                 logger.debug("Trying to join MITMReceiver")
                 mitm_receiver_process.join()
                 logger.debug("MITMReceiver joined")
+            if mitm_data_processor_manager is not None:
+                mitm_data_processor_manager.shutdown()
             if device_updater is not None:
                 device_updater.stop_updater()
             if t_whw is not None:

@@ -5,7 +5,7 @@ from typing import Generator, Tuple, Union
 import requests
 from flask import Response, stream_with_context
 
-from mapadroid.utils.global_variables import ADDRESSES_GITHUB, CHUNK_MAX_SIZE
+from mapadroid.utils.global_variables import CHUNK_MAX_SIZE, VERSIONCODES_URL
 from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from .abstract_apk_storage import AbstractAPKStorage
@@ -282,14 +282,14 @@ def supported_pogo_version(architecture: APKArch, version: str) -> bool:
     else:
         bits = '64'
     try:
-        with open('configs/addresses.json') as fh:
+        with open('configs/version_codes.json') as fh:
             address_object = json.load(fh)
             composite_key = '%s_%s' % (version, bits,)
             address_object[composite_key]
             valid = True
     except KeyError:
         try:
-            requests.get(ADDRESSES_GITHUB).json()[composite_key]
+            requests.get(VERSIONCODES_URL).json()[composite_key]
             valid = True
         except KeyError:
             pass

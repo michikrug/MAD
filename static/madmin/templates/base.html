@@ -101,6 +101,17 @@
     <center><i class="fas fa-exclamation-triangle"></i> MAD is running in config mode and will not move the workers. Please restart without config mode enabled to begin mapping <i class="fas fa-exclamation-triangle"></i></center>
   </div>
   {% endif %}
+  {% if app_dupe_macs %}
+  <div class="alert alert-danger">
+    <center>
+      <i class="fas fa-exclamation-triangle"></i>Duplicate MAC addresses detected assigned to devices. This will cause
+      issues and it will not be apparent whats broken. This is only checked on MAD startup<i class="fas fa-exclamation-triangle"></i>
+      {% for dupe in app_dupe_macs_devs %}
+      <br>{{ dupe.mac_address }}: {{ dupe.origins }}
+      {% endfor %}
+    </center>
+  </div>
+  {% endif %}
   <div class="container" role="main">
     {% block content %}{% endblock %}
   </div>

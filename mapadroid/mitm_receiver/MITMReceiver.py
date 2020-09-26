@@ -7,11 +7,12 @@ import time
 from functools import wraps
 from multiprocessing import JoinableQueue, Process
 from threading import RLock
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from flask import Flask, Response, request, send_file
 from gevent.pywsgi import WSGIServer
 
+from mapadroid.data_manager.dm_exceptions import UpdateIssue
 from mapadroid.mad_apk import (APKType, lookup_package_info, parse_frontend,
                                stream_package, supported_pogo_version)
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
@@ -310,10 +311,14 @@ class MITMReceiver(Process):
                     "lvl_mode": level_mode}
         return json.dumps(response)
 
+    # TODO - Deprecate this function as it does not return useful addresses
     def get_addresses(self, origin, data):
-        with open('configs/addresses.json') as f:
-            address_object = json.load(f)
-        return json.dumps(address_object)
+        supported: Dict[str, Dict] = {}
+        with open('configs/version_codes.json', 'rb') as fh:
+            data = json.load(fh)
+            for key in data.keys():
+                supported[key] = {}
+        return json.dumps(supported)
 
     def status(self, origin, data):
         origin_return: dict = {}
@@ -504,9 +509,12 @@ class MITMReceiver(Process):
                     log_data['msg'] = 'No MAC provided during MAC assignment'
                     self.autoconfig_log(**log_data)
                 return Response(status=400, response='No MAC provided')
-            device['mac_address'] = data
-            device.save()
-            return Response(status=200)
+            try:
+                device['mac_address'] = data
+                device.save()
+                return Response(status=200)
+            except UpdateIssue:
+                return Response(status=422)
         else:
             return Response(status=405)
 

@@ -4,7 +4,7 @@ import os
 from functools import update_wrapper, wraps
 from math import floor
 
-from flask import (make_response, request)
+from flask import make_response, request
 
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.functions import creation_date

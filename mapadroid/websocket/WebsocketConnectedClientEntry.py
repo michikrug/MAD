@@ -2,13 +2,15 @@ import asyncio
 import math
 import time
 from threading import Thread
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 import websockets
 from mapadroid.utils.CustomTypes import MessageTyping
-from mapadroid.utils.madGlobals import WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException, \
-    WebsocketWorkerConnectionClosedException
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
+from mapadroid.utils.madGlobals import (WebsocketWorkerConnectionClosedException,
+                                        WebsocketWorkerRemovedException,
+                                        WebsocketWorkerTimeoutException)
 from mapadroid.worker.AbstractWorker import AbstractWorker
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
 
 
 class ReceivedMessageEntry:

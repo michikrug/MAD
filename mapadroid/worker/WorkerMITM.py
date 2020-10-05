@@ -8,15 +8,12 @@ from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.utils import MappingManager
 from mapadroid.utils.collections import Location
-from mapadroid.utils.geo import (
-    get_distance_of_two_points_in_meters,
-    get_lat_lng_offsets_by_distance
-)
+from mapadroid.utils.geo import (get_distance_of_two_points_in_meters,
+                                 get_lat_lng_offsets_by_distance)
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.madGlobals import InternalStopWorkerException
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
-from mapadroid.worker.MITMBase import MITMBase, LatestReceivedType
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from mapadroid.worker.MITMBase import LatestReceivedType, MITMBase
 
 logger = get_logger(LoggerEnums.worker)
 
@@ -104,7 +101,7 @@ class WorkerMITM(MITMBase):
                 self.logger.debug("Walking back")
                 time.sleep(0.3)
                 self._communicator.walk_from_to(Location(self.current_location.lat + lat_offset,
-                                                self.current_location.lng + lng_offset),
+                                                         self.current_location.lng + lng_offset),
                                                 self.current_location,
                                                 11)
                 self.logger.debug("Done walking")

@@ -1,19 +1,22 @@
-import apkutils
-from apkutils.apkfile import BadZipFile, LargeZipFile
-import json
 import io
-import requests
+import json
 import zipfile
 from threading import Thread
 from typing import Dict, NoReturn, Optional
+
+import requests
 import urllib3
-from .abstract_apk_storage import AbstractAPKStorage
-from .apk_enums import APKArch, APKType, APKPackage
-from .utils import lookup_package_info, is_newer_version, supported_pogo_version, lookup_arch_enum
+
+import apkutils
+from apkutils.apkfile import BadZipFile, LargeZipFile
 from mapadroid.utils import global_variables
 from mapadroid.utils.gplay_connector import GPlayConnector
-from mapadroid.utils.logging import get_logger, LoggerEnums
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
+from .abstract_apk_storage import AbstractAPKStorage
+from .apk_enums import APKArch, APKPackage, APKType
+from .utils import (is_newer_version, lookup_arch_enum, lookup_package_info,
+                    supported_pogo_version)
 
 logger = get_logger(LoggerEnums.package_mgr)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -383,6 +386,7 @@ class PackageImporter(object):
         mimetype (str): Mimetype of the package
         version (str): Version of the package
     """
+
     def __init__(self, package: APKType, architecture: APKArch, storage_obj: AbstractAPKStorage,
                  downloaded_file: io.BytesIO, mimetype: str, version: str = None):
         self.package_version: str = None

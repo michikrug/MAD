@@ -150,8 +150,8 @@ def questtask(typeid, condition, target, quest_template):
             else:
                 for ty in pt:
                     arr['type'] += (_('or ') if last == cur else '') + \
-                                   pokemonTypes[ty].title() + (_('-type ')
-                                                               if last == cur else '-, ')
+                        pokemonTypes[ty].title() + (_('-type ')
+                                                    if last == cur else '-, ')
                     cur += 1
         if re.search(r'"type": 3', condition) is not None:
             arr['wb'] = _(" with weather boost")
@@ -167,7 +167,7 @@ def questtask(typeid, condition, target, quest_template):
             else:
                 for ty in pt:
                     arr['poke'] += (_('or ') if last == cur else '') + \
-                                   i8ln(pokemonname(ty)) + ('' if last == cur else ', ')
+                        i8ln(pokemonname(ty)) + ('' if last == cur else ', ')
                     cur += 1
             text = _('Catch {0} {poke}')
     elif typeid == 5:

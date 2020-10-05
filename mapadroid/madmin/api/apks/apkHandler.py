@@ -1,5 +1,7 @@
 import flask
+
 from mapadroid.mad_apk import parse_frontend
+
 from .. import apiHandler
 
 

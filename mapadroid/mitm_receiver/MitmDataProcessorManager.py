@@ -66,7 +66,7 @@ class MitmDataProcessorManager():
         for worker_thread in self._worker_threads:
             worker_thread.terminate()
             worker_thread.join()
-        logger.info("Stopped MITM datap rocessors")
+        logger.info("Stopped MITM data processors")
 
         if self._mitm_data_queue is not None:
             self._mitm_data_queue.close()

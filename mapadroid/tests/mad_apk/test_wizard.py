@@ -1,7 +1,8 @@
-from mapadroid.mad_apk import APKType, WizardError, APKWizard, APKArch
+from unittest.mock import MagicMock
+
+from mapadroid.mad_apk import APKArch, APKType, APKWizard, WizardError
 from mapadroid.tests.mad_apk.base_storage import StorageBase, upload_package
 from mapadroid.tests.test_utils import GetStorage, get_connection_api
-from unittest.mock import MagicMock
 from mapadroid.utils.gplay_connector import GPlayConnector
 
 

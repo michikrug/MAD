@@ -1,19 +1,19 @@
 import time
-from multiprocessing import Lock, Event
+from multiprocessing import Event, Lock
 from multiprocessing.managers import SyncManager
 from multiprocessing.pool import ThreadPool
 from queue import Empty, Queue
 from threading import Thread
-from typing import Optional, List, Dict, Tuple, Set
+from typing import Dict, List, Optional, Set, Tuple
+
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
-from mapadroid.route import RouteManagerIV, RouteManagerBase
+from mapadroid.route import RouteManagerBase, RouteManagerIV
 from mapadroid.route.RouteManagerFactory import RouteManagerFactory
 from mapadroid.utils.collections import Location
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.s2Helper import S2Helper
 from mapadroid.worker.WorkerType import WorkerType
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
 
 logger = get_logger(LoggerEnums.utils)
 

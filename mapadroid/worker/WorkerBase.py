@@ -425,23 +425,16 @@ class WorkerBase(AbstractWorker):
                 self._add_task_to_loop(self._update_position_file())
                 self._location_count += 1
                 self.logger.debug("Seting new 'scannedlocation' in Database")
+                mode = self._mapping_manager.routemanager_get_mode(self._routemanager_name)
+                if mode == None or mode == "iv_mitm" or mode == "mon_mitm":
+                    radius = 67
+                if mode == "raids_ocr" or mode == "raids_mitm":
+                    radius = 490
+                if mode == "pokestops":
+                    radius = 40
                 self._add_task_to_loop(self.update_scanned_location(
-                    self.current_location.lat, self.current_location.lng, time_snapshot)
+                    self.current_location.lat, self.current_location.lng, time_snapshot, radius)
                 )
-                if self._applicationArgs.last_scanned:
-                    self.logger.debug("Seting new 'scannedlocation' in Database")
-
-                    mode = self._mapping_manager.routemanager_get_mode(self._routemanager_name)
-                    if mode == None or mode == "iv_mitm" or mode == "mon_mitm":
-                        radius = 67
-                    if mode == "raids_ocr" or mode == "raids_mitm":
-                        radius = 490
-                    if mode == "pokestops":
-                        radius = 40
-
-                    self._add_task_to_loop(self.update_scanned_location(
-                        self.current_location.lat, self.current_location.lng, time_snapshot, radius)
-                    )
 
                 try:
                     self._post_move_location_routine(time_snapshot)

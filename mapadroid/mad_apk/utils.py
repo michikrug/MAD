@@ -1,14 +1,16 @@
-from distutils.version import LooseVersion
-from flask import Response, stream_with_context
 import json
-import requests
-from typing import Tuple, Union, Generator
-from .apk_enums import APKArch, APKType, APKPackage
-from .abstract_apk_storage import AbstractAPKStorage
-from .custom_types import MADapks, MADPackage, MADPackages
-from mapadroid.utils.global_variables import CHUNK_MAX_SIZE, VERSIONCODES_URL
-from mapadroid.utils.logging import get_logger, LoggerEnums
+from distutils.version import LooseVersion
+from typing import Generator, Tuple, Union
 
+import requests
+from flask import Response, stream_with_context
+
+from mapadroid.utils.global_variables import CHUNK_MAX_SIZE, VERSIONCODES_URL
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+from .abstract_apk_storage import AbstractAPKStorage
+from .apk_enums import APKArch, APKPackage, APKType
+from .custom_types import MADapks, MADPackage, MADPackages
 
 logger = get_logger(LoggerEnums.package_mgr)
 

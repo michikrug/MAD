@@ -6,8 +6,9 @@ import sys
 import cv2
 import numpy as np
 import pytesseract
-from mapadroid.utils.resolution import Resocalculator
 from PIL import Image
+
+from mapadroid.utils.resolution import Resocalculator
 
 sys.path.append("..")
 

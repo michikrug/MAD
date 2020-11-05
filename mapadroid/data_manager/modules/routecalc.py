@@ -2,6 +2,7 @@ import json
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
 from mapadroid.route.routecalc.ClusteringHelper import ClusteringHelper
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import LoggerEnums, get_logger
@@ -162,7 +163,8 @@ class RouteCalc(Resource):
             logger.info("Calculating a short route through all those coords. Might take a while")
             from timeit import default_timer as timer
             start = timer()
-            from mapadroid.route.routecalc.calculate_route_all import route_calc_all
+            from mapadroid.route.routecalc.calculate_route_all import \
+                route_calc_all
             sol_best = route_calc_all(less_coords, route_name, num_processes, algorithm)
 
             end = timer()

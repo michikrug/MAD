@@ -4,11 +4,11 @@ import zipfile
 from threading import Thread
 from typing import Dict, NoReturn, Optional
 
+import apkutils
 import requests
 import urllib3
-
-import apkutils
 from apkutils.apkfile import BadZipFile, LargeZipFile
+
 from mapadroid.utils import global_variables
 from mapadroid.utils.gplay_connector import GPlayConnector
 from mapadroid.utils.logging import LoggerEnums, get_logger

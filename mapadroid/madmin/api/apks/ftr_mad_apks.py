@@ -2,8 +2,8 @@ import io
 from threading import Thread
 
 import flask
-
 from apkutils.apkfile import BadZipFile, LargeZipFile
+
 from mapadroid.mad_apk import (APKArch, APKType, APKWizard, MADapks,
                                PackageImporter, WizardError, get_apk_status,
                                stream_package)

@@ -5,9 +5,9 @@ from mapadroid.utils.collections import Location
 from mapadroid.utils.CustomTypes import MessageTyping
 from mapadroid.utils.geo import get_distance_of_two_points_in_meters
 from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
-from mapadroid.utils.madGlobals import (ScreenshotType,
-                                        WebsocketWorkerConnectionClosedException,
-                                        WebsocketWorkerTimeoutException)
+from mapadroid.utils.madGlobals import (
+    ScreenshotType, WebsocketWorkerConnectionClosedException,
+    WebsocketWorkerTimeoutException)
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
 from mapadroid.websocket.WebsocketConnectedClientEntry import \
     WebsocketConnectedClientEntry

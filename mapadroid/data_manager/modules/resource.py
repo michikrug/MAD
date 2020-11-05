@@ -2,6 +2,7 @@ import copy
 from collections import UserDict
 
 import mysql
+
 from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from ..dm_exceptions import (DependencyError, SaveIssue, UnknownIdentifier,

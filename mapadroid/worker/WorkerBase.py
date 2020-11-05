@@ -15,11 +15,10 @@ from mapadroid.ocr.screenPath import WordToScreenMatching
 from mapadroid.utils import MappingManager
 from mapadroid.utils.collections import Location
 from mapadroid.utils.logging import LoggerEnums, get_logger
-from mapadroid.utils.madGlobals import (InternalStopWorkerException,
-                                        ScreenshotType,
-                                        WebsocketWorkerConnectionClosedException,
-                                        WebsocketWorkerRemovedException,
-                                        WebsocketWorkerTimeoutException)
+from mapadroid.utils.madGlobals import (
+    InternalStopWorkerException, ScreenshotType,
+    WebsocketWorkerConnectionClosedException, WebsocketWorkerRemovedException,
+    WebsocketWorkerTimeoutException)
 from mapadroid.utils.resolution import Resocalculator
 from mapadroid.utils.routeutil import check_walker_value_type
 from mapadroid.utils.s2Helper import S2Helper
@@ -425,6 +424,10 @@ class WorkerBase(AbstractWorker):
             if process_location:
                 self._add_task_to_loop(self._update_position_file())
                 self._location_count += 1
+                self.logger.debug("Seting new 'scannedlocation' in Database")
+                self._add_task_to_loop(self.update_scanned_location(
+                    self.current_location.lat, self.current_location.lng, time_snapshot)
+                )
                 if self._applicationArgs.last_scanned:
                     self.logger.debug("Seting new 'scannedlocation' in Database")
 
@@ -658,7 +661,10 @@ class WorkerBase(AbstractWorker):
 
             self._last_screen_type = screen_type
         self.logger.info('Checking pogo screen is finished')
-        return True
+        if screen_type in [ScreenType.POGO, ScreenType.QUEST]:
+            return True
+        else:
+            return False
 
     def _restart_pogo_safe(self):
         self.logger.warning("WorkerBase::_restart_pogo_safe restarting pogo the long way")
@@ -708,8 +714,14 @@ class WorkerBase(AbstractWorker):
 
         cur_time = time.time()
         start_result = False
+        attempts = 0
         while not pogo_topmost:
-            start_result = self._communicator.start_app("com.nianticlabs.pokemongo")
+            attempts += 1
+            if attempts > 10:
+                self.logger.error("_start_pogo failed 10 times")
+                return False
+            start_result = self._communicator.start_app(
+                "com.nianticlabs.pokemongo")
             time.sleep(1)
             pogo_topmost = self._communicator.is_pogo_topmost()
 
@@ -771,7 +783,8 @@ class WorkerBase(AbstractWorker):
                                                    99)
             return self._start_pogo()
         else:
-            return False
+            self.logger.error("Failed restarting PoGo - reboot device")
+            return self._reboot()
 
     def _get_trash_positions(self, full_screen=False):
         self.logger.debug2("_get_trash_positions: Get_trash_position.")

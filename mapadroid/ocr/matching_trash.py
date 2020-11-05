@@ -3,8 +3,9 @@ from typing import List
 
 import cv2
 import imutils
-import mapadroid
 import numpy as np
+
+import mapadroid
 from mapadroid.utils.collections import Trash
 from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 

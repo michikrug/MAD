@@ -2,9 +2,10 @@ from multiprocessing import Lock, Semaphore
 from multiprocessing.managers import SyncManager
 
 import mysql
-from mapadroid.utils.logging import LoggerEnums, get_logger
 from mysql.connector import ProgrammingError
 from mysql.connector.pooling import MySQLConnectionPool
+
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.database)
 

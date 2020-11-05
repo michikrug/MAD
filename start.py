@@ -1,8 +1,14 @@
+import sys
+
+py_version = sys.version_info
+if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
+    print("MAD requires at least python 3.6! Your version: {}.{}"
+          .format(py_version.major, py_version.minor))
+    sys.exit(1)
 import calendar
 import datetime
 import gc
 import os
-import sys
 import time
 import unittest
 from multiprocessing import Process
@@ -10,8 +16,8 @@ from threading import Thread, active_count
 from typing import Optional
 
 import pkg_resources
-
 import psutil
+
 from mapadroid.data_manager import DataManager
 from mapadroid.db.DbFactory import DbFactory
 from mapadroid.mad_apk import (AbstractAPKStorage, StorageSyncManager,
@@ -34,13 +40,6 @@ from mapadroid.utils.updater import DeviceUpdater
 from mapadroid.utils.walkerArgs import parse_args
 from mapadroid.webhook.webhookworker import WebhookWorker
 from mapadroid.websocket.WebsocketServer import WebsocketServer
-
-py_version = sys.version_info
-if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
-    print("MAD requires at least python 3.6! Your version: {}.{}"
-          .format(py_version.major, py_version.minor))
-    sys.exit(1)
-
 
 args = parse_args()
 os.environ['LANGUAGE'] = args.language
@@ -293,7 +292,7 @@ if __name__ == "__main__":
     mad_plugins = PluginCollection('plugins', plugin_parts)
     mad_plugins.apply_all_plugins_on_value()
 
-    if args.with_madmin or args.config_mode:
+    if not args.disable_madmin or args.config_mode:
         logger.info("Starting Madmin on port {}", str(args.madmin_port))
         t_madmin = Thread(name="madmin", target=madmin.madmin_start)
         t_madmin.daemon = True

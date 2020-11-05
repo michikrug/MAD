@@ -4,6 +4,7 @@ import time
 
 from flask import (flash, jsonify, redirect, render_template, request,
                    send_file, url_for)
+from PIL import Image
 from werkzeug.utils import secure_filename
 
 import mapadroid
@@ -21,7 +22,6 @@ from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 from mapadroid.utils.madGlobals import ScreenshotType
 from mapadroid.utils.updater import JobType
 from mapadroid.websocket.WebsocketServer import WebsocketServer
-from PIL import Image
 
 logger = get_logger(LoggerEnums.madmin)
 

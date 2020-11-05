@@ -8,6 +8,7 @@ from threading import Event, Thread, current_thread
 from typing import Coroutine, Dict, List, Optional, Set
 
 import websockets
+
 from mapadroid.data_manager import DataManager
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper

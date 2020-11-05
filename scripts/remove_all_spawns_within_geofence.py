@@ -6,6 +6,7 @@ import re
 import sys
 
 import mysql.connector
+
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.utils.logging import initLogging, logger
 

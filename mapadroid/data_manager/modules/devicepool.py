@@ -27,7 +27,7 @@ class DevicePool(Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Delay in seconds after reaching destination with the speed given (Default: 7.0)",
+                    "description": "Delay in seconds after reaching destination with the speed given (Default: 0)",
                     "expected": float
                 }
             },
@@ -35,7 +35,7 @@ class DevicePool(Resource):
                 "settings": {
                     "type": "text",
                     "require": False,
-                    "description": "Delay in seconds after a teleport. (Default: 7.0)",
+                    "description": "Delay in seconds after teleport (Default: 0)",
                     "expected": float
                 }
             },
@@ -81,15 +81,6 @@ class DevicePool(Resource):
                     "expected": int
                 }
             },
-            "delay_after_hatch": {
-                "settings": {
-                    "type": "text",
-                    "require": False,
-                    "description": "Delay in minutes to wait before moving to the location of a hatched egg. Raidbosses"
-                                   " do not necessarily appear immediately. (Default: 3.5)",
-                    "expected": float
-                }
-            },
             "inventory_clear_rounds": {
                 "settings": {
                     "type": "text",
@@ -128,9 +119,8 @@ class DevicePool(Resource):
                 "settings": {
                     "type": "option",
                     "require": False,
-                    "values": [None, False, True],
-                    "description": "Reboot device if reboot_thresh is reached.  This value is doubled when init is "
-                                   "active (Default: False)",
+                    "values": [None, True, False],
+                    "description": "Reboot device if reboot_thresh is reached. (Default: True)",
                     "expected": bool
                 }
             },
@@ -207,7 +197,7 @@ class DevicePool(Resource):
             "screendetection": {
                 "settings": {
                     "type": "option",
-                    "values": [None, False, True],
+                    "values": [None, True, False],
                     "require": False,
                     "description": "Use this argument if there are login/logout problems with this device or you want "
                                    "to levelup accounts  (Default: False)",

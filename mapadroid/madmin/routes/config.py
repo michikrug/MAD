@@ -4,8 +4,8 @@ import re
 from typing import List, Tuple
 
 from flask import Response, redirect, render_template, request, url_for
-
 from flask_caching import Cache
+
 from mapadroid.data_manager import DataManagerException
 from mapadroid.data_manager.dm_exceptions import ModeNotSpecified, ModeUnknown
 from mapadroid.data_manager.modules.pogoauth import PogoAuth
@@ -129,7 +129,6 @@ class MADminConfig(object):
                 settings_vars = {}
         if request.method == 'GET':
             included_data = {
-                'advcfg': self._args.advanced_config,
                 'base_uri': url_for(base_uri),
                 'identifier': identifier
             }
@@ -187,8 +186,7 @@ class MADminConfig(object):
         ortools_info = False
 
         try:
-            from ortools.constraint_solver import routing_enums_pb2
-            from ortools.constraint_solver import pywrapcp
+            from ortools.constraint_solver import pywrapcp, routing_enums_pb2
         except Exception:
             pass
         import platform

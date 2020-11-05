@@ -2,8 +2,8 @@ import json
 from typing import List, Optional
 
 from flask import jsonify, redirect, render_template, request, url_for
-
 from flask_caching import Cache
+
 from mapadroid.data_manager import DataManagerException
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.geofence.geofenceHelper import GeofenceHelper

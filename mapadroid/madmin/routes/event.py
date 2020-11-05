@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from flask import flash, jsonify, redirect, render_template, request, url_for
-
 from flask_caching import Cache
+
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils.MappingManager import MappingManager
 

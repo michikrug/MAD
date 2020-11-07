@@ -15,8 +15,8 @@ from mapadroid.utils.logging import LoggerEnums, get_logger
 
 from .abstract_apk_storage import AbstractAPKStorage
 from .apk_enums import APKArch, APKPackage, APKType
-from .utils import (is_newer_version, lookup_arch_enum, lookup_package_info,
-                    supported_pogo_version)
+from .utils import (get_apk_info, is_newer_version, lookup_arch_enum,
+                    lookup_package_info, supported_pogo_version)
 
 logger = get_logger(LoggerEnums.package_mgr)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -27,6 +27,10 @@ MAX_RETRIES: int = 3  # Number of attempts for downloading on failure
 
 
 class WizardError(Exception):
+    pass
+
+
+class InvalidDownload(WizardError):
     pass
 
 
@@ -85,8 +89,13 @@ class APKWizard(object):
 
     def apk_nonblocking_download(self) -> NoReturn:
         "Download all packages"
-        self.download_pogo(APKArch.armeabi_v7a)
-        self.download_pogo(APKArch.arm64_v8a)
+        for arch in APKArch:
+            if arch == APKArch.noarch:
+                continue
+            try:
+                self.download_pogo(arch)
+            except InvalidDownload:
+                pass
         self.download_rgc(APKArch.noarch)
         self.download_pd(APKArch.noarch)
 
@@ -138,10 +147,16 @@ class APKWizard(object):
                         latest_data = self.get_latest(APKType.pogo, architecture)
                         downloaded_file = self.gpconn.download(APKPackage.pogo.value, version_code=latest_data['url'])
                         if downloaded_file and downloaded_file.getbuffer().nbytes > 0:
-                            PackageImporter(APKType.pogo, architecture, self.storage, downloaded_file,
-                                            'application/zip', version=latest_version)
-                            successful = True
-                        else:
+                            version, _ = get_apk_info(downloaded_file)
+                            if version != latest_version:
+                                msg = f"Playstore returned {version} when requesting {latest_version}"
+                                logger.warning(msg)
+                                raise InvalidDownload(msg)
+                            else:
+                                PackageImporter(APKType.pogo, architecture, self.storage, downloaded_file,
+                                                'application/zip', version=latest_version)
+                                successful = True
+                        if not successful:
                             logger.info("Issue downloading apk")
                             retries += 1
                             if retries < MAX_RETRIES:
@@ -283,6 +298,10 @@ class APKWizard(object):
                     logger.info("Version in store is newer than supported version. Using an older version")
                     version_code = latest_supported["versionCode"]
                     version_str = latest_supported["version"]
+                elif current_version and store_vs == current_version:
+                    logger.info("Latest version [{}] is already installed", store_vc)
+                    version_code = store_vc
+                    version_str = store_vs
                 else:
                     logger.info('Newer version found: {}', store_vs)
                     version_code = store_vc
@@ -417,7 +436,7 @@ class PackageImporter(object):
         self.package_arch: APKArch = None
         self._data: io.BytesIO = downloaded_file
         if mimetype == 'application/vnd.android.package-archive':
-            self.get_apk_info(downloaded_file)
+            self.package_version, self.package_name = get_apk_info(downloaded_file)
         else:
             self.normalize_package()
             mimetype = 'application/zip'
@@ -438,18 +457,6 @@ class PackageImporter(object):
             logger.info(log_msg, package.name, version)
         else:
             logger.warning('Unable to determine apk information')
-
-    def get_apk_info(self, downloaded_file: io.BytesIO) -> NoReturn:
-        try:
-            apk = apkutils.APK(downloaded_file)
-        except:  # noqa: E722
-            logger.warning('Unable to parse APK file')
-        else:
-            manifest = apk.get_manifest()
-            try:
-                self.package_version, self.package_name = (manifest['@android:versionName'], manifest['@package'])
-            except KeyError:
-                raise InvalidFile('Unable to parse the APK file')
 
     def normalize_package(self) -> NoReturn:
         """ Normalize the package

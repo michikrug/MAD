@@ -3,16 +3,17 @@ import os
 import os.path
 import time
 from multiprocessing.pool import ThreadPool
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
+
 import cv2
 import numpy as np
 import pytesseract
 from PIL import Image
 from pytesseract import Output
+
 from mapadroid.ocr.matching_trash import trash_image_matching
 from mapadroid.ocr.screen_type import ScreenType
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
-
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 
 logger = get_logger(LoggerEnums.ocr)
 
@@ -340,7 +341,7 @@ class PogoWindows:
             return False
 
         imwrite_status = cv2.imwrite(os.path.join(self.temp_dir_path,
-                                     str(identifier) + '_exitcircle.jpg'), image)
+                                                  str(identifier) + '_exitcircle.jpg'), image)
         if not imwrite_status:
             origin_logger.error("Could not save file: {} - check permissions and path",
                                 os.path.join(self.temp_dir_path, str(identifier) + '_exitcircle.jpg'))
@@ -584,7 +585,7 @@ class PogoWindows:
 
                 texts = [frame_org]
                 for thresh in [200, 175, 150]:
-                    fn = lambda x: 255 if x > thresh else 0  # noqa: E731
+                    def fn(x): return 255 if x > thresh else 0  # noqa: E731
                     frame = frame_org.convert('L').point(fn, mode='1')
                     texts.append(frame)
                 for text in texts:

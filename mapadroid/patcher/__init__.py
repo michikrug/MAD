@@ -1,12 +1,13 @@
-from collections import OrderedDict
 import importlib
 import json
 import shutil
 import sys
-from mapadroid.db import DbSchemaUpdater
-import mysql.connector
-from mapadroid.utils.logging import get_logger, LoggerEnums
+from collections import OrderedDict
 
+import mysql.connector
+
+from mapadroid.db import DbSchemaUpdater
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.patcher)
 

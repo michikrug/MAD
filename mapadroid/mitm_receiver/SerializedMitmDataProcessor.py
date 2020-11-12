@@ -1,10 +1,11 @@
 import time
 from datetime import datetime
-from multiprocessing import Queue, Process
+from multiprocessing import Process, Queue
+
 from mapadroid.db.DbPogoProtoSubmit import DbPogoProtoSubmit
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
-from mapadroid.utils.logging import get_logger, LoggerEnums, get_origin_logger
+from mapadroid.utils.logging import LoggerEnums, get_logger, get_origin_logger
 
 logger = get_logger(LoggerEnums.mitm)
 
@@ -86,9 +87,9 @@ class SerializedMitmDataProcessor(Process):
                 full_time = self.get_time_ms() - start_time
 
                 origin_logger.debug("Done processing GMO in {}ms (weather={}ms, stops={}ms, gyms={}ms, raids={}ms, " +
-                                     "spawnpoints={}ms, mons={}ms, cells={}ms, gmo_loc={}ms)",
-                                     full_time, weather_time, stops_time, gyms_time, raids_time,
-                                     spawnpoints_time, mons_time, cells_time, gmo_loc_time)
+                                    "spawnpoints={}ms, mons={}ms, cells={}ms, gmo_loc={}ms)",
+                                    full_time, weather_time, stops_time, gyms_time, raids_time,
+                                    spawnpoints_time, mons_time, cells_time, gmo_loc_time)
             elif data_type == 102:
                 playerlevel = self.__mitm_mapper.get_playerlevel(origin)
                 if playerlevel >= 30:

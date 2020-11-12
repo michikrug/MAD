@@ -5,25 +5,20 @@ from difflib import SequenceMatcher
 from enum import Enum
 from threading import Event, Thread
 from typing import List
+
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.mitm_receiver.MitmMapper import MitmMapper
 from mapadroid.ocr.pogoWindows import PogoWindows
 from mapadroid.utils import MappingManager
 from mapadroid.utils.collections import Location
-from mapadroid.utils.geo import (
-    get_distance_of_two_points_in_meters,
-    get_lat_lng_offsets_by_distance
-)
+from mapadroid.utils.geo import (get_distance_of_two_points_in_meters,
+                                 get_lat_lng_offsets_by_distance)
+from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.madGlobals import (
-    InternalStopWorkerException,
-    WebsocketWorkerRemovedException,
-    WebsocketWorkerTimeoutException,
-    WebsocketWorkerConnectionClosedException
-)
+    InternalStopWorkerException, WebsocketWorkerConnectionClosedException,
+    WebsocketWorkerRemovedException, WebsocketWorkerTimeoutException)
 from mapadroid.websocket.AbstractCommunicator import AbstractCommunicator
-from mapadroid.worker.MITMBase import MITMBase, LatestReceivedType
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from mapadroid.worker.MITMBase import LatestReceivedType, MITMBase
 
 logger = get_logger(LoggerEnums.worker)
 PROTO_NUMBER_FOR_GMO = 106

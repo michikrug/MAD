@@ -211,10 +211,8 @@ class MITMBase(WorkerBase):
                     self._reboot(mitm_mapper=self._mitm_mapper)
                     raise InternalStopWorkerException
 
-                # self._mitm_mapper.
-                self._restart_count = 0
                 self.logger.error("Too many timeouts - Restarting game")
-                self._restart_pogo(True, self._mitm_mapper)
+                self._restart_pogo_safe()
 
         self.worker_stats()
         return data_requested

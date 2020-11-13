@@ -661,20 +661,27 @@ class WorkerBase(AbstractWorker):
 
     def _restart_pogo_safe(self):
         self.logger.warning("WorkerBase::_restart_pogo_safe restarting pogo the long way")
-        self._stop_pogo()
-        self._communicator.clear_app_cache("com.nianticlabs.pokemongo")
-        time.sleep(1)
-        if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
-            self._worker_specific_setup_stop()
+        successful_stop = self._stop_pogo()
+        self._db_wrapper.save_last_restart(self._dev_id)
+        self._restart_count = 0
+        self.logger.debug("restartPogoSafe: stop game resulted in {}", str(successful_stop))
+        if successful_stop:
+            self._communicator.clear_app_cache("com.nianticlabs.pokemongo")
             time.sleep(1)
-        self._communicator.magisk_off()
-        time.sleep(1)
-        self._communicator.magisk_on()
-        time.sleep(1)
-        if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
-            self._worker_specific_setup_start()
+            if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+                self._worker_specific_setup_stop()
+                time.sleep(1)
+            self._communicator.magisk_off()
             time.sleep(1)
-        return self._start_pogo()
+            self._communicator.magisk_on()
+            time.sleep(1)
+            if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+                self._worker_specific_setup_start()
+                time.sleep(1)
+            return self._start_pogo()
+        else:
+            self.logger.error("Failed restarting PoGo - reboot device")
+            return self._reboot()
 
     def _switch_user(self):
         self.logger.info('Switching User - please wait ...')

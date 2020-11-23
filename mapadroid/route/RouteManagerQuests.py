@@ -1,10 +1,10 @@
 import collections
 import time
 from typing import List
+
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.route.RouteManagerBase import RouteManagerBase
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from mapadroid.utils.logging import LoggerEnums, get_logger
 
 logger = get_logger(LoggerEnums.routemanager)
 Location = collections.namedtuple('Location', ['lat', 'lng'])

@@ -1,19 +1,21 @@
-from copy import copy
-from flask import Response
-from functools import wraps
-from io import BytesIO
 import json
 import os
 import re
+from copy import copy
+from functools import wraps
+from io import BytesIO
+from threading import RLock
 from typing import Any, ClassVar, NamedTuple, NoReturn, Optional
+
+from flask import Response
+
+from mapadroid.utils.json_encoder import MADEncoder
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
 from .abstract_apk_storage import AbstractAPKStorage
 from .apk_enums import APKArch, APKType
-from .utils import lookup_apk_enum, lookup_arch_enum, generate_filename
 from .custom_types import MADapks, MADPackage, MADPackages
-from mapadroid.utils.json_encoder import MADEncoder
-from threading import RLock
-from mapadroid.utils.logging import get_logger, LoggerEnums
-
+from .utils import generate_filename, lookup_apk_enum, lookup_arch_enum
 
 logger = get_logger(LoggerEnums.storage)
 

@@ -854,7 +854,7 @@ class RouteManagerBase(ABC):
                 sorted_routepools = sorted(reduced_routepools, key=itemgetter(1))
 
                 self.logger.debug("Checking routepools in the following order: {}", sorted_routepools)
-                compare = lambda x, y: collections.Counter(x) == collections.Counter(y)  # noqa: E731
+                def compare(x, y): return collections.Counter(x) == collections.Counter(y)  # noqa: E731
                 for origin, _time_added in sorted_routepools:
                     if origin not in self._routepool:
                         # TODO probably should restart this job or something

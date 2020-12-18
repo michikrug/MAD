@@ -428,6 +428,7 @@ class PackageImporter(object):
         mimetype (str): Mimetype of the package
         version (str): Version of the package
     """
+
     def __init__(self, package: APKType, architecture: APKArch, storage_obj: AbstractAPKStorage,
                  downloaded_file: io.BytesIO, mimetype: str, version: str = None):
         self.package_version: str = None

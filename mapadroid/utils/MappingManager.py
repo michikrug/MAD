@@ -527,7 +527,7 @@ class MappingManager:
             elif mode == "pokestops":
                 coords = self.__db_wrapper.stops_from_db(geofence_helper)
             else:
-                logger.error("Mode not implemented yet: {}", mode)
+                logger.fatal("Mode not implemented yet: {}", mode)
                 exit(1)
         else:
             # calculate all level N cells (mapping back from mapping above linked to mode)
@@ -632,6 +632,6 @@ class MappingManager:
     def get_all_devices(self):
         devices = []
         devices_raw = self.__data_manager.get_root_resource('device')
-        for device_id, device in devices_raw.items():
+        for _device_id, device in devices_raw.items():
             devices.append(device['origin'])
         return devices

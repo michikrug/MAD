@@ -19,7 +19,7 @@
     function setGrid(tableGridHtmlId, gridData) {
         $(tableGridHtmlId).DataTable({
             "data": gridData,
-            //"responsive": {{ responsive }},
+            "responsive": {{ responsive }},
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "columns": [
                 { data: null, title: 'Pokestop', responsivePriority: 1 },
@@ -30,18 +30,20 @@
                 {
                     "targets": [0],
                     "render": function (data, type, row) {
-                        var url = row.url.replace('http://', 'https://')
-                        var img = `<img class='lazy pokestopimg mr-3' data-original='${url}' width=100>`;
-                        var name = build_name(row)
-                        return `<div class="media">${img}<div class="media-body">${name}</div></div>`
+                        let img = '';
+                        if (row.url !== null) {
+                            let url = row.url.replace('http://', 'https://')
+                            img = `<img class='lazy pokestopimg mr-3' data-original='${url}' width=100>`;
+                        }
+                        return `<div class="media">${img}<div class="media-body">${build_name(row)}</div></div>`
                     }
                 },
                 {
                     "targets": [1],
                     "render": function (data, type, row) {
                         //TODO use form names in rewards
-                        var reward_text = build_reward_text(row.quest_reward_type_raw, row.item_amount, row.pokemon_name, row.item_type);
-                        var reward_icon = build_quest_small(row.quest_reward_type_raw, row.item_id, row.pokemon_id, row.pokemon_form, row.pokemon_asset_bundle_id, row.pokemon_costume);
+                        const reward_text = build_reward_text(row.quest_reward_type_raw, row.item_amount, row.pokemon_name, row.item_type);
+                        const reward_icon = build_quest_small(row.quest_reward_type_raw, row.item_id, row.pokemon_id, row.pokemon_form, row.pokemon_asset_bundle_id, row.pokemon_costume);
                         return `<div class="media">${reward_icon}<div class="media-body">${reward_text}</div></div>`
                     }
                 }
@@ -58,8 +60,7 @@
     $(document).ready(function () {
         $("#navgyms").addClass("active");
         loadingBlockUI("Loading")
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "{{ url_for('get_quests') }}?fence={{fence}}",
             success: function (result) {
                 setGrid('#show-data', result);
@@ -103,7 +104,6 @@
     }
 
     function build_quest_small(quest_reward_type, quest_item_id, quest_pokemon_id, quest_pokemon_form_id, quest_pokemon_asset_bundle_id, quest_pokemon_costume_id) {
-        let url = '';
         switch (quest_reward_type) {
             case 2:
                 return '<img class="mr-3" src="static/quest/reward_' + quest_item_id + '_1.png" width="50">';
@@ -115,11 +115,10 @@
                     costume = `_${quest_pokemon_costume_id}`
                 }
                 const iconBasePath = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/no_border'
-                url = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id || '00'}${costume}.png`;
+                const url = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id}${costume}.png`;
                 return `<img class="mr-3" src="${url}" width="50">`;
             case 12:
-                url = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/rewards/reward_mega_energy.png'
-                return `<img class="mr-3" src="${url}" width="50">`;
+                return `<img class="mr-3" src="https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/rewards/reward_mega_energy.png" width="50">`;
         }
         return '';
     }

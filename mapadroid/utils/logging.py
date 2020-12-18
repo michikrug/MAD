@@ -106,7 +106,7 @@ def init_logging(args):
         logger.configure(**logconfig)
         init_custom(logger)
     except ValueError:
-        logger.error("Logging parameters/configuration is invalid.")
+        logger.fatal("Logging parameters/configuration is invalid.")
         sys.exit(1)
     logger.info("Setting log level to {} ({}).", str(log_level_val), log_level_label)
 

@@ -38,7 +38,7 @@ def ensure_config_file(func) -> Any:
         try:
             return func(self, *args, **kwargs)
         except FileNotFoundError:
-            logger.warning('Configuration file not found.  Recreating')
+            logger.info('Configuration file not found.  Recreating')
             with self.file_lock:
                 self.create_structure()
                 self.create_config()
@@ -190,7 +190,7 @@ class APKStorageFilesystem(AbstractAPKStorage):
         with self.file_lock:
             try:
                 data = copy(self.apks[package])
-                for arch, apk_info in data.items():
+                for arch, _apk_info in data.items():
                     self.validate_file(package, arch)
             except KeyError:
                 logger.debug('Package has not been downloaded')
@@ -271,7 +271,7 @@ class APKStorageFilesystem(AbstractAPKStorage):
                     self.save_configuration()
                     logger.info('Successfully saved {} to the disk', filename)
                     return True
-        except:  # noqa: E722
+        except Exception:  # noqa: E722
             logger.opt(exception=True).critical('Unable to upload APK')
         return False
 

@@ -86,7 +86,7 @@ class WorkerConfigmode(AbstractWorker):
         if walkereventid is None:
             walkereventid = 1
         if walkereventid != self._event.get_current_event_id():
-            self.logger.warning("A other Event has started - leaving now")
+            self.logger.info("Another Event has started - leaving now")
             return False
         mode = self._walker['walkertype']
         if mode == "countdown":
@@ -109,7 +109,7 @@ class WorkerConfigmode(AbstractWorker):
                 return False
             return check_walker_value_type(exittime)
         elif mode == "round":
-            self.logger.error("Rounds while sleep - HAHAHAH")
+            self.logger.warning("Rounds while sleep - HAHAHAH")
             return False
         elif mode == "period":
             self.logger.debug("Checking walker mode 'period'")
@@ -172,7 +172,7 @@ class WorkerConfigmode(AbstractWorker):
 
         if not self._communicator.is_screen_on():
             self._communicator.start_app("de.grennith.rgc.remotegpscontroller")
-            self.logger.warning("Turning screen on")
+            self.logger.info("Turning screen on")
             self._communicator.turn_screen_on()
             time.sleep(self.get_devicesettings_value("post_turn_screen_on_delay", 7))
 
@@ -195,7 +195,7 @@ class WorkerConfigmode(AbstractWorker):
             injection_thresh_reboot = int(self.get_devicesettings_value("injection_thresh_reboot", 20))
         while not self._mitm_mapper.get_injection_status(self._origin):
             if reboot and self._not_injected_count >= injection_thresh_reboot:
-                self.logger.error("Nt get injected in time - reboot")
+                self.logger.error("Not injected in time - reboot")
                 self._reboot()
                 return False
             self.logger.info("Didn't receive any data yet. (Retry count: {}/{})", str(self._not_injected_count),
@@ -220,7 +220,7 @@ class WorkerConfigmode(AbstractWorker):
         try:
             start_result = self._communicator.reboot()
         except (WebsocketWorkerRemovedException, WebsocketWorkerConnectionClosedException):
-            self.logger.error("Could not reboot due to client already having disconnected")
+            self.logger.warning("Could not reboot due to client already having disconnected")
             start_result = False
         time.sleep(5)
         self._db_wrapper.save_last_reboot(self._dev_id)

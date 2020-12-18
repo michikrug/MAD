@@ -64,7 +64,7 @@ class WorkerFactory:
         origin_logger = get_origin_logger(logger, origin=origin)
         walker_area_array = client_mapping.get("walker", None)
         if walker_area_array is None:
-            logger.error("No valid walker could be found for {}", origin)
+            logger.warning("No valid walker could be found for {}", origin)
             return None
 
         if devicesettings is not None and "walker_area_index" not in devicesettings:
@@ -84,7 +84,7 @@ class WorkerFactory:
             origin_logger.info('not using area {} - Walkervalue out of range',
                                self.__mapping_manager.routemanager_get_name(walker_area_name))
             if walker_index >= len(walker_area_array) - 1:
-                origin_logger.error('Can NOT find any active area defined for current time. Check Walker entries')
+                origin_logger.warning('Cannot find any active area defined for current time. Check Walker entries')
                 walker_index = 0
                 self.__mapping_manager.set_devicesetting_value_of(origin, 'walker_area_index',
                                                                   walker_index)
@@ -151,7 +151,7 @@ class WorkerFactory:
         # TODO: get worker
         walker_configuration: Optional[WalkerConfiguration] = await self.__prep_settings(origin)
         if walker_configuration is None:
-            origin_logger.error("Failed to find a walker configuration")
+            origin_logger.warning("Failed to find a walker configuration")
             return None
         origin_logger.debug("Setting up worker")
         await self.__update_settings_of_origin(origin, walker_configuration)

@@ -1,14 +1,8 @@
-import sys
-
-py_version = sys.version_info
-if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
-    print("MAD requires at least python 3.6! Your version: {}.{}"
-          .format(py_version.major, py_version.minor))
-    sys.exit(1)
 import calendar
 import datetime
 import gc
 import os
+import sys
 import time
 import unittest
 from multiprocessing import Process
@@ -41,10 +35,11 @@ from mapadroid.utils.walkerArgs import parse_args
 from mapadroid.webhook.webhookworker import WebhookWorker
 from mapadroid.websocket.WebsocketServer import WebsocketServer
 
-args = parse_args()
-os.environ['LANGUAGE'] = args.language
-init_logging(args)
-logger = get_logger(LoggerEnums.system)
+py_version = sys.version_info
+if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 6):
+    print("MAD requires at least python 3.6! Your version: {}.{}"
+          .format(py_version.major, py_version.minor))
+    sys.exit(1)
 
 
 # Patch to make exceptions in threads cause an exception.
@@ -155,6 +150,11 @@ def check_dependencies():
 
 
 if __name__ == "__main__":
+    args = parse_args()
+    os.environ['LANGUAGE'] = args.language
+    init_logging(args)
+    logger = get_logger(LoggerEnums.system)
+
     data_manager: DataManager = None
     device_updater: DeviceUpdater = None
     event: Event = None

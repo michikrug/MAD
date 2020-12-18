@@ -485,10 +485,12 @@ class RouteManagerBase(ABC):
             # clustering
             return latest
         if self.mode == "mon_mitm" and self.remove_from_queue_backlog == 0:
-            self.logger.error("You are running in mon_mitm mode with priority queue enabled and "
-                              "remove_from_queue_backlog set to 0. This may result in building up a significant queue "
-                              "backlog and reduced scanning performance. Please review this setting or set it to the "
-                              "default of 300.")
+            self.logger.warning("You are running in mon_mitm mode with priority queue enabled and "
+                                "remove_from_queue_backlog set to 0. This may result in building up a significant "
+                                "queue "
+                                "backlog and reduced scanning performance. Please review this setting or set it to "
+                                "the "
+                                "default of 300.")
 
         if self.remove_from_queue_backlog is not None:
             delete_before = time.time() - self.remove_from_queue_backlog
@@ -719,7 +721,7 @@ class RouteManagerBase(ABC):
     def _check_worker_rounds(self) -> int:
         temp_worker_round_list: list = []
         with self._manager_mutex:
-            for origin, entry in self._routepool.items():
+            for _origin, entry in self._routepool.items():
                 temp_worker_round_list.append(entry.rounds)
 
         return 0 if len(temp_worker_round_list) == 0 else min(temp_worker_round_list)
@@ -727,7 +729,7 @@ class RouteManagerBase(ABC):
     def _get_unprocessed_coords_from_worker(self) -> list:
         unprocessed_coords: list = []
         with self._manager_mutex:
-            for origin, entry in self._routepool.items():
+            for _origin, entry in self._routepool.items():
                 unprocessed_coords.append(entry.queue)
 
         return unprocessed_coords
@@ -853,7 +855,7 @@ class RouteManagerBase(ABC):
 
                 self.logger.debug("Checking routepools in the following order: {}", sorted_routepools)
                 def compare(x, y): return collections.Counter(x) == collections.Counter(y)  # noqa: E731
-                for origin, time_added in sorted_routepools:
+                for origin, _time_added in sorted_routepools:
                     if origin not in self._routepool:
                         # TODO probably should restart this job or something
                         self.logger.info('{} must have unregistered when we weren\'t looking.. skip it', origin)

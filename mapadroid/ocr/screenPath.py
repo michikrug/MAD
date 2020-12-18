@@ -505,7 +505,7 @@ class WordToScreenMatching(object):
             return False
 
         time.sleep(2)
-        self._logger.warning('Dont find any button...')
+        self._logger.warning('Could not find any button...')
         return False
 
     def parse_ggl(self, xml, mail: str) -> bool:

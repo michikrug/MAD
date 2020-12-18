@@ -23,7 +23,7 @@ class ADBConnect(object):
                     pass
             self.check_adblib = 'adb.client' in sys.modules or 'ppadb.client' in sys.modules
             if not self.check_adblib:
-                logger.warning("Could not find pure-python-adb library.  If you are not using ADB you can ignore this")
+                logger.warning("Could not find pure-python-adb library. If you are not using ADB you can ignore this")
                 self._useadb = False
             else:
                 self._client = AdbClient(

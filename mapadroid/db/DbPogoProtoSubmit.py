@@ -642,7 +642,7 @@ class DbPogoProtoSubmit:
 
     def _extract_args_single_stop(self, stop_data):
         if stop_data["type"] != 1:
-            logger.warning("{} is not a pokestop", stop_data)
+            logger.info("{} is not a pokestop", stop_data)
             return None
 
         now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")

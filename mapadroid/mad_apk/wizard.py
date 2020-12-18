@@ -124,7 +124,7 @@ class APKWizard(object):
         """
         latest_pogo_info = self.find_latest_pogo(architecture)
         if latest_pogo_info is None:
-            logger.warning('Unable to find latest data for PoGo.  Try again later')
+            logger.warning('Unable to find latest data for PoGo. Try again later')
         elif supported_pogo_version(architecture, latest_pogo_info["version"]):
             latest_version = latest_pogo_info["version"]
             current_version = self.storage.get_current_version(APKType.pogo, architecture)
@@ -161,7 +161,7 @@ class APKWizard(object):
                             retries += 1
                             if retries < MAX_RETRIES:
                                 logger.warning('Unable to successfully download the APK')
-                except:  # noqa: E722
+                except Exception:  # noqa: E722
                     raise
                 finally:
                     update_data['download_status'] = 0
@@ -221,7 +221,7 @@ class APKWizard(object):
                         retries += 1
                         if retries < MAX_RETRIES:
                             logger.warning('Unable to successfully download the APK')
-            except:  # noqa: E722
+            except Exception:  # noqa: E722
                 logger.warning('Unable to download the file @ {}', latest_data['url'])
             finally:
                 update_data['download_status'] = 0

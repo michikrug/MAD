@@ -111,7 +111,7 @@
                 return '<img class="mr-3" src="static/quest/reward_stardust.png" width="50">';
             case 7:
                 let costume = ''
-                if (quest_pokemon_costume_id != '00') {
+                if (quest_pokemon_costume_id > 0) {
                     costume = `_${quest_pokemon_costume_id}`
                 }
                 const iconBasePath = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/no_border'

@@ -1239,7 +1239,7 @@ new Vue({
                 case 7:
                     var costume = '';
                     var asset_bundle = quest_pokemon_asset_bundle_id || '00';
-                    if (quest_pokemon_costume_id != '00') {
+                    if (quest_pokemon_costume_id > 0) {
                         costume = '_' + quest_pokemon_costume_id;
                     }
                     var image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id}${costume}.png`;
@@ -1279,7 +1279,7 @@ new Vue({
                 case 7:
                     var costume = '';
                     var asset_bundle = quest_pokemon_asset_bundle_id || '00';
-                    if (quest_pokemon_costume_id != '00') {
+                    if (quest_pokemon_costume_id > 0) {
                         costume = '_' + quest_pokemon_costume_id;
                     }
                     var image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id}${costume}.png`;

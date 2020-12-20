@@ -11,12 +11,7 @@
 <script type="text/javascript" src="static/js/jquery.flot.axislabels.js"></script>
 
 <script>
-
-
-
-
     $(function () {
-
         var options_dots = {
             xaxis: {
                 mode: "time",
@@ -100,7 +95,7 @@
                 show: false,
                 labelBoxBorderColor: 'green',
                 labelFormatter: function (label, series) {
-                     return "12311232" + label + ' : ' +(series.data[0][1]);
+                    return "12311232" + label + ' : ' + (series.data[0][1]);
                 },
                 container: '.flc-bar',
 
@@ -110,11 +105,9 @@
 
         loadingBlockUI("Loading");
 
-        $.ajax({
-            "url": "get_game_stats?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
-            "type": "GET",
-            "cache": false,
-            "dataType": "json",
+        $.getJSON({
+            url: "get_game_stats",
+            data: { minutes_spawn: "{{ minutes_spawn }}", minutes_usage: "{{ minutes_usage }}" },
             success: function (result) {
                 spawn = result.spawn
                 quest = result.quest
@@ -127,8 +120,6 @@
                 location_info = result.location_info
                 shiny = result.shiny
 
-
-
                 setGrid('#show-data-good-pokemon', good_spawns, [
                     { data: 'id', title: 'Mon-ID' },
                     { data: 'name', title: 'Name' },
@@ -138,12 +129,12 @@
                     { data: 'cp', title: 'CP' },
                     { data: 'periode', title: 'Scantime' }
                 ], [
-                {
-                    "targets": [2],
-                    "render": function (data, type, row) {
-                        return "<img src=" + row.img + " width=100>";
+                    {
+                        "targets": [2],
+                        "render": function (data, type, row) {
+                            return "<img src=" + row.img + " width=100>";
+                        }
                     }
-                }
                 ]);
 
                 setGrid('#show-data-shiny', shiny, [
@@ -155,12 +146,12 @@
                     { data: 'worker', title: 'Worker' }
 
                 ], [
-                {
-                    "targets": [3],
-                    "render": function (data, type, row) {
-                        return "<img src=" + row.img + " width=100>";
+                    {
+                        "targets": [3],
+                        "render": function (data, type, row) {
+                            return "<img src=" + row.img + " width=100>";
+                        }
                     }
-                }
                 ]);
 
                 setGrid('#show-data-detection', detection, [
@@ -170,12 +161,12 @@
                     { data: 'raids', title: 'Raids' },
                     { data: 'quests', title: 'Quests' }
                 ], [
-                {
-                    "targets": [0],
-                    "render": function (data, type, row) {
-                        return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                    {
+                        "targets": [0],
+                        "render": function (data, type, row) {
+                            return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                        }
                     }
-                }
 
                 ]);
 
@@ -186,12 +177,12 @@
                     { data: 'locationsnok', title: 'Locations NOK' },
                     { data: 'ratio', title: 'NOK Ratio' }
                 ], [
-                {
-                    "targets": [0],
-                    "render": function (data, type, row) {
-                        return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                    {
+                        "targets": [0],
+                        "render": function (data, type, row) {
+                            return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                        }
                     }
-                }
 
                 ]);
 
@@ -205,15 +196,14 @@
                     { data: 'lastscan', title: 'Last Scan' },
                     { data: 'countsuccess', title: 'Count Success' },
                 ], [
-                {
-                    "targets": [0],
-                    "render": function (data, type, row) {
-                        return "<a href=map?lat=" + row.lat + "&lng=" + row.lng + " target=_new>[MAP]</a>";
+                    {
+                        "targets": [0],
+                        "render": function (data, type, row) {
+                            return "<a href=map?lat=" + row.lat + "&lng=" + row.lng + " target=_new>[MAP]</a>";
+                        }
                     }
-                }
 
                 ]);
-
 
                 $.plot($("#flot_spawn"), [
                     {
@@ -229,6 +219,7 @@
                         label: "Sum Spawns / Hour"
                     }
                 ], options_dots);
+
                 $("#flot_spawn").UseTooltip();
 
                 $.plot($("#flot_usage"), usage,
@@ -240,11 +231,11 @@
                         },
                         xaxis: {
                             mode: "time",
-                            //{% if time == "12" %}
+                            {% if time == "12" %}
                             timeformat: "%d.%m<br>%I:%M %p",
-                            //{% else %}
+                            {% else %}
                             timeformat: "%d.%m<br>%H:%M",
-                            //{% endif %}
+                            {% endif %}
                             tickSize: [3, "hour"],
                             timezone: "browser"
                         },
@@ -400,21 +391,17 @@
         }
 
         function setGrid(tableGridHtmlId, gridData, columns, defs) {
-        $(tableGridHtmlId).DataTable({
-            "data": gridData,
-            "searching": true,
-            "paging": true,
-            "columns": columns,
-            "ordering": false,
-            "columnDefs": defs,
-            "responsive": {{ responsive }}
-        });
+            $(tableGridHtmlId).DataTable({
+                "data": gridData,
+                "searching": true,
+                "paging": true,
+                "columns": columns,
+                "ordering": false,
+                "columnDefs": defs,
+                "responsive": {{ responsive }}
+            });
 	    }
-
-
-
     });
-
 </script>
 
 <style type="text/css">
@@ -443,8 +430,6 @@
         height: 300px;
     }
 
-
-
     #flotcontainer {
         width: 600px;
         height: 200px;
@@ -456,8 +441,6 @@
         margin: 10px;
     }
 </style>
-
-
 {% endblock %}
 
 {% block content %}
@@ -474,7 +457,7 @@
     <a href="statistics?minutes_spawn={{ minutes_spawn }}&amp;minutes_usage=480">480</a>
     <a href="statistics?minutes_spawn={{ minutes_spawn }}&amp;minutes_usage=1440">1440</a>
     <a href="statistics?minutes_spawn={{ minutes_spawn }}&amp;minutes_usage=10080">One Week</a>
-    </div>
+</div>
 <div id="legendContainer_usage"></div>
 <div id="flot_usage"></div>
 <br>
@@ -488,7 +471,7 @@
     <a href="statistics?minutes_spawn=480&amp;minutes_usage={{ minutes_usage }}">480</a>
     <a href="statistics?minutes_spawn=1440&amp;minutes_usage={{ minutes_usage }}">1440</a>
     <a href="statistics?minutes_spawn=10080&amp;minutes_usage={{ minutes_usage }}">One Week</a>
-    </div>
+</div>
 <div id="legendContainer_spawn"></div>
 <div id="flot_spawn"></div>
 <br>

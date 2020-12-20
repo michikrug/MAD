@@ -49,6 +49,7 @@ class MADminMap:
             ("/get_spawns", self.get_spawns),
             ("/get_gymcoords", self.get_gymcoords),
             ("/get_quests", self.get_quests),
+            ("/get_rstops", self.get_rstops),
             ("/get_map_mons", self.get_map_mons),
             ("/get_cells", self.get_cells),
             ("/get_stops", self.get_stops),
@@ -248,7 +249,8 @@ class MADminMap:
 
     @auth_required
     def get_quests(self):
-        coords = []
+
+        quests = []
 
         fence = request.args.get("fence", None)
         if fence not in (None, 'None', 'All'):
@@ -274,9 +276,13 @@ class MADminMap:
 
         for stopid in data:
             quest = data[str(stopid)]
-            coords.append(generate_quest(quest))
+            quests.append(generate_quest(quest))
 
-        return jsonify(coords)
+        return jsonify(quests)
+
+    @auth_required
+    def get_rstops(self):
+        return jsonify(self._db.get_stops_with_incident())
 
     @auth_required
     def get_map_mons(self):

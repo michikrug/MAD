@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block header %}
-<link rel="stylesheet" href="static/style/madmin.css"/>
+<link rel="stylesheet" href="static/style/madmin.css" />
 {% endblock %}
 
 {% block scripts %}
@@ -14,7 +14,7 @@
 <script>
     var errorCount = 0;
     var dataTable = $("#show-data-status").DataTable({
-        "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
+        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         "ajax": {
             "url": "get_status",
             "dataSrc": function (data) {
@@ -38,8 +38,8 @@
                     return "<a href='{{ url_for('settings_devices') }}?id=" + oData.device_id + "'>" + oData.name + "</a>";
                 }
             },
-            {responsivePriority: 2, data: 'lastProtoDateTime', title: 'Last Update'},
-            {data: 'currentSleepTime', title: 'Next Action'},
+            { responsivePriority: 2, data: 'lastProtoDateTime', title: 'Last Update' },
+            { data: 'currentSleepTime', title: 'Next Action' },
             {
                 responsivePriority: 3, data: 'rmname', title: 'Route',
                 "render": function (data, type, oData) {
@@ -50,15 +50,15 @@
                     }
                 }
             },
-            {data: 'routeMax', title: 'Route Length'},
-            {data: 'init', title: 'Init Mode'},
-            {data: 'restartCounter', title: 'Restart Counter'},
-            {data: 'globalrestartcount', title: 'Total Restarts'},
-            {data: 'lastPogoRestart', title: 'Last Restart'},
-            {data: 'rebootingOption', title: 'Reboot Device'},
-            {data: 'rebootCounter', title: 'Reboot Counter'},
-            {data: 'globalrebootcount', title: 'Total Reboots'},
-            {data: 'lastPogoReboot', title: 'Last Reboot'},
+            { data: 'routeMax', title: 'Route Length' },
+            { data: 'init', title: 'Init Mode' },
+            { data: 'restartCounter', title: 'Restart Counter' },
+            { data: 'globalrestartcount', title: 'Total Restarts' },
+            { data: 'lastPogoRestart', title: 'Last Restart' },
+            { data: 'rebootingOption', title: 'Reboot Device' },
+            { data: 'rebootCounter', title: 'Reboot Counter' },
+            { data: 'globalrebootcount', title: 'Total Reboots' },
+            { data: 'lastPogoReboot', title: 'Last Reboot' },
             {
                 responsivePriority: 4, data: null, orderable: false, className: "text-nowrap",
                 "render": function (data, type, oData) {
@@ -129,22 +129,22 @@
     var hideAllButton = $('#btn-hide-all-children')
 
     // Hide expand all hide all if table is not responsive
-    if (dataTable.responsive.hasHidden()){
+    if (dataTable.responsive.hasHidden()) {
         showAllButton.show()
         hideAllButton.show()
-    }else{
+    } else {
         showAllButton.hide()
         hideAllButton.hide()
     }
 
-        // Handle click on "Expand All" button
-    showAllButton.on('click', function(){
+    // Handle click on "Expand All" button
+    showAllButton.on('click', function () {
         // Expand row details
         dataTable.rows(':not(.parent)').nodes().to$().find('td:first-child').trigger('click');
     });
 
     // Handle click on "Collapse All" button
-    hideAllButton.on('click', function(){
+    hideAllButton.on('click', function () {
         // Collapse row details
         dataTable.rows('.parent').nodes().to$().find('td:first-child').trigger('click');
     });
@@ -199,9 +199,7 @@
         delete_div.append(elem);
         var deviceid = $(this).data('deviceid');
 
-
-        $.ajax({
-            type: 'GET',
+        $.getJSON({
             url: 'delete_status_entry',
             data: 'deviceid=' + deviceid,
             success: function (msg) {
@@ -239,9 +237,7 @@
         delete_div.append(elem);
         var deviceid = $(this).data('deviceid');
 
-
-        $.ajax({
-            type: 'GET',
+        $.getJSON({
             url: 'reset_status_entry',
             data: 'deviceid=' + deviceid,
             success: function (msg) {
@@ -271,7 +267,6 @@
         background-color: white;
     }
 </style>
-
 {% endblock %}
 
 {% block content %}
@@ -298,8 +293,7 @@
 <br>
 <div class="row">
     <div class="col">
-        Set maximum time in seconds to display "Last update" as <i class="fas fa-check"
-                                                                   style="color: green !important;"></i> for an easier overview <input type="number" id="maxSeconds"/>
+        Set maximum time in seconds to display "Last update" as <i class="fas fa-check" style="color: green !important;"></i> for an easier overview <input type="number" id="maxSeconds" />
     </div>
 </div>
 {% endblock %}

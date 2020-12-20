@@ -71,10 +71,8 @@
     }
 
     $(document).ready(function () {
-    $("#navunknown").addClass("active");
-
-        $.ajax({
-            type: "GET",
+        $("#navunknown").addClass("active");
+        $.getJSON({
             url: "get_unknowns",
             success: function (result) {
                 setGrid('#show-data', result);

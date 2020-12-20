@@ -46,6 +46,7 @@ class APITestBase(TestCase, object):
     # ===========================
     # ========== Tests ==========
     # ===========================
+
     def landing_page(self, test_resource=True):
         response = self.api.get(self.uri)
         self.assertEqual(response.status_code, 200)

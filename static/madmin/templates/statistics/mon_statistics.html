@@ -44,117 +44,113 @@
                 lines: {
                     show: true,
                     color: '#ffa500'
-              },
-              points: {
-                  show: true
-              }
-          },
-          grid: {
-              hoverable: true,
-              borderWidth: 1,
-              backgroundColor: { colors: ["transparent", "transparent"] }
-          },
-          legend: {
-              container: $("#legendContainer_spawn"),
-              noColumns: 0
-          }
-      };
+                },
+                points: {
+                    show: true
+                }
+            },
+            grid: {
+                hoverable: true,
+                borderWidth: 1,
+                backgroundColor: { colors: ["transparent", "transparent"] }
+            },
+            legend: {
+                container: $("#legendContainer_spawn"),
+                noColumns: 0
+            }
+        };
 
-      var options_bars = {
-          xaxis: {
-              mode: "time",
-          {% if time == "12" %}
-              timeformat: "%I:00 %p",
-          {% else %}
-              timeformat: "%H:00",
-          {% endif %}
-              timezone: "browser"
-          },
-          series: {
-              bars: {
-                  show: true
-              }
-          },
-          bars: {
-              align: "center",
-              barWidth: 60 * 40 * 1000
-          },
-          grid: {
-              hoverable: true,
-              borderWidth: 2,
-              backgroundColor: { colors: ["#ffffff", "#EDF5FF"] }
-          }
-      };
+        var options_bars = {
+            xaxis: {
+                mode: "time",
+                {% if time == "12" %}
+                timeformat: "%I:00 %p",
+                {% else %}
+                timeformat: "%H:00",
+                {% endif %}
+                timezone: "browser"
+            },
+            series: {
+                bars: {
+                    show: true
+                }
+            },
+            bars: {
+                align: "center",
+                barWidth: 60 * 40 * 1000
+            },
+            grid: {
+                hoverable: true,
+                borderWidth: 2,
+                backgroundColor: { colors: ["#ffffff", "#EDF5FF"] }
+            }
+        };
 
-      var options_pie = {
-          series: {
-              pie: {
-                  show: true,
-                  radius: 1,
-                  tilt: 0.5,
-                  label: {
-                      show: true,
-                      radius: 0.8,
-                      threshold: 0.1
-                  }
-              }
-          },
-          legend: {
-              show: true,
-              labelFormatter: function (label, series) {
-                  return '<div id="legendContainer" style="color:black;">' +
-                      label + ' : ' +
-                      (series.data[0][1]) +
-                      '</div>';
-              }
-          }
-      };
+        var options_pie = {
+            series: {
+                pie: {
+                    show: true,
+                    radius: 1,
+                    tilt: 0.5,
+                    label: {
+                        show: true,
+                        radius: 0.8,
+                        threshold: 0.1
+                    }
+                }
+            },
+            legend: {
+                show: true,
+                labelFormatter: function (label, series) {
+                    return '<div id="legendContainer" style="color:black;">' +
+                        label + ' : ' +
+                        (series.data[0][1]) +
+                        '</div>';
+                }
+            }
+        };
 
         loadingBlockUI("Loading");
 
-      $.ajax({
-          "url": "get_game_stats_mon?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
-          "type": "GET",
-          "cache": false,
-          "dataType": "json",
-          success: function (result) {
-              spawn = result.spawn
-              good_spawns = result.good_spawns
-              detection = result.detection
+        $.getJSON({
+            "url": "get_game_stats_mon?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
+            success: function (result) {
+                spawn = result.spawn
+                good_spawns = result.good_spawns
+                detection = result.detection
 
-              setGrid('#show-data-good-pokemon', good_spawns, [
-                  { data: 'id', title: 'Mon-ID' },
-                  { data: 'name', title: 'Mon' },
-                  { data: 'lvl', title: 'Level' },
-                  { data: 'cp', title: 'CP' },
-                  { data: 'periode', title: 'Scantime' }
-              ],
-              [
-                {
-                  "targets": [1],
-                  "render": function (data, type, row) {
-                      return type === "display"
-                          ? `<div class="media"><img class="mr-3" src="${row.img}" width="48" height="48"><div class="media-body">${row.name}</div></div>`
-                          : data;
-                  }
-                }
-              ]);
+                setGrid('#show-data-good-pokemon', good_spawns, [
+                    { data: 'id', title: 'Mon-ID' },
+                    { data: 'name', title: 'Mon' },
+                    { data: 'lvl', title: 'Level' },
+                    { data: 'cp', title: 'CP' },
+                    { data: 'periode', title: 'Scantime' }
+                ], [
+                    {
+                        "targets": [1],
+                        "render": function (data, type, row) {
+                            return type === "display"
+                                ? `<div class="media"><img class="mr-3" src="${row.img}" width="48" height="48"><div class="media-body">${row.name}</div></div>`
+                                : data;
+                        }
+                    }
+                ]);
 
-              $.plot($("#flot_spawn"), [
-                  {
-                      data: spawn.iv,
-                      label: "IV Spawns / Hour"
-                  },
-                  {
-                      data: spawn.noniv,
-                      label: "NonIV Spawns / Hour"
-                  },
-                  {
-                      data: spawn.sum,
-                      label: "Sum Spawns / Hour"
-                  }
-              ], options_dots);
-              $("#flot_spawn").UseTooltip();
+                $.plot($("#flot_spawn"), [
+                    {
+                        data: spawn.iv,
+                        label: "IV Spawns / Hour"
+                    },
+                    {
+                        data: spawn.noniv,
+                        label: "NonIV Spawns / Hour"
+                    },
+                    {
+                        data: spawn.sum,
+                        label: "Sum Spawns / Hour"
+                    }
+                ], options_dots);
+                $("#flot_spawn").UseTooltip();
             },
             complete: function () {
                 $.unblockUI();
@@ -304,30 +300,30 @@
         }
 
         function setGrid(tableGridHtmlId, gridData, columns, defs) {
-        $(tableGridHtmlId).DataTable({
-            "data": gridData,
-            "searching": true,
-            "paging": true,
-            "columns": columns,
-            "ordering": true, "order": [],
-            "columnDefs": defs,
-            "deferRender": true,
-            "responsive": {{ responsive }},
-            "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
-            dom: 'Blfrtip',
-            buttons: [
-                'copy', 'csv', 'excel', 'pdf'
-            ],
-            "stripeClasses": [ 'odd', 'even' ],
-            sorting: true,
-            stateSave: true,
-            stateSaveCallback: function(settings,data) {
-              localStorage.setItem( 'DataTables_' + settings.sInstance, JSON.stringify(data) )
-            },
-            stateLoadCallback: function(settings) {
-              return JSON.parse( localStorage.getItem( 'DataTables_' + settings.sInstance ) )
-            }
-        });
+            $(tableGridHtmlId).DataTable({
+                "data": gridData,
+                "searching": true,
+                "paging": true,
+                "columns": columns,
+                "ordering": true, "order": [],
+                "columnDefs": defs,
+                "deferRender": true,
+                "responsive": {{ responsive }},
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                dom: 'Blfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf'
+                ],
+                "stripeClasses": ['odd', 'even'],
+                sorting: true,
+                stateSave: true,
+                stateSaveCallback: function(settings, data) {
+                    localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data))
+                },
+                stateLoadCallback: function(settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance))
+                }
+            });
 	    }
     });
 </script>
@@ -376,10 +372,22 @@
         font-size: 1.5em;
         margin: 10px;
     }
-    table.dataTable tr.odd { background-color: #F8F8F8; }
-    table.dataTable tr.even { background-color: white; }
-    table.dataTable tr td { vertical-align: middle; }
-    table.dataTable tr td .media-body { margin: auto 0; }
+
+    table.dataTable tr.odd {
+        background-color: #F8F8F8;
+    }
+
+    table.dataTable tr.even {
+        background-color: white;
+    }
+
+    table.dataTable tr td {
+        vertical-align: middle;
+    }
+
+    table.dataTable tr td .media-body {
+        margin: auto 0;
+    }
 </style>
 {% endblock %}
 
@@ -394,7 +402,7 @@
     <a href="statistics_mon?minutes_spawn=480">480</a>
     <a href="statistics_mon?minutes_spawn=1440">1440</a>
     <a href="statistics_mon?minutes_spawn=10080">One Week</a>
-    </div>
+</div>
 <br>
 <div id="legendContainer_spawn"></div>
 <div id="flot_spawn"></div>

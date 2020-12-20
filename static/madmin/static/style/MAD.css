@@ -181,7 +181,7 @@
 }
 
 [data-theme="dark"] .leaflet-draw-toolbar a {
-    background-image: url(/static/leaflet.draw.white.png) !important;
+    background-image: url(/madmin/static/leaflet.draw.white.png) !important;
     background-repeat: no-repeat;
     background-size: auto !important;
 }
@@ -195,7 +195,7 @@
 [data-theme="dark"] .leaflet-popup-content i.fas, .leaflet-popup-content i.fa { color: #333 !important; }
 
 .leaflet-draw-toolbar a {
-    background-image: url(/static/leaflet.draw.png) !important;
+    background-image: url(/madmin/static/leaflet.draw.png) !important;
     background-repeat: no-repeat;
     background-size: auto !important;
 }

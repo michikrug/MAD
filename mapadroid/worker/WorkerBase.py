@@ -437,8 +437,15 @@ class WorkerBase(AbstractWorker):
                 self._add_task_to_loop(self._update_position_file())
                 self._location_count += 1
                 self.logger.debug("Seting new 'scannedlocation' in Database")
+                mode = self._mapping_manager.routemanager_get_mode(self._routemanager_name)
+                if mode == None or mode == "iv_mitm" or mode == "mon_mitm":
+                    radius = 67
+                if mode == "raids_ocr" or mode == "raids_mitm":
+                    radius = 490
+                if mode == "pokestops":
+                    radius = 40
                 self._add_task_to_loop(self.update_scanned_location(
-                    self.current_location.lat, self.current_location.lng, time_snapshot)
+                    self.current_location.lat, self.current_location.lng, time_snapshot, radius)
                 )
 
                 try:
@@ -459,9 +466,9 @@ class WorkerBase(AbstractWorker):
                 outfile.write(str(self.current_location.lat) +
                               ", " + str(self.current_location.lng))
 
-    async def update_scanned_location(self, latitude, longitude, timestamp):
+    async def update_scanned_location(self, latitude, longitude, timestamp, radius):
         try:
-            self._db_wrapper.set_scanned_location(str(latitude), str(longitude))
+            self._db_wrapper.set_scanned_location(str(latitude), str(longitude), radius)
         except Exception as e:
             self.logger.error("Failed updating scanned location: {}", e)
             return
@@ -670,19 +677,28 @@ class WorkerBase(AbstractWorker):
         time.sleep(1)
         if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
             self._worker_specific_setup_stop()
+        self.logger.warning("WorkerBase::_restart_pogo_safe restarting pogo the long way")
+        successful_stop = self._stop_pogo()
+        self._db_wrapper.save_last_restart(self._dev_id)
+        self._restart_count = 0
+        self.logger.debug("restartPogoSafe: stop game resulted in {}", str(successful_stop))
+        if successful_stop:
+            self._communicator.clear_app_cache("com.nianticlabs.pokemongo")
             time.sleep(1)
-        self._communicator.magisk_off()
-        time.sleep(1)
-        self._communicator.magisk_on()
-        time.sleep(1)
-        self._communicator.start_app("com.nianticlabs.pokemongo")
-        time.sleep(25)
-        self._stop_pogo()
-        time.sleep(1)
-        if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
-            self._worker_specific_setup_start()
+            if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+                self._worker_specific_setup_stop()
+                time.sleep(1)
+            self._communicator.magisk_off()
             time.sleep(1)
-        return self._start_pogo()
+            self._communicator.magisk_on()
+            time.sleep(1)
+            if self._applicationArgs.enable_worker_specific_extra_start_stop_handling:
+                self._worker_specific_setup_start()
+                time.sleep(1)
+            return self._start_pogo()
+        else:
+            self.logger.error("Failed restarting PoGo - reboot device")
+            return self._reboot()
 
     def _switch_user(self):
         self.logger.info('Switching User - please wait ...')

@@ -140,7 +140,8 @@ class DbWebhookReader:
             "last_modified, last_updated, incident_start, incident_expiration, incident_grunt_type "
             "FROM pokestop "
             "WHERE last_updated >= %s AND (DATEDIFF(lure_expiration, '1970-01-01 00:00:00') > 0 OR "
-            "incident_start IS NOT NULL)"
+            "incident_start IS NOT NULL) "
+            "ORDER BY last_updated DESC"
         )
         tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self._db_exec.execute(query, (tsdt,))

@@ -16,10 +16,6 @@
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
 <script>
-
-
-
-
     $(function () {
 
         var options_dots = {
@@ -110,11 +106,8 @@
 
         loadingBlockUI("Loading");
 
-        $.ajax({
+        $.getJSON({
             "url": "get_game_stats?minutes_spawn={{ minutes_spawn }}&minutes_usage={{ minutes_usage }}",
-            "type": "GET",
-            "cache": false,
-            "dataType": "json",
             success: function (result) {
                 gym = result.gym
                 usage = result.usage
@@ -129,12 +122,12 @@
                     { data: 'raids', title: 'Raids' },
                     { data: 'quests', title: 'Quests' }
                 ], [
-                {
-                    "targets": [0],
-                    "render": function (data, type, row) {
-                        return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                    {
+                        "targets": [0],
+                        "render": function (data, type, row) {
+                            return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                        }
                     }
-                }
 
                 ]);
 
@@ -145,13 +138,12 @@
                     { data: 'locationsnok', title: 'Locations NOK' },
                     { data: 'ratio', title: 'NOK Ratio' }
                 ], [
-                {
-                    "targets": [0],
-                    "render": function (data, type, row) {
-                        return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                    {
+                        "targets": [0],
+                        "render": function (data, type, row) {
+                            return "<a href=statistics_detection_worker?worker=" + row.worker + ">" + row.worker + "</a>";
+                        }
                     }
-                }
-
                 ]);
 
                 setGrid('#show-data-detection_empty', detection_empty, [
@@ -164,13 +156,12 @@
                     { data: 'lastscan', title: 'Last Scan' },
                     { data: 'countsuccess', title: 'Count Success' },
                 ], [
-                {
-                    "targets": [0],
-                    "render": function (data, type, row) {
-                        return "<a href=map?lat=" + row.lat + "&lng=" + row.lng + " target=_new>[MAP]</a>";
+                    {
+                        "targets": [0],
+                        "render": function (data, type, row) {
+                            return "<a href=map?lat=" + row.lat + "&lng=" + row.lng + " target=_new>[MAP]</a>";
+                        }
                     }
-                }
-
                 ]);
 
                 $.plot($("#flot_usage"), usage,
@@ -181,11 +172,11 @@
                         },
                         xaxis: {
                             mode: "time",
-                            //{% if time == "12" %}
+                            {% if time == "12" %}
                             timeformat: "%d.%m<br>%I:%M %p",
-                            //{% else %}
+                            {% else %}
                             timeformat: "%d.%m<br>%H:%M",
-                            //{% endif %}
+                            {% endif %}
                             tickSize: [3, "hour"],
                             timezone: "browser"
                         },
@@ -217,7 +208,6 @@
                                 min: 1
                             }
                         ],
-
                         legend: {
                             container: $("#legendContainer_usage"),
                             noColumns: 0
@@ -232,7 +222,6 @@
             complete: function () {
                 setTimeout($.unblockUI, 100);
             }
-
         });
 
         var previousPoint = null, previousLabel = null;
@@ -331,36 +320,32 @@
         }
 
         function setGrid(tableGridHtmlId, gridData, columns, defs) {
-        $(tableGridHtmlId).DataTable({
-            "data": gridData,
-            "searching": true,
-            "paging": true,
-            "columns": columns,
-            "ordering": true, "order": [],
-            "columnDefs": defs,
-            "deferRender": true,
-            "responsive": {{ responsive }},
-            "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
-            dom: 'Blfrtip',
-            buttons: [
-                'copy', 'csv', 'excel', 'pdf'
-            ],
-            "stripeClasses": [ 'odd', 'even' ],
-            sorting: true,
-            stateSave: true,
-            stateSaveCallback: function(settings,data) {
-            localStorage.setItem( 'DataTables_' + settings.sInstance, JSON.stringify(data) )
-            },
-            stateLoadCallback: function(settings) {
-            return JSON.parse( localStorage.getItem( 'DataTables_' + settings.sInstance ) )
-            }
-        });
-	    }
-
-
-
+            $(tableGridHtmlId).DataTable({
+                "data": gridData,
+                "searching": true,
+                "paging": true,
+                "columns": columns,
+                "ordering": true, "order": [],
+                "columnDefs": defs,
+                "deferRender": true,
+                "responsive": {{ responsive }},
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                dom: 'Blfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf'
+                ],
+                "stripeClasses": ['odd', 'even'],
+                sorting: true,
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data))
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance))
+                }
+            });
+        }
     });
-
 </script>
 
 <style type="text/css">
@@ -407,11 +392,15 @@
         font-size: 1.5em;
         margin: 10px;
     }
-    table.dataTable tr.odd { background-color: #F8F8F8; }
-    table.dataTable tr.even { background-color: white; }
+
+    table.dataTable tr.odd {
+        background-color: #F8F8F8;
+    }
+
+    table.dataTable tr.even {
+        background-color: white;
+    }
 </style>
-
-
 {% endblock %}
 
 {% block content %}
@@ -428,7 +417,7 @@
     <a href="statistics?minutes_spawn={{ minutes_spawn }}&amp;minutes_usage=480">480</a>
     <a href="statistics?minutes_spawn={{ minutes_spawn }}&amp;minutes_usage=1440">1440</a>
     <a href="statistics?minutes_spawn={{ minutes_spawn }}&amp;minutes_usage=10080">One Week</a>
-    </div>
+</div>
 <div id="legendContainer_usage"></div>
 <div id="flot_usage"></div>
 <br>

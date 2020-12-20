@@ -79,8 +79,7 @@
 	
     $(document).ready(function () {
         $("#navraids").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_raids",
             success: function (result) {
                 setGrid('#show-data', result);

@@ -76,7 +76,7 @@ def parse_args():
                         help='Header Authorization password for MITM /status/ page')
 
     # Walk Settings
-    parser.add_argument('--enable_worker_specific_extra_start_stop_handling', default=False,
+    parser.add_argument('--enable_worker_specific_extra_start_stop_handling', action='store_true', default=False,
                         help='Option to enable/disable extra handling for the start/stop routine of workers. Default: '
                         'False')
     parser.add_argument('-mvd', '--maximum_valid_distance', required=False, type=int, default=50,

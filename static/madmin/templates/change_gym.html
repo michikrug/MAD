@@ -41,14 +41,14 @@
             "responsive": {{ responsive }},
             "autoWidth": true
         });
-	}
+    }
 
     $(document).ready(function () {
         var displayResources = $('#show-data');
         displayResources.text('Loading data ...');
-        $.ajax({
-            type: "GET",
-            url: "near_gym?lat={{ lat }}&lon={{ lon }}",
+        $.getJSON({
+            url: "near_gym",
+            data: { lat: "{{ lat }}", lon: "{{ lon }}" },
             success: function (result) {
                 setGrid('#show-data', result);
             }

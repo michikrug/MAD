@@ -45,9 +45,9 @@
 
     $(document).ready(function () {
         $("#navraids").addClass("active");
-        $.ajax({
-            type: "GET",
-            url: "near_gym?lat={{ lat }}&lon={{ lon }}",
+        $.getJSON({
+            url: "near_gym",
+            data: { lat: "{{ lat }}", lon: "{{ lon }}" },
             success: function (result) {
                 setGrid('#show-data', result);
             }

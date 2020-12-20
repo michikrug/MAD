@@ -80,8 +80,8 @@ class MADminControl(object):
         self.add_route()
 
     @auth_required
-    @nocache
     @logger.catch()
+    @nocache
     def get_phonescreens(self):
         if not os.path.exists(os.path.join(mapadroid.MAD_ROOT, self._args.temp_path, "madmin")):
             os.makedirs(os.path.join(self._args.temp_path, "madmin"))
@@ -153,6 +153,7 @@ class MADminControl(object):
                                title="Device control")
 
     @auth_required
+    @nocache
     def take_screenshot(self, origin=None, adb=False):
         origin = request.args.get('origin')
         useadb = request.args.get('adb', False)
@@ -191,6 +192,7 @@ class MADminControl(object):
         return
 
     @auth_required
+    @nocache
     def click_screenshot(self):
         origin = request.args.get('origin')
         origin_logger = get_origin_logger(self._logger, origin=origin)
@@ -218,6 +220,7 @@ class MADminControl(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def swipe_screenshot(self):
         origin = request.args.get('origin')
         origin_logger = get_origin_logger(self._logger, origin=origin)
@@ -252,6 +255,7 @@ class MADminControl(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def quit_pogo(self):
         origin = request.args.get('origin')
         origin_logger = get_origin_logger(self._logger, origin=origin)
@@ -289,6 +293,7 @@ class MADminControl(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def restart_phone(self):
         origin = request.args.get('origin')
         useadb = True if request.args.get('adb') == 'True' else False
@@ -333,6 +338,7 @@ class MADminControl(object):
             return None
 
     @auth_required
+    @nocache
     def clear_game_data(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
@@ -351,6 +357,7 @@ class MADminControl(object):
         return redirect(url_for('get_phonescreens'), code=302)
 
     @auth_required
+    @nocache
     def send_gps(self):
         origin = request.args.get('origin')
         devicemappings = self._mapping_manager.get_all_devicemappings()
@@ -398,6 +405,7 @@ class MADminControl(object):
         return self.take_screenshot(origin, useadb)
 
     @auth_required
+    @nocache
     def send_command(self):
         origin = request.args.get('origin')
         useadb = request.args.get('adb')
@@ -449,10 +457,12 @@ class MADminControl(object):
         return render_template('upload.html', header="File Upload", title="File Upload")
 
     @auth_required
+    @nocache
     def get_uploaded_files(self):
         return jsonify(uploaded_files(self._datetimeformat, self._device_updater.return_commands()))
 
     @auth_required
+    @nocache
     def uploaded_files(self):
         origin = request.args.get('origin', False)
         useadb = request.args.get('adb', False)
@@ -461,6 +471,7 @@ class MADminControl(object):
                                title="Uploaded Files", origin=origin, adb=useadb)
 
     @auth_required
+    @nocache
     def delete_file(self):
         filename = request.args.get('filename')
         if os.path.exists(os.path.join(self._args.upload_path, filename)):
@@ -470,8 +481,8 @@ class MADminControl(object):
 
     @auth_required
     @logger.catch
+    @nocache
     def install_file(self):
-
         jobname = request.args.get('jobname')
         origin = request.args.get('origin')
         useadb = request.args.get('adb', False)
@@ -506,6 +517,7 @@ class MADminControl(object):
 
     @auth_required
     @logger.catch
+    @nocache
     def get_install_log(self):
         withautojobs = request.args.get('withautojobs', False)
         return_log = []
@@ -519,6 +531,7 @@ class MADminControl(object):
 
     @auth_required
     @logger.catch()
+    @nocache
     def delete_log_entry(self):
         id_ = request.args.get('id')
         if self._device_updater.delete_log_id(id_):
@@ -529,6 +542,7 @@ class MADminControl(object):
 
     @auth_required
     @logger.catch
+    @nocache
     def install_status(self):
         withautojobs = request.args.get('withautojobs', False)
         return render_template('installation_status.html',
@@ -537,6 +551,7 @@ class MADminControl(object):
 
     @auth_required
     @logger.catch()
+    @nocache
     def install_file_all_devices(self):
         jobname = request.args.get('jobname', None)
         job_type = request.args.get('type', None)
@@ -554,6 +569,7 @@ class MADminControl(object):
 
     @auth_required
     @logger.catch()
+    @nocache
     def restart_job(self):
         job_id: int = request.args.get('id', None)
         if job_id is not None:
@@ -566,12 +582,14 @@ class MADminControl(object):
 
     @auth_required
     @logger.catch()
+    @nocache
     def delete_log(self):
         onlysuccess = request.args.get('only_success', False)
         self._device_updater.delete_log(onlysuccess=onlysuccess)
         return redirect(url_for('install_status'), code=302)
 
     @auth_required
+    @nocache
     def get_all_workers(self):
         devices = self._mapping_manager.get_all_devices()
         devicesreturn = []
@@ -581,6 +599,7 @@ class MADminControl(object):
         return jsonify(devicesreturn)
 
     @auth_required
+    @nocache
     def job_for_worker(self):
         jobname = request.args.get('jobname', None)
         job_type = request.args.get('type', None)

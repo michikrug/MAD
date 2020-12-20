@@ -148,7 +148,7 @@ msgstr ""
 
 #: ../mapadroid/utils/questGen.py:203
 #, python-brace-format
-msgid "Use {0} {type}Berries to help catch Pokemon"
+msgid "Use {0} {type} Berries to help catch Pokemon"
 msgstr ""
 
 #: ../mapadroid/utils/questGen.py:208

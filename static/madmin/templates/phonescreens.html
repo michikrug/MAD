@@ -52,7 +52,7 @@
     border-color: lightgray;
   }
 
- .screen {
+  .screen {
     float: left;
     width: 30%;
     border: black 1px;
@@ -65,7 +65,7 @@
     width: 100%;
   }
 
- .phonename {
+  .phonename {
     font-size: large;
     text-align: center;
     background-color: #000;
@@ -142,7 +142,7 @@
     }
 
     .controlButtons .row:last-child .col-md:first-child {
-    border-bottom: 1px solid #CCC;
+      border-bottom: 1px solid #CCC;
     }
 
     .controlButtons .row:last-child .col-md:last-child {
@@ -171,17 +171,17 @@
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script>jQuery.fn.tooltip = _tooltip;</script>
 <script>
-$(document).ready(function() {
+  $(document).ready(function () {
 
-$('body').Aplus();
-$('dialog-confirm').dialog();
+    $('body').Aplus();
+    $('dialog-confirm').dialog();
 
-  $('.date').each(function() {
-    var screendate = $(this).text();
-    $(this).text(moment(screendate).fromNow());
-  })
+    $('.date').each(function () {
+      var screendate = $(this).text();
+      $(this).text(moment(screendate).fromNow());
+    })
 
-  $(".action_screenshot").bind("click", function(event) {
+    $(".action_screenshot").bind("click", function (event) {
       event.preventDefault();
       var origin = $(this).attr("origin");
       var url = $(this).attr("href");
@@ -189,21 +189,21 @@ $('dialog-confirm').dialog();
       $.ajax({
         type: "GET",
         url: url,
-        success: function(data){
-            $('#date' + origin + ' span.date').attr('data-original-title', data).tooltip('hide');
-            $('#date' + origin + ' span.date').text(moment(data).fromNow());
-            $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-            $('div#' + origin).unblock();
+        success: function (data) {
+          $('#date' + origin + ' span.date').attr('data-original-title', data).tooltip('hide');
+          $('#date' + origin + ' span.date').text(moment(data).fromNow());
+          $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+          $('div#' + origin).unblock();
         }
-     });
-   });
+      });
+    });
 
-  $(".action_quit").bind("click", function(event) {
-    event.preventDefault();
-    var origin = $(this).attr("origin");
-    var url = $(this).attr("href");
+    $(".action_quit").bind("click", function (event) {
+      event.preventDefault();
+      var origin = $(this).attr("origin");
+      var url = $(this).attr("href");
 
-    $("#dialog-confirm").dialog({
+      $("#dialog-confirm").dialog({
         draggable: false,
         resizable: false,
         height: "auto",
@@ -212,189 +212,184 @@ $('dialog-confirm').dialog();
         width: "auto",
         modal: true,
         buttons: [
-            {
-                text: "Quit",
-                icon: "ui-icon-power",
-                click: function() {
-                     $(this).dialog("close");
-                  $('div#' + origin).block({ message: '<img src="{{ url_for("static", filename="loading.gif") }}" width="100px"><br><strong>Load...</strong>' });
-                     $.ajax({
-                         type: "GET",
-                         url: url,
-                         success: function(data){
-                             $('#date' + origin).text(data);
-                             $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-                             $('div#' + origin).unblock();
-                         }
-                     });
+          {
+            text: "Quit",
+            icon: "ui-icon-power",
+            click: function () {
+              $(this).dialog("close");
+              $('div#' + origin).block({ message: '<img src="{{ url_for("static", filename="loading.gif") }}" width="100px"><br><strong>Load...</strong>' });
+              $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) {
+                  $('#date' + origin).text(data);
+                  $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+                  $('div#' + origin).unblock();
                 }
-            },
-            {
-                text: "Start/Restart",
-                icon: "ui-icon-refresh",
-                click: function() {
-                    $(this).dialog("close");
-                    url = url + "&restart=1"
-                    $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
-                    $.ajax({
-                        type: "GET",
-                        url: url,
-                        success: function(data){
-                            $('#date' + origin).text(data);
-                            $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-                            $('div#' + origin).unblock();
-                        }
-                    });
-                }
-            },
-            {
-                text: "Cancel",
-                click: function() {
-                    $(this).dialog("close");
-                }
+              });
             }
+          },
+          {
+            text: "Start/Restart",
+            icon: "ui-icon-refresh",
+            click: function () {
+              $(this).dialog("close");
+              url = url + "&restart=1"
+              $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
+              $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) {
+                  $('#date' + origin).text(data);
+                  $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+                  $('div#' + origin).unblock();
+                }
+              });
+            }
+          },
+          {
+            text: "Cancel",
+            click: function () {
+              $(this).dialog("close");
+            }
+          }
         ]
+      });
     });
-  });
 
 
-  $(".backbutton").bind("click", function(event) {
-       event.preventDefault();
-       var origin = $(this).attr("origin");
-       var adb = $(this).attr("adb");
-       var url = $(this).attr("href");
-       $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
-       $.ajax({
-       type: "GET",
-       url: 'send_command?origin=' + origin + '&command=back&adb=' + adb,
-       success: function(data){
-           $('#date' + origin).text(data);
-           $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-           $('div#' + origin).unblock();
-       }
-     });
-   });
+    $(".backbutton").bind("click", function (event) {
+      event.preventDefault();
+      var origin = $(this).attr("origin");
+      var adb = $(this).attr("adb");
+      var url = $(this).attr("href");
+      $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
+      $.ajax({
+        type: "GET",
+        url: 'send_command?origin=' + origin + '&command=back&adb=' + adb,
+        success: function (data) {
+          $('#date' + origin).text(data);
+          $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+          $('div#' + origin).unblock();
+        }
+      });
+    });
 
-  $(".homebutton").bind("click", function(event) {
-       event.preventDefault();
-       var origin = $(this).attr("origin");
-       var adb = $(this).attr("adb");
-       var url = $(this).attr("href");
-       $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
-       $.ajax({
-       type: "GET",
-       url: 'send_command?origin=' + origin + '&command=home&adb=' + adb,
-       success: function(data){
-           $('#date' + origin).text(data);
-           $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-           $('div#' + origin).unblock();
-       }
-     });
-   });
+    $(".homebutton").bind("click", function (event) {
+      event.preventDefault();
+      var origin = $(this).attr("origin");
+      var adb = $(this).attr("adb");
+      var url = $(this).attr("href");
+      $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
+      $.ajax({
+        type: "GET",
+        url: 'send_command?origin=' + origin + '&command=home&adb=' + adb,
+        success: function (data) {
+          $('#date' + origin).text(data);
+          $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+          $('div#' + origin).unblock();
+        }
+      });
+    });
 
-  $(".gpsbutton").bind("click", function(event) {
-       event.preventDefault();
-       var coords = prompt("Enter the coordinates you want to send your device to. The device will continue its normal route afterwards:", "0.0,0.0");
+    $(".gpsbutton").bind("click", function (event) {
+      event.preventDefault();
+      var coords = prompt("Enter the coordinates you want to send your device to. The device will continue its normal route afterwards:", "0.0,0.0");
 
-       if (coords != null) {
-           var sleeptime = prompt("Additional sleeptime after geofix (in seconds)?", "0");
-           if (sleeptime == null || sleeptime == "") { sleeptime = 0 }
-           var origin = $(this).attr("origin");
-           var adb = $(this).attr("adb");
-           var url = $(this).attr("href");
-           $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
-           $.ajax({
-               type: "GET",
-               url: 'send_gps?origin=' + origin + '&coords=' + coords + '&adb=' + adb + '&sleeptime=' + sleeptime,
-               success: function(data){
-                   $('#date' + origin).text(data);
-                   $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-                   $('div#' + origin).unblock();
-               }
-           });
-       };
-   });
+      if (coords != null) {
+        var sleeptime = prompt("Additional sleeptime after geofix (in seconds)?", "0");
+        if (sleeptime == null || sleeptime == "") { sleeptime = 0 }
+        var origin = $(this).attr("origin");
+        var adb = $(this).attr("adb");
+        var url = $(this).attr("href");
+        $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
+        $.ajax({
+          type: "GET",
+          url: 'send_gps?origin=' + origin + '&coords=' + coords + '&adb=' + adb + '&sleeptime=' + sleeptime,
+          success: function (data) {
+            $('#date' + origin).text(data);
+            $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+            $('div#' + origin).unblock();
+          }
+        });
+      };
+    });
 
-  $(".keyboardbutton").bind("click", function(event) {
-       event.preventDefault();
-       var text = prompt("Please enter text:", "");
-       if (text != null) {
-           var origin = $(this).attr("origin");
-           var adb = $(this).attr("adb");
-           var url = $(this).attr("href");
-           $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
-           $.ajax({
-               type: "GET",
-               url: 'send_text?origin=' + origin + '&text=' + text + '&adb=' + adb,
-               success: function(data){
-                   $('#date' + origin).text(data);
-                   $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-                   $('div#' + origin).unblock();
-               }
-           });
-       };
-   });
+    $(".keyboardbutton").bind("click", function (event) {
+      event.preventDefault();
+      var text = prompt("Please enter text:", "");
+      if (text != null) {
+        var origin = $(this).attr("origin");
+        var adb = $(this).attr("adb");
+        var url = $(this).attr("href");
+        $('div#' + origin).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><strong>Load...</strong>' });
+        $.ajax({
+          type: "GET",
+          url: 'send_text?origin=' + origin + '&text=' + text + '&adb=' + adb,
+          success: function (data) {
+            $('#date' + origin).text(data);
+            $('img#' + origin).attr('src', 'screenshot/madmin/screenshot_' + origin + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+            $('div#' + origin).unblock();
+          }
+        });
+      };
+    });
 
-  $(".downloadbutton").bind("click", function(event) {
-       event.preventDefault();
-       var origin = $(this).attr("origin");
-       var img = $('img#' + origin).attr("src").replace("/madmin", "");
-       window.open(img, '_blank');
-  });
+    $(".downloadbutton").bind("click", function (event) {
+      event.preventDefault();
+      var origin = $(this).attr("origin");
+      var img = $('img#' + origin).attr("src").replace("/madmin", "");
+      window.open(img, '_blank');
+    });
 
-
-$(".screenshot").mousedown(function(e){
-  e.preventDefault();
-
-    $(this).data("tracking",true);
-    $(this).data("start",{x:e.offsetX,y:e.offsetY,
-                          xe:e.offsetX,ye:e.offsetY});
-}).mousemove(function(e){
-    if($(this).data("tracking")){
+    $(".screenshot").mousedown(function (e) {
+      e.preventDefault();
+      $(this).data("tracking", true);
+      $(this).data("start", {
+        x: e.offsetX, y: e.offsetY,
+        xe: e.offsetX, ye: e.offsetY
+      });
+    }).mousemove(function (e) {
+      if ($(this).data("tracking")) {
         var start = $(this).data("start");
         var w = Math.abs(e.offsetX);
         var h = Math.abs(e.offsetY);
-        $(this).data("start",{x:start.x,y:start.y,
-                              xe:w, ye:h});
+        $(this).data("start", {
+          x: start.x, y: start.y,
+          xe: w, ye: h
+        });
 
-    }
-}).mouseup(function(e){
-    $(this).data("tracking",false);
-    var start = $(this).data("start");
-    var id = event.target.id;
-    var adb = $(this).attr("adb");
-    var imagex = this.width / (start.x );
-    var imagey = this.height / (start.y);
-    var imagexe = this.width / (start.xe );
-    var imageye = this.height / (start.ye);
-    if (start.x == start.xe && start.y == start.ye) {
-        var url = 'click_screenshot?origin=' + id +'&clickx=' + imagex +'&clicky=' + imagey + '&adb=' + adb
-    } else {
-        var url = 'swipe_screenshot?origin=' + id +'&clickx=' + imagex +'&clicky=' + imagey + '&adb=' + adb + '&clickxe=' + imagexe +'&clickye=' + imageye
-    }
-    $('div#' + id).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><h2>Load...</h2>' });
-       $.ajax({
-       type: "GET",
-       url: url,
-       success: function(data){
-           $('#date' + id).text(data);
-           $('img#' + id).attr('src', 'screenshot/madmin/screenshot_' + id + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
-           $('div#' + id).unblock();
-       }
+      }
+    }).mouseup(function (e) {
+      $(this).data("tracking", false);
+      var start = $(this).data("start");
+      var id = event.target.id;
+      var adb = $(this).attr("adb");
+      var imagex = this.width / (start.x);
+      var imagey = this.height / (start.y);
+      var imagexe = this.width / (start.xe);
+      var imageye = this.height / (start.ye);
+      if (start.x == start.xe && start.y == start.ye) {
+        var url = 'click_screenshot?origin=' + id + '&clickx=' + imagex + '&clicky=' + imagey + '&adb=' + adb
+      } else {
+        var url = 'swipe_screenshot?origin=' + id + '&clickx=' + imagex + '&clicky=' + imagey + '&adb=' + adb + '&clickxe=' + imagexe + '&clickye=' + imageye
+      }
+      $('div#' + id).block({ message: '<img src="{{ url_for('static', filename='loading.gif') }}" width="100px"><br><h2>Load...</h2>' });
+      $.ajax({
+        type: "GET",
+        url: url,
+        success: function (data) {
+          $('#date' + id).text(data);
+          $('img#' + id).attr('src', 'screenshot/madmin/screenshot_' + id + '.jpg?cachebuster=' + Math.round(new Date().getTime() / 1000));
+          $('div#' + id).unblock();
+        }
+      });
     });
-
-
-});
-
   });
-
-
-
 </script>
 {% endblock %}
 
 {% block content %}
-
 <h2>{{header | safe }}</h2>
 <div class="alert alert-info">You can control your devices from here. Clicks and swipes will be sent to the device. After each action, a screenshot will be taken.</div>
 <div id="devicegrid">
@@ -405,5 +400,4 @@ $(".screenshot").mousedown(function(e){
 <div id="dialog-confirm" style="display:none;">
   <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>Quit or Restart game?</p>
 </div>
-
 {% endblock %}

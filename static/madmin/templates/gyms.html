@@ -44,8 +44,7 @@
 
     $(document).ready(function () {
         $("#navgyms").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_gyms",
             success: function (result) {
                 setGrid('#show-data', result);

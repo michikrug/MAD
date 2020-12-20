@@ -64,7 +64,7 @@ msgstr "Fange {0}{different} {type}Pokemon{wb}"
 #: ../mapadroid/utils/questGen.py:237 ../mapadroid/utils/questGen.py:241
 #: ../mapadroid/utils/questGen.py:349 ../mapadroid/utils/questGen.py:353
 msgid "-type "
-msgstr "  "
+msgstr " "
 
 #: ../mapadroid/utils/questGen.py:153 ../mapadroid/utils/questGen.py:170
 #: ../mapadroid/utils/questGen.py:240 ../mapadroid/utils/questGen.py:257
@@ -93,7 +93,7 @@ msgstr "Drehe {0} Pokestops oder Arenen"
 #: ../mapadroid/utils/questGen.py:177
 #, python-brace-format
 msgid "Spin {0} Pokestops you haven't visited before"
-msgstr "Drehe {0} Pokestops die Du noch nicht besucht hast"
+msgstr "Drehe {0} Pokestops, die du noch nicht besucht hast"
 
 #: ../mapadroid/utils/questGen.py:179
 #, python-brace-format
@@ -149,17 +149,17 @@ msgstr "Favorisiere {0} Pokemon"
 
 #: ../mapadroid/utils/questGen.py:203
 #, python-brace-format
-msgid "Use {0} {type}Berries to help catch Pokemon"
-msgstr "Verwende {0} {type} Beeren um ein Pokemon zu fangen"
+msgid "Use {0} {type} Berries to help catch Pokemon"
+msgstr "Benutze {0} {type} Beeren, um ein Pokemon zu fangen"
 
 #: ../mapadroid/utils/questGen.py:208
 msgid " Berry"
-msgstr " Beeren"
+msgstr " Beere"
 
 #: ../mapadroid/utils/questGen.py:210
 #, python-brace-format
 msgid "Power up Pokemon {0} times"
-msgstr "Power up Pokemon {0} mal"
+msgstr "Verwende {0} Power-ups bei Pokemon"
 
 #: ../mapadroid/utils/questGen.py:212
 #, python-brace-format
@@ -201,12 +201,12 @@ msgstr "Curveball"
 #: ../mapadroid/utils/questGen.py:272
 #, python-brace-format
 msgid "Make {0} {type}{curve}Throws{inrow}"
-msgstr "Lande {0} {type}{curve} Würfe {inrow}"
+msgstr "Lande {0} {type}{curve} Würfe{inrow}"
 
 #: ../mapadroid/utils/questGen.py:274
 #, python-brace-format
 msgid "Earn {0} Candies walking with your buddy"
-msgstr "Verdiene {0} Bonbons mit deinem Begleiter"
+msgstr "Verdiene {0} Bonbons mit deinem Kumpel"
 
 #: ../mapadroid/utils/questGen.py:277
 msgid "Make a new friend"

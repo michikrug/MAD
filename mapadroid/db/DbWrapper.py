@@ -120,7 +120,7 @@ class DbWrapper:
                 continue
             elif geofence_helper and not geofence_helper.is_coord_inside_include_geofence([latitude, longitude]):
                 logger.debug3("Excluded hatch at {}, {} since the coordinate is not inside the given include fences",
-                              latitude, longitude)
+                              str(latitude), str(longitude))
                 continue
             timestamp = self.__db_timestring_to_unix_timestamp(str(start))
             data.append((timestamp, Location(latitude, longitude)))
@@ -128,7 +128,7 @@ class DbWrapper:
         logger.debug4("Latest Q: {}", data)
         return data
 
-    def set_scanned_location(self, lat, lng):
+    def set_scanned_location(self, lat, lng, radius=67):
         """
         Update scannedlocation (in RM) of a given lat/lng
         """
@@ -137,13 +137,12 @@ class DbWrapper:
             time.time()).strftime('%Y-%m-%d %H:%M:%S')
         cell_id = int(S2Helper.lat_lng_to_cell_id(float(lat), float(lng), 16))
         query = (
-            "INSERT INTO scannedlocation (cellid, latitude, longitude, last_modified, done, band1, band2, "
-            "band3, band4, band5, midpoint, width) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
-            "ON DUPLICATE KEY UPDATE last_modified=VALUES(last_modified)"
+            "REPLACE INTO scannedlocation (cellid, latitude, longitude, last_modified, done, band1, band2, "
+            "band3, band4, band5, midpoint, width, radius) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         )
         # TODO: think of a better "unique, real number"
-        sql_args = (cell_id, lat, lng, now, -1, -1, -1, -1, -1, -1, -1, 0)
+        sql_args = (cell_id, lat, lng, now, -1, -1, -1, -1, -1, -1, -1, 0, radius)
         self.execute(query, sql_args, commit=True)
 
         return True
@@ -326,23 +325,21 @@ class DbWrapper:
             query_where = query_where + oquery_where
 
         if fence is not None:
-            query_where = query_where + " and ST_CONTAINS(ST_GEOMFROMTEXT( 'POLYGON(( {} ))'), " \
+            query_where = query_where + " AND ST_CONTAINS(ST_GEOMFROMTEXT( 'POLYGON(( {} ))'), " \
                                         "POINT(pokestop.latitude, pokestop.longitude))".format(str(fence))
 
-        res = self.execute(query + query_where)
+        query_order = " ORDER BY trs_quest.quest_timestamp DESC"
+        res = self.execute(query + query_where + query_order)
 
         for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id,
              quest_pokemon_form_id, quest_pokemon_costume_id, quest_reward_type,
              quest_item_id, quest_item_amount, name, image, quest_target, quest_condition,
              quest_timestamp, quest_task, quest_reward, quest_template) in res:
-            mon = "%03d" % quest_pokemon_id
-            form_id = "%02d" % quest_pokemon_form_id
-            costume_id = "%02d" % quest_pokemon_costume_id
             questinfo[pokestop_id] = ({
                 'pokestop_id': pokestop_id, 'latitude': latitude, 'longitude': longitude,
                 'quest_type': quest_type, 'quest_stardust': quest_stardust,
-                'quest_pokemon_id': mon, 'quest_pokemon_form_id': form_id,
-                'quest_pokemon_costume_id': costume_id,
+                'quest_pokemon_id': quest_pokemon_id, 'quest_pokemon_form_id': quest_pokemon_form_id,
+                'quest_pokemon_costume_id': quest_pokemon_costume_id,
                 'quest_reward_type': quest_reward_type, 'quest_item_id': quest_item_id,
                 'quest_item_amount': quest_item_amount, 'name': name, 'image': image,
                 'quest_target': quest_target,
@@ -1323,6 +1320,39 @@ class DbWrapper:
             'val': version
         }
         return self.autoexec_insert('versions', update_data, optype="ON DUPLICATE")
+
+    def get_stops_with_incident(self):
+        query = (
+            "SELECT pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier, "
+            "last_modified, last_updated, incident_start, incident_expiration, incident_grunt_type "
+            "FROM pokestop "
+            "WHERE incident_expiration > %s"
+        )
+
+        now = datetime.utcfromtimestamp(
+            time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        res = self.execute(query, (now, ))
+
+        ret = []
+        for (pokestop_id, latitude, longitude, lure_expiration, name, image, active_fort_modifier,
+                last_modified, last_updated, incident_start, incident_expiration, incident_grunt_type) in res:
+
+            ret.append({
+                'pokestop_id': pokestop_id,
+                'latitude': latitude,
+                'longitude': longitude,
+                'lure_expiration': int(lure_expiration.replace(tzinfo=timezone.utc).timestamp()) if lure_expiration is not None else None,
+                'name': name,
+                'image': image,
+                'active_fort_modifier': active_fort_modifier,
+                "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()) if last_modified is not None else None,
+                "last_updated": int(last_updated.replace(tzinfo=timezone.utc).timestamp()) if last_updated is not None else None,
+                "incident_start": int(incident_start.replace(tzinfo=timezone.utc).timestamp()) if incident_start is not None else None,
+                "incident_expiration": int(incident_expiration.replace(tzinfo=timezone.utc).timestamp()) if incident_expiration is not None else None,
+                "incident_grunt_type": incident_grunt_type
+            })
+
+        return ret
 
 
 def adjust_tz_to_utc(column: str, as_name: str = None) -> str:

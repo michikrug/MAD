@@ -52,8 +52,7 @@
     $(document).ready(function () {
         $('body').Aplus();
         $("#navgyms").addClass("active");
-        $.ajax({
-            type: "GET",
+        $.getJSON({
             url: "get_events",
             success: function (result) {
                 setGrid('#show-data', result);

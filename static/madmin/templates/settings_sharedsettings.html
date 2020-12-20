@@ -11,7 +11,7 @@ $(document).ready(function () {
     $(".delete").click(function() {
         if(confirm('Are you sure you want to delete this resource?')) {
             var elem =  $(this);
-            loadingBlockUI('Deleting a  {{ subtab }}' );
+            loadingBlockUI('Deleting {{ subtab }}' );
             $.ajax({
                 url : '{{ base_uri }}/'+ $(this).data('identifier'),
                 type : 'DELETE',
@@ -30,7 +30,7 @@ $(document).ready(function () {
                         });
                         alert(msg);
                     } else {
-                        alert('Unable to save the {{ subtab }}.  An unknown error occurred');
+                        alert('Unable to save the {{ subtab }}. An unknown error occurred');
                     }
                 }
             });

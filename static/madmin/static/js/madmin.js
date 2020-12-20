@@ -247,7 +247,7 @@ new Vue({
     computed: {
         sortedGeofences() {
             return Object.values(this.layers.dyn.geofences).sort(function (x, y) {
-                return x.name.localeCompare(y.name, "en", {sensitivity: "base"});
+                return x.name.localeCompare(y.name, "en", { sensitivity: "base" });
             });
         }
     },
@@ -339,7 +339,7 @@ new Vue({
             }
         },
         'settings.cellUpdateTimeout': function (newVal) {
-        	this.updateStoredSetting('settings-cellUpdateTimeout', newVal);
+            this.updateStoredSetting('settings-cellUpdateTimeout', newVal);
         },
         'settings.routes.coordinateRadius': {
             deep: true,
@@ -633,9 +633,7 @@ new Vue({
                         weight: 2,
                         opacity: 0.4,
                         pane: layerOrders.routes.pane
-                    })
-                    .bindPopup(this.build_route_popup(route), { className: "routepopup" })
-                    .addTo(group);
+                    }).bindPopup(this.build_route_popup(route), { className: "routepopup" }).addTo(group);
 
                     // add layergroup to management object
                     leaflet_data.routes[name] = group;
@@ -706,9 +704,7 @@ new Vue({
                             fillOpacity: 0.5,
                             pmIgnore: true,
                             pane: layerOrders.routes.pane,
-                        })
-                        .bindPopup(this.build_prioq_popup)
-                        .addTo(group);
+                        }).bindPopup(this.build_prioq_popup).addTo(group);
 
                         linecoords.push([coord.latitude, coord.longitude]);
                     }, this);
@@ -871,8 +867,8 @@ new Vue({
                 return;
             }
 
-            this.mapGuardedFetch("stops", "get_stops" + urlFilter, function(res) {
-                res.data.forEach(function(stop) {
+            this.mapGuardedFetch("stops", "get_stops" + urlFilter, function (res) {
+                res.data.forEach(function (stop) {
                     const id = stop["pokestop_id"];
 
                     if (this.stops[id]) {
@@ -903,14 +899,14 @@ new Vue({
         },
         map_fetch_geofences() {
             this.mapGuardedFetch("geofences", "get_geofences", function (res) {
-                res.data.forEach(function(geofence) {
+                res.data.forEach(function (geofence) {
                     this.mapAddGeofence(geofence, this.getStoredSetting("layers-dyn-geofences-" + geofence.id, false));
                 }, this);
             });
         },
         map_fetch_areas() {
             this.mapGuardedFetch("areas", "get_areas", function (res) {
-                res.data.forEach(function(area) {
+                res.data.forEach(function (area) {
                     const name = area.name;
 
                     if (this.layers.dyn.areas[name]) {
@@ -978,7 +974,7 @@ new Vue({
                         icon: icon,
                         pane: layerOrders.mons.pane,
                         pmIgnore: true
-                    }).bindPopup(this.build_mon_popup, {"className": "monpopup"});
+                    }).bindPopup(this.build_mon_popup, { "className": "monpopup" });
 
                     this.addMouseEventPopup(leaflet_data.mons[id]);
 
@@ -1003,33 +999,33 @@ new Vue({
                 res.data.forEach(function (cell) {
                     const id = cell["id"];
 
-					var noSkip = true;
+                    var noSkip = true;
                     var notTooOld = true;
                     if (this.cellupdates[id]) {
                         if (this.cellupdates[id]["updated"] === cell["updated"]) {
                             noSkip = false;
                         } else {
-                        	map.removeLayer(leaflet_data.cellupdates[id]);
-                        	delete leaflet_data.cellupdates[id];
+                            map.removeLayer(leaflet_data.cellupdates[id]);
+                            delete leaflet_data.cellupdates[id];
                         }
                     }
                     //  86400
-                    if($this.settings.cellUpdateTimeout > 0 && now - cell.updated > $this.settings.cellUpdateTimeout) {
+                    if ($this.settings.cellUpdateTimeout > 0 && now - cell.updated > $this.settings.cellUpdateTimeout) {
                         notTooOld = false;
                     }
 
                     if (noSkip && notTooOld) {
                         $this.cellupdates[id] = cell;
 
-                    	leaflet_data.cellupdates[id] = L.polygon(cell["polygon"], {
+                        leaflet_data.cellupdates[id] = L.polygon(cell["polygon"], {
                             id: id,
                             pane: layerOrders.cells.pane,
                             pmIgnore: true
                         })
-                        .setStyle(this.getCellStyle(now, cell["updated"]))
-                        .bindPopup(this.build_cell_popup, { className: "cellpopup" });
+                            .setStyle(this.getCellStyle(now, cell["updated"]))
+                            .bindPopup(this.build_cell_popup, { className: "cellpopup" });
 
-                    	this.mapAddLayer(leaflet_data.cellupdates[id], layerOrders.cells.bringTo);
+                        this.mapAddLayer(leaflet_data.cellupdates[id], layerOrders.cells.bringTo);
                     }
 
                 }, this);
@@ -1243,7 +1239,7 @@ new Vue({
                 case 7:
                     var costume = '';
                     var asset_bundle = quest_pokemon_asset_bundle_id || '00';
-                    if (quest_pokemon_costume_id != '00') {
+                    if (quest_pokemon_costume_id > 0) {
                         costume = '_' + quest_pokemon_costume_id;
                     }
                     var image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id}${costume}.png`;
@@ -1283,7 +1279,7 @@ new Vue({
                 case 7:
                     var costume = '';
                     var asset_bundle = quest_pokemon_asset_bundle_id || '00';
-                    if (quest_pokemon_costume_id != '00') {
+                    if (quest_pokemon_costume_id > 0) {
                         costume = '_' + quest_pokemon_costume_id;
                     }
                     var image = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id}${costume}.png`;
@@ -1292,7 +1288,7 @@ new Vue({
                     break;
                 case 12:
                     var image = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/rewards/reward_mega_energy.png'
-                    var rewardtext =  `${quest_item_amount} ${quest_item_type} ${quest_pokemon_name}`;
+                    var rewardtext = `${quest_item_amount} ${quest_item_type} ${quest_pokemon_name}`;
                     break;
             }
 
@@ -1566,7 +1562,7 @@ new Vue({
                     <button type="button" class="btn btn-sm btn-outline-secondary map-popup-button-edit"><i class="fas fa-edit"></i> Edit</button>
                   </div>
                   <div class="map-popup-group-saving hidden">
-                    <img src="{{ url_for('static', filename='loading.gif') }}" style="height: 3em" /> Saving...
+                    <img src="${ url_for('static', filename='loading.gif') }" style="height: 3em" /> Saving...
                   </div>
                   <div class="map-popup-group-save hidden">
                     <button type="button" class="btn btn-sm btn-outline-primary map-popup-button-save"><i class="fas fa-save"></i> Save</button>
@@ -1597,11 +1593,11 @@ new Vue({
                 layer.setStyle({ opacity: 1.0 });
                 layer.pm.enable({ snappable: false, allowSelfIntersection: false });
 
-                layer.on("pm:markerdragstart", function() {
+                layer.on("pm:markerdragstart", function () {
                     mouseEventsIgnore.enableIgnore();
                 });
 
-                layer.on("pm:markerdragend", function() {
+                layer.on("pm:markerdragend", function () {
                     mouseEventsIgnore.disableIgnore();
                 });
             }
@@ -1854,8 +1850,7 @@ new Vue({
             this.updateStoredSetting(swLon, bounds.getSouthWest().lng);
         },
         injectLocation() {
-            $.ajax({
-                type: "GET",
+            $.getJSON({
                 url: 'send_gps?origin=' + $('#injectionWorker').val() +
                     '&coords=' + $('#injectLocation').val() +
                     '&sleeptime=' + $('#injectionSleep').val()
@@ -1988,7 +1983,7 @@ new Vue({
 
             // create panes
             let zIndex = 390;
-            const createdPanes = { };
+            const createdPanes = {};
             for (const key in layerOrders) {
                 const paneName = layerOrders[key].pane;
                 if (!paneName || createdPanes[paneName]) {

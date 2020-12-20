@@ -278,7 +278,8 @@ class MITMBase(WorkerBase):
             self._check_for_mad_job()
             if reboot and self._not_injected_count >= injection_thresh_reboot:
                 self.logger.warning("Not injected in time - reboot")
-                self._reboot(self._mitm_mapper)
+                # self._reboot(self._mitm_mapper)
+                self._restart_pogo(mitm_mapper=self._mitm_mapper)
                 return False
             self.logger.info("Didn't receive any data yet. (Retry count: {}/{})", self._not_injected_count,
                              injection_thresh_reboot)
@@ -432,9 +433,12 @@ class MITMBase(WorkerBase):
     def _worker_specific_setup_start(self):
         self.logger.info("Starting pogodroid")
         start_result = self._communicator.start_app("com.mad.pogodroid")
-        time.sleep(5)
+        time.sleep(4)
         # won't work if PogoDroid is repackaged!
         self._communicator.passthrough("am startservice com.mad.pogodroid/.services.HookReceiverService")
+        time.sleep(1)
+        self._communicator.start_app("com.nianticlabs.pokemongo")
+        time.sleep(1)
         return start_result
 
     @staticmethod

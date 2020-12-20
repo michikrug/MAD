@@ -282,6 +282,8 @@ class DbPogoProtoSubmit:
         """
         Update/Insert pokestops from a map_proto dict
         """
+        if origin == 'tvbox4':
+            return True
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::stops called with data received")
         cells = map_proto.get("cells", None)
@@ -314,6 +316,8 @@ class DbPogoProtoSubmit:
         :param stop_proto:
         :return:
         """
+        if origin == 'tvbox4':
+            return True
         logger.debug3("DbPogoProtoSubmit::pokestops_details called")
 
         query_stops = (

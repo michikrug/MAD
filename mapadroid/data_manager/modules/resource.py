@@ -1,10 +1,13 @@
 import copy
 from collections import UserDict
-import mysql
-from ..dm_exceptions import DependencyError, SaveIssue, UnknownIdentifier, UpdateIssue
-from ..resource_search import get_search, SearchType
-from mapadroid.utils.logging import get_logger, LoggerEnums
 
+import mysql
+
+from mapadroid.utils.logging import LoggerEnums, get_logger
+
+from ..dm_exceptions import (DependencyError, SaveIssue, UnknownIdentifier,
+                             UpdateIssue)
+from ..resource_search import SearchType, get_search
 
 logger = get_logger(LoggerEnums.data_manager)
 

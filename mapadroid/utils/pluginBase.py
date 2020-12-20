@@ -1,13 +1,14 @@
-import inspect
-import os
 import base64
-import json
-import pkgutil
 import configparser
+import inspect
+import json
+import os
+import pkgutil
 import zipfile
 
+from flask import Blueprint, flash, redirect, request, send_file, url_for
 from werkzeug.utils import secure_filename
-from flask import Blueprint, request, flash, redirect, url_for, send_file
+
 from mapadroid.madmin.functions import auth_required
 from mapadroid.utils.functions import generate_path
 

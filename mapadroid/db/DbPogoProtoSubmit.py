@@ -316,8 +316,6 @@ class DbPogoProtoSubmit:
         :param stop_proto:
         :return:
         """
-        if origin == 'tvbox4':
-            return True
         logger.debug3("DbPogoProtoSubmit::pokestops_details called")
 
         query_stops = (

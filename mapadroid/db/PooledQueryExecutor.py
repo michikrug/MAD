@@ -99,7 +99,7 @@ class PooledQueryExecutor:
                 args = (args,)
             if sql.count(';') > 1:
                 multi = True
-                for res in conn.cmd_query_iter(sql):
+                for _ in conn.cmd_query_iter(sql):
                     pass
             else:
                 cursor.execute(sql, args)
@@ -288,7 +288,7 @@ class PooledQueryExecutor:
             returned_vals.append(row[0])
         return returned_vals
 
-    def autoexec_delete(self, table, keyvals, literals=[], where_append=[], **kwargs):
+    def autoexec_delete(self, table, keyvals, literals=None, where_append=None, **kwargs):
         """ Performs a delete
         Args:
             table (str): Table to run the query against
@@ -296,6 +296,10 @@ class PooledQueryExecutor:
             literals (list): Datapoints that should not be escaped
             where_append (list): Additional data to append to the query
         """
+        if literals is None:
+            literals = []
+        if where_append is None:
+            where_append = []
         if type(keyvals) is not dict:
             raise Exception("Data must be a dictionary")
         if type(literals) is not list:
@@ -310,7 +314,7 @@ class PooledQueryExecutor:
         query = query % tuple(literal_values)
         self.execute(query, args=tuple(column_values), commit=True, raise_exc=True, **kwargs)
 
-    def autoexec_insert(self, table, keyvals, literals=[], optype="INSERT", **kwargs):
+    def autoexec_insert(self, table, keyvals, literals=None, optype="INSERT", **kwargs):
         """ Auto-inserts into a table and handles all escaping
         Args:
             table (str): Table to run the query against
@@ -323,6 +327,8 @@ class PooledQueryExecutor:
         Returns (int):
             Primary key for the row
         """
+        if literals is None:
+            literals = []
         optype = optype.upper()
         if optype not in ["INSERT", "REPLACE", "INSERT IGNORE", "ON DUPLICATE"]:
             raise ProgrammingError("MySQL operation must be 'INSERT', 'REPLACE', 'INSERT IGNORE', 'ON DUPLICATE',"
@@ -352,7 +358,7 @@ class PooledQueryExecutor:
             column_values += ondupe_values
         return self.execute(query, args=tuple(column_values), commit=True, get_id=True, raise_exc=True, **kwargs)
 
-    def autoexec_update(self, table, set_keyvals, literals=[], where_keyvals={}, where_literals=[], **kwargs):
+    def autoexec_update(self, table, set_keyvals, literals=None, where_keyvals=None, where_literals=None, **kwargs):
         """ Auto-updates into a table and handles all escaping
         Args:
             table (str): Table to run the query against
@@ -361,6 +367,12 @@ class PooledQueryExecutor:
             where_keyvals (dict): Data used in the where clause
             where_literals (list): Datapoints that should not be escaped
         """
+        if literals is None:
+            literals = []
+        if where_keyvals is None:
+            where_keyvals = {}
+        if where_literals is None:
+            where_literals = []
         if type(set_keyvals) is not dict:
             raise Exception("Set Keyvals must be a dictionary")
         if type(literals) is not list:

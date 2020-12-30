@@ -56,5 +56,5 @@ class APKHandler(apiHandler.APIHandler):
             elif flask.request.method == 'POST':
                 data = self.post(apk_type=apk_type, apk_arch=apk_arch)
                 return data
-        except:  # noqa: E722
+        except:  # noqa: E722 B001
             return (None, 404)

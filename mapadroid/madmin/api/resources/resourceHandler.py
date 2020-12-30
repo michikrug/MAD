@@ -98,7 +98,9 @@ class ResourceHandler(apiHandler.APIHandler):
             pass
         return resource
 
-    def get_resource_info_elems(self, config, skip_fields=[]):
+    def get_resource_info_elems(self, config, skip_fields=None):
+        if skip_fields is None:
+            skip_fields = []
         variables = []
         for key, field in config.items():
             if key in skip_fields:

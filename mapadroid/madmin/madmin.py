@@ -113,7 +113,7 @@ class MADmin(object):
             self.control.start_modul()
             self.autoconf.start_modul()
             self._app.run(host=self._args.madmin_ip, port=int(self._args.madmin_port), threaded=True)
-        except:  # noqa: E722
+        except:  # noqa: E722 B001
             logger.opt(exception=True).critical('Unable to load MADmin component')
         logger.info('Finished madmin')
 

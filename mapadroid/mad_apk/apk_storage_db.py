@@ -127,7 +127,7 @@ class APKStorageDatabase(AbstractAPKStorage):
                 self.dbc.autoexec_insert('filestore_chunks', insert_data)
             logger.info('Finished upload of APK')
             return True
-        except:  # noqa: E722
+        except:  # noqa: E722 B001
             logger.opt(exception=True).critical('Unable to upload APK')
         return False
 

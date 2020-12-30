@@ -151,7 +151,7 @@ def get_apk_info(downloaded_file: io.BytesIO) -> Tuple[str, str]:
     package_name: str = None
     try:
         apk = apkutils.APK(downloaded_file)
-    except:  # noqa: E722
+    except:  # noqa: E722 B001
         logger.warning('Unable to parse APK file')
     else:
         manifest = apk.get_manifest()

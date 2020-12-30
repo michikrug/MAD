@@ -224,7 +224,7 @@ class MITMReceiver(Process):
 
     def shutdown(self):
         logger.info("MITMReceiver stop called...")
-        for i in range(self.__application_args.mitmreceiver_data_workers):
+        for _ in range(self.__application_args.mitmreceiver_data_workers):
             self._add_to_queue(None)
 
     def run(self):

@@ -46,7 +46,7 @@ class RouteCalc(Resource):
             table_sql = sql % (table,)
             try:
                 area_dependencies = self._dbc.autofetch_column(table_sql, args=(self.identifier))
-                for ind, area_id in enumerate(area_dependencies[:]):
+                for _, area_id in enumerate(area_dependencies[:]):
                     dependencies.append(('area', area_id))
             except TypeError:
                 pass
@@ -61,8 +61,10 @@ class RouteCalc(Resource):
         self._data['fields']['routefile'] = json.loads(data['routefile'])
         self.recalc_status = data['recalc_status']
 
-    def save(self, force_insert: Optional[bool] = False, ignore_issues: Optional[List[str]] = [],
+    def save(self, force_insert: Optional[bool] = False, ignore_issues: Optional[List[str]] = None,
              update_time: bool = False) -> int:
+        if ignore_issues is None:
+            ignore_issues = []
         self.presave_validation(ignore_issues=ignore_issues)
         literals = []
         core_data = self.get_resource()

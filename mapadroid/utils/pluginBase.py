@@ -203,7 +203,7 @@ class PluginCollection(object):
                 with open(os.path.join(extractpath, "plugin.ini.example"), 'w') as pluginini:
                     pluginini.write('[plugin]\n')
                     pluginini.write('active = false\n')
-        except:  # noqa: E722
+        except:  # noqa: E722 B001
             self._logger.opt(exception=True).error("Cannot install new plugin: " + str(mpl_file))
             return False
 

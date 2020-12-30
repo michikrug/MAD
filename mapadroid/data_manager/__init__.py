@@ -65,9 +65,10 @@ class DataManager(object):
         if section == 'area':
             return modules.area_factory(self, identifier=identifier)
         try:
-            return modules.MAPPINGS[section](self, identifier=identifier)
+            class_def = modules.MAPPINGS[section]
         except KeyError:
             raise InvalidSection()
+        return class_def(self, identifier=identifier)
 
     def get_resource_def(self, section: str, **kwargs) -> Resource:
         mode = kwargs.get('mode', None)

@@ -27,7 +27,7 @@ class Patch(PatchBase):
             # conversion is re-run.  We do not want dupe data in the database
             cache = {}
             for section in update_order:
-                for elem_id, elem in config_file[section]['entries'].items():
+                for elem in config_file[section]['entries'].values():
                     if section == 'areas':
                         try:
                             if int(elem['settings']['mon_ids_iv']) == 0:

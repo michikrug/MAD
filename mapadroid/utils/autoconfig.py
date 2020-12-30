@@ -236,7 +236,7 @@ class AutoConfigCreator:
         processed = []
         missing: List[str] = []
         invalid: List[str] = []
-        for section, sect_conf in self.sections.items():
+        for sect_conf in self.sections.values():
             for key, elem in sect_conf.items():
                 processed.append(key)
                 if elem['required'] and key not in user_vals:

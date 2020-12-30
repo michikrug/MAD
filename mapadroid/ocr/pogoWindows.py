@@ -103,8 +103,7 @@ class PogoWindows:
             # convert the (x, y) coordinates and radius of the circles to integers
             circles = np.round(circles[0, :]).astype("int")
             # loop over the (x, y) coordinates and radius of the circles
-            for (pos_x, pos_y, radius) in circles:
-
+            for (pos_x, pos_y, _) in circles:
                 if not xcord:
                     circle += 1
                     if click:
@@ -485,7 +484,7 @@ class PogoWindows:
                                    maxRadius=radius_max)
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
-            for (pos_x, pos_y, radius) in circles:
+            for (pos_x, _, _) in circles:
                 if pos_x < width_ - width_ / 3:
                     mainscreen += 1
 

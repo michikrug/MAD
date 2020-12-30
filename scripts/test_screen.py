@@ -8,8 +8,9 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
-sys.path.append("..")
 from mapadroid.utils.resolution import Resocalculator
+
+sys.path.append("..")
 
 
 class testimage(object):
@@ -81,8 +82,8 @@ class testimage(object):
     def open_close_menu(self, image):
         print('Open Close Menu')
         x, y = self._resocalc.get_close_main_button_coords(self)[0], \
-               self._resocalc.get_close_main_button_coords(self)[
-                   1]
+            self._resocalc.get_close_main_button_coords(self)[
+            1]
         return cv2.circle(image, (int(x), int(y)), 20, (0, 0, 255), -1)
 
     def check_menu(self, image):
@@ -149,7 +150,7 @@ class testimage(object):
         print('Check Pokeball Mainscreen')
         height, width, _ = image.shape
         image = image[int(height) - int(round(height / 4.5)):int(height),
-                0: round(int(width) / 2)]
+                      0: round(int(width) / 2)]
         output = image.copy()
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         radMin = int((width / float(7.5) - 3) / 2)
@@ -196,7 +197,7 @@ class testimage(object):
 
         height, width, _ = image.shape
         gray = image[int(height) - int(round(height / 6)):int(height),
-               0: int(int(width) / 3)]
+                     0: int(int(width) / 3)]
         original = gray
         height_, width_, _ = gray.shape
         radMin = int((width / float(6.8) - 3) / 2)
@@ -215,7 +216,7 @@ class testimage(object):
                     cv2.circle(original, (x, y), r, (0, 255, 0), 4)
                     mainscreen += 1
                     raidhash = original[y - r - 1:y +
-                                                  r + 1, x - r - 1:x + r + 1]
+                                        r + 1, x - r - 1:x + r + 1]
                     cv2.imshow("output", np.hstack([raidhash]))
                     cv2.waitKey(0)
 

@@ -63,7 +63,7 @@ class GeoFence(Resource):
                 table_sql = sql % (table, column,)
                 try:
                     area_dependencies = self._dbc.autofetch_column(table_sql, args=(self.identifier))
-                    for ind, area_id in enumerate(area_dependencies[:]):
+                    for _, area_id in enumerate(area_dependencies[:]):
                         dependencies.append(('area', area_id))
                 except TypeError:
                     pass
@@ -79,7 +79,9 @@ class GeoFence(Resource):
         self._data['fields']['fence_type'] = data['fence_type']
         self._data['fields']['fence_data'] = json.loads(data['fence_data'])
 
-    def save(self, force_insert: Optional[bool] = False, ignore_issues: Optional[List[str]] = []) -> int:
+    def save(self, force_insert: Optional[bool] = False, ignore_issues: Optional[List[str]] = None) -> int:
+        if ignore_issues is None:
+            ignore_issues = []
         self.presave_validation(ignore_issues=ignore_issues)
         core_data = self.get_resource()
         core_data['fence_data'] = json.dumps(self._data['fields']['fence_data'])

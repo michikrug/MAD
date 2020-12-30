@@ -303,7 +303,7 @@ class MADminMap:
 
         mons_raw = {}
 
-        for index, mon in enumerate(data):
+        for index, _ in enumerate(data):
             try:
                 mon_id = data[index]["mon_id"]
                 if str(mon_id) in mons_raw:

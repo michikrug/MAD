@@ -45,7 +45,10 @@ MAD_UPDATES = OrderedDict([
     (36, 'pokemon_iv_index'),
     (37, 'move_ptc_accounts'),
     (38, 'remove_hatch_delay'),
-    (39, 'extend_trs_quest_pogodroid_190')
+    (39, 'extend_trs_quest_pogodroid_190'),
+    (40, 'add_is_ar_scan_eligible'),
+    (41, 'dynamic_iv_list'),
+    (42, 'add_encounter_all')
 ])
 
 

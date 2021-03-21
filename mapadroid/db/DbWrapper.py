@@ -878,7 +878,7 @@ class DbWrapper:
         res = self.execute(query)
 
         for (spawnid, ) in res:
-            spawn.append(spawnid)
+            spawn.append(str(spawnid))
 
         return spawn
 

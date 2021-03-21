@@ -352,8 +352,6 @@ class DbPogoProtoSubmit:
         return True
 
     def stop_details(self, stop_proto: dict):
-        if origin == 'tvbox5':
-            return True
         """
         Update/Insert pokestop details from a GMO
         :param stop_proto:

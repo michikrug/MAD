@@ -32,8 +32,6 @@ class DbPogoProtoSubmit:
         """
         Update/Insert mons from a map_proto dict
         """
-        if origin == 'tvbox5':
-            return True
         cache = get_cache(self._args)
 
         origin_logger = get_origin_logger(logger, origin=origin)
@@ -109,8 +107,6 @@ class DbPogoProtoSubmit:
         return True
 
     def mon_iv(self, origin: str, timestamp: float, encounter_proto: dict, mitm_mapper):
-        if origin == 'tvbox5':
-            return True
         """
         Update/Insert a mon with IVs
         """
@@ -223,8 +219,6 @@ class DbPogoProtoSubmit:
         return True
 
     def spawnpoints(self, origin: str, map_proto: dict, proto_dt: datetime):
-        if origin == 'tvbox5':
-            return True
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::spawnpoints called with data received")
         cells = map_proto.get("cells", None)
@@ -312,8 +306,6 @@ class DbPogoProtoSubmit:
                                   spawnpoint_args_unseen, commit=True)
 
     def stops(self, origin: str, map_proto: dict):
-        if origin == 'tvbox5':
-            return True
         """
         Update/Insert pokestops from a map_proto dict
         """
@@ -380,8 +372,6 @@ class DbPogoProtoSubmit:
         return True
 
     def quest(self, origin: str, quest_proto: dict, mitm_mapper):
-        if origin == 'tvbox5':
-            return True
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::quest called")
         fort_id = quest_proto.get("fort_id", None)
@@ -449,8 +439,6 @@ class DbPogoProtoSubmit:
         return True
 
     def gyms(self, origin: str, map_proto: dict):
-        if origin == 'tvbox5':
-            return True
         """
         Update/Insert gyms from a map_proto dict
         """
@@ -525,8 +513,6 @@ class DbPogoProtoSubmit:
         return True
 
     def gym(self, origin: str, map_proto: dict):
-        if origin == 'tvbox5':
-            return True
         """
         Update gyms from a map_proto dict
         """
@@ -569,8 +555,6 @@ class DbPogoProtoSubmit:
         return True
 
     def raids(self, origin: str, map_proto: dict, mitm_mapper):
-        if origin == 'tvbox5':
-            return True
         """
         Update/Insert raids from a map_proto dict
         """
@@ -665,8 +649,6 @@ class DbPogoProtoSubmit:
         return True
 
     def weather(self, origin, map_proto, received_timestamp):
-        if origin == 'tvbox5':
-            return True
         """
         Update/Insert weather from a map_proto dict
         """

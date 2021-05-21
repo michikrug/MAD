@@ -194,7 +194,7 @@ def questtask(typeid, condition, target, quest_template):
                     arr['different'] = _(' purified')
     elif typeid == 5:
         if '"type": 12' in condition:
-            text = _('Spin {0} Pokestops you haven't visited before')
+            text = _('Spin {0} Pokestops you haven\'t visited before')
         else:
             text = _('Spin {0} Pokestops or Gyms')
     elif typeid == 6:

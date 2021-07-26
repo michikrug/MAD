@@ -110,7 +110,6 @@ def generate_quest(quest):
     })
     return quest_raw
 
-
 def questreward(quest_reward_type):
     return quest_rewards.get(quest_reward_type, 'nothing')
 

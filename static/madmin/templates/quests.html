@@ -116,10 +116,10 @@
             case 7:
                 let costume = ''
                 if (quest_pokemon_costume_id > 0) {
-                    costume = `_${quest_pokemon_costume_id}`
+                    costume = `_${String.prototype.padStart.call(quest_pokemon_costume_id, 2, 0)}`
                 }
                 const iconBasePath = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/no_border'
-                const url = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${quest_pokemon_form_id}${costume}.png`;
+                const url = `${iconBasePath}/pokemon_icon_${String.prototype.padStart.call(quest_pokemon_id, 3, 0)}_${String.prototype.padStart.call(quest_pokemon_form_id, 2, 0)}${costume}.png`;
                 return `<img class="mr-3" src="${url}" width="50">`;
             case 12:
                 return `<img class="mr-3" src="https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/rewards/reward_mega_energy.png" width="50">`;

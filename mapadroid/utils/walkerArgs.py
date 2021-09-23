@@ -70,6 +70,9 @@ def parse_args():
                         help='Port to listen on for proto data (MITM data). Default: 8000')
     parser.add_argument('-mrdw', '--mitmreceiver_data_workers', type=int, default=2,
                         help='Amount of workers to work off the data that queues up. Default: 2')
+    parser.add_argument('-miptt', '--mitm_ignore_proc_time_thresh', type=int, default=0,
+                        help='Ignore MITM data having a timestamp too far in the past.'
+                             'Specify in seconds. Default: 0 (off)')
     parser.add_argument('-mipb', '--mitm_ignore_pre_boot', default=False, type=bool,
                         help='Ignore MITM data having a timestamp pre MAD\'s startup time')
     parser.add_argument('-mspass', '--mitm_status_password', default='',
@@ -106,6 +109,16 @@ def parse_args():
                         help='Only calculate routes, then exit the program. No scanning.')
     parser.add_argument('-cm', '--config_mode', action='store_true', default=False,
                         help='Run in ConfigMode')
+    parser.add_argument('-nm', '--scan_nearby_mons', action='store_true', default=False,
+                        help='Enable scanning of nearby mons')
+    parser.add_argument('-dnc', '--disable_nearby_cell', action='store_true', default=False,
+                        help='Disables nearby_cell scans if scan_nearby_mons is enabled')
+    parser.add_argument('-lm', '--scan_lured_mons', action='store_true', default=False,
+                        help='Enable scanning of lured mons')
+    parser.add_argument('-dnt', '--default_nearby_timeleft', type=int, default=15,
+                        help='The default despawn time left in minutes for Nearby Mons. Default: 15')
+    parser.add_argument('-dut', '--default_unknown_timeleft', type=int, default=3,
+                        help='The default despawn time left in minutes for Mons at unknown Spawnpoints. Default: 3')
     parser.add_argument("-sn", "--status-name", default="mad",
                         help=("Enable status page database update using"
                               " STATUS_NAME as main worker name."))
@@ -138,7 +151,9 @@ def parse_args():
                         help=('Set Lng from the center of your scan location.'
                               'Especially for using MADBOT (User submitted Raidscreens). Default: 0.0'))
     parser.add_argument('-L', '--language', default='en',
-                        help=('Set Language for MadMin / Quests. Default: en'))
+                        help='Set Language for MadMin / Quests. Default: en')
+    parser.add_argument('--no_quest_titles', default=False, action='store_true',
+                        help='Do not download quest title resources')
 
     # MADmin
     parser.add_argument('-dm', '--disable_madmin', action='store_true', default=False,
@@ -205,8 +220,6 @@ def parse_args():
     parser.add_argument('-whea', '--webhook_excluded_areas', default="",
                         help='Comma-separated list of area names to exclude elements from within to be sent to a '
                              'webhook')
-    parser.add_argument('-pwhn', '--pokemon_webhook_nonivs', action='store_true', default=False,
-                        help='Send non-IVd pokemon even if they are on Global Mon List')
     parser.add_argument('-qwhf', '--quest_webhook_flavor', choices=['default', 'poracle'], default='default',
                         help='Webhook format for Quests: default or poracle compatible')
     parser.add_argument('-whst', '--webhook_start_time', default=0,
@@ -265,6 +278,8 @@ def parse_args():
     parser.add_argument('-gp', '--gmail_passwd', default='',
                         help='Google Mail Password for interacting with the Google Play Store.  Must be an app'
                         ' password or 2fa will be triggered (this should be enabled on your account anyways')
+    parser.add_argument('-mat', '--maddev_api_token', default=None,
+                        help='MADdev API token used for querying supported versions')
 
     # Auto-Configuration
     parser.add_argument('-acna', '--autoconfig_no_auth', action='store_true', default=False,

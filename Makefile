@@ -47,7 +47,7 @@ ifdef OS
     pip := $(shell Get-Command pip | Select-Object -ExpandProperty Source)
     precommit := $(shell Get-Command pre-commit | Select-Object -ExpandProperty Source)
     docker := $(shell Get-Command docker | Select-Object -ExpandProperty Source)
-    docker_compose := $(shell Get-Command docker-compose -f ${COMPOSE_FILE_DEV} | Select-Object -ExpandProperty Source)
+    docker_compose := $(shell (Get-Command docker-compose | Select-Object -ExpandProperty Source) -f ${COMPOSE_FILE_DEV})
     UID ?= 1000
     GID ?= 1000
 else
@@ -97,11 +97,11 @@ clean-tox:
 	rm -rf .tox
 
 build:
-	docker build --file docker/Dockerfile --tag ${LOCAL_MAD_IMAGE} .
+	docker build --file Dockerfile --tag ${LOCAL_MAD_IMAGE} .
 	docker-compose -f ${COMPOSE_FILE_DEV} build --no-cache
 
 rebuild:
-	docker build --file docker/Dockerfile --tag ${LOCAL_MAD_IMAGE} .
+	docker build --file Dockerfile --tag ${LOCAL_MAD_IMAGE} .
 	docker-compose -f ${COMPOSE_FILE_DEV} build
 
 setup-precommit:
@@ -123,7 +123,7 @@ root-shell: up
 	docker-compose -f ${COMPOSE_FILE_DEV} exec -u root $(CONTAINER_NAME) $(CMD)
 
 run: down
-	docker-compose -f ${COMPOSE_FILE_TEST} up
+	docker-compose -f ${COMPOSE_FILE_PERSISTENT} up
 
 down:
 	docker-compose -f ${COMPOSE_FILE_DEV} down
@@ -134,6 +134,9 @@ tests: up
 
 unittests: up
 	docker-compose -f ${COMPOSE_FILE_DEV} exec mapadroid-dev tox -e py37
+
+test: up
+	docker-compose -f ${COMPOSE_FILE_TEST} run mapadroid-dev
 
 # Run bash within a defined tox environment
 # Specify a valid tox environment as such:

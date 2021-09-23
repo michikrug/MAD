@@ -3,13 +3,11 @@
 # Please ensure to leave a space after the colon if a value is needed ("example-setting" "example-setting-with: value")
 # When your configuration is done, rename this file by removing the ".example" extension
 # A different config-files can be included directly in processes by "--config" or "-cf" and path
-# Value without # are needed for this script
 
 # MySQL Settings
 ######################
 # You really need to fill those. Most of the times you want to have frontend (RM/PMSF) already installed before running MAD.
 # You need to have MySQL Database and User/Grants already created!
-# If you just need clean schema take a look at scripts/SQL/rocketmap.sql
 #dbip:                      # IP or hostname of MySql Server
 #dbport:                    # Port of the database (Default: 3306)
 #dbusername:                # Username for MySQL login
@@ -37,7 +35,7 @@
 # Walk Settings
 ######################
 #enable_worker_specific_extra_start_stop_handling # Option to enable/disable extra handling for the start/stop routine of workers. Default: False
-#maximum_valid_distance       # The maximum distance for a scan of a location to be considered a valid/correct scan of that location in meters. Default: 50m
+#maximum_valid_distance:      # The maximum distance for a scan of a location to be considered a valid/correct scan of that location in meters. Default: 50m
 
 
 # Job Processor
@@ -52,9 +50,14 @@
 # Runtypes
 ######################
 #only_scan                    # Use this instance only for scanning. Default: True
-#ocr_thread_count             # Amount of threads/processes to be used for screenshot-analysis. Default: 2
+#ocr_thread_count:            # Amount of threads/processes to be used for screenshot-analysis. Default: 2
 #only_routes                  # Only calculate routes, then exit the program. No scanning. Default: False
 #config_mode                  # Run in ConfigMode. Default: False
+#scan_nearby_mons             # Enable scanning of nearby mons - Please make sure you know how this works before turning it on!
+#disable_nearby_cell          # Disables nearby_cell scans if scan_nearby_mons is enabled
+#scan_lured_mons              # Enable scanning of lured mons
+#default_nearby_timeleft:     # The default despawn time left in minutes for Nearby Mons. Default: 15
+#default_unknown_timeleft:    # The default despawn time left in minutes for Mons at unknown Spawnpoints. Default: 3
 #status-name:                 # Setup name for this instance - if not set: PID of the process will be used
 #no_event_checker             # Disable event checker task
 
@@ -64,7 +67,6 @@
 #temp_path:                  # Path for generated files while detecting raids (Default: temp/)
 #upload_path:                # Path for uploaded Files via madmin and for device installation. (Default: upload/)
 #file_path:                  # Defines directory to save worker stats- and position files and calculated routes (Default: files/)
-#mappings:                   # optional: defines the path of the mappings file (Default: configs/mappings.json)
 
 
 # other settings
@@ -73,17 +75,17 @@
 #home_lat:                   # Center Lat of your scan location (Default: 0.0)
 #home_lng:                   # Center Lng of your scan location (Default: 0.0)
 #language:                   # Language for several things like quests or mon names in the IV list (default:en - others: de, fr )
+#no_quest_titles             # Do not fetch quest title resources from pokeminers. Will instead use internal parsing
 
 
 # MADmin
 ######################
+#madmin_user:                # PLEASE SET. MADmin username for login
+#madmin_password:            # PLEASE SET. MADmin password for login
 #disable_madmin              # Disable Madmin on the instance
-#madmin_base_path            # Base path for madmin
+#madmin_base_path:           # Base path for madmin
 #madmin_ip:                  # MADmin listening interface (Default: 0.0.0.0)
 #madmin_port:                # Highly recommended to change. MADmin web port (Default: 5000)
-#madmin_user:                # MADmin username for login
-#madmin_password:            # MADmin password for login
-#madmin_sort:                # MADmin sort column Raid/Gym (5= Modify / 6 = Create) (Default: 6)
 #madmin_time:                # MADmin clock format (12/24) (Default: 24)
 #madmin_noresponsive         # MADmin deactivate responsive tables
 #quests_public               # Enables MADmin /quests_pub, /get_quests, and pushassets endpoints for public quests overview
@@ -102,7 +104,7 @@
 ######################
 #game_stats                  # Generate worker stats
 #game_stats_raw              # Generate worker raw stats (only with --game_stats)')
-#game_stats_save_time        # Number of seconds until worker information is saved to database (Default: 300)
+#game_stats_save_time:       # Number of seconds until worker information is saved to database (Default: 300)
 #raw_delete_shiny:           # Delete shiny mon in raw stats older then x days (0 =  Disable (Default))
 
 
@@ -118,14 +120,13 @@
 #webhook                     # Activate support for webhook
 #webhook_url:                # webhook endpoint (multiple seperated by comma)
                              #  use [<type>] in front of the url, if you want to split data between multiple endpoints. Ex: [pokemon]http://foo.com,[raid]http://bar.com
-                             #  possible types are: pokemon, raid, gym, weather, pokestop, quest
+                             #  possible types are: raid, gym, weather, pokestop, quest
+                             #  different pokemon types: encounter, wild, nearby_stop, nearby_cell, lure_encounter, lure_wild
 #webhook_submit_exraids      # Send Ex-raids to the webhook if detected
-#webhook_excluded_areas      # Comma-separated list of area names to exclude elements from within an area to be sent to a webhook.
-#pokemon_webhook_nonivs      # By default MAD will not send mons without IV checked if they are on ANY Global Mon List. Enable this to have them (sometimes) send twice
-                             # once without IV, once with IV. Make sure your webhook reciever can work with the same encounter send twice [e.g. PokeAlarm needs dev branch]
+#webhook_excluded_areas:     # Comma-separated list of area names to exclude elements from within an area to be sent to a webhook.
 #quest_webhook_flavor:       # Mode for quest webhooks (default or poracle)
-#webhook_start_time          # Debug: Set initial timestamp to fetch changed elements from the DB to send via WH.
-#webhook_max_payload_size    # Split up the payload into chunks and send multiple requests. Default: 0 (unlimited)
+#webhook_start_time:         # Debug: Set initial timestamp to fetch changed elements from the DB to send via WH.
+#webhook_max_payload_size:   # Split up the payload into chunks and send multiple requests. Default: 0 (unlimited)
 
 
 # Dynamic Rarity
@@ -144,17 +145,16 @@
                              #  at 12:00' or a maximum file size like '100 MB' or '0.5 GB'. Set to '0' to disable completely. (Default: 50 MB)
 #log_level:                  # Forces a certain log level. By default by the -v command to show DEBUG logs.
                              # Custom log levels like DEBUG[1-5] can be used too
-#log_file_level              # File logging level. See description for --log_level.
-#log_file_retention          # mount of days to keep file logs. Set to 0 to keep them forever (Default: 10)
+#log_file_level:             # File logging level. See description for --log_level.
+#log_file_retention:         # Amount of days to keep file logs. Set to 0 to keep them forever (Default: 10)
 #no_log_colors               # Disable colored logs.
 
 
-# MADAPKs
+# MADAPKs wizard
 ######################
+#maddev_api_token:          # Token used by the wizard to query supported versions. You can find it as 'API token' on first page after logging into MADdev auth backend (not device/account password).
 #token_dispenser:           # Path to token dispenser config (MAD-provided)
 #token_dispenser_user:      # Path to token dispenser config (User-provided)
-#gmail_user:                # Email address if not using a token dispenser
-#gmail_passwd:              # Google Mail Password for interacting with the Google Play Store.  Must be an app password or 2fa will be triggered (this should be enabled on your account anyways')
 
 
 # Auto-Config
@@ -165,6 +165,6 @@
 # Redis caching
 ######################
 #enable_cache          # Enable cache (backed by Redis) to prevent re-inserting data over and over again
-#cache_host            # Redis cache host (Default: localhost)
-#cache_port            # Redis cache port (Default: 6379)
-#cache_database        # Redis database. Use different numbers (0-15) if you are running multiple instances.
+#cache_host:           # Redis cache host (Default: localhost)
+#cache_port:           # Redis cache port (Default: 6379)
+#cache_database:       # Redis database. Use different numbers (0-15) if you are running multiple instances.

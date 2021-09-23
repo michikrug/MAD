@@ -242,6 +242,11 @@
         <div class="alert alert-primary">
             This section allows you to easily manage the required APKs for running MAD.
         </div>
+        {% if not has_token %}
+        <div class="alert alert-warning">
+            The MADdev API token (maddev_api_token) has not been configured in config.ini. Please configure this to use the wizard for downloading PokemonGo.
+        </div>
+        {% endif %}
     </div>
 </div>
 {% with messages = get_flashed_messages() %}

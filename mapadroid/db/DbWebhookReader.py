@@ -102,7 +102,7 @@ class DbWebhookReader:
         query = (
             "SELECT name, description, url, gym.gym_id, team_id, guard_pokemon_id, slots_available, "
             "latitude, longitude, total_cp, is_in_battle, weather_boosted_condition, "
-            "last_modified, gym.last_scanned, gym.is_ex_raid_eligible "
+            "last_modified, gym.last_scanned, gym.is_ex_raid_eligible, gym.is_ar_scan_eligible "
             "FROM gym "
             "LEFT JOIN gymdetails ON gym.gym_id = gymdetails.gym_id "
             "WHERE gym.last_scanned >= %s"
@@ -113,7 +113,7 @@ class DbWebhookReader:
         ret = []
         for (name, description, url, gym_id, team_id, guard_pokemon_id, slots_available,
              latitude, longitude, total_cp, is_in_battle, weather_boosted_condition,
-             last_modified, last_scanned, is_ex_raid_eligible) in res:
+             last_modified, last_scanned, is_ex_raid_eligible, is_ar_scan_eligible) in res:
             ret.append({
                 "gym_id": gym_id,
                 "team_id": team_id,
@@ -129,7 +129,8 @@ class DbWebhookReader:
                 "name": name,
                 "url": url,
                 "description": description,
-                "is_ex_raid_eligible": is_ex_raid_eligible
+                "is_ex_raid_eligible": is_ex_raid_eligible,
+                "is_ar_scan_eligible": is_ar_scan_eligible
             })
         return ret
 
@@ -169,18 +170,44 @@ class DbWebhookReader:
             })
         return ret
 
-    def get_mon_changed_since(self, timestamp):
+    def get_mon_changed_since(self, timestamp, mon_types=None):
         logger.debug2("DbWebhookReader::get_mon_changed_since called")
+        if mon_types is None:
+            mon_types = {"encounter", "lure_encounter"}
         query = (
-            "SELECT encounter_id, spawnpoint_id, pokemon_id, pokemon.latitude, pokemon.longitude, "
+            "SELECT pokemon.encounter_id, spawnpoint_id, pokemon_id, pokemon.latitude, pokemon.longitude, "
             "disappear_time, individual_attack, individual_defense, individual_stamina, "
-            "move_1, move_2, cp, cp_multiplier, weight, height, gender, form, costume, "
-            "weather_boosted_condition, last_modified, catch_prob_1, catch_prob_2, catch_prob_3, "
-            "(trs_spawn.calc_endminsec IS NOT NULL) AS verified "
+            "move_1, move_2, cp, cp_multiplier, weight, height, pokemon.gender, pokemon.form, pokemon.costume, "
+            "weather_boosted_condition, pokemon.last_modified, catch_prob_1, catch_prob_2, catch_prob_3, "
+            "(trs_spawn.calc_endminsec IS NOT NULL) AS verified, seen_type, "
+            "pokemon_display.pokemon as display_pokemon, "
+            "pokemon_display.form as display_form, "
+            "pokemon_display.costume as display_costume, "
+            "pokemon_display.gender as display_gender, "
+            "{}"
             "FROM pokemon "
-            "INNER JOIN trs_spawn ON pokemon.spawnpoint_id = trs_spawn.spawnpoint "
-            "WHERE last_modified >= %s"
+            "LEFT JOIN trs_spawn ON pokemon.spawnpoint_id = trs_spawn.spawnpoint {} "
+            "LEFT JOIN pokemon_display ON pokemon.encounter_id=pokemon_display.encounter_id "
+            "WHERE pokemon.last_modified >= %s "
         )
+        query_mon_types = ["'" + t + "'" for t in mon_types]
+        query += "AND seen_type in (" + ",".join(query_mon_types) + ")"
+
+        extra_select = ""
+        extra_join = ""
+        if {"nearby_stop", "lure_wild", "lure_encounter"} & mon_types:
+            extra_select += "fort_id, pokestop.name, pokestop.image, "
+            extra_join += "LEFT JOIN pokestop ON pokemon.fort_id = pokestop.pokestop_id "
+        else:
+            extra_select += "NULL, NULL, NULL, "
+
+        if "nearby_cell" in mon_types:
+            extra_select += "cell_id "
+        else:
+            extra_select += "NULL "
+
+        query = query.format(extra_select, extra_join)
+
         tsdt = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
         res = self._db_exec.execute(query, (tsdt,))
 
@@ -190,7 +217,12 @@ class DbWebhookReader:
              individual_defense, individual_stamina, move_1, move_2,
              cp, cp_multiplier, weight, height, gender, form, costume,
              weather_boosted_condition, last_modified, catch_prob_1, catch_prob_2, catch_prob_3,
-             verified) in res:
+             verified, seen_type, display_pokemon, display_form, display_costume, display_gender,
+             fort_id, stop_name, stop_url, cell_id) in res:
+
+            if latitude == 0 and seen_type == "lure_encounter":
+                continue
+
             ret.append({
                 "encounter_id": encounter_id,
                 "pokemon_id": pokemon_id,
@@ -215,6 +247,15 @@ class DbWebhookReader:
                 "base_catch": catch_prob_1,
                 "great_catch": catch_prob_2,
                 "ultra_catch": catch_prob_3,
-                "spawn_verified": verified == 1
+                "spawn_verified": verified == 1,
+                "fort_id": fort_id,
+                "stop_name": stop_name,
+                "stop_url": stop_url,
+                "cell_id": cell_id,
+                "seen_type": seen_type,
+                "display_pokemon": display_pokemon,
+                "display_form": display_form,
+                "display_costume": display_costume,
+                "display_gender": display_gender
             })
         return ret

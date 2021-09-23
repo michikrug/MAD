@@ -40,6 +40,7 @@ CREATE TABLE `gym` (
     `last_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `last_scanned` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `is_ex_raid_eligible` tinyint(1) NOT NULL DEFAULT '0',
+    `is_ar_scan_eligible` tinyint(1) NOT NULL DEFAULT '0',
     PRIMARY KEY (`gym_id`),
     KEY `gym_last_modified` (`last_modified`),
     KEY `gym_last_scanned` (`last_scanned`),
@@ -113,6 +114,9 @@ CREATE TABLE `pokemon` (
     `rating_defense` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `weather_boosted_condition` smallint(6) DEFAULT NULL,
     `last_modified` datetime DEFAULT NULL,
+    `fort_id` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+    `cell_id` bigint(20) unsigned DEFAULT NULL,
+    `seen_type` enum('wild', 'encounter', 'nearby_stop', 'nearby_cell', 'lure_wild', 'lure_encounter'),
     PRIMARY KEY (`encounter_id`),
     KEY `pokemon_spawnpoint_id` (`spawnpoint_id`),
     KEY `pokemon_pokemon_id` (`pokemon_id`),
@@ -136,7 +140,7 @@ CREATE TABLE `pokestop` (
     `incident_start` datetime DEFAULT NULL,
     `incident_expiration` datetime DEFAULT NULL,
     `incident_grunt_type` smallint(1) DEFAULT NULL,
-    `encounter_id` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+    `is_ar_scan_eligible` tinyint(1) NOT NULL DEFAULT '0',
     PRIMARY KEY (`pokestop_id`),
     KEY `pokestop_last_modified` (`last_modified`),
     KEY `pokestop_lure_expiration` (`lure_expiration`),
@@ -228,7 +232,9 @@ CREATE TABLE `settings_area_iv_mitm` (
     `remove_from_queue_backlog` tinyint(1) DEFAULT NULL,
     `starve_route` tinyint(1) DEFAULT NULL,
     `monlist_id` int(10) unsigned DEFAULT NULL,
+    `all_mons` tinyint(1) DEFAULT NULL,
     `min_time_left_seconds` int(11) DEFAULT NULL,
+    `encounter_all` tinyint(1) DEFAULT NULL,
     PRIMARY KEY (`area_id`),
     KEY `fk_ai_monid` (`monlist_id`),
     KEY `fk_area_iv_mitm_geofence` (`geofence_included`),
@@ -259,9 +265,11 @@ CREATE TABLE `settings_area_mon_mitm` (
     `starve_route` tinyint(1) DEFAULT NULL,
     `init_mode_rounds` int(11) DEFAULT NULL,
     `monlist_id` int(10) unsigned DEFAULT NULL,
+    `all_mons` tinyint(1) DEFAULT NULL,
     `min_time_left_seconds` int(11) DEFAULT NULL,
     `max_clustering` int(11) DEFAULT NULL,
     `include_event_id` int DEFAULT NULL,
+    `encounter_all` tinyint(1) DEFAULT NULL,
     PRIMARY KEY (`area_id`),
     KEY `fk_am_monid` (`monlist_id`),
     KEY `fk_area_mon_mitm_geofence` (`geofence_included`),
@@ -317,6 +325,8 @@ CREATE TABLE `settings_area_raids_mitm` (
     `starve_route` tinyint(1) DEFAULT NULL,
     `init_mode_rounds` int(11) DEFAULT NULL,
     `monlist_id` int(10) unsigned DEFAULT NULL,
+    `encounter_all` tinyint(1) DEFAULT NULL,
+    `all_mons` tinyint(1) DEFAULT NULL,
     PRIMARY KEY (`area_id`),
     KEY `fk_ar_monid` (`monlist_id`),
     KEY `fk_area_raids_mitm_geofence` (`geofence_included`),
@@ -361,7 +371,6 @@ CREATE TABLE `settings_device` (
     `post_pogo_start_delay` float DEFAULT NULL,
     `restart_pogo` int(11) DEFAULT NULL,
     `inventory_clear_rounds` int(11) DEFAULT NULL,
-    `inventory_clear_item_amount_tap_duration` int(11) DEFAULT NULL,
     `mitm_wait_timeout` float DEFAULT NULL,
     `vps_delay` float DEFAULT NULL,
     `reboot` tinyint(1) DEFAULT NULL,
@@ -412,7 +421,6 @@ CREATE TABLE `settings_devicepool` (
     `post_pogo_start_delay` float DEFAULT NULL,
     `restart_pogo` int(11) DEFAULT NULL,
     `inventory_clear_rounds` int(11) DEFAULT NULL,
-    `inventory_clear_item_amount_tap_duration` int(11) DEFAULT NULL,
     `mitm_wait_timeout` float DEFAULT NULL,
     `vps_delay` float DEFAULT NULL,
     `reboot` tinyint(1) DEFAULT NULL,
@@ -551,6 +559,7 @@ CREATE TABLE `trs_quest` (
     `quest_task` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `quest_pokemon_form_id` smallint(6) NOT NULL DEFAULT '0',
     `quest_pokemon_costume_id` smallint(6) NOT NULL DEFAULT '0',
+    `quest_title` varchar(100) COLLATE utf8mb4_unicode_ci  DEFAULT NULL,
     PRIMARY KEY (`GUID`),
     KEY `quest_type` (`quest_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -622,6 +631,17 @@ CREATE TABLE `trs_stats_detect_raw` (
     KEY `worker` (`worker`),
     KEY `typeworker` (`worker`,`type_id`),
     KEY `shiny` (`is_shiny`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `trs_stats_detect_seen_type` (
+    `encounter_id` bigint(20) unsigned NOT NULL,
+    `encounter` datetime NULL DEFAULT NULL,
+    `wild` datetime NULL DEFAULT NULL,
+    `nearby_stop` datetime NULL DEFAULT NULL,
+    `nearby_cell` datetime NULL DEFAULT NULL,
+    `lure_encounter` datetime NULL DEFAULT NULL,
+    `lure_wild` datetime NULL DEFAULT NULL,
+    PRIMARY KEY (`encounter_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `trs_stats_location` (

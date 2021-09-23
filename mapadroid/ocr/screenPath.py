@@ -52,7 +52,7 @@ class WordToScreenMatching(object):
         if self._logintype == LoginType.ptc:
             temp_accounts = self.get_device_value('ptc_login', [])
             if not temp_accounts:
-                self._logger.warning('No PTC Accounts are set - hope we are login and never logout!')
+                self._logger.warning('No PTC Accounts are set - hope we are logged in and never logout!')
                 self._accountcount = 0
                 return
             for username, password in temp_accounts:
@@ -132,6 +132,9 @@ class WordToScreenMatching(object):
             return ScreenType.CREDENTIALS, global_dict, diff
         elif "ConsentActivity" in topmost_app:
             return ScreenType.CONSENT, global_dict, diff
+        elif "/a.m" in topmost_app:
+            self._logger.error("Likely found 'not responding' popup - reboot device (topmost app: {})", topmost_app)
+            return ScreenType.NOTRESPONDING, global_dict, diff
         elif "com.nianticlabs.pokemongo" not in topmost_app:
             self._logger.warning("PoGo is not opened! Current topmost app: {}", topmost_app)
             return ScreenType.CLOSE, global_dict, diff
@@ -142,19 +145,12 @@ class WordToScreenMatching(object):
             self._logger.info('Screen detection is disabled')
             return ScreenType.DISABLED, global_dict, diff
         else:
-            if not self._take_screenshot(delay_before=self.get_devicesettings_value("post_screenshot_delay", 1),
-                                         delay_after=2):
-                self._logger.error("_check_windows: Failed getting screenshot")
-                return ScreenType.ERROR, global_dict, diff
-
-            screenpath = self.get_screenshot_path()
-
-            result = self._pogoWindowManager.screendetection_get_type_by_screen_analysis(screenpath, self.origin)
-            if result is None:
-                self._logger.error("Failed analyzing screen")
+            result = self._take_and_analyze_screenshot()
+            if not result:
+                self._logger.error("_check_windows: Failed getting/analyzing screenshot")
                 return ScreenType.ERROR, global_dict, diff
             else:
-                returntype, global_dict, self._width, self._height, diff = result
+                returntype, global_dict, diff = result
             if not global_dict:
                 self._nextscreen = ScreenType.UNDEFINED
                 self._logger.warning('Could not understand any text on screen - starting next round...')
@@ -190,6 +186,7 @@ class WordToScreenMatching(object):
             if self.get_devicesettings_value('logintype', 'google') == 'ptc':
                 self._nextscreen = ScreenType.PTC
                 if 'CLUB' in (global_dict['text'][i]):
+                    self._logger.info("ScreenType.LOGINSELECT (c) using PTC (logintype in Device Settings)")
                     self._click_center_button(diff, global_dict, i)
                     time.sleep(5)
                     return
@@ -198,6 +195,7 @@ class WordToScreenMatching(object):
                 elif 'Facebook' in temp_dict:
                     click_x = self._width / 2
                     click_y = (temp_dict['Facebook'] + 2 * self._height / 10.11)
+                    self._logger.info("ScreenType.LOGINSELECT (f) using PTC (logintype in Device Settings)")
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
                     return
@@ -206,6 +204,7 @@ class WordToScreenMatching(object):
                 elif 'Google' in temp_dict:
                     click_x = self._width / 2
                     click_y = (temp_dict['Google'] + self._height / 10.11)
+                    self._logger.info("ScreenType.LOGINSELECT (g) using PTC (logintype in Device Settings)")
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
                     return
@@ -213,6 +212,7 @@ class WordToScreenMatching(object):
             else:
                 self._nextscreen = ScreenType.UNDEFINED
                 if 'Google' in (global_dict['text'][i]):
+                    self._logger.info("ScreenType.LOGINSELECT (g) using Google Account (logintype in Device Settings)")
                     self._click_center_button(diff, global_dict, i)
                     time.sleep(5)
                     return
@@ -221,6 +221,7 @@ class WordToScreenMatching(object):
                 elif 'Facebook' in temp_dict and 'CLUB' in temp_dict:
                     click_x = self._width / 2
                     click_y = (temp_dict['Facebook'] + ((temp_dict['CLUB'] - temp_dict['Facebook']) / 2))
+                    self._logger.info("ScreenType.LOGINSELECT (fc) using Google Account (logintype in Device Settings)")
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
                     return
@@ -229,6 +230,7 @@ class WordToScreenMatching(object):
                 elif 'Facebook' in temp_dict:
                     click_x = self._width / 2
                     click_y = (temp_dict['Facebook'] + self._height / 10.11)
+                    self._logger.info("ScreenType.LOGINSELECT (f) using Google Account (logintype in Device Settings)")
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
                     return
@@ -237,6 +239,7 @@ class WordToScreenMatching(object):
                 elif 'CLUB' in temp_dict:
                     click_x = self._width / 2
                     click_y = (temp_dict['CLUB'] - self._height / 10.11)
+                    self._logger.info("ScreenType.LOGINSELECT (c) using Google Account (logintype in Device Settings)")
                     self._communicator.click(click_x, click_y)
                     time.sleep(5)
                     return
@@ -267,6 +270,8 @@ class WordToScreenMatching(object):
         elif screentype == ScreenType.WRONG:
             self.__handle_returning_player_or_wrong_credentials()
             screentype = ScreenType.ERROR
+        elif screentype == ScreenType.LOGINTIMEOUT:
+            self.__handle_login_timeout(diff, global_dict)
         elif screentype == ScreenType.GAMEDATA:
             self._nextscreen = ScreenType.UNDEFINED
         elif screentype == ScreenType.GGL:
@@ -278,7 +283,7 @@ class WordToScreenMatching(object):
         elif screentype == ScreenType.MARKETING:
             self.__handle_marketing_screen(diff, global_dict)
         elif screentype == ScreenType.CONSENT:
-            self._nextscreen = ScreenType.UNDEFINED
+            screentype = self.__handle_ggl_consent_screen()
         elif screentype == ScreenType.SN:
             self._nextscreen = ScreenType.UNDEFINED
         elif screentype == ScreenType.UPDATE:
@@ -381,6 +386,15 @@ class WordToScreenMatching(object):
                 self._click_center_button(diff, global_dict, i)
                 time.sleep(2)
 
+    def __handle_login_timeout(self, diff, global_dict) -> None:
+        self._nextscreen = ScreenType.UNDEFINED
+        click_text = 'SIGNOUT,SIGN,ABMELDEN,_DECONNECTER'
+        n_boxes = len(global_dict['text'])
+        for i in range(n_boxes):
+            if any(elem in (global_dict['text'][i]) for elem in click_text.split(",")):
+                self._click_center_button(diff, global_dict, i)
+                time.sleep(2)
+
     def __handle_ptc_login(self) -> ScreenType:
         self._nextscreen = ScreenType.UNDEFINED
         ptc = self.get_next_account()
@@ -422,6 +436,27 @@ class WordToScreenMatching(object):
 
     def __handle_failure_screen(self) -> None:
         self.__handle_returning_player_or_wrong_credentials()
+
+    def __handle_ggl_consent_screen(self) -> None:
+        if self._width == 0 and self._height == 0:
+            self._logger.warning("_handle_ggl_consent_screen: Screen width and height are zero - "
+                                 "try to get real values from new screenshot ...")
+            # this updates self._width, self._height
+            result = self._take_and_analyze_screenshot()
+            if not result:
+                self._logger.error("_handle_ggl_consent_screen: Failed getting/analyzing screenshot")
+                return ScreenType.ERROR
+
+        if self._width != 720 and self._height != 1280:
+            self._logger.warning("The google consent screen can only be handled on 720x1280 screens "
+                                 f"(width is {self._width}, height is {self._height})")
+            return ScreenType.ERROR
+
+        self._logger.info("_handle_ggl_consent_screen: Click accept button")
+        self._nextscreen = ScreenType.UNDEFINED
+        self._communicator.click(520, 1185)
+        time.sleep(10)
+        return ScreenType.UNDEFINED
 
     def __handle_returning_player_or_wrong_credentials(self) -> None:
         self._nextscreen = ScreenType.UNDEFINED
@@ -618,3 +653,19 @@ class WordToScreenMatching(object):
             self._lastScreenshotTaken = time.time()
             time.sleep(delay_after)
             return True
+
+    def _take_and_analyze_screenshot(self, delay_after=0.0, delay_before=0.0, errorscreen: bool = False):
+        if not self._take_screenshot(delay_after=self.get_devicesettings_value("post_screenshot_delay", delay_after),
+                                     delay_before=delay_before, errorscreen=errorscreen):
+            self._logger.error("_take_and_analyze_screenshot: Failed getting screenshot")
+            return None
+
+        screenpath = self.get_screenshot_path()
+
+        result = self._pogoWindowManager.screendetection_get_type_by_screen_analysis(screenpath, self.origin)
+        if result is None:
+            self._logger.error("_take_and_analyze_screenshot: Failed analyzing screen")
+            return None
+        else:
+            returntype, global_dict, self._width, self._height, diff = result
+            return returntype, global_dict, diff

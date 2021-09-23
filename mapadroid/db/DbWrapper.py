@@ -1,4 +1,5 @@
 import json
+import random
 import re
 import time
 from datetime import datetime, timedelta, timezone
@@ -211,6 +212,8 @@ class DbWrapper:
         if geofence_helper is None:
             logger.error("No geofence_helper! Not fetching encounters.")
             return 0, {}
+        if latest == 0:
+            latest = time.time() - 15 * 60
 
         logger.debug3("Filtering with rectangle")
         rectangle = geofence_helper.get_polygon_from_fence()
@@ -299,7 +302,8 @@ class DbWrapper:
             "trs_quest.quest_pokemon_costume_id, trs_quest.quest_reward_type, "
             "trs_quest.quest_item_id, trs_quest.quest_item_amount, pokestop.name, pokestop.image, "
             "trs_quest.quest_target, trs_quest.quest_condition, trs_quest.quest_timestamp, "
-            "trs_quest.quest_task, trs_quest.quest_reward, trs_quest.quest_template "
+            "trs_quest.quest_task, trs_quest.quest_reward, trs_quest.quest_template, pokestop.is_ar_scan_eligible, "
+            "trs_quest.quest_title "
             "FROM pokestop INNER JOIN trs_quest ON pokestop.pokestop_id = trs_quest.GUID "
             "WHERE DATE(from_unixtime(trs_quest.quest_timestamp,'%Y-%m-%d')) = CURDATE() "
         )
@@ -334,7 +338,7 @@ class DbWrapper:
         for (pokestop_id, latitude, longitude, quest_type, quest_stardust, quest_pokemon_id,
              quest_pokemon_form_id, quest_pokemon_costume_id, quest_reward_type,
              quest_item_id, quest_item_amount, name, image, quest_target, quest_condition,
-             quest_timestamp, quest_task, quest_reward, quest_template) in res:
+             quest_timestamp, quest_task, quest_reward, quest_template, is_ar_scan_eligible, quest_title) in res:
             mon = "%03d" % quest_pokemon_id
             form_id = "%02d" % quest_pokemon_form_id
             costume_id = "%02d" % quest_pokemon_costume_id
@@ -347,7 +351,9 @@ class DbWrapper:
                 'quest_item_amount': quest_item_amount, 'name': name, 'image': image,
                 'quest_target': quest_target,
                 'quest_condition': quest_condition, 'quest_timestamp': quest_timestamp,
-                'task': quest_task, 'quest_reward': quest_reward, 'quest_template': quest_template})
+                'task': quest_task, 'quest_reward': quest_reward, 'quest_template': quest_template,
+                'is_ar_scan_eligible': is_ar_scan_eligible, 'quest_title': quest_title
+            })
 
         return questinfo
 
@@ -383,10 +389,10 @@ class DbWrapper:
         logger.debug3("Getting mons to be encountered")
         query = (
             "SELECT latitude, longitude, encounter_id, spawnpoint_id, pokemon_id, "
-            "TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), disappear_time) AS expire "
+            "TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), disappear_time) AS expire, seen_type, cell_id "
             "FROM pokemon "
             "WHERE individual_attack IS NULL AND individual_defense IS NULL AND individual_stamina IS NULL "
-            "AND encounter_id != 0 "
+            "AND encounter_id != 0 AND seen_type != 'nearby_cell' "
             "and (disappear_time BETWEEN DATE_ADD(UTC_TIMESTAMP(), INTERVAL %s SECOND) "
             "and DATE_ADD(UTC_TIMESTAMP(), INTERVAL 60 MINUTE))"
             "ORDER BY expire ASC"
@@ -399,7 +405,7 @@ class DbWrapper:
         results = self.execute(query, sql_args, commit=False)
 
         next_to_encounter = []
-        for latitude, longitude, encounter_id, _spawnpoint_id, pokemon_id, _ in results:
+        for latitude, longitude, encounter_id, _spawnpoint_id, pokemon_id, _, seen_type, cellid in results:
             if pokemon_id not in eligible_mon_ids:
                 continue
             elif latitude is None or longitude is None:
@@ -411,15 +417,34 @@ class DbWrapper:
                               " fences", latitude, longitude)
                 continue
 
-            next_to_encounter.append((pokemon_id, Location(latitude, longitude), encounter_id))
+            next_to_encounter.append((pokemon_id, Location(latitude, longitude), encounter_id, seen_type, cellid))
 
         # now filter by the order of eligible_mon_ids
         to_be_encountered = []
         i = 0
         for mon_prio in eligible_mon_ids:
-            for mon in next_to_encounter:
-                if mon_prio == mon[0]:
-                    to_be_encountered.append((i, mon[1], mon[2]))
+            for mon_id, location, encounter_id, seen_type, cell_id in next_to_encounter:
+                if mon_prio == mon_id:
+                    if seen_type == "nearby_cell":
+                        cell_coords = S2Helper.coords_of_cell(cell_id)
+
+                        geohelper_data = {
+                            "fence_data": [
+                                str(lat) + "," + str(lon) for lat, lon in cell_coords
+                            ]
+                        }
+                        spawns = self.retrieve_next_spawns(
+                            GeofenceHelper(geohelper_data, None)
+                        )
+
+                        if len(spawns) == 0:
+                            to_be_encountered.append((i, location, encounter_id))
+                        else:
+                            for _, spawn_location in spawns:
+                                to_be_encountered.append((i, spawn_location, encounter_id))
+                                i += 1
+                    else:
+                        to_be_encountered.append((i, location, encounter_id))
             i += 1
         return to_be_encountered
 
@@ -600,7 +625,7 @@ class DbWrapper:
             "longitude, disappear_time, individual_attack, individual_defense, "
             "individual_stamina, move_1, move_2, cp, weight, "
             "height, gender, form, costume, weather_boosted_condition, "
-            "last_modified "
+            "last_modified, seen_type "
             "FROM pokemon "
             "WHERE disappear_time > '{}'"
         ).format(now)
@@ -632,7 +657,11 @@ class DbWrapper:
              disappear_time, individual_attack, individual_defense,
              individual_stamina, move_1, move_2, cp,
              weight, height, gender, form, costume,
-             weather_boosted_condition, last_modified) in res:
+             weather_boosted_condition, last_modified, seen_type) in res:
+
+            if seen_type is not None and "nearby" in seen_type:
+                latitude += random.uniform(-0.0003, 0.0003)
+                longitude += random.uniform(-0.0005, 0.0005)
             mons.append({
                 "encounter_id": encounter_id,
                 "spawnpoint_id": spawnpoint_id,
@@ -652,7 +681,8 @@ class DbWrapper:
                 "form": form,
                 "costume": costume,
                 "weather_boosted_condition": weather_boosted_condition,
-                "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp())
+                "last_modified": int(last_modified.replace(tzinfo=timezone.utc).timestamp()),
+                "seen_type": seen_type
             })
 
         return mons
@@ -877,7 +907,7 @@ class DbWrapper:
         res = self.execute(query)
 
         for (spawnid, ) in res:
-            spawn.append(spawnid)
+            spawn.append(str(spawnid))
 
         return spawn
 

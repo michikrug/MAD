@@ -10,8 +10,9 @@
 
 {% block scripts %}
 <script>
-var setlat = {{ setlat }};
-var setlng = {{ setlng }};
+const setlat = {{ setlat }};
+const setlng = {{ setlng }};
+const loadingImgUrl = '{{ url_for('static', filename='loading.gif') }}';
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js"></script>
@@ -19,10 +20,10 @@ var setlng = {{ setlng }};
 <script src="static/js/leaflet-sidebar.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.EasyButton/2.4.0/easy-button.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
-<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.7.0/dist/leaflet-geoman.min.js"></script>
-<script src="static/js/leaflet-event-forwarder.js?1599172474"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.9.0/dist/leaflet-geoman.min.js"></script>
+<script src="static/js/leaflet-event-forwarder.js?1617020349"></script>
 <script src="static/js/s2geometry.min.js"></script>
-<script src="static/js/madmin.js?1598819723"></script>
+<script src="static/js/madmin.js?1617020349"></script>
 {% endblock %}
 
 {% block content %}
@@ -63,12 +64,13 @@ var setlng = {{ setlng }};
         <div class="sidebar-pane-content">
           <ul class="list-group list-group-flush">
             {% raw %}
-            <li v-for="(route, index) in layers.dyn.routes" class="list-group-item layer-item justify-content-between d-flex align-items-center">
-              <div class="flex-grow-1">{{ index }}</div>
-              <span class="badge badge-secondary" style="margin-right: 5px;">{{ route.mode }}</span>
+            <li v-for="route in sortedRoutes" v-bind:key="route.id" v-bind:class="{ 'list-group-subitem': route.tag }" class="list-group-item layer-item justify-content-between d-flex align-items-center">
+              <div class="flex-grow-1">{{ route.name }}</div>
+              <span class="badge badge-secondary">{{ route.mode }}</span>
+              <span v-if="route.tag" class="badge badge-info">{{ route.tag }}</span>
               <div class="custom-control custom-switch">
-                <input :id="'layers-dyn-routes-'+index" type="checkbox" v-model="layers.dyn.routes[index].show" class="custom-control-input" />
-                <label :for="'layers-dyn-routes-'+index" class="custom-control-label"></label>
+                <input :id="'layers-dyn-routes-'+route.id" type="checkbox" v-model="route.show" class="custom-control-input" />
+                <label :for="'layers-dyn-routes-'+route.id" class="custom-control-label"></label>
               </div>
             </li>
             {% endraw %}
@@ -83,7 +85,7 @@ var setlng = {{ setlng }};
             {% raw %}
             <li v-for="(route, index) in layers.dyn.prioroutes" class="list-group-item layer-item justify-content-between d-flex align-items-center">
               <div class="flex-grow-1">{{ index }}</div>
-              <span class="badge badge-secondary" style="margin-right: 5px;">{{ route.mode }}</span>
+              <span class="badge badge-secondary">{{ route.mode }}</span>
               <div class="custom-control custom-switch">
                 <input :id="'layers-dyn-prioroutes-'+index" type="checkbox" v-model="layers.dyn.prioroutes[index].show" class="custom-control-input" />
                 <label :for="'layers-dyn-prioroutes-'+index" class="custom-control-label"></label>

@@ -2,7 +2,7 @@
 FROM local_mad_production:latest AS dev_test
 # Versions of python to install for pyenv. These are used when tox executes specific
 # python versions. The correct versions need to be added to tox.ini under tox/envlist
-ENV PYTHON_VERSIONS 3.6.0 3.7.0 3.8.0
+ENV PYTHON_VERSIONS 3.6.2 3.7.0 3.8.0
 # User information related to how to run within the shell
 ARG USER_NAME=dockeruser
 ARG UID=1000
@@ -15,7 +15,7 @@ RUN apt-get install -y --no-install-recommends \
 # pyenv
 build-essential libssl-dev zlib1g-dev libbz2-dev \
 libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-xz-utils tk-dev libffi-dev liblzma-dev python-openssl git \
+xz-utils tk-dev libffi-dev liblzma-dev python3-openssl git \
 # python build
 libffi-dev libgdbm-dev libsqlite3-dev libssl-dev zlib1g-dev && \
 # Create user

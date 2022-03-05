@@ -115,11 +115,11 @@ class SerializedMitmDataProcessor(Process):
                     stop_encounters = []
                     nearby_mons_time = 0
 
-                if self.__application_args.game_stats:
-                    self.__db_submit.update_seen_type_stats(
-                        wild=wild_encounters, lure_wild=lure_wild,
-                        nearby_cell=cell_encounters, nearby_stop=stop_encounters
-                    )
+                # if self.__application_args.game_stats:
+                #     self.__db_submit.update_seen_type_stats(
+                #         wild=wild_encounters, lure_wild=lure_wild,
+                #         nearby_cell=cell_encounters, nearby_stop=stop_encounters
+                #     )
 
                 full_time = self.get_time_ms() - start_time
 
@@ -136,10 +136,10 @@ class SerializedMitmDataProcessor(Process):
                     encounter = self.__db_submit.mon_iv(
                         origin, received_timestamp, data["payload"], self.__mitm_mapper)
 
-                    if self.__application_args.game_stats:
-                        self.__db_submit.update_seen_type_stats(
-                            encounter=encounter
-                        )
+                    # if self.__application_args.game_stats:
+                    #     self.__db_submit.update_seen_type_stats(
+                    #         encounter=encounter
+                    #     )
 
                     end_time = self.get_time_ms() - start_time
                     origin_logger.debug("Done processing encounter in {}ms", end_time)
@@ -155,10 +155,10 @@ class SerializedMitmDataProcessor(Process):
                     lure_encounter = self.__db_submit.mon_lure_iv(
                         origin, received_timestamp, data["payload"])
 
-                    if self.__application_args.game_stats:
-                        self.__db_submit.update_seen_type_stats(
-                            lure_encounter=lure_encounter
-                        )
+                    # if self.__application_args.game_stats:
+                    #     self.__db_submit.update_seen_type_stats(
+                    #         lure_encounter=lure_encounter
+                    #     )
 
                     end_time = self.get_time_ms() - start_time
                     origin_logger.debug("Done processing lure encounter in {}ms", end_time)

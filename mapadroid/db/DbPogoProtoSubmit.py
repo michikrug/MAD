@@ -32,8 +32,9 @@ class DbPogoProtoSubmit:
         """
         Update/Insert mons from a map_proto dict
         """
+        if origin == "tvbox7":
+            return True
         cache = get_cache(self._args)
-
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::mons called with data received")
         cells = map_proto.get("cells", None)
@@ -121,6 +122,8 @@ class DbPogoProtoSubmit:
         """
         Insert nearby mons
         """
+        if origin == "tvbox7":
+            return True
         cache = get_cache(self._args)
 
         origin_logger = get_origin_logger(logger, origin=origin)
@@ -403,6 +406,8 @@ class DbPogoProtoSubmit:
         """
         Update/Insert Lure mons from a map_proto dict
         """
+        if origin == "tvbox7":
+            return True
         cache = get_cache(self._args)
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::mon_lure_noiv called with data received")
@@ -506,6 +511,8 @@ class DbPogoProtoSubmit:
         self._db_exec.executemany(base_query, base_args, commit=True)
 
     def spawnpoints(self, origin: str, map_proto: dict, proto_dt: datetime):
+        if origin == "tvbox7":
+            return True
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::spawnpoints called with data received")
         cells = map_proto.get("cells", None)
@@ -596,6 +603,8 @@ class DbPogoProtoSubmit:
         """
         Update/Insert pokestops from a map_proto dict
         """
+        if origin == "tvbox7":
+            return True
         cache = get_cache(self._args)
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::stops called with data received")
@@ -659,6 +668,8 @@ class DbPogoProtoSubmit:
         return True
 
     def quest(self, origin: str, quest_proto: dict, mitm_mapper, quest_gen: QuestGen):
+        if origin == "tvbox7":
+            return True
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::quest called")
         fort_id = quest_proto.get("fort_id", None)
@@ -735,6 +746,8 @@ class DbPogoProtoSubmit:
         """
         Update/Insert gyms from a map_proto dict
         """
+        if origin == "tvbox7":
+            return True
         cache = get_cache(self._args)
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::gyms called with data received from")
@@ -812,6 +825,8 @@ class DbPogoProtoSubmit:
         """
         Update gyms from a map_proto dict
         """
+        if origin == "tvbox7":
+            return True
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("Updating gyms")
         if map_proto.get("result", 0) != 1:
@@ -854,6 +869,8 @@ class DbPogoProtoSubmit:
         """
         Update/Insert raids from a map_proto dict
         """
+        if origin == "tvbox7":
+            return True
         cache = get_cache(self._args)
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::raids called with data received")
@@ -948,6 +965,8 @@ class DbPogoProtoSubmit:
         """
         Update/Insert weather from a map_proto dict
         """
+        if origin == "tvbox7":
+            return True
         cache = get_cache(self._args)
         origin_logger = get_origin_logger(logger, origin=origin)
         origin_logger.debug3("DbPogoProtoSubmit::weather called with data received")
@@ -982,6 +1001,8 @@ class DbPogoProtoSubmit:
         return True
 
     def cells(self, origin: str, map_proto: dict):
+        if origin == "tvbox7":
+            return True
         protocells = map_proto.get("cells", [])
 
         query = (

@@ -68,6 +68,7 @@ class DbPogoProtoSubmit:
                 if encounter_id < 0:
                     encounter_id = encounter_id + 2 ** 64
 
+                mitm_mapper.collect_mon_stats(origin, str(encounter_id))
                 cache_key = "mon{}-{}".format(encounter_id, mon_id)
                 if cache.exists(cache_key):
                     continue
@@ -81,8 +82,6 @@ class DbPogoProtoSubmit:
                 gender = pokemon_display.get('gender_value')
                 costume = pokemon_display.get('costume_value')
                 form = pokemon_display.get('form_value')
-
-                mitm_mapper.collect_mon_stats(origin, str(encounter_id))
 
                 now = datetime.utcfromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -231,11 +230,13 @@ class DbPogoProtoSubmit:
         pokemon_display = pokemon_data.get("display", {})
         mon_id = pokemon_data.get("id")
         weather_boosted = pokemon_display.get("weather_boosted_value")
+        shiny = pokemon_display.get("is_shiny", 0)
         spawnid = int(str(wild_pokemon["spawnpoint_id"]), 16)
 
         if encounter_id < 0:
             encounter_id = encounter_id + 2 ** 64
 
+        mitm_mapper.collect_mon_iv_stats(origin, encounter_id, int(shiny))
         cache_key = "moniv{}-{}-{}".format(encounter_id, weather_boosted, mon_id)
         if cache.exists(cache_key):
             return
@@ -248,9 +249,6 @@ class DbPogoProtoSubmit:
 
         latitude = wild_pokemon.get("latitude")
         longitude = wild_pokemon.get("longitude")
-        shiny = pokemon_display.get("is_shiny", 0)
-
-        mitm_mapper.collect_mon_iv_stats(origin, encounter_id, int(shiny))
 
         if getdetspawntime is None:
             origin_logger.debug3("updating IV mon #{} at {}, {}. Despawning at {} (init)", pokemon_data["id"], latitude,
@@ -754,7 +752,9 @@ class DbPogoProtoSubmit:
             "guard_pokemon_id=VALUES(guard_pokemon_id), team_id=VALUES(team_id), "
             "slots_available=VALUES(slots_available), last_scanned=VALUES(last_scanned), "
             "last_modified=VALUES(last_modified), latitude=VALUES(latitude), longitude=VALUES(longitude), "
-            "is_ex_raid_eligible=VALUES(is_ex_raid_eligible), is_ar_scan_eligible=VALUES(is_ar_scan_eligible)"
+            "is_ex_raid_eligible=VALUES(is_ex_raid_eligible),"
+            "is_ar_scan_eligible=VALUES(is_ar_scan_eligible),"
+            "is_in_battle=VALUES(is_in_battle)"
         )
         query_gym_details = (
             "INSERT INTO gymdetails (gym_id, name, url, last_scanned) "
@@ -777,6 +777,7 @@ class DbPogoProtoSubmit:
                         last_modified_ts).strftime("%Y-%m-%d %H:%M:%S")
                     is_ex_raid_eligible = gym["gym_details"]["is_ex_raid_eligible"]
                     is_ar_scan_eligible = gym["is_ar_scan_eligible"]
+                    is_in_battle = gym['gym_details']['is_in_battle']
 
                     cache_key = "gym{}{}".format(gymid, last_modified_ts)
                     if cache.exists(cache_key):
@@ -788,7 +789,7 @@ class DbPogoProtoSubmit:
                             1,  # enabled
                             latitude, longitude,
                             0,  # total CP
-                            0,  # is_in_battle
+                            is_in_battle,
                             last_modified,  # last_modified
                             now,  # last_scanned
                             is_ex_raid_eligible,
@@ -995,8 +996,9 @@ class DbPogoProtoSubmit:
                 cell_id = cell_id + 2 ** 64
 
             lat, lng, _ = S2Helper.get_position_from_cell(cell_id)
+            level = S2Helper.get_cell_level(cell_id)
 
-            cells.append((cell_id, 15, lat, lng, cell["current_timestamp"] / 1000))
+            cells.append((cell_id, level, lat, lng, cell["current_timestamp"] / 1000))
 
         self._db_exec.executemany(query, cells, commit=True)
 

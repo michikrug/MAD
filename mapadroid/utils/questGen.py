@@ -31,6 +31,7 @@ class QuestGen:
         self.pokemen_file = open_json_file('pokemon')
 
         self.quest_rewards = {
+            1: _("Experience"),
             2: _("Item"),
             4: _("Candy"),
             3: _("Stardust"),
@@ -113,13 +114,17 @@ class QuestGen:
             else:
                 pokemon_name = ''
             item_amount = quest['quest_item_amount']
-            quest_reward = '%s %s' % (item_amount, item_type)
+            quest_reward = '%sx %s %s' % (item_amount, pokemon_name, item_type)
         elif quest_reward_type == _("Candy"):
             # TODO maybe we should be doing deep parsing against the reward array
             item_amount = quest['quest_item_amount']
             item_type = quest_reward_type
             pokemon_id = quest['quest_pokemon_id']
             pokemon_name = pokemon_name = i8ln(self.pokemonname(str(pokemon_id)))
+            quest_reward = '%sx %s %s' % (item_amount, pokemon_name, item_type)
+        elif quest_reward_type == _('Experience'):
+            item_type = quest_reward_type
+            item_amount = quest['quest_stardust']
             quest_reward = '%s %s' % (item_amount, item_type)
 
         if not quest['task']:

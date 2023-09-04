@@ -96,6 +96,7 @@ class AbstractMadminRootEndpoint(web.View, ABC):
         try:
             logger.debug("Waiting for response to {}", self.request.url)
             response = await super()._iter()
+            response.headers.setdefault('Cache-Control', 'no-cache')
             logger.success("Got response to {}", self.request.url)
             if self._commit_trigger:
                 logger.debug("Awaiting commit")

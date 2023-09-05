@@ -28,21 +28,13 @@ class AbstractStatisticsRootEndpoint(AbstractMadminRootEndpoint, ABC):
 
     @staticmethod
     def _generate_mon_icon_url(mon_id, form=None, costume=None, shiny=False):
-        base_path = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/no_border'
+        base_path = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/main/uicons/pokemon'
 
-        form_str = '_00'
-        if form is not None and str(form) != '0':
-            form_str = '_' + str(form)
+        form_suffix = '_f' + str(form) if form > 0 else ''
+        costume_suffix = '_c' + str(costume) if costume > 0 else ''
+        shiny_suffix = '_s' if shiny else ''
 
-        costume_str = ''
-        if costume is not None and str(costume) != '0':
-            costume_str = '_' + str(costume)
-
-        shiny_str = ''
-        if shiny:
-            shiny_str = '_shiny'
-
-        return "{}/pokemon_icon_{:03d}{}{}{}.png".format(base_path, mon_id, form_str, costume_str, shiny_str)
+        return "{}/{}{}{}{}.png".format(base_path, mon_id, form_suffix, costume_suffix, shiny_suffix)
 
     def _get_minutes_usage_query_args(self) -> int:
         try:

@@ -30,8 +30,8 @@ class AbstractStatisticsRootEndpoint(AbstractMadminRootEndpoint, ABC):
     def _generate_mon_icon_url(mon_id, form=None, costume=None, shiny=False):
         base_path = 'https://raw.githubusercontent.com/whitewillem/PogoAssets/main/uicons/pokemon'
 
-        form_suffix = '_f' + str(form) if form > 0 else ''
-        costume_suffix = '_c' + str(costume) if costume > 0 else ''
+        form_suffix = '_f' + str(form) if form is not None and form > 0 else ''
+        costume_suffix = '_c' + str(costume) if costume is not None and costume > 0 else ''
         shiny_suffix = '_s' if shiny else ''
 
         return "{}/{}{}{}{}.png".format(base_path, mon_id, form_suffix, costume_suffix, shiny_suffix)

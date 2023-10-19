@@ -3,15 +3,15 @@ import time
 from functools import reduce
 from typing import Dict, List, Optional, Set, Tuple
 
-from sqlalchemy import and_, delete, desc, func
+from sqlalchemy import Result, and_, delete, desc, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from mapadroid.db.model import (Pokemon, PokemonDisplay, Pokestop, TrsSpawn,
                                 TrsStatsDetectWildMonRaw)
 from mapadroid.geofence.geofenceHelper import GeofenceHelper
-from mapadroid.utils.DatetimeWrapper import DatetimeWrapper
 from mapadroid.utils.collections import Location
+from mapadroid.utils.DatetimeWrapper import DatetimeWrapper
 from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.utils.madGlobals import MonSeenTypes
 
@@ -69,7 +69,8 @@ class PokemonHelper:
 
     @staticmethod
     async def get_to_be_encountered(session: AsyncSession, geofence_helper: Optional[GeofenceHelper],
-                                    min_time_left_seconds: int, eligible_mon_ids: Optional[List[int]]) -> List[Tuple[int, Location, int]]:
+                                    min_time_left_seconds: int, eligible_mon_ids: Optional[List[int]]) -> List[
+        Tuple[int, Location, int]]:
         if min_time_left_seconds is None or not eligible_mon_ids:
             logger.warning(
                 "DbWrapper::get_to_be_encountered: Not returning any encounters since no time left or "
@@ -144,8 +145,8 @@ class PokemonHelper:
     @staticmethod
     async def get_all_shiny(session: AsyncSession, timestamp_after: Optional[int] = None,
                             timestamp_before: Optional[int] = None) -> Dict[int,
-                                                                            Tuple[Pokemon,
-                                                                                  List[TrsStatsDetectWildMonRaw]]]:
+    Tuple[Pokemon,
+    List[TrsStatsDetectWildMonRaw]]]:
         """
         Used to be DbStatsReader::get_shiny_stats_v2
         Args:
@@ -187,7 +188,8 @@ class PokemonHelper:
             timestamp_after:
             timestamp_before:
 
-        Returns: List of tuples consisting of (count('*'), Pokemon.pokemon_id, Pokemon.form, Pokemon.gender, Pokemon.costume)
+        Returns: List of tuples consisting of (count('*'),
+            Pokemon.pokemon_id, Pokemon.form, Pokemon.gender, Pokemon.costume)
             of all mons that have been scanned for IV
 
         """
@@ -293,8 +295,8 @@ class PokemonHelper:
     @staticmethod
     async def get_changed_since(session: AsyncSession, _timestamp: int,
                                 mon_types: Optional[Set[MonSeenTypes]] = None) -> List[Tuple[Pokemon, TrsSpawn,
-                                                                                             Optional[Pokestop],
-                                                                                             Optional[PokemonDisplay]]]:
+    Optional[Pokestop],
+    Optional[PokemonDisplay]]]:
         if not mon_types:
             mon_types = {MonSeenTypes.encounter, MonSeenTypes.lure_encounter}
 
@@ -319,8 +321,20 @@ class PokemonHelper:
         where_condition = Pokemon.disappear_time < DatetimeWrapper.now() - datetime.timedelta(hours=hours)
         stmt = delete(Pokemon).where(where_condition)
         if limit:
-            encounter_ids_query = select(Pokemon.encounter_id).where(where_condition).limit(limit)
-            result_encounter_ids = await session.execute(encounter_ids_query)
-            encounter_ids = result_encounter_ids.scalars().all()
-            stmt = delete(Pokemon).where(Pokemon.encounter_id.in_(encounter_ids))
+            # Rather ugly construct as stmt.with_dialect_options currently does not work
+            # See https://groups.google.com/g/sqlalchemy/c/WDKhyAt6eAk/m/feteFNZnAAAJ
+            stmt = text(f"{str(stmt)} LIMIT :limit")
+            result = await session.execute(stmt,
+                                  {
+                                      "disappear_time_1": DatetimeWrapper.now() - datetime.timedelta(hours=hours),
+                                      "limit": limit
+                                  })
+            # The resulting object is of type CursorResult -> rowcount is available
+            logger.info("Removed {} rows of mons", result.rowcount)
+        else:
+            await session.execute(stmt)
+
+    @staticmethod
+    async def run_optimize(session: AsyncSession) -> None:
+        stmt = text(f"OPTIMIZE TABLE {Pokemon.__tablename__}")
         await session.execute(stmt)

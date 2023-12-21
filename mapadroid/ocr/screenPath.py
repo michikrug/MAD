@@ -61,9 +61,11 @@ class WordToScreenMatching(object):
         returntype: ScreenType = ScreenType.UNDEFINED
         global_dict: dict = {}
         diff = 1
-        if "ExternalAppBrowserActivity" in topmost_app:
+        if "IntentReceiverActivity" in topmost_app:
+            return ScreenType.PTCSLOW, global_dict, diff
+        elif "ExternalAppBrowserActivity" in topmost_app:
             return ScreenType.PTC, global_dict, diff
-        if "AccountPickerActivity" in topmost_app or 'SignInActivity' in topmost_app:
+        elif "AccountPickerActivity" in topmost_app or 'SignInActivity' in topmost_app:
             return ScreenType.GGL, global_dict, diff
         elif "GrantPermissionsActivity" in topmost_app:
             return ScreenType.PERMISSION, global_dict, diff
@@ -263,7 +265,9 @@ class WordToScreenMatching(object):
         elif screentype == ScreenType.LOGINSELECT:
             await self.__handle_login_screen(global_dict, diff)
         elif screentype == ScreenType.PTC:
-            return await self.__handle_ptc_login()
+            await self.__handle_ptc_login()
+        elif screentype == ScreenType.PTCSLOW:
+            await self.__handle_ptc_slow()
         elif screentype == ScreenType.FAILURE:
             await self.__handle_failure_screen()
         elif screentype == ScreenType.RETRY:
@@ -444,7 +448,12 @@ class WordToScreenMatching(object):
             if any(elem in (global_dict['text'][i]) for elem in click_text.split(",")):
                 await self._click_center_button(diff, global_dict, i)
                 await asyncio.sleep(2)
-
+                
+    async def __handle_ptc_slow(self) -> ScreenType:
+        await asyncio.sleep(5)
+        logger.debug("Still loading the webbrowser, sleeping extra 5 seconds")
+        return ScreenType.PTC
+        
     async def __handle_ptc_login(self) -> ScreenType:
         self._nextscreen = ScreenType.UNDEFINED
         if not self._worker_state.active_account:

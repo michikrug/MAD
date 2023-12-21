@@ -423,12 +423,12 @@ class WordToScreenMatching(object):
         usernames_to_check_for: List[str] = usernames.split(",")
         if await self.parse_ggl(await self._communicator.uiautomator(), usernames_to_check_for):
             logger.info("Sleeping 50 seconds after clicking the account to login with - please wait!")
-            await asyncio.sleep(50)
+            await asyncio.sleep(120)
             await self._communicator.passthrough(
                 "su -c 'am broadcast -a com.mad.pogodroid.SET_INTENTIONAL_STOP -c android.intent.category.DEFAULT -n com.mad.pogodroid/.IntentionalStopSetterReceiver --ez value false'")
             await asyncio.sleep(5)
             await self._communicator.passthrough(
-                "su -c 'am startservice -n com.mad.pogodroid/.services.HookReceiverService'")
+                "su -c 'am start-foreground-service -n com.mad.pogodroid/.services.HookReceiverService'")
         else:
             screentype = ScreenType.ERROR
         return screentype
@@ -528,13 +528,13 @@ class WordToScreenMatching(object):
             if accept_x and accept_y:
                 await self._communicator.click(accept_x, accept_y)
                 logger.info("Clicking Log In and sleeping 50 seconds - please wait!")
-                await asyncio.sleep(50)
+                await asyncio.sleep(120)
                 # Start pogodroid service again to make sure we are running PD properly here
                 await self._communicator.passthrough(
                     "su -c 'am broadcast -a com.mad.pogodroid.SET_INTENTIONAL_STOP -c android.intent.category.DEFAULT -n com.mad.pogodroid/.IntentionalStopSetterReceiver --ez value false'")
                 await asyncio.sleep(5)
                 await self._communicator.passthrough(
-                    "su -c 'am startservice -n com.mad.pogodroid/.services.HookReceiverService'")
+                    "su -c 'am start-foreground-service -n com.mad.pogodroid/.services.HookReceiverService'")
                 return ScreenType.PTC
             else:
                 logger.error("Log in [accept] button not found?")

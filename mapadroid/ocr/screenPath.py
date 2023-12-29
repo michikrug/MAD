@@ -36,15 +36,10 @@ class WordToScreenMatching(object):
         self._worker_state: WorkerState = worker_state
         self._mapping_manager: MappingManager = mapping_mananger
         self._account_handler: AbstractAccountHandler = account_handler
-        self._ratio: float = 0.0
-
-        self._screenshot_y_offset: int = 0
         self._nextscreen: ScreenType = ScreenType.UNDEFINED
 
         self._communicator: AbstractCommunicator = communicator
         logger.info("Starting Screendetector")
-        self._width: int = 0
-        self._height: int = 0
 
     @classmethod
     async def create(cls, communicator: AbstractCommunicator, worker_state: WorkerState,
@@ -53,8 +48,6 @@ class WordToScreenMatching(object):
                                     mapping_mananger=mapping_mananger,
                                     account_handler=account_handler)
         self._accountindex = await self.get_devicesettings_value(MappingManagerDevicemappingKey.ACCOUNT_INDEX, 0)
-        self._screenshot_y_offset = await self.get_devicesettings_value(
-            MappingManagerDevicemappingKey.SCREENSHOT_Y_OFFSET, 0)
         return self
 
     async def __evaluate_topmost_app(self, topmost_app: str) -> Tuple[ScreenType, dict, int]:
@@ -63,9 +56,9 @@ class WordToScreenMatching(object):
         diff = 1
         if "IntentReceiverActivity" in topmost_app:
             return ScreenType.PTCSLOW, global_dict, diff
-        elif "ExternalAppBrowserActivity" in topmost_app:
+        elif "ExternalAppBrowserActivity" in topmost_app or "CustomTabActivity" in topmost_app:
             return ScreenType.PTC, global_dict, diff
-        elif "AccountPickerActivity" in topmost_app or 'SignInActivity' in topmost_app:
+        elif "AccountPickerActivity" in topmost_app or "SignInActivity" in topmost_app:
             return ScreenType.GGL, global_dict, diff
         elif "GrantPermissionsActivity" in topmost_app:
             return ScreenType.PERMISSION, global_dict, diff
@@ -97,9 +90,7 @@ class WordToScreenMatching(object):
                 logger.warning('Could not understand any text on screen - starting next round...')
                 return ScreenType.ERROR, global_dict, diff
 
-            self._ratio = self._height / self._width
-
-            logger.debug("Screenratio: {}", self._ratio)
+            logger.debug("Screenratio: {}", self._worker_state.resolution_calculator.x_y_ratio)
 
             if 'text' not in global_dict:
                 logger.error('Error while text detection')
@@ -173,8 +164,8 @@ class WordToScreenMatching(object):
 
                 # alternative select - calculate down from Facebook button
                 elif 'Facebook' in temp_dict:
-                    click_x = self._width / 2
-                    click_y = (temp_dict['Facebook'] + 2 * self._height / 10.11)
+                    click_x = self._worker_state.resolution_calculator.screen_size_x / 2
+                    click_y = (temp_dict['Facebook'] + 2 * self._worker_state.resolution_calculator.screen_size_y / 10.11)
                     logger.info("ScreenType.LOGINSELECT (f) using PTC (logintype in Device Settings)")
                     await self._communicator.click(int(click_x), int(click_y))
                     await asyncio.sleep(5)
@@ -182,8 +173,8 @@ class WordToScreenMatching(object):
 
                 # alternative select - calculate down from Google button
                 elif 'Google' in temp_dict:
-                    click_x = self._width / 2
-                    click_y = (temp_dict['Google'] + self._height / 10.11)
+                    click_x = self._worker_state.resolution_calculator.screen_size_x / 2
+                    click_y = (temp_dict['Google'] + self._worker_state.resolution_calculator.screen_size_y / 10.11)
                     logger.info("ScreenType.LOGINSELECT (g) using PTC (logintype in Device Settings)")
                     await self._communicator.click(int(click_x), int(click_y))
                     await asyncio.sleep(5)
@@ -199,7 +190,7 @@ class WordToScreenMatching(object):
 
                 # alternative select
                 elif 'Facebook' in temp_dict and 'CLUB' in temp_dict:
-                    click_x = self._width / 2
+                    click_x = self._worker_state.resolution_calculator.screen_size_x / 2
                     click_y = (temp_dict['Facebook'] + ((temp_dict['CLUB'] - temp_dict['Facebook']) / 2))
                     logger.info("ScreenType.LOGINSELECT (fc) using Google Account (logintype in Device Settings)")
                     await self._communicator.click(int(click_x), int(click_y))
@@ -208,8 +199,8 @@ class WordToScreenMatching(object):
 
                 # alternative select
                 elif 'Facebook' in temp_dict:
-                    click_x = self._width / 2
-                    click_y = (temp_dict['Facebook'] + self._height / 10.11)
+                    click_x = self._worker_state.resolution_calculator.screen_size_x / 2
+                    click_y = (temp_dict['Facebook'] + self._worker_state.resolution_calculator.screen_size_y / 10.11)
                     logger.info("ScreenType.LOGINSELECT (f) using Google Account (logintype in Device Settings)")
                     await self._communicator.click(int(click_x), int(click_y))
                     await asyncio.sleep(5)
@@ -217,8 +208,8 @@ class WordToScreenMatching(object):
 
                 # alternative select
                 elif 'CLUB' in temp_dict:
-                    click_x = self._width / 2
-                    click_y = (temp_dict['CLUB'] - self._height / 10.11)
+                    click_x = self._worker_state.resolution_calculator.screen_size_x / 2
+                    click_y = (temp_dict['CLUB'] - self._worker_state.resolution_calculator.screen_size_y / 10.11)
                     logger.info("ScreenType.LOGINSELECT (c) using Google Account (logintype in Device Settings)")
                     await self._communicator.click(int(click_x), int(click_y))
                     await asyncio.sleep(5)
@@ -340,6 +331,8 @@ class WordToScreenMatching(object):
                                                    BurnType.MAINTENANCE)
         elif screentype == ScreenType.POGO:
             screentype = await self.__check_pogo_screen_ban_or_loading(screentype, y_offset=y_offset)
+            if screentype == ScreenType.WELCOME:
+                screentype = await self.__handle_welcome_screen()
         elif screentype == ScreenType.QUEST:
             logger.warning("Already on quest screen")
             # TODO: consider closing quest window?
@@ -359,9 +352,12 @@ class WordToScreenMatching(object):
         return screentype
 
     async def __check_pogo_screen_ban_or_loading(self, screentype, y_offset: int = 0) -> ScreenType:
-        backgroundcolor = await self._worker_state.pogo_windows.most_frequent_colour(await self.get_screenshot_path(),
+        screenshot_path: str = await self.get_screenshot_path()
+        backgroundcolor = await self._worker_state.pogo_windows.most_frequent_colour(screenshot_path,
                                                                                      self._worker_state.origin,
                                                                                      y_offset=y_offset)
+        globaldict = await self._worker_state.pogo_windows.get_screen_text(screenshot_path, self._worker_state.origin)
+        welcome_text = ['Willkommen', 'Welcome']
         if backgroundcolor is not None and (
                 backgroundcolor[0] == 0 and
                 backgroundcolor[1] == 0 and
@@ -375,9 +371,13 @@ class WordToScreenMatching(object):
             # Got a strike warning
             screentype = ScreenType.STRIKE
         elif backgroundcolor is not None and (
+                any(text in welcome_text for text in globaldict['text']) or (
                 backgroundcolor[0] == 18 and
                 backgroundcolor[1] == 46 and
-                backgroundcolor[2] == 86):
+                backgroundcolor[2] == 86) or (
+                backgroundcolor[0] == 55 and
+                backgroundcolor[1] == 72 and
+                backgroundcolor[2] == 88)):
             screentype = ScreenType.WELCOME
         return screentype
 
@@ -426,9 +426,14 @@ class WordToScreenMatching(object):
             await asyncio.sleep(120)
             await self._communicator.passthrough(
                 "su -c 'am broadcast -a com.mad.pogodroid.SET_INTENTIONAL_STOP -c android.intent.category.DEFAULT -n com.mad.pogodroid/.IntentionalStopSetterReceiver --ez value false'")
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
             await self._communicator.passthrough(
                 "su -c 'am start-foreground-service -n com.mad.pogodroid/.services.HookReceiverService'")
+            await asyncio.sleep(5)
+            await self._communicator.stop_app("com.nianticlabs.pokemongo")
+            await asyncio.sleep(10)
+            await self._communicator.start_app("com.nianticlabs.pokemongo")
+            await asyncio.sleep(120)
         else:
             screentype = ScreenType.ERROR
         return screentype
@@ -479,8 +484,8 @@ class WordToScreenMatching(object):
                     bounds = item.attrib['bounds']
                     match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
                     logger.debug("Logo image Bounds {}", item.attrib['bounds'])
-                    exit_keyboard_x = int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2)
-                    exit_keyboard_y = int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2)
+                    exit_keyboard_x = int(int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2))
+                    exit_keyboard_y = int(int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2))
                 if item.attrib["resource-id"] == "email":
                     bounds = item.attrib['bounds']
                     logger.info("Found email/login field, clicking, filling, clicking")
@@ -532,9 +537,14 @@ class WordToScreenMatching(object):
                 # Start pogodroid service again to make sure we are running PD properly here
                 await self._communicator.passthrough(
                     "su -c 'am broadcast -a com.mad.pogodroid.SET_INTENTIONAL_STOP -c android.intent.category.DEFAULT -n com.mad.pogodroid/.IntentionalStopSetterReceiver --ez value false'")
-                await asyncio.sleep(5)
+                await asyncio.sleep(2)
                 await self._communicator.passthrough(
                     "su -c 'am start-foreground-service -n com.mad.pogodroid/.services.HookReceiverService'")
+                await asyncio.sleep(5)
+                await self._communicator.stop_app("com.nianticlabs.pokemongo")
+                await asyncio.sleep(10)
+                await self._communicator.start_app("com.nianticlabs.pokemongo")
+                await asyncio.sleep(120)
                 return ScreenType.PTC
             else:
                 logger.error("Log in [accept] button not found?")
@@ -549,26 +559,27 @@ class WordToScreenMatching(object):
         await self.__handle_returning_player_or_wrong_credentials()
 
     async def __handle_ggl_consent_screen(self) -> ScreenType:
-        if self._width == 0 and self._height == 0:
+        if (self._worker_state.resolution_calculator.screen_size_x == 0
+                and self._worker_state.resolution_calculator.screen_size_y == 0):
             logger.warning("Screen width and height are zero - try to get real values from new screenshot ...")
-            # this updates self._width, self._height
+            # this updates screen sizes etc
             result = await self._take_and_analyze_screenshot()
             if not result:
                 logger.error("Failed getting/analyzing screenshot")
                 return ScreenType.ERROR
-        if (self._width != 720 and self._height != 1280) and (self._width != 1080 and self._height != 1920) and (
-                self._width != 1440 and self._height != 2560):
+        if (self._worker_state.resolution_calculator.screen_size_x != 720 and self._worker_state.resolution_calculator.screen_size_y != 1280) and (self._worker_state.resolution_calculator.screen_size_x != 1080 and self._worker_state.resolution_calculator.screen_size_y != 1920) and (
+                self._worker_state.resolution_calculator.screen_size_x != 1440 and self._worker_state.resolution_calculator.screen_size_y != 2560):
             logger.warning("The google consent screen can only be handled on 720x1280, 1080x1920 and 1440x2560 screens "
-                           f"(width is {self._width}, height is {self._height})")
+                           f"(width is {self._worker_state.resolution_calculator.screen_size_x}, height is {self._worker_state.resolution_calculator.screen_size_y})")
             return ScreenType.ERROR
         logger.info("Click accept button")
-        if self._width == 720 and self._height == 1280:
+        if self._worker_state.resolution_calculator.screen_size_x == 720 and self._worker_state.resolution_calculator.screen_size_y == 1280:
             await self._communicator.touch_and_hold(int(360), int(1080), int(360), int(500))
             await self._communicator.click(480, 1080)
-        if self._width == 1080 and self._height == 1920:
+        if self._worker_state.resolution_calculator.screen_size_x == 1080 and self._worker_state.resolution_calculator.screen_size_y == 1920:
             await self._communicator.touch_and_hold(int(360), int(1800), int(360), int(400))
             await self._communicator.click(830, 1638)
-        if self._width == 1440 and self._height == 2560:
+        if self._worker_state.resolution_calculator.screen_size_x == 1440 and self._worker_state.resolution_calculator.screen_size_y == 2560:
             await self._communicator.touch_and_hold(int(360), int(2100), int(360), int(400))
             await self._communicator.click(976, 2180)
         await asyncio.sleep(10)
@@ -582,7 +593,8 @@ class WordToScreenMatching(object):
             2.20, 3.01,
             upper=True)
         if coordinates:
-            coordinates = ScreenCoordinates(int(self._width / 2), int(self._height * 0.7))
+            coordinates = ScreenCoordinates(int(self._worker_state.resolution_calculator.screen_size_x / 2),
+                                            int(self._worker_state.resolution_calculator.screen_size_y * 0.7 - self._worker_state.resolution_calculator.y_offset))
             await self._communicator.click(coordinates.x, coordinates.y)
             await asyncio.sleep(2)
 
@@ -600,17 +612,17 @@ class WordToScreenMatching(object):
 
         # After having restarted pogo, we should again be on the birthday screen now and PD is turned off
         self._nextscreen = ScreenType.RETURNING
-        click_x = int((self._width / 2) + (self._width / 4))
-        click_y = int((self._height / 1.69) + self._screenshot_y_offset)
+        click_x = int((self._worker_state.resolution_calculator.screen_size_x / 2) + (self._worker_state.resolution_calculator.screen_size_x / 4))
+        click_y = int(self._worker_state.resolution_calculator.screen_size_y / 1.69)
         await self._communicator.click(click_x, click_y)
-        await self._communicator.touch_and_hold(click_x, click_y, click_x, int(click_y - (self._height / 2)), 200)
+        await self._communicator.touch_and_hold(click_x, click_y, click_x, int(click_y - (self._worker_state.resolution_calculator.screen_size_y / 2)), 200)
         await asyncio.sleep(1)
-        await self._communicator.touch_and_hold(click_x, click_y, click_x, int(click_y - (self._height / 2)), 200)
+        await self._communicator.touch_and_hold(click_x, click_y, click_x, int(click_y - (self._worker_state.resolution_calculator.screen_size_y / 2)), 200)
         await asyncio.sleep(1)
         await self._communicator.click(click_x, click_y)
         await asyncio.sleep(1)
-        click_x = int(self._width / 2)
-        click_y = int(click_y + (self._height / 8.53))
+        click_x = int(self._worker_state.resolution_calculator.screen_size_x / 2)
+        click_y = int(click_y + (self._worker_state.resolution_calculator.screen_size_y / 8.53))
         await self._communicator.click(click_x, click_y)
         await asyncio.sleep(1)
 
@@ -630,7 +642,7 @@ class WordToScreenMatching(object):
     async def __handle_tos_screen(self) -> ScreenType:
         #self._nextscreen = ScreenType.PRIVACY
         screenshot_path = await self.get_screenshot_path()
-        await self._communicator.click(int(self._width / 2), int(self._height * 0.47))
+        await self._communicator.click(int(self._worker_state.resolution_calculator.screen_size_x / 2), int(self._worker_state.resolution_calculator.screen_size_y * 0.47))
         coordinates: Optional[ScreenCoordinates] = await self._worker_state.pogo_windows.look_for_button(
             screenshot_path,
             2.20, 3.01,
@@ -659,10 +671,10 @@ class WordToScreenMatching(object):
             await self._communicator.click(100, 100)
             await asyncio.sleep(1)
         await asyncio.sleep(1)
-        await self._communicator.click(int(self._width / 4), int(self._height / 2))
+        await self._communicator.click(int(self._worker_state.resolution_calculator.screen_size_x / 4), int(self._worker_state.resolution_calculator.screen_size_y / 2))
         await asyncio.sleep(2)
         for _ in range(3):
-            await self._communicator.click(int(self._width * 0.91), int(self._height * 0.94))
+            await self._communicator.click(int(self._worker_state.resolution_calculator.screen_size_x * 0.91), int(self._worker_state.resolution_calculator.screen_size_y * 0.94))
             await asyncio.sleep(2)
 
         if not await self._take_screenshot(delay_before=await self.get_devicesettings_value(
@@ -687,8 +699,8 @@ class WordToScreenMatching(object):
             await self._communicator.click(100, 100)
         for x in range(1,10):
             for y in range(1,10):
-                click_x = int(self._width * x/10)
-                click_y = int(self._height * y/20 + self._height / 2)
+                click_x = int(self._worker_state.resolution_calculator.screen_size_x * x/10)
+                click_y = int(self._worker_state.resolution_calculator.screen_size_y * y/20 + self._worker_state.resolution_calculator.screen_size_y / 2)
                 await self._communicator.click(click_x, click_y)
             await asyncio.sleep(5)
             if not await self._take_screenshot(delay_before=await self.get_devicesettings_value(
@@ -704,9 +716,9 @@ class WordToScreenMatching(object):
                 break
 
         for _ in range(3):
-            click_x = int(self._width / 2)
-            click_y = int(self._height * 0.93)
-            await self._communicator.touch_and_hold(click_x, click_y, click_x, int(click_y - (self._height / 2)), 200)
+            click_x = int(self._worker_state.resolution_calculator.screen_size_x / 2)
+            click_y = int(self._worker_state.resolution_calculator.screen_size_y * 0.93)
+            await self._communicator.touch_and_hold(click_x, click_y, click_x, int(click_y - (self._worker_state.resolution_calculator.screen_size_y / 2)), 200)
             await asyncio.sleep(15)
 
             if not await self._take_screenshot(delay_before=await self.get_devicesettings_value(
@@ -724,7 +736,7 @@ class WordToScreenMatching(object):
                 await self._communicator.click(coordinates.x, coordinates.y)
                 logger.info("Catched Pokémon.")
                 await asyncio.sleep(12)
-                await self._communicator.click(int(self._width / 2), int(self._height * 0.93))
+                await self._communicator.click(int(self._worker_state.resolution_calculator.screen_size_x / 2), int(self._worker_state.resolution_calculator.screen_size_y * 0.93))
                 await asyncio.sleep(2)
                 return ScreenType.UNDEFINED
 
@@ -745,8 +757,8 @@ class WordToScreenMatching(object):
         await self._communicator.enter_text(username)
         await self._communicator.click(100, 100)
         await asyncio.sleep(2)
-        await self._communicator.click(int(self._width / 2), int(self._height * 0.66))
-        await self._communicator.click(int(self._width / 2), int(self._height * 0.51))
+        await self._communicator.click(int(self._worker_state.resolution_calculator.screen_size_x / 2), int(self._worker_state.resolution_calculator.screen_size_y * 0.66))
+        await self._communicator.click(int(self._worker_state.resolution_calculator.screen_size_x / 2), int(self._worker_state.resolution_calculator.screen_size_y * 0.51))
         await asyncio.sleep(2)
 
         if not await self._take_screenshot(delay_before=await self.get_devicesettings_value(
@@ -1010,7 +1022,9 @@ class WordToScreenMatching(object):
             logger.error("Failed analyzing screen")
             return None
         else:
-            returntype, global_dict, self._width, self._height, diff = result
+            returntype, global_dict, width, height, diff = result
+            self._worker_state.resolution_calculator.screen_size_x = width
+            self._worker_state.resolution_calculator.screen_size_y = height
             return returntype, global_dict, diff
 
     async def clear_game_data(self):

@@ -333,7 +333,7 @@ class AbstractWorkerStrategy(ABC):
             if screen_type != ScreenType.ERROR and self._worker_state.last_screen_type == screen_type:
                 self._worker_state.same_screen_count += 1
                 logger.info("Found {} multiple times in a row ({})", screen_type, self._worker_state.same_screen_count)
-                if self._worker_state.same_screen_count > 3:
+                if self._worker_state.same_screen_count > 7:
                     logger.warning("Screen is frozen!")
                     if self._worker_state.same_screen_count > 4 or not await self._restart_pogo():
                         logger.warning("Restarting PoGo failed - reboot device")

@@ -1,5 +1,6 @@
 import asyncio
 import os
+import random
 import re
 import time
 import xml.etree.ElementTree as ET  # noqa: N817
@@ -475,6 +476,10 @@ class WordToScreenMatching(object):
         if not self._worker_state.active_account:
             logger.error('No PTC Username and Password is set')
             return ScreenType.ERROR
+        for i in range(6):
+            await self._communicator.click(random.randint(30, 400), random.randint(30, 400))
+            await asyncio.sleep(1)
+
         xml: Optional[MessageTyping] = await self._communicator.uiautomator()
         if xml is None:
             logger.warning('Something wrong with processing - getting None Type from Websocket...')

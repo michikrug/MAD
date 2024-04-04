@@ -53,7 +53,7 @@ class DeviceUpdater(object):
         self.t_updater: List[Task] = []
 
     async def _load_log(self) -> None:
-        log_file: str = "update_log.json"
+        log_file: str = os.path.join(MadGlobals.application_args.file_path, 'update_log.json')
         try:
             if os.path.exists(log_file):
                 with open(log_file) as logfile:
@@ -371,7 +371,7 @@ class DeviceUpdater(object):
 
     async def __write_log(self):
         async with self._update_mutex:
-            with open('update_log.json', 'w') as outfile:
+            with open(os.path.join(MadGlobals.application_args.file_path, 'update_log.json'), 'w') as outfile:
                 to_dump = {}
                 for job_id, entry in self._log.items():
                     to_dump[job_id] = self._global_job_log_entry_schema.dump(entry, many=False)

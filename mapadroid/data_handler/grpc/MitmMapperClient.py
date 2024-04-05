@@ -68,7 +68,7 @@ class MitmMapperClient(MitmMapperStub, AbstractMitmMapper):
             # TODO: Return time.time() to continue scans or throw a custom exception that needs to be handled?
             return 0
 
-    async def update_latest(self, worker: str, key: str, value: Union[List, Dict],
+    async def update_latest(self, worker: str, key: str, value: Union[List, Dict, bytes],
                             timestamp_received_raw: float = None,
                             timestamp_received_receiver: float = None, location: Location = None) -> None:
         request: mitm_mapper_pb2.LatestMitmDataEntryUpdateRequest = mitm_mapper_pb2.LatestMitmDataEntryUpdateRequest()
@@ -86,6 +86,8 @@ class MitmMapperClient(MitmMapperStub, AbstractMitmMapper):
             request.data.some_list.extend(value)
         elif isinstance(value, dict):
             request.data.some_dictionary.update(value)
+        elif isinstance(value, bytes):
+            request.data.raw_message = value
         else:
             raise ValueError("Cannot handle data")
         try:
@@ -124,10 +126,14 @@ class MitmMapperClient(MitmMapperStub, AbstractMitmMapper):
         elif entry.HasField(
                 "some_list"):
             data = entry.some_list
+        elif entry.HasField("raw_message"):
+            data = entry.raw_message
         else:
             data = None
-        if data:
+        if data is not None and not isinstance(data, bytes):
             formatted = json_format.MessageToDict(data)
+        elif data is not None:
+            formatted = data
         else:
             formatted = None
         entry: LatestMitmDataEntry = LatestMitmDataEntry(location=location,

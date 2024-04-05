@@ -103,48 +103,6 @@ class WordToScreenMatching(object):
         temp_dict: dict = {}
         n_boxes = len(global_dict['text'])
         logger.debug("Selecting login with: {}", global_dict)
-        last_used_account_valid: bool = False
-        try:
-            last_used_account_valid = (self._worker_state.active_account
-                                       and await self._account_handler.is_burnt(self._worker_state.device_id,
-                                                                                self._worker_state.active_account.account_id))
-        except ValueError as e:
-            logger.warning("Account last used does not match the assignment of accounts stored in DB")
-            self._worker_state.active_account = None
-            self._worker_state.active_account_last_set = 0
-        if self._worker_state.active_account_last_set + 300 < time.time() or not last_used_account_valid:
-            logger.info("Detected login screen, fetching new account to use since last account was assigned more "
-                        "than 5 minutes ago OR current account was marked burnt")
-            location_to_scan: Optional[Location] = None
-            if not location_to_scan \
-                    or self._worker_state.current_location.lat == 0 and self._worker_state.current_location.lng == 0:
-                # Default location, use the middle of the geofence...
-                geofence_helper: Optional[GeofenceHelper] = await self._mapping_manager \
-                    .routemanager_get_geofence_helper(self._worker_state.area_id)
-                if geofence_helper:
-                    lat, lon = geofence_helper.get_middle_from_fence()
-                    location_to_scan = Location(lat, lon)
-            else:
-                location_to_scan = self._worker_state.current_location
-
-            account_to_use: Optional[SettingsPogoauth] = await self._account_handler.get_account(
-                self._worker_state.device_id,
-                await self._mapping_manager.routemanager_get_purpose_of_device(self._worker_state.area_id),
-                location_to_scan
-            )
-            if not account_to_use:
-                logger.error("No account to use found, are there too few accounts in DB or did MAD screw up here? "
-                             "Please make sure accounts in MADmin->Settings->Pogo Auth have correct level set - edit "
-                             "it manually if imported with 0/1 - MAD does not (auto)login to check levels "
-                             "(unless levelmode is active.")
-                self._worker_state.active_account = None
-                self._worker_state.active_account_last_set = 0
-            else:
-                logger.info("Account for {}: {}", self._worker_state.origin, account_to_use.username)
-                self._worker_state.active_account = account_to_use
-                self._worker_state.active_account_last_set = int(time.time())
-        else:
-            logger.info("Account was set recently and is still assigned to device {} in DB")
         if not self._worker_state.active_account:
             logger.error("No account set for device, sleeping 30s")
             await asyncio.sleep(30)
@@ -224,6 +182,51 @@ class WordToScreenMatching(object):
                     await asyncio.sleep(5)
                     return
 
+    async def _fetch_auth_details(self) -> None:
+        logger.debug("Checking for a new account")
+        last_used_account_valid: bool = False
+        try:
+            last_used_account_valid = (self._worker_state.active_account
+                                       and await self._account_handler.is_burnt(self._worker_state.device_id,
+                                                                                self._worker_state.active_account.account_id))
+        except ValueError as e:
+            logger.warning("Account last used does not match the assignment of accounts stored in DB")
+            self._worker_state.active_account = None
+            self._worker_state.active_account_last_set = 0
+        if self._worker_state.active_account_last_set + 300 < time.time() or not last_used_account_valid:
+            logger.info("Detected login screen, fetching new account to use since last account was assigned more "
+                        "than 5 minutes ago OR current account was marked burnt")
+            location_to_scan: Optional[Location] = None
+            if not location_to_scan \
+                    or self._worker_state.current_location.lat == 0 and self._worker_state.current_location.lng == 0:
+                # Default location, use the middle of the geofence...
+                geofence_helper: Optional[GeofenceHelper] = await self._mapping_manager \
+                    .routemanager_get_geofence_helper(self._worker_state.area_id)
+                if geofence_helper:
+                    lat, lon = geofence_helper.get_middle_from_fence()
+                    location_to_scan = Location(lat, lon)
+            else:
+                location_to_scan = self._worker_state.current_location
+
+            account_to_use: Optional[SettingsPogoauth] = await self._account_handler.get_account(
+                self._worker_state.device_id,
+                await self._mapping_manager.routemanager_get_purpose_of_device(self._worker_state.area_id),
+                location_to_scan
+            )
+            if not account_to_use:
+                logger.error("No account to use found, are there too few accounts in DB or did MAD screw up here? "
+                             "Please make sure accounts in MADmin->Settings->Pogo Auth have correct level set - edit "
+                             "it manually if imported with 0/1 - MAD does not (auto)login to check levels "
+                             "(unless levelmode is active.")
+                self._worker_state.active_account = None
+                self._worker_state.active_account_last_set = 0
+            else:
+                logger.info("Account for {}: {}", self._worker_state.origin, account_to_use.username)
+                self._worker_state.active_account = account_to_use
+                self._worker_state.active_account_last_set = int(time.time())
+        else:
+            logger.info("Account was set recently and is still assigned to device {} in DB")
+
     async def check_ptc_login_ban(self, increment_count: bool = True) -> bool:
         """
         Checks whether a PTC login is currently permissible.
@@ -259,13 +262,16 @@ class WordToScreenMatching(object):
         if screentype == ScreenType.UNDEFINED:
             logger.warning("Undefined screentype, abandon ship...")
         elif screentype == ScreenType.BIRTHDATE:
+            await self._fetch_auth_details()
             await self.__handle_birthday_screen()
         elif screentype == ScreenType.RETURNING:
             await self.__handle_returning_player_or_wrong_credentials()
         elif screentype == ScreenType.LOGINSELECT:
+            await self._fetch_auth_details()
             await self.__handle_login_screen(global_dict, diff)
         elif screentype == ScreenType.PTC:
-            await self.__handle_ptc_login()
+            await self._fetch_auth_details()
+            return await self.__handle_ptc_login()
         elif screentype == ScreenType.PTCSLOW:
             await self.__handle_ptc_slow()
         elif screentype == ScreenType.FAILURE:
@@ -340,8 +346,6 @@ class WordToScreenMatching(object):
                                                    BurnType.MAINTENANCE)
         elif screentype == ScreenType.POGO:
             screentype = await self.__check_pogo_screen_ban_or_loading(screentype, y_offset=y_offset)
-            if screentype == ScreenType.WELCOME:
-                screentype = await self.__handle_welcome_screen()
         elif screentype == ScreenType.QUEST:
             logger.warning("Already on quest screen")
             # TODO: consider closing quest window?
@@ -419,7 +423,11 @@ class WordToScreenMatching(object):
     async def __handle_google_login(self, screentype) -> ScreenType:
         self._nextscreen = ScreenType.UNDEFINED
         usernames: Optional[str] = None
-        if self._worker_state.active_account and self._worker_state.active_account.login_type == LoginType.ptc.name:
+        if not self._worker_state.active_account:
+            logger.error("No account set for device, sleeping 30s")
+            await asyncio.sleep(30)
+            return ScreenType.ERROR
+        elif self._worker_state.active_account and self._worker_state.active_account.login_type == LoginType.ptc.name:
             logger.warning('Really dont know how i get there ... using first @ggl address ... :)')
             usernames: Optional[str] = await self.get_devicesettings_value(
                 MappingManagerDevicemappingKey.GGL_LOGIN_MAIL, '@gmail.com')
@@ -476,6 +484,11 @@ class WordToScreenMatching(object):
         if not self._worker_state.active_account:
             logger.error('No PTC Username and Password is set')
             return ScreenType.ERROR
+        elif self._worker_state.active_account.login_type == LoginType.ptc.google:
+            logger.warning("PTC login was opened but google login is expected, restarting pogo")
+            await self._communicator.restart_app("com.nianticlabs.pokemongo")
+            await asyncio.sleep(50)
+            return ScreenType.GGL
         for i in range(6):
             await self._communicator.click(random.randint(30, 400), random.randint(30, 400))
             await asyncio.sleep(1)
@@ -495,14 +508,25 @@ class WordToScreenMatching(object):
             # Changing it to (300, 300), but also detecting big logo image on website and taking this as new coords
             exit_keyboard_x: int = 300
             exit_keyboard_y: int = 300
+
+            waf_detected: bool = False
+
             for item in xmlroot.iter('node'):
-                if item.attrib["class"] == "android.widget.Image":
+                if "Access denied" in item.attrib["text"]:
+                    logger.warning("WAF on PTC login attempt detected")
+                    # Reload the page 1-3 times
+                    for i in range(random.randint(1,3)):
+                        logger.info("Reload #{}", i)
+                        await self.__handle_ptc_waf()
+                    return ScreenType.PTC
+                elif item.attrib["class"] == "android.widget.Image":
                     bounds = item.attrib['bounds']
                     match = re.search(r'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$', bounds)
                     logger.debug("Logo image Bounds {}", item.attrib['bounds'])
                     exit_keyboard_x = int(int(match.group(1)) + ((int(match.group(3)) - int(match.group(1))) / 2))
                     exit_keyboard_y = int(int(match.group(2)) + ((int(match.group(4)) - int(match.group(2))) / 2))
-                if item.attrib["resource-id"] == "email":
+                elif (item.attrib["resource-id"] == "email"
+                        or ("EditText" in item.attrib["class"] and item.attrib["index"] == "0")):
                     bounds = item.attrib['bounds']
                     logger.info("Found email/login field, clicking, filling, clicking")
                     logger.debug("email-node Bounds {}", item.attrib['bounds'])
@@ -514,7 +538,8 @@ class WordToScreenMatching(object):
                     await self._communicator.enter_text(self._worker_state.active_account.username)
                     await self._communicator.click(exit_keyboard_x, exit_keyboard_y)
                     await asyncio.sleep(2)
-                if item.attrib["resource-id"] == "password":
+                elif (item.attrib["resource-id"] == "password"
+                        or ("EditText" in item.attrib["class"] and item.attrib["index"] == "1")):
                     bounds = item.attrib['bounds']
                     logger.debug("password-node Bounds {}", item.attrib['bounds'])
                     logger.info("Found password field, clicking, filling, clicking")
@@ -526,7 +551,8 @@ class WordToScreenMatching(object):
                     await self._communicator.enter_text(self._worker_state.active_account.password)
                     await self._communicator.click(exit_keyboard_x, exit_keyboard_y)
                     await asyncio.sleep(2)
-                if item.attrib["resource-id"] == "accept":
+                elif "Button" in item.attrib["class"] and (item.attrib["resource-id"] == "accept"
+                                                         or item.attrib["text"] in ("Anmelden", "Log In")):
                     bounds = item.attrib['bounds']
                     logger.info("Found Log In button")
                     logger.debug("accept-node Bounds {}", item.attrib['bounds'])
@@ -549,18 +575,19 @@ class WordToScreenMatching(object):
             if accept_x and accept_y:
                 await self._communicator.click(accept_x, accept_y)
                 logger.info("Clicking Log In and sleeping 50 seconds - please wait!")
-                await asyncio.sleep(120)
-                # Start pogodroid service again to make sure we are running PD properly here
-                await self._communicator.passthrough(
-                    "su -c 'am broadcast -a com.mad.pogodroid.SET_INTENTIONAL_STOP -c android.intent.category.DEFAULT -n com.mad.pogodroid/.IntentionalStopSetterReceiver --ez value false'")
-                await asyncio.sleep(2)
-                await self._communicator.passthrough(
-                    "su -c 'am start-foreground-service -n com.mad.pogodroid/.services.HookReceiverService'")
-                await asyncio.sleep(5)
-                await self._communicator.stop_app("com.nianticlabs.pokemongo")
-                await asyncio.sleep(10)
-                await self._communicator.start_app("com.nianticlabs.pokemongo")
-                await asyncio.sleep(120)
+                await asyncio.sleep(50)
+                if await self.get_devicesettings_value(MappingManagerDevicemappingKey.EXTENDED_LOGIN, False):
+                    # Start pogodroid service again to make sure we are running PD properly here
+                    await self._communicator.passthrough(
+                        "su -c 'am broadcast -a com.mad.pogodroid.SET_INTENTIONAL_STOP -c android.intent.category.DEFAULT -n com.mad.pogodroid/.IntentionalStopSetterReceiver --ez value false'")
+                    await asyncio.sleep(2)
+                    await self._communicator.passthrough(
+                        "su -c 'am start-foreground-service -n com.mad.pogodroid/.services.HookReceiverService'")
+                    await asyncio.sleep(5)
+                    await self._communicator.stop_app("com.nianticlabs.pokemongo")
+                    await asyncio.sleep(10)
+                    await self._communicator.start_app("com.nianticlabs.pokemongo")
+                    await asyncio.sleep(120)
                 return ScreenType.PTC
             else:
                 logger.error("Log in [accept] button not found?")
@@ -1063,3 +1090,23 @@ class WordToScreenMatching(object):
     async def clear_game_data(self):
         await self._communicator.reset_app_data("com.nianticlabs.pokemongo")
         await self._account_handler.notify_logout(self._worker_state.device_id)
+
+    async def __handle_ptc_waf(self) -> None:
+        """
+        The WAF was either triggered at random (happens) and a simple reload is needed or the IP was blacklisted.
+        Let's pull down the page to trigger a reload.
+        """
+        # First fetch the bounds, then randomly pick an X coordinate roughly around the center +-10% (random)
+        # Then, fetch y of upper 10-20% part
+        # swipe down for half the screen with mildly varying X coordinate as target to randomize swipes
+        center_x: int = int(self._worker_state.resolution_calculator.screen_size_x / 2)
+        upper_x: int = random.randint(int(center_x * 0.9), int(center_x * 1.1))
+        lower_x: int = random.randint(int(center_x * 0.9), int(center_x * 1.1))
+
+        upper_y: int = random.randint(int(self._worker_state.resolution_calculator.screen_size_y * 0.2),
+                                      int(self._worker_state.resolution_calculator.screen_size_y * 0.35))
+        lower_y: int = random.randint(int(self._worker_state.resolution_calculator.screen_size_y * 0.5),
+                                      int(self._worker_state.resolution_calculator.screen_size_y * 0.65))
+        swipe_duration: int = random.randint(800, 1500)
+        await self._communicator.touch_and_hold(upper_x, upper_y, lower_x, lower_y, swipe_duration)
+        # Returning ScreenType PTC for now to re-evaluate

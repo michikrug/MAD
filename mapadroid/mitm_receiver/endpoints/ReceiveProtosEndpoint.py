@@ -1,19 +1,21 @@
 import asyncio
 import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from aiohttp import web
 from loguru import logger
-from orjson import orjson
+import orjson
 
 from mapadroid.db.helper.SettingsDeviceHelper import SettingsDeviceHelper
 from mapadroid.db.helper.TrsVisitedHelper import TrsVisitedHelper
 from mapadroid.db.model import SettingsDevice
 from mapadroid.mitm_receiver.endpoints.AbstractMitmReceiverRootEndpoint import \
     AbstractMitmReceiverRootEndpoint
+from mapadroid.mitm_receiver.protos.ProtoHelper import ProtoHelper
 from mapadroid.utils.collections import Location
 from mapadroid.utils.DatetimeWrapper import DatetimeWrapper
 from mapadroid.utils.ProtoIdentifier import ProtoIdentifier
+import mapadroid.mitm_receiver.protos.Rpc_pb2 as pogoprotos
 
 
 class ReceiveProtosEndpoint(AbstractMitmReceiverRootEndpoint):
@@ -70,26 +72,6 @@ class ReceiveProtosEndpoint(AbstractMitmReceiverRootEndpoint):
         if proto_type not in (106, 102, 101, 104, 4, 156, 145, 1405):
             # trash protos - ignoring
             return
-        elif proto_type == 106 and not data["payload"].get("cells", []):
-            logger.debug("Ignoring apparently empty GMO")
-            return
-        elif proto_type == 102 and not data["payload"].get("status", None) == 1:
-            logger.warning("Encounter with status {} being ignored", data["payload"].get("status", None))
-            return
-        elif proto_type == 1405 and not data["payload"].get("route_map_cell", []):
-            logger.info("No routes in payload to be processed")
-            return
-        elif proto_type == 101:
-            # FORT_SEARCH
-            # check if it is out of range. If so, ignore it
-            fort_search = data["payload"]
-            result: int = fort_search.get("result", 0)
-            if result == 2:
-                location_of_data: Location = Location(data.get("lat", 0.0), data.get("lng", 0.0))
-                # Fort search out of range, abort
-                logger.debug("Received out of range fort search for {}. Location of data: {}",
-                             fort_search.get("fort_id", "unknown_id"), location_of_data)
-                return
 
         location_of_data: Location = Location(data.get("lat", 0.0), data.get("lng", 0.0))
         if (location_of_data.lat > 90 or location_of_data.lat < -90 or
@@ -97,19 +79,65 @@ class ReceiveProtosEndpoint(AbstractMitmReceiverRootEndpoint):
             location_of_data: Location = Location(0.0, 0.0)
         time_received: int = int(time.time())
 
-        if proto_type == ProtoIdentifier.FORT_SEARCH.value:
-            logger.debug("Checking fort search proto type 101")
-            await self._handle_fort_search_proto(origin, data["payload"], location_of_data, timestamp)
         quests_held: Optional[List[int]] = data.get("quests_held", None)
         await self._get_mitm_mapper().set_quests_held(origin, quests_held)
+
+        if not data.get("raw", False):
+            # Legacy json processing...
+            logger.warning("JSON formatted processing is deprecated")
+            return
+        # Parsing raw data should be done within the data processor rather than the endpoint except for time
+        # relevant information as the update_latest directive for example?
+        # TODO: Offload to threads or does this have too much overhead?
+        # TODO: dataclass for data passed in
+        decoded_raw_proto: bytes = ProtoHelper.decode(data["payload"])
+        data["payload"] = decoded_raw_proto
         await self._get_mitm_mapper().update_latest(origin, timestamp_received_raw=timestamp,
-                                                    timestamp_received_receiver=time_received, key=str(proto_type),
+                                                    timestamp_received_receiver=time_received,
+                                                    key=str(proto_type),
+                                                    value=decoded_raw_proto,
+                                                    location=location_of_data)
+        if proto_type == ProtoIdentifier.GMO.value:
+            # TODO: Offload transformation
+            gmo: pogoprotos.GetMapObjectsOutProto = ProtoHelper.parse(ProtoIdentifier.GMO, decoded_raw_proto)
+            if not gmo.map_cell:
+                logger.debug("Ignoring apparently empty GMO")
+                return
+        elif proto_type == ProtoIdentifier.FORT_SEARCH.value:
+            logger.debug("Checking fort search proto type 101")
+            fort_search: pogoprotos.FortSearchOutProto = ProtoHelper.parse(ProtoIdentifier.FORT_SEARCH,
+                                                                           decoded_raw_proto)
+            if fort_search.result == 2:
+                location_of_data: Location = Location(data.get("lat", 0.0), data.get("lng", 0.0))
+                # Fort search out of range, abort
+                logger.debug("Received out of range fort search for {}. Location of data: {}",
+                             fort_search.get("fort_id", "unknown_id"), location_of_data)
+                return
+
+            await self._handle_fort_search_proto(origin, fort_search, location_of_data, timestamp)
+        elif proto_type == ProtoIdentifier.ENCOUNTER.value:
+            # TODO: Offload transformation
+            encounter: pogoprotos.EncounterOutProto = ProtoHelper.parse(ProtoIdentifier.ENCOUNTER, decoded_raw_proto)
+            if encounter.status != 1:
+                logger.warning("Encounter with status {} being ignored", encounter.status)
+                return
+        elif proto_type == ProtoIdentifier.GET_ROUTES.value:
+            get_routes: pogoprotos.GetRoutesOutProto = ProtoHelper.parse(ProtoIdentifier.GET_ROUTES, decoded_raw_proto)
+            if not get_routes.route_map_cell:
+                logger.info("No routes in payload to be processed")
+                return
+
+        await self._get_mitm_mapper().update_latest(origin, timestamp_received_raw=timestamp,
+                                                    timestamp_received_receiver=time_received,
+                                                    key=str(proto_type),
                                                     value=data["payload"],
                                                     location=location_of_data)
+
         logger.debug2("Placing data received to data_queue")
         await self._add_to_queue((timestamp, data, origin))
 
-    async def _handle_fort_search_proto(self, origin: str, quest_proto: Dict, location_of_data: Location,
+    async def _handle_fort_search_proto(self, origin: str, quest_proto: pogoprotos.FortSearchOutProto,
+                                        location_of_data: Location,
                                         timestamp: int) -> None:
         instance_id = self._get_db_wrapper().get_instance_id()
         logger.debug("Checking fort search of {} of instance {}", origin, instance_id)
@@ -123,22 +151,20 @@ class ReceiveProtosEndpoint(AbstractMitmReceiverRootEndpoint):
             device.device_id, location_of_action=location_of_data,
             time_of_action=DatetimeWrapper.fromtimestamp(timestamp))
         self._commit_trigger = True
-
-        fort_id = quest_proto.get("fort_id", None)
-        if fort_id is None:
+        if not quest_proto.fort_id:
             logger.debug("No fort id in fort search")
             return
         username: Optional[str] = await self._get_account_handler().get_assigned_username(device_id=device.device_id)
         if username:
-            await TrsVisitedHelper.mark_visited(self._session, username, fort_id)
+            await TrsVisitedHelper.mark_visited(self._session, username, quest_proto.fort_id)
         else:
             logger.warning("Unable to retrieve username last assigned to {} to mark stop as visited", origin)
-
-        if "challenge_quest" not in quest_proto:
+        # TODO: Stop doing anything after the above marking as visited given nothing happens below
+        if not quest_proto.challenge_quest:
             logger.debug("No challenge quest in fort search")
             return
-        protoquest = quest_proto["challenge_quest"]["quest"]
-        rewards = protoquest.get("quest_rewards", None)
+        # TODO: This chaining of property access probably is not safe to call like this...
+        rewards = quest_proto.challenge_quest.quest.quest_rewards
         if not rewards:
             logger.debug("No quest rewards in fort search")
             return

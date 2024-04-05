@@ -1,11 +1,13 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union, Dict
 
 from mapadroid.data_handler.mitm_data.holder.latest_mitm_data.LatestMitmDataEntry import LatestMitmDataEntry
+from mapadroid.mitm_receiver.protos.ProtoHelper import ProtoHelper
 from mapadroid.utils.DatetimeWrapper import DatetimeWrapper
 from mapadroid.utils.ProtoIdentifier import ProtoIdentifier
 from mapadroid.utils.logging import LoggerEnums, get_logger
 from mapadroid.worker.ReceivedTypeEnum import ReceivedType
 from mapadroid.worker.strategy.plain.AbstractWorkerMitmStrategy import AbstractWorkerMitmStrategy
+import mapadroid.mitm_receiver.protos.Rpc_pb2 as pogoprotos
 
 logger = get_logger(LoggerEnums.worker)
 
@@ -30,11 +32,12 @@ class WorkerRaidsStrategy(AbstractWorkerMitmStrategy):
             # TODO: latter indicates too high speeds for example
             return type_of_data_found, data_found
 
-        latest_proto_data: dict = latest.data
-        if latest_proto_data is None:
+        latest_proto_data: Union[List, Dict, bytes] = latest.data
+        if not latest_proto_data:
             return ReceivedType.UNDEFINED, data_found
-        if proto_to_wait_for == ProtoIdentifier.GMO:
-            if self._gmo_cells_contain_multiple_of_key(latest_proto_data, "forts"):
+        elif proto_to_wait_for == ProtoIdentifier.GMO:
+            gmo: pogoprotos.GetMapObjectsOutProto = ProtoHelper.parse(ProtoIdentifier.GMO, latest_proto_data)
+            if self._gmo_cells_contain_multiple_of_key(gmo, "fort"):
                 data_found = latest_proto_data
                 type_of_data_found = ReceivedType.GMO
             else:

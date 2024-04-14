@@ -6,11 +6,14 @@ from typing import Any, List, Optional
 
 from loguru import logger
 
+from mapadroid.account_handler import (AbstractAccountHandler,
+                                       fetch_auth_details)
 from mapadroid.data_handler.stats.AbstractStatsHandler import \
     AbstractStatsHandler
 from mapadroid.db.DbWrapper import DbWrapper
 from mapadroid.db.helper.TrsStatusHelper import TrsStatusHelper
-from mapadroid.db.model import SettingsWalkerarea
+from mapadroid.db.model import SettingsPogoauth, SettingsWalkerarea
+from mapadroid.geofence.geofenceHelper import GeofenceHelper
 from mapadroid.mapping_manager.MappingManager import MappingManager
 from mapadroid.mapping_manager.MappingManagerDevicemappingKey import \
     MappingManagerDevicemappingKey
@@ -38,6 +41,7 @@ class AbstractWorkerStrategy(ABC):
                  pogo_windows_handler: PogoWindows,
                  walker: SettingsWalkerarea,
                  worker_state: WorkerState,
+                 account_handler: AbstractAccountHandler,
                  stats_handler: Optional[AbstractStatsHandler] = None):
         self._stats_handler: Optional[AbstractStatsHandler] = stats_handler
         self._area_id: int = area_id
@@ -48,6 +52,7 @@ class AbstractWorkerStrategy(ABC):
         self._pogo_windows_handler: PogoWindows = pogo_windows_handler
         self._walker: SettingsWalkerarea = walker
         self._worker_state: WorkerState = worker_state
+        self._account_handler: AbstractAccountHandler = account_handler
 
     def get_communicator(self) -> AbstractCommunicator:
         return self._communicator
@@ -214,22 +219,23 @@ class AbstractWorkerStrategy(ABC):
             logger.info(f"logintype is {self._worker_state.active_account.login_type}")
         else:
             logger.warning("No active account set when starting pogo")
+            await fetch_auth_details(mapping_manager=self._mapping_manager,
+                                     worker_state=self._worker_state,
+                                     account_handler=self._account_handler)
 
         if self._worker_state.active_account and self._worker_state.active_account.login_type == LoginType.ptc.name\
                 and MadGlobals.application_args.enable_login_tracking:
             logger.debug("start_pogo: Login tracking enabled")
             if not await self._word_to_screen_matching.check_ptc_login_ban(increment_count=False):
-                # TODO: Why should we always reset app data here?
                 # sleeping close to or longer than 5 minutes may cause a problem with a 5-minute timeout
                 # in the RGC websocket connection? Only sleep 60s and then do some nonsense ...
                 logger.warning("start_pogo: No permission for PTC login. Kill pogo data and wait for 4 minutes...")
-                await self._communicator.reset_app_data("com.nianticlabs.pokemongo")
+                # await self._communicator.reset_app_data("com.nianticlabs.pokemongo")
                 await self._communicator.stop_app("com.nianticlabs.pokemongo")
-                c = 0
+                self._worker_state.active_account = None
                 await self._communicator.passthrough("true")
-                while c < 4:
-                    logger.warning(f"start_pogo: sleep 60 more seconds ... c = {c}")
-                    c += 1
+                for c in range(4):
+                    logger.warning("start_pogo: sleep 60 more seconds ... c = {}", c)
                     await asyncio.sleep(60)
                     await self._communicator.passthrough("true")
                 logger.warning("start_pogo: reboot after waiting ...")
@@ -647,7 +653,6 @@ class AbstractWorkerStrategy(ABC):
                      self._worker_state.resolution_calculator.screen_size_x,
                      self._worker_state.resolution_calculator.screen_size_y,
                      x_offset, y_offset)
-        # self._resocalc.get_x_y_ratio(self, self._screen_x, self._screen_y, x_offset, y_offset)
 
     async def _grant_permissions_to_pogo(self) -> None:
         command: str = "su -c 'pm grant com.nianticlabs.pokemongo android.permission.ACCESS_FINE_LOCATION " \

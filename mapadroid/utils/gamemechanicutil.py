@@ -10,6 +10,8 @@ import mapadroid.mitm_receiver.protos.Rpc_pb2 as pogoprotos
 
 
 def calculate_mon_level(cp_multiplier):
+    if cp_multiplier is None:
+        return 0
     if cp_multiplier < 0.734:
         pokemon_level = 58.35178527 * cp_multiplier * cp_multiplier - 2.838007664 * cp_multiplier + 0.8539209906
     else:

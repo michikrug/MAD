@@ -51,7 +51,7 @@ class RaidHelper:
             .select_from(Raid) \
             .join(GymDetail, GymDetail.gym_id == Raid.gym_id) \
             .join(Gym, Gym.gym_id == Raid.gym_id) \
-            .where(Raid.last_scanned > DatetimeWrapper.fromtimestamp(_timestamp))
+            .where(Raid.last_scanned > DatetimeWrapper.fromtimestamp(_timestamp), Raid.level > 0)
         result = await session.execute(stmt)
         changed_data: List[Tuple[Raid, GymDetail, Gym]] = []
         raw = result.all()
